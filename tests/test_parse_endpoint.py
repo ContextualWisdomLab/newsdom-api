@@ -38,6 +38,55 @@ def test_parse_endpoint_requires_pdf_file():
     assert response.status_code == 422
 
 
+def test_parse_endpoint_rejects_non_pdf_content_type():
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.txt", b"%PDF-1.4\nsome text", "text/plain")},
+    )
+    assert response.status_code == 415
+    assert "Unsupported media type" in response.json()["detail"]
+
+
+def test_parse_endpoint_rejects_invalid_magic_bytes():
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"Not a PDF\n", "application/pdf")},
+    )
+    assert response.status_code == 415
+    assert "Invalid file content" in response.json()["detail"]
+
+
+def test_parse_endpoint_rejects_oversized_file(monkeypatch):
+    client = TestClient(app)
+
+    # We fake the size calculation for the test
+    # Starlette UploadFile calculates size via the spooled file
+    # We can inject a file with a large reported size
+    class FakeUploadFile:
+        def __init__(self, size):
+            self.size = size
+            self.content_type = "application/pdf"
+            self.filename = "large.pdf"
+
+        async def read(self):
+            return b"%PDF-1.4\n..."
+
+    # Alternatively, directly patch the app or post large content
+    # A cleaner way is posting a large request body, but for speed we can
+    # monkeypatch size or just post a large string using a generator
+    large_content = b"%PDF" + b"0" * (50 * 1024 * 1024 + 1)
+
+    response = client.post(
+        "/parse",
+        files={"file": ("large.pdf", large_content, "application/pdf")},
+    )
+
+    assert response.status_code == 413
+    assert "File too large" in response.json()["detail"]
+
+
 def test_parse_endpoint_returns_503_for_mineru_runtime_failure(monkeypatch):
     def fake_run(cmd, check, capture_output, text, timeout=None):
         assert check is True
