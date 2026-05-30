@@ -84,13 +84,21 @@ def _build_page_dom(
 
     for block in content_list:
         block_type = block.get("type")
-        text = (block.get("text") or block.get("contents") or "").strip()
-        bbox = _bbox_from_values(block.get("bbox") or block.get("box"))
-        text_level = block.get("text_level")
-        role = block.get("role")
+        raw_text = block.get("text")
+        if raw_text is None:
+            raw_text = block.get("contents")
+
+        text = str(raw_text).strip() if raw_text else ""
 
         if not text and block_type not in {"image", "table", "chart"}:
             continue
+
+        raw_bbox = block.get("bbox")
+        if raw_bbox is None:
+            raw_bbox = block.get("box")
+        bbox = _bbox_from_values(raw_bbox)
+
+        role = block.get("role")
 
         if role == "header":
             page.headers.append(text)
@@ -133,6 +141,7 @@ def _build_page_dom(
             current_article.footnotes.extend(_caption_nodes_from_items(block.get("table_footnote")))
             continue
 
+        text_level = block.get("text_level")
         is_headline = bool(text_level == 1 or role == "section_headings")
         if is_headline:
             current_article = _new_article(article_seq, text.replace("\n", " "), bbox)
@@ -175,7 +184,19 @@ def build_dom(
             page_info = page_model.get("page_info") or {}
             page_info_by_idx[index] = page_info
 
-    has_page_idx = any(isinstance(block.get("page_idx"), int) for block in content_list)
+    has_page_idx = False
+    has_missing_page_idx = False
+    blocks_by_page_idx: dict[int, list[dict[str, Any]]] = {}
+
+    for block in content_list:
+        raw_page_idx = block.get("page_idx")
+        if isinstance(raw_page_idx, int):
+            has_page_idx = True
+            blocks_by_page_idx.setdefault(raw_page_idx, []).append(block)
+        else:
+            has_missing_page_idx = True
+            blocks_by_page_idx.setdefault(0, []).append(block)
+
     if not has_page_idx:
         article_seq = count(1)
         if len(page_info_by_idx) > 1:
@@ -187,7 +208,7 @@ def build_dom(
                 page_info = page_info_by_idx.get(page_idx, {})
                 pages.append(
                     _build_page_dom(
-                        content_list if page_idx == 0 else [],
+                        blocks_by_page_idx.get(0, []) if page_idx == 0 else [],
                         page_number=_page_number_from_info(page_info, page_idx + 1),
                         article_seq=article_seq,
                         width=page_info.get("width"),
@@ -205,7 +226,7 @@ def build_dom(
             document_id=document_id,
             pages=[
                 _build_page_dom(
-                    content_list,
+                    blocks_by_page_idx.get(0, []),
                     page_number=_page_number_from_info(page_info, 1),
                     article_seq=article_seq,
                     width=page_info.get("width"),
@@ -214,17 +235,10 @@ def build_dom(
             ],
         )
 
-    has_missing_page_idx = any(not isinstance(block.get("page_idx"), int) for block in content_list)
     if has_missing_page_idx and len(page_info_by_idx) > 1:
         quality_warnings.append(
             "Some blocks are missing page_idx; untagged blocks were assigned to page_idx 0 for deterministic grouping."
         )
-
-    blocks_by_page_idx: dict[int, list[dict[str, Any]]] = {}
-    for block in content_list:
-        raw_page_idx = block.get("page_idx")
-        normalized_page_idx = raw_page_idx if isinstance(raw_page_idx, int) else 0
-        blocks_by_page_idx.setdefault(normalized_page_idx, []).append(block)
 
     pages = []
     article_seq = count(1)
