@@ -49,8 +49,15 @@ def _caption_nodes_from_items(items: Any) -> list[CaptionNode]:
 
     for item in items:
         if isinstance(item, dict):
-            text = str(item.get("text") or item.get("contents") or "").strip()
-            bbox = _bbox_from_values(item.get("bbox") or item.get("box"))
+            raw_text = item.get("text")
+            if raw_text is None:
+                raw_text = item.get("contents")
+            text = str(raw_text).strip() if raw_text else ""
+
+            raw_bbox = item.get("bbox")
+            if raw_bbox is None:
+                raw_bbox = item.get("box")
+            bbox = _bbox_from_values(raw_bbox)
         else:
             text = str(item).strip()
             bbox = None
@@ -149,7 +156,7 @@ def _build_page_dom(
             continue
 
         if current_article is None:
-            current_article = _new_article(article_seq, "(untitled)")
+            current_article = _new_article(article_seq, "(untitled)", bbox)
             page.articles.append(current_article)
         current_article.body_blocks.append(text.replace("\n", " "))
 

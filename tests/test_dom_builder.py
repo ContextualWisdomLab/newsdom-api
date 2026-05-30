@@ -335,3 +335,13 @@ def test_build_dom_keeps_article_ids_unique_across_pages():
 
     article_ids = [article.article_id for page in dom.pages for article in page.articles]
     assert article_ids == ["article-1", "article-2"]
+
+def test_build_dom_handles_box_fallback():
+    dom = build_dom(
+        [
+            {"type": "text", "text": "test box fallback", "box": [1, 2, 3, 4], "page_idx": 0}
+        ],
+        document_id="doc-box",
+    )
+    assert dom.pages[0].articles[0].bbox is not None
+    assert dom.pages[0].articles[0].bbox.x0 == 1.0
