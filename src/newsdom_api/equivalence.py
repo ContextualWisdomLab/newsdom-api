@@ -35,34 +35,34 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
 
     if articles is not None:
         metrics["article_count"] = len(articles)
-        metrics["headline_blocks"] = sum(
-            1 for article in articles if isinstance(article, dict) and _article_has_headline(article)
-        )
+        headline_blocks = 0
+        vertical_count = 0
+        article_page_numbers = set()
+        headline_pages = set()
+
+        # Performance: Consolidate multiple iterations over 'articles' into a single pass
+        # to reduce list comprehensions and dict lookups overhead.
+        for article in articles:
+            if isinstance(article, dict):
+                has_headline = _article_has_headline(article)
+                if has_headline:
+                    headline_blocks += 1
+                if article.get("vertical"):
+                    vertical_count += 1
+
+                page_num = article.get("page_number")
+                if isinstance(page_num, int):
+                    article_page_numbers.add(page_num)
+                    if has_headline:
+                        headline_pages.add(page_num)
+
+        metrics["headline_blocks"] = headline_blocks
         if articles:
-            vertical_count = sum(
-                1 for article in articles if isinstance(article, dict) and bool(article.get("vertical"))
-            )
             metrics["vertical_article_ratio"] = vertical_count / len(articles)
 
-        article_page_numbers = {
-            article.get("page_number")
-            for article in articles
-            if isinstance(article, dict) and isinstance(article.get("page_number"), int)
-        }
         if article_page_numbers:
             metrics["page_count"] = len(article_page_numbers)
-            metrics["headline_page_coverage"] = (
-                len(
-                    {
-                        article.get("page_number")
-                        for article in articles
-                        if isinstance(article, dict)
-                        and isinstance(article.get("page_number"), int)
-                        and _article_has_headline(article)
-                    }
-                )
-                / len(article_page_numbers)
-            )
+            metrics["headline_page_coverage"] = len(headline_pages) / len(article_page_numbers)
 
     if images is not None:
         metrics["image_count"] = len(images)
@@ -73,14 +73,15 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     if pages is not None:
         metrics["page_count"] = len(pages)
         if pages:
-            metrics["column_count"] = max(
-                (
-                    page.get("column_count", 0)
-                    for page in pages
-                    if isinstance(page, dict) and isinstance(page.get("column_count"), int)
-                ),
-                default=metrics.get("column_count", 0),
-            )
+            # Performance: Replace max() generator comprehension with a single pass loop
+            # to avoid generator instantiation overhead.
+            max_col = metrics.get("column_count", 0)
+            for page in pages:
+                if isinstance(page, dict):
+                    c = page.get("column_count")
+                    if isinstance(c, int) and c > max_col:
+                        max_col = c
+            metrics["column_count"] = max_col
 
     return metrics
 

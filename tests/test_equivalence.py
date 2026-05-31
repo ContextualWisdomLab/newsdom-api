@@ -133,3 +133,24 @@ def test_compare_fixture_to_baseline_handles_empty_structural_lists(tmp_path: Pa
     )
 
     assert result["equivalent"] is True
+
+def test_derived_metrics_handles_non_dict_articles_and_pages():
+    from newsdom_api.equivalence import _derived_metrics
+    payload = {
+        "articles": ["not a dict", {"vertical": True}, {"page_number": 1, "headline": "h"}],
+        "pages": ["not a dict", {"column_count": "not int"}, {"column_count": 5}],
+        "column_count": 2
+    }
+    metrics = _derived_metrics(payload)
+    assert metrics["article_count"] == 3
+    assert metrics["vertical_article_ratio"] == 1 / 3
+    assert metrics["page_count"] == 3
+    assert metrics["column_count"] == 5
+
+def test_derived_metrics_handles_missing_vertical_and_page_number_types():
+    from newsdom_api.equivalence import _derived_metrics
+    payload = {
+        "articles": [{"vertical": "yes"}, {"page_number": "1", "headline": "h"}],
+    }
+    metrics = _derived_metrics(payload)
+    assert metrics["vertical_article_ratio"] == 1 / 2
