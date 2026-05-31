@@ -68,6 +68,20 @@ def test_parse_pdf_bytes_sanitizes_client_filename(monkeypatch):
         }
 
     monkeypatch.setattr("newsdom_api.service.run_mineru", fake_run_mineru)
+
+    # Test POSIX-style path
     result = parse_pdf_bytes(b"pdf-bytes", filename="../../nested/unsafe.pdf")
     assert observed["path_name"] == "unsafe.pdf"
     assert result.document_id == "unsafe"
+
+    # Test Windows-style path with mixed slashes
+    observed.clear()
+    result = parse_pdf_bytes(b"pdf-bytes", filename="C:\\nested/mix\\unsafe2.pdf")
+    assert observed["path_name"] == "unsafe2.pdf"
+    assert result.document_id == "unsafe2"
+
+    # Test Windows-style path traversal
+    observed.clear()
+    result = parse_pdf_bytes(b"pdf-bytes", filename="..\\..\\unsafe3.pdf")
+    assert observed["path_name"] == "unsafe3.pdf"
+    assert result.document_id == "unsafe3"

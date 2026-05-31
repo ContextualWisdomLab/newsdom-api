@@ -1,0 +1,4 @@
+## 2024-05-31 - [Path Traversal / Filename Sanitization]
+**Vulnerability:** Path sanitization using `Path(filename).name` was insufficient for preventing path traversal attacks when the API received filenames from different operating systems (e.g., Windows paths on a Linux host). A filename like `..\..\unsafe.pdf` could bypass the `Path().name` check on a POSIX system.
+**Learning:** Python's `pathlib.Path` uses the host OS's path flavor. Therefore, when handling user-provided file paths from an API request, one must sanitize against both POSIX (`/`) and Windows (`\`) directory separators to ensure cross-platform safety.
+**Prevention:** Always use both `ntpath.basename` and `posixpath.basename` to extract safe filenames from unverified input, instead of relying solely on `pathlib.Path` or `os.path.basename`.
