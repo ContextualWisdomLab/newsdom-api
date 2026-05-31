@@ -8,6 +8,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
+# Ensure newsdom_api is imported so PyInstaller can find it for fuzzing
+import newsdom_api
+
 from newsdom_api.dom_builder import build_dom
 
 
