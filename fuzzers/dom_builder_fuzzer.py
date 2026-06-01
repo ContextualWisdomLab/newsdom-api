@@ -8,6 +8,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
+# Make sure newsdom_api is importable from src
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
 from newsdom_api.dom_builder import build_dom
 
 
