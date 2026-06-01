@@ -8,6 +8,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
+# Fix relative import when running from root via pyinstaller
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
 from newsdom_api.dom_builder import build_dom
 
 
