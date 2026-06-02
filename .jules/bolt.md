@@ -1,0 +1,3 @@
+## 2024-05-18 - Single pass O(n) replacement for repeated comprehensions in list traversal
+**Learning:** For a codebase dealing with parsing a large amount of elements from DOM nodes in lists, performing multiple `any(...)` generator checks followed by a `for` loop to build a grouping dictionary results in doing O(n) passes multiple times, which adds up to a noticeable overhead.
+**Action:** Replace sequential `.get(...)` checks inside list comprehensions or `any(...)` generators with a single `for` loop that checks conditions and builds the grouped dict at the same time. The reduction in function calls significantly speeds up execution for large payloads.
