@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import json
 import os
 import shutil
@@ -33,9 +34,11 @@ def build_mineru_command(
     ]
 
 
+@functools.lru_cache(maxsize=1)
 def _resolve_mineru_bin() -> str:
     """Resolve the MinerU executable path from env override or PATH."""
 
+    # ⚡ Bolt: Caching this result to prevent redundant shutil.which() disk I/O on every request
     configured = os.environ.get("NEWSDOM_MINERU_BIN")
     if configured:
         return configured
