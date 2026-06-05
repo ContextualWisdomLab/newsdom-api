@@ -1,0 +1,3 @@
+## 2024-06-05 - Cache external executable resolution but clear in tests
+**Learning:** When using `@functools.lru_cache` to optimize functions that check system environment variables or files (e.g., `shutil.which` or `os.environ`), it significantly reduces overhead for identical requests. However, this causes severe side-effects in test environments where `monkeypatch` changes the environment dynamically between tests.
+**Action:** Whenever adding `lru_cache` to environment-dependent logic, ensure that tests using `monkeypatch` cannot contaminate each other. Implement an `autouse=True` fixture in `conftest.py` that explicitly calls `.cache_clear()` on the cached function.

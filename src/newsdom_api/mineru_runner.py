@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import json
 import os
 import shutil
@@ -33,6 +34,8 @@ def build_mineru_command(
     ]
 
 
+# Cache executable resolution to prevent redundant os.environ lookups and shutil.which filesystem checks
+@functools.lru_cache(maxsize=1)
 def _resolve_mineru_bin() -> str:
     """Resolve the MinerU executable path from env override or PATH."""
 
