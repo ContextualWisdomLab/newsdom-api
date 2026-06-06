@@ -1,0 +1,4 @@
+## 2026-06-06 - Path Traversal in File Downloads (Backslash bypass)
+**Vulnerability:** The application was vulnerable to path traversal attacks on Windows/mixed environments when users uploaded files with backslashes in the names (e.g., `..\..\etc\passwd`). Using `pathlib.Path().name` directly on POSIX environments does not strip backslashes as path separators, allowing malicious payloads to write outside the intended directory.
+**Learning:** `pathlib.Path(filename).name` alone is insufficient to sanitize filenames because its behavior depends on the host OS. On POSIX, a backslash is a valid file character, so `..\..\etc\passwd` becomes a single filename instead of a directory traversal sequence, bypassing intended path separation behavior.
+**Prevention:** Always replace backslashes with forward slashes (`filename.replace('\\', '/')`) before passing arbitrary paths to `pathlib.Path().name` or similar path extraction routines.
