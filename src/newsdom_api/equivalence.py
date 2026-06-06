@@ -35,34 +35,34 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
 
     if articles is not None:
         metrics["article_count"] = len(articles)
-        metrics["headline_blocks"] = sum(
-            1 for article in articles if isinstance(article, dict) and _article_has_headline(article)
-        )
+
+        # Optimize multiple array passes into a single loop
+        headline_blocks = 0
+        vertical_count = 0
+        article_page_numbers: set[int] = set()
+        headline_page_numbers: set[int] = set()
+
+        for article in articles:
+            if isinstance(article, dict):
+                has_hl = _article_has_headline(article)
+                if has_hl:
+                    headline_blocks += 1
+                if article.get("vertical"):
+                    vertical_count += 1
+
+                pn = article.get("page_number")
+                if isinstance(pn, int):
+                    article_page_numbers.add(pn)
+                    if has_hl:
+                        headline_page_numbers.add(pn)
+
+        metrics["headline_blocks"] = headline_blocks
         if articles:
-            vertical_count = sum(
-                1 for article in articles if isinstance(article, dict) and bool(article.get("vertical"))
-            )
             metrics["vertical_article_ratio"] = vertical_count / len(articles)
 
-        article_page_numbers = {
-            article.get("page_number")
-            for article in articles
-            if isinstance(article, dict) and isinstance(article.get("page_number"), int)
-        }
         if article_page_numbers:
             metrics["page_count"] = len(article_page_numbers)
-            metrics["headline_page_coverage"] = (
-                len(
-                    {
-                        article.get("page_number")
-                        for article in articles
-                        if isinstance(article, dict)
-                        and isinstance(article.get("page_number"), int)
-                        and _article_has_headline(article)
-                    }
-                )
-                / len(article_page_numbers)
-            )
+            metrics["headline_page_coverage"] = len(headline_page_numbers) / len(article_page_numbers)
 
     if images is not None:
         metrics["image_count"] = len(images)
