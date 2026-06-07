@@ -34,12 +34,14 @@ def _assert_no_private_path_material(value: str) -> None:
 
 def test_resolve_mineru_bin_prefers_env(monkeypatch):
     monkeypatch.setenv("NEWSDOM_MINERU_BIN", "/opt/mineru")
+    mineru_runner._resolve_mineru_bin.cache_clear()
     assert mineru_runner._resolve_mineru_bin() == "/opt/mineru"
 
 
 def test_resolve_mineru_bin_raises_when_not_found(monkeypatch):
     monkeypatch.delenv("NEWSDOM_MINERU_BIN", raising=False)
     monkeypatch.setattr(mineru_runner.shutil, "which", lambda name: None)
+    mineru_runner._resolve_mineru_bin.cache_clear()
     with pytest.raises(FileNotFoundError):
         mineru_runner._resolve_mineru_bin()
 
@@ -50,6 +52,7 @@ def test_find_output_dir_raises_when_missing(tmp_path: Path):
 
 
 def test_run_mineru_reads_generated_json(monkeypatch, tmp_path: Path):
+    mineru_runner._resolve_mineru_bin.cache_clear()
     tempdir = tmp_path / "temp"
     ocr_dir = tempdir / "sample" / "ocr"
     ocr_dir.mkdir(parents=True)
@@ -91,6 +94,7 @@ def test_run_mineru_reads_generated_json(monkeypatch, tmp_path: Path):
 
 
 def test_run_mineru_prefers_exact_stem_content_json(monkeypatch, tmp_path: Path):
+    mineru_runner._resolve_mineru_bin.cache_clear()
     tempdir = tmp_path / "temp"
     ocr_dir = tempdir / "sample" / "ocr"
     ocr_dir.mkdir(parents=True)
@@ -130,6 +134,7 @@ def test_run_mineru_prefers_exact_stem_content_json(monkeypatch, tmp_path: Path)
 
 
 def test_run_mineru_wraps_called_process_error(monkeypatch, tmp_path: Path):
+    mineru_runner._resolve_mineru_bin.cache_clear()
     tempdir = tmp_path / "temp"
     tempdir.mkdir()
 
@@ -164,6 +169,7 @@ def test_run_mineru_wraps_called_process_error(monkeypatch, tmp_path: Path):
 
 
 def test_run_mineru_wraps_missing_executable_failure(monkeypatch, tmp_path: Path):
+    mineru_runner._resolve_mineru_bin.cache_clear()
     tempdir = tmp_path / "temp"
     tempdir.mkdir()
 
@@ -216,6 +222,7 @@ def test_run_mineru_wraps_missing_executable_failure(monkeypatch, tmp_path: Path
 def test_run_mineru_raises_typed_incomplete_output_error(
     monkeypatch, tmp_path: Path, fixture_name: str, create_outputs
 ):
+    mineru_runner._resolve_mineru_bin.cache_clear()
     tempdir = tmp_path / "temp"
     create_outputs(tempdir)
     if fixture_name == "missing content list":
@@ -264,6 +271,7 @@ def test_run_mineru_raises_typed_incomplete_output_error(
 def test_run_mineru_raises_typed_incomplete_output_error_for_malformed_json(
     monkeypatch, tmp_path: Path, artifact_name: str, file_name: str
 ):
+    mineru_runner._resolve_mineru_bin.cache_clear()
     tempdir = tmp_path / "temp"
     ocr_dir = tempdir / "sample" / "ocr"
     ocr_dir.mkdir(parents=True)
