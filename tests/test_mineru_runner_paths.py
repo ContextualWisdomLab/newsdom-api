@@ -19,6 +19,12 @@ class _FakeTempDir:
         return False
 
 
+@pytest.fixture(autouse=True)
+def clear_cache():
+    """Clear lru_cache for resolving binary paths between tests to prevent monkeypatch contamination."""
+    mineru_runner._resolve_mineru_bin.cache_clear()
+
+
 def _assert_no_private_path_material(value: str) -> None:
     forbidden_fragments = (
         "/Users/",

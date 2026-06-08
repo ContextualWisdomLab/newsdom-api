@@ -7,6 +7,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -33,6 +34,7 @@ def build_mineru_command(
     ]
 
 
+@lru_cache()
 def _resolve_mineru_bin() -> str:
     """Resolve the MinerU executable path from env override or PATH."""
 
