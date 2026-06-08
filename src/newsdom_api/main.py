@@ -11,18 +11,49 @@ from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 from .schemas import ParseResponse
 from .service import parse_pdf_bytes
 
-app = FastAPI(title="NewsDOM API")
+app = FastAPI(
+    title="NewsDOM API",
+    description="DOM-style parser API for scanned Japanese newspaper PDFs, converting MinerU OCR output into canonical JSON.",
+    version="0.2.0",
+)
 
 
-@app.get("/health")
+@app.get(
+    "/health",
+    summary="Liveness check",
+    description="Return a minimal liveness response for load balancers and health checks.",
+)
 def health() -> dict[str, str]:
     """Return a minimal liveness response for health checks."""
 
     return {"status": "ok"}
 
 
-@app.post("/parse", response_model=ParseResponse)
-async def parse(file: Annotated[UploadFile, File(...)]) -> ParseResponse:
+@app.post(
+    "/parse",
+    response_model=ParseResponse,
+    summary="Parse PDF document",
+    description="Upload a scanned Japanese newspaper PDF to convert it into a structured DOM representation.",
+    responses={
+        200: {
+            "description": "Successfully parsed document",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "document_id": "upload",
+                        "pages": [],
+                        "quality": {"status": "success", "parser": "mineru", "warnings": []}
+                    }
+                }
+            }
+        },
+        502: {"description": "MinerU processing failed or returned incomplete output"},
+        503: {"description": "MinerU runtime or environment is unavailable"},
+    }
+)
+async def parse(
+    file: Annotated[UploadFile, File(description="The PDF file to parse")]
+) -> ParseResponse:
     """Parse an uploaded PDF into the canonical DOM response model."""
 
     try:
