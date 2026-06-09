@@ -1,0 +1,3 @@
+## 2025-06-09 - Consolidate Multiple O(N) Passes into a Single Loop
+**Learning:** Found redundant generator iterations and comprehensions in `src/newsdom_api/equivalence.py`. Iterating over a list four separate times and repeating function calls (`_article_has_headline()`) is less efficient than completing everything in a single `for` loop pass.
+**Action:** When gathering multiple metrics from the same array of dictionaries or objects, consolidate the work into a single iteration to avoid creating intermediate generators/sets, saving time and memory overhead.
