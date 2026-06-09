@@ -1,0 +1,4 @@
+## 2026-06-09 - Path Traversal via Backslash Paths on POSIX
+**Vulnerability:** File upload path traversal via backslash (`\`) paths on POSIX systems.
+**Learning:** `pathlib.Path().name` does not extract the base name of a Windows-style path containing backslashes when run on a POSIX (Linux/Mac) system because backslashes are considered valid filename characters on POSIX. If an attacker submits `..\..\etc\passwd`, `Path("..\..\etc\passwd").name` evaluates to the entire string `..\..\etc\passwd` on POSIX, which creates a path traversal vector when this unsanitized string is appended to a directory path.
+**Prevention:** Explicitly replace backslashes with forward slashes (`filename.replace('\\', '/')`) before calling `Path().name` to ensure base name extraction works consistently across platforms and mitigates path traversal.
