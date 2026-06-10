@@ -1,0 +1,4 @@
+## 2024-06-10 - Fix Path Traversal Vulnerability with Windows-style Paths on POSIX
+**Vulnerability:** A path traversal vulnerability existed in `parse_pdf_bytes` where user-provided filenames with backslashes (e.g., `..\..\etc\passwd`) were not correctly sanitized on POSIX systems (Linux/macOS) because `pathlib.Path().name` treats backslashes as valid filename characters on those systems, not path separators.
+**Learning:** `pathlib.Path().name` behaves differently depending on the operating system running the code. On POSIX systems, it does not strip out directory components separated by backslashes, making the application vulnerable if deployed on Linux but receiving payloads from Windows or attackers mimicking Windows paths.
+**Prevention:** Always normalize or replace backslashes with forward slashes before extracting the base name (e.g., `Path(filename.replace('\\', '/')).name`) to ensure safe extraction across all operating systems.

@@ -14,7 +14,9 @@ def parse_pdf_bytes(data: bytes, filename: str = "upload.pdf") -> ParseResponse:
     """Persist uploaded PDF bytes temporarily and return the normalized parse result."""
 
     with tempfile.TemporaryDirectory(prefix="newsdom-upload-") as tempdir:
-        safe_name = Path(filename).name or "upload.pdf"
+        # Sanitize filename by converting backslashes to forward slashes before extracting name
+        # to prevent path traversal on POSIX systems via Windows-style paths
+        safe_name = Path(filename.replace("\\", "/")).name or "upload.pdf"
         pdf_path = Path(tempdir) / safe_name
         pdf_path.write_bytes(data)
         mineru_output = run_mineru(pdf_path)

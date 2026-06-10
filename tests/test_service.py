@@ -71,3 +71,7 @@ def test_parse_pdf_bytes_sanitizes_client_filename(monkeypatch):
     result = parse_pdf_bytes(b"pdf-bytes", filename="../../nested/unsafe.pdf")
     assert observed["path_name"] == "unsafe.pdf"
     assert result.document_id == "unsafe"
+
+    result = parse_pdf_bytes(b"pdf-bytes", filename="..\\..\\nested\\unsafe_win.pdf")
+    assert observed["path_name"] == "unsafe_win.pdf"
+    assert result.document_id == "unsafe_win"
