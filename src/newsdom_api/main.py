@@ -11,18 +11,31 @@ from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 from .schemas import ParseResponse
 from .service import parse_pdf_bytes
 
-app = FastAPI(title="NewsDOM API")
+app = FastAPI(
+    title="NewsDOM API",
+    description="Parses scanned Japanese newspaper PDFs into DOM-like article trees.",
+    version="0.2.0",
+)
 
 
-@app.get("/health")
+@app.get("/health", tags=["System"], summary="Health check endpoint")
 def health() -> dict[str, str]:
     """Return a minimal liveness response for health checks."""
 
     return {"status": "ok"}
 
 
-@app.post("/parse", response_model=ParseResponse)
-async def parse(file: Annotated[UploadFile, File(...)]) -> ParseResponse:
+@app.post(
+    "/parse",
+    response_model=ParseResponse,
+    tags=["Document Processing"],
+    summary="Parse a PDF document",
+)
+async def parse(
+    file: Annotated[
+        UploadFile, File(description="The Japanese newspaper PDF file to be parsed")
+    ],
+) -> ParseResponse:
     """Parse an uploaded PDF into the canonical DOM response model."""
 
     try:
