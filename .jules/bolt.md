@@ -1,0 +1,3 @@
+## 2025-06-10 - Explicit type checks vs generator comprehensions
+**Learning:** For extremely large block lists (like OCR'd layout elements), chaining `any(isinstance())` generators across the same list can be surprisingly slow in Python compared to a single explicit loop that uses exact type checking (`type(x) is int`). Generator comprehensions introduce noticeable function call overhead for standard type checking in critical loops.
+**Action:** When a list is processed multiple times to compute boolean flags and build lookup dicts, consolidate the passes into a single explicit loop with `type(x) is` for measurable micro-optimizations, while still ensuring coverage constraints are met.
