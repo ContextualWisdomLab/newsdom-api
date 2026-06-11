@@ -59,7 +59,9 @@ def _caption_nodes_from_items(items: Any) -> list[CaptionNode]:
     return nodes
 
 
-def _new_article(article_seq: count, headline: str, bbox: BoundingBox | None = None) -> ArticleNode:
+def _new_article(
+    article_seq: count, headline: str, bbox: BoundingBox | None = None
+) -> ArticleNode:
     """Create a new article node with the next deterministic identifier."""
 
     return ArticleNode(
@@ -129,8 +131,12 @@ def _build_page_dom(
                 current_article = _new_article(article_seq, "(table-block)")
                 page.articles.append(current_article)
             current_article.body_blocks.append(block.get("table_body", ""))
-            current_article.captions.extend(_caption_nodes_from_items(block.get("table_caption")))
-            current_article.footnotes.extend(_caption_nodes_from_items(block.get("table_footnote")))
+            current_article.captions.extend(
+                _caption_nodes_from_items(block.get("table_caption"))
+            )
+            current_article.footnotes.extend(
+                _caption_nodes_from_items(block.get("table_footnote"))
+            )
             continue
 
         is_headline = bool(text_level == 1 or role == "section_headings")
@@ -175,7 +181,27 @@ def build_dom(
             page_info = page_model.get("page_info") or {}
             page_info_by_idx[index] = page_info
 
-    has_page_idx = any(isinstance(block.get("page_idx"), int) for block in content_list)
+    # ⚡ Bolt: Consolidated three iterations over content_list into one for O(N) performance.
+    # Replaced `isinstance` and `any` generator comprehensions with exact type checking.
+    has_page_idx = False
+    has_missing_page_idx = False
+    blocks_by_page_idx: dict[int, list[dict[str, Any]]] = {}
+
+    for block in content_list:
+        raw_page_idx = block.get("page_idx")
+        if type(raw_page_idx) is int:
+            has_page_idx = True
+            if raw_page_idx in blocks_by_page_idx:
+                blocks_by_page_idx[raw_page_idx].append(block)
+            else:
+                blocks_by_page_idx[raw_page_idx] = [block]
+        else:
+            has_missing_page_idx = True
+            if 0 in blocks_by_page_idx:
+                blocks_by_page_idx[0].append(block)
+            else:
+                blocks_by_page_idx[0] = [block]
+
     if not has_page_idx:
         article_seq = count(1)
         if len(page_info_by_idx) > 1:
@@ -214,17 +240,10 @@ def build_dom(
             ],
         )
 
-    has_missing_page_idx = any(not isinstance(block.get("page_idx"), int) for block in content_list)
     if has_missing_page_idx and len(page_info_by_idx) > 1:
         quality_warnings.append(
             "Some blocks are missing page_idx; untagged blocks were assigned to page_idx 0 for deterministic grouping."
         )
-
-    blocks_by_page_idx: dict[int, list[dict[str, Any]]] = {}
-    for block in content_list:
-        raw_page_idx = block.get("page_idx")
-        normalized_page_idx = raw_page_idx if isinstance(raw_page_idx, int) else 0
-        blocks_by_page_idx.setdefault(normalized_page_idx, []).append(block)
 
     pages = []
     article_seq = count(1)
