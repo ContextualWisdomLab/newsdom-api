@@ -71,3 +71,25 @@ def test_parse_pdf_bytes_sanitizes_client_filename(monkeypatch):
     result = parse_pdf_bytes(b"pdf-bytes", filename="../../nested/unsafe.pdf")
     assert observed["path_name"] == "unsafe.pdf"
     assert result.document_id == "unsafe"
+
+
+def test_parse_pdf_bytes_sanitizes_windows_style_filename(monkeypatch):
+    observed = {}
+
+    def fake_run_mineru(path: Path):
+        observed["path_name"] = path.name
+        return {
+            "content_list": [
+                {
+                    "type": "text",
+                    "text": "headline",
+                    "text_level": 1,
+                    "bbox": [0, 0, 1, 1],
+                }
+            ]
+        }
+
+    monkeypatch.setattr("newsdom_api.service.run_mineru", fake_run_mineru)
+    result = parse_pdf_bytes(b"pdf-bytes", filename="..\\..\\nested\\unsafe_win.pdf")
+    assert observed["path_name"] == "unsafe_win.pdf"
+    assert result.document_id == "unsafe_win"
