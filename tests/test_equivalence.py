@@ -55,7 +55,10 @@ def test_article_has_headline_supports_boolean_and_text_forms():
     from newsdom_api.equivalence import _article_has_headline
 
     assert _article_has_headline({"headline_present": True}) is True
-    assert _article_has_headline({"headline_present": False, "headline": "headline"}) is False
+    assert (
+        _article_has_headline({"headline_present": False, "headline": "headline"})
+        is False
+    )
     assert _article_has_headline({"headline": "headline"}) is True
 
 
