@@ -36,9 +36,7 @@ OCR_ENGINES: dict[str, Callable[[Path], dict[str, Any]]] = {
 }
 
 
-def run_benchmark(
-    fixtures_dir: Path, output_path: Path, engines: list[str]
-) -> None:
+def run_benchmark(fixtures_dir: Path, output_path: Path, engines: list[str]) -> None:
     """
     Run the OCR benchmark against a directory of PDFs for a list of engines.
 
