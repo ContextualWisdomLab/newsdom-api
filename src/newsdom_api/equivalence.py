@@ -28,9 +28,7 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     """Normalize structural metrics, preferring derivation from structural data when present."""
 
     metrics = dict(payload)
-    articles = (
-        payload.get("articles") if isinstance(payload.get("articles"), list) else None
-    )
+    articles = payload.get("articles") if isinstance(payload.get("articles"), list) else None
     images = payload.get("images") if isinstance(payload.get("images"), list) else None
     ads = payload.get("ads") if isinstance(payload.get("ads"), list) else None
     pages = payload.get("pages") if isinstance(payload.get("pages"), list) else None
@@ -38,15 +36,11 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     if articles is not None:
         metrics["article_count"] = len(articles)
         metrics["headline_blocks"] = sum(
-            1
-            for article in articles
-            if isinstance(article, dict) and _article_has_headline(article)
+            1 for article in articles if isinstance(article, dict) and _article_has_headline(article)
         )
         if articles:
             vertical_count = sum(
-                1
-                for article in articles
-                if isinstance(article, dict) and bool(article.get("vertical"))
+                1 for article in articles if isinstance(article, dict) and bool(article.get("vertical"))
             )
             metrics["vertical_article_ratio"] = vertical_count / len(articles)
 
@@ -57,15 +51,18 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
         }
         if article_page_numbers:
             metrics["page_count"] = len(article_page_numbers)
-            metrics["headline_page_coverage"] = len(
-                {
-                    article.get("page_number")
-                    for article in articles
-                    if isinstance(article, dict)
-                    and isinstance(article.get("page_number"), int)
-                    and _article_has_headline(article)
-                }
-            ) / len(article_page_numbers)
+            metrics["headline_page_coverage"] = (
+                len(
+                    {
+                        article.get("page_number")
+                        for article in articles
+                        if isinstance(article, dict)
+                        and isinstance(article.get("page_number"), int)
+                        and _article_has_headline(article)
+                    }
+                )
+                / len(article_page_numbers)
+            )
 
     if images is not None:
         metrics["image_count"] = len(images)
@@ -80,8 +77,7 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
                 (
                     page.get("column_count", 0)
                     for page in pages
-                    if isinstance(page, dict)
-                    and isinstance(page.get("column_count"), int)
+                    if isinstance(page, dict) and isinstance(page.get("column_count"), int)
                 ),
                 default=metrics.get("column_count", 0),
             )
@@ -99,15 +95,11 @@ def compare_fixture_to_baseline(
     failures: list[str] = []
 
     checks = {
-        "column_count": abs(truth["column_count"] - baseline_metrics["column_count"])
-        <= 1,
-        "article_count": abs(truth["article_count"] - baseline_metrics["article_count"])
-        <= 1,
+        "column_count": abs(truth["column_count"] - baseline_metrics["column_count"]) <= 1,
+        "article_count": abs(truth["article_count"] - baseline_metrics["article_count"]) <= 1,
         "image_count": abs(truth["image_count"] - baseline_metrics["image_count"]) <= 1,
         "ad_count": abs(truth["ad_count"] - baseline_metrics["ad_count"]) <= 1,
-        "headline_blocks": abs(
-            truth["headline_blocks"] - baseline_metrics["headline_blocks"]
-        )
+        "headline_blocks": abs(truth["headline_blocks"] - baseline_metrics["headline_blocks"])
         <= 2,
         "vertical_article_ratio": abs(
             truth["vertical_article_ratio"] - baseline_metrics["vertical_article_ratio"]

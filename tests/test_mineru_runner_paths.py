@@ -159,10 +159,7 @@ def test_run_mineru_wraps_called_process_error(monkeypatch, tmp_path: Path):
     assert exc_info.type.__name__ == "MineruRuntimeUnavailableError"
     assert exc_info.value.returncode == 23
     assert exc_info.value.stdout == "runtime output from /private/var/folders/secret"
-    assert (
-        exc_info.value.stderr
-        == "runtime stderr from /Users/private-user/tmp/mineru.log"
-    )
+    assert exc_info.value.stderr == "runtime stderr from /Users/private-user/tmp/mineru.log"
     _assert_no_private_path_material(str(exc_info.value))
 
 
@@ -181,9 +178,7 @@ def test_run_mineru_wraps_missing_executable_failure(monkeypatch, tmp_path: Path
         assert check is True
         assert capture_output is True
         assert text is True
-        raise FileNotFoundError(
-            "/opt/private/mineru not found in /Users/private-user/bin"
-        )
+        raise FileNotFoundError("/opt/private/mineru not found in /Users/private-user/bin")
 
     monkeypatch.setattr(mineru_runner.subprocess, "run", fake_run)
 

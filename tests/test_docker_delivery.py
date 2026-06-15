@@ -12,14 +12,7 @@ def _load_container_image_workflow() -> dict:
 
 
 def _find_step_by_uses(steps: list[dict], uses: str) -> dict:
-    match = next(
-        (
-            step
-            for step in steps
-            if re.match(rf"{re.escape(uses)}@[0-9a-fA-F]{{40}}", step.get("uses", ""))
-        ),
-        None,
-    )
+    match = next((step for step in steps if re.match(rf"{re.escape(uses)}@[0-9a-fA-F]{{40}}", step.get("uses", ""))), None)
     assert match is not None, f"missing workflow step for uses={uses!r}"
     return match
 
@@ -143,10 +136,7 @@ def test_readme_describes_default_image_as_shipping_mineru_runtime() -> None:
     assert "NEWSDOM_MINERU_BIN=mineru" in text
     assert "includes the MinerU runtime" in text
     assert "real `/parse` execution" not in text
-    assert (
-        "requires a compatible MinerU runtime to be available inside the container image"
-        not in text
-    )
+    assert "requires a compatible MinerU runtime to be available inside the container image" not in text
 
 
 def test_docker_command_matchers_allow_wrapped_whitespace():

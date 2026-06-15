@@ -69,11 +69,7 @@ def run_mineru(input_pdf: Path) -> dict[str, Any]:
                 cmd, check=True, capture_output=True, text=True, timeout=300
             )
         except subprocess.TimeoutExpired as exc:
-            stdout_str = (
-                exc.stdout.decode("utf-8", "replace")
-                if isinstance(exc.stdout, bytes)
-                else exc.stdout
-            )
+            stdout_str = exc.stdout.decode("utf-8", "replace") if isinstance(exc.stdout, bytes) else exc.stdout
             raise MineruRuntimeUnavailableError(
                 returncode=-1,
                 stdout=stdout_str or "",
