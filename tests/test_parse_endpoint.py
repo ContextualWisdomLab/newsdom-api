@@ -38,6 +38,18 @@ def test_parse_endpoint_requires_pdf_file():
     assert response.status_code == 422
 
 
+def test_parse_endpoint_rejects_non_pdf_content_type():
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.txt", b"not a pdf", "text/plain")},
+    )
+    assert response.status_code == 415
+    assert (
+        response.json()["detail"] == "Unsupported Media Type: expected application/pdf"
+    )
+
+
 def test_parse_endpoint_returns_503_for_mineru_runtime_failure(monkeypatch):
     def fake_run(cmd, check, capture_output, text, timeout=None):
         assert check is True
