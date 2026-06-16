@@ -29,7 +29,9 @@ def derive_baseline(fixtures_dir: Path, output_path: Path) -> None:
             response = parse_pdf_bytes(pdf_bytes, filename=pdf_path.name)
         except HTTPException as e:
             # Re-raise as a more generic exception for a CLI context
-            raise RuntimeError(f"OCR processing failed for {pdf_path.name}: {e.detail}") from e
+            raise RuntimeError(
+                f"OCR processing failed for {pdf_path.name}: {e.detail}"
+            ) from e
 
         total_pages += len(response.pages)
 
