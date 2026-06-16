@@ -1,4 +1,4 @@
-## 2025-02-28 - Fix Path Traversal in File Uploads
-**Vulnerability:** The API allowed path traversal via `filename` containing Windows-style backslashes (e.g. `..\\..\\unsafe.pdf`) which resulted in creating paths outside the temporary upload directory, because `pathlib.Path` treats backslashes as regular filename characters on non-Windows systems like Linux, bypassing the `.name` extraction filter.
-**Learning:** `Path(filename).name` alone does not normalize cross-platform paths securely when running on a POSIX system handling arbitrary inputs. The backslashes aren't recognized as path separators, allowing malicious inputs like `..\\..\\` to pass through.
-**Prevention:** Always normalize backward slashes to forward slashes before applying `Path` extraction or use secure filename libraries.
+## 2025-02-28 - Normalize Windows Filenames
+**Vulnerability:** The API allowed users to upload files literally containing Windows-style backslashes in their names on POSIX systems, because `pathlib.Path` treats backslashes as regular filename characters. While not a path traversal vulnerability, this can cause cross-platform issues or edge cases.
+**Learning:** On POSIX systems, `pathlib.Path` treats backslashes as regular filename characters, not directory separators. A Windows-style path like `..\\..\\file.pdf` does not cause path traversal via `Path(filename).name`, but creates a file literally containing backslashes.
+**Prevention:** Always normalize backward slashes to forward slashes before applying `Path` extraction.
