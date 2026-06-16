@@ -50,16 +50,20 @@ def _caption_nodes_from_items(items: Any) -> list[CaptionNode]:
     for item in items:
         if isinstance(item, dict):
             text = str(item.get("text") or item.get("contents") or "").strip()
-            bbox = _bbox_from_values(item.get("bbox") or item.get("box"))
+            if text:
+                # ⚡ Bolt: Defer expensive bbox parsing/float casting until we actually need it
+                bbox = _bbox_from_values(item.get("bbox") or item.get("box"))
+                nodes.append(CaptionNode(text=text, bbox=bbox))
         else:
             text = str(item).strip()
-            bbox = None
-        if text:
-            nodes.append(CaptionNode(text=text, bbox=bbox))
+            if text:
+                nodes.append(CaptionNode(text=text, bbox=None))
     return nodes
 
 
-def _new_article(article_seq: count, headline: str, bbox: BoundingBox | None = None) -> ArticleNode:
+def _new_article(
+    article_seq: count, headline: str, bbox: BoundingBox | None = None
+) -> ArticleNode:
     """Create a new article node with the next deterministic identifier."""
 
     return ArticleNode(
@@ -85,7 +89,6 @@ def _build_page_dom(
     for block in content_list:
         block_type = block.get("type")
         text = (block.get("text") or block.get("contents") or "").strip()
-        bbox = _bbox_from_values(block.get("bbox") or block.get("box"))
         text_level = block.get("text_level")
         role = block.get("role")
 
@@ -109,6 +112,8 @@ def _build_page_dom(
             continue
 
         if block_type in {"image", "chart"}:
+            # ⚡ Bolt: Defer expensive bbox parsing/float casting until we actually need it
+            bbox = _bbox_from_values(block.get("bbox") or block.get("box"))
             image = ImageNode(
                 path=block.get("img_path") or block.get("path") or block_type,
                 media_type=block_type,
@@ -129,12 +134,18 @@ def _build_page_dom(
                 current_article = _new_article(article_seq, "(table-block)")
                 page.articles.append(current_article)
             current_article.body_blocks.append(block.get("table_body", ""))
-            current_article.captions.extend(_caption_nodes_from_items(block.get("table_caption")))
-            current_article.footnotes.extend(_caption_nodes_from_items(block.get("table_footnote")))
+            current_article.captions.extend(
+                _caption_nodes_from_items(block.get("table_caption"))
+            )
+            current_article.footnotes.extend(
+                _caption_nodes_from_items(block.get("table_footnote"))
+            )
             continue
 
         is_headline = bool(text_level == 1 or role == "section_headings")
         if is_headline:
+            # ⚡ Bolt: Defer expensive bbox parsing/float casting until we actually need it
+            bbox = _bbox_from_values(block.get("bbox") or block.get("box"))
             current_article = _new_article(article_seq, text.replace("\n", " "), bbox)
             page.articles.append(current_article)
             continue
@@ -214,7 +225,9 @@ def build_dom(
             ],
         )
 
-    has_missing_page_idx = any(not isinstance(block.get("page_idx"), int) for block in content_list)
+    has_missing_page_idx = any(
+        not isinstance(block.get("page_idx"), int) for block in content_list
+    )
     if has_missing_page_idx and len(page_info_by_idx) > 1:
         quality_warnings.append(
             "Some blocks are missing page_idx; untagged blocks were assigned to page_idx 0 for deterministic grouping."
