@@ -13,7 +13,8 @@ while IFS= read -r -d '' fuzzer; do
 	fuzzer_basename=$(basename -s .py "$fuzzer")
 	fuzzer_package="${fuzzer_basename}.pkg"
 
-	pyinstaller --distpath "$OUT" --onefile --name "$fuzzer_package" "$fuzzer"
+	pyinstaller --distpath "$OUT" --paths src --onefile --name "$fuzzer_package" "$fuzzer"
+	rm -rf build-out/ build/ *.spec
 	chmod -x "$OUT/$fuzzer_package"
 
 	cat >"$OUT/$fuzzer_basename" <<EOF
