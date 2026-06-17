@@ -101,3 +101,13 @@ def test_parse_endpoint_returns_502_for_incomplete_mineru_output(
     assert response.status_code == 502
     assert response.json()["detail"] == "MinerU output was incomplete"
     _assert_no_private_path_material(response.json()["detail"])
+
+
+def test_parse_endpoint_rejects_non_pdf():
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.txt", b"plain text content", "text/plain")},
+    )
+    assert response.status_code == 415
+    assert response.json()["detail"] == "Only application/pdf is allowed"

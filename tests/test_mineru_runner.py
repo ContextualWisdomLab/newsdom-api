@@ -23,8 +23,10 @@ def test_run_mineru_handles_timeout(tmp_path: Path):
     input_pdf = tmp_path / "dummy.pdf"
     input_pdf.write_text("dummy content")
 
-    with patch("subprocess.run") as mock_run, \
-         patch("shutil.which", return_value="mineru"):
+    with (
+        patch("subprocess.run") as mock_run,
+        patch("shutil.which", return_value="mineru"),
+    ):
         mock_run.side_effect = subprocess.TimeoutExpired(cmd="mineru", timeout=0.1)
 
         with pytest.raises(MineruRuntimeUnavailableError) as exc_info:
@@ -42,8 +44,10 @@ def test_run_mineru_handles_called_process_error(tmp_path: Path):
     input_pdf = tmp_path / "dummy.pdf"
     input_pdf.write_text("dummy content")
 
-    with patch("subprocess.run") as mock_run, \
-         patch("shutil.which", return_value="mineru"):
+    with (
+        patch("subprocess.run") as mock_run,
+        patch("shutil.which", return_value="mineru"),
+    ):
         mock_run.side_effect = subprocess.CalledProcessError(
             returncode=1, cmd="mineru", stderr="Something went wrong"
         )

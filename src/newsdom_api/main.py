@@ -25,6 +25,9 @@ def health() -> dict[str, str]:
 async def parse(file: Annotated[UploadFile, File(...)]) -> ParseResponse:
     """Parse an uploaded PDF into the canonical DOM response model."""
 
+    if file.content_type != "application/pdf":
+        raise HTTPException(status_code=415, detail="Only application/pdf is allowed")
+
     try:
         pdf_bytes = await file.read()
         return await asyncio.to_thread(
