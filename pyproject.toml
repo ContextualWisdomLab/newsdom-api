@@ -15,7 +15,7 @@ dependencies = [
   "uvicorn>=0.30,<1.0",
   "pydantic>=2.9,<3.0",
   "python-multipart>=0.0.9,<1.0",
-  "reportlab>=4.2,<5.0",
+  "reportlab>=4.2,<6.0",
   "Pillow>=11.0,<13.0",
   "pypdf>=6.10.2,<7.0",
 ]
@@ -29,16 +29,16 @@ dev = [
   "pyyaml>=6.0,<7.0",
 ]
 mineru = [
-  "mineru[pipeline]==3.0.9",
+  "mineru[pipeline]==3.4.0",
   "transformers>=4.48.0",
 ]
 docs = [
     "mkdocs>=1.6,<2.0",
-    "mkdocs-material>=9.6,<9.7",
+    "mkdocs-material>=9.6,<9.8",
 ]
 fuzz = [
-  "atheris==3.0.0 ; platform_system == 'Linux' and python_version >= '3.11'",
-  "pyinstaller==6.16.0",
+  "atheris==3.1.0 ; platform_system == 'Linux' and python_version >= '3.11'",
+  "pyinstaller==6.21.0",
 ]
 
 [project.scripts]
