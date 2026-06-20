@@ -67,6 +67,8 @@ def test_clusterfuzzlite_dockerfile_places_build_script_at_src_root():
 def test_clusterfuzzlite_build_script_uses_locked_uv_fuzz_extra():
     text = _repo_path(".clusterfuzzlite", "build.sh").read_text(encoding="utf-8")
     assert "uv sync --frozen --extra fuzz" in text
+    assert "--paths src" in text
+    assert "--collect-submodules newsdom_api" in text
     assert "pip3 install . pyinstaller atheris" not in text
 
 
