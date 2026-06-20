@@ -20,6 +20,27 @@ def test_api_reference_examples_are_consistent_and_valid_json():
     assert payload["pages"][0]["articles"][0]["images"][0]["bbox"]["x0"] == 120.0
 
 
+def test_api_reference_uses_current_runtime_commands_and_temp_file_contract() -> None:
+    text = Path("manual/api-reference.md").read_text(encoding="utf-8")
+
+    assert "uv run uvicorn --app-dir src newsdom_api.main:app --reload" in text
+    assert "임시 디렉토리" in text
+    assert "응답 후 정리됩니다" in text
+    assert "uvicorn newsdom_api.main:app --reload" not in text
+
+
+def test_api_reference_documents_sanitized_parse_failure_semantics() -> None:
+    text = Path("manual/api-reference.md").read_text(encoding="utf-8")
+
+    for expected in [
+        "503 Service Unavailable",
+        "MinerU runtime unavailable",
+        "502 Bad Gateway",
+        "MinerU output was incomplete",
+    ]:
+        assert expected in text
+
+
 def test_development_doc_uses_tree_wording():
     text = Path("manual/development.md").read_text(encoding="utf-8")
     assert "트리 구조의 DOM" in text

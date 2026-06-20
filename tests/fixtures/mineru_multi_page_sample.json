@@ -1,0 +1,93 @@
+[
+  {
+    "type": "text",
+    "text": "Synthetic News Page 1",
+    "role": "header",
+    "page_idx": 0,
+    "bbox": [40, 30, 1160, 90]
+  },
+  {
+    "type": "text",
+    "text": "Battery Supply Chain Expands",
+    "text_level": 1,
+    "page_idx": 0,
+    "bbox": [80, 140, 620, 220]
+  },
+  {
+    "type": "text",
+    "text": "Producers added new refining capacity for cathode materials.",
+    "page_idx": 0,
+    "bbox": [80, 240, 620, 520]
+  },
+  {
+    "type": "image",
+    "img_path": "images/page-1-photo.png",
+    "page_idx": 0,
+    "bbox": [700, 240, 1110, 760],
+    "image_caption": ["Image caption on page 1"],
+    "image_footnote": ["Image footnote on page 1"]
+  },
+  {
+    "type": "text",
+    "text": "Page 1 footer",
+    "role": "footer",
+    "page_idx": 0,
+    "bbox": [50, 1700, 420, 1760]
+  },
+  {
+    "type": "text",
+    "text": "1",
+    "role": "page_number",
+    "page_idx": 0,
+    "bbox": [1080, 1700, 1130, 1760]
+  },
+  {
+    "type": "text",
+    "text": "Synthetic News Page 2",
+    "role": "header",
+    "page_idx": 1,
+    "bbox": [40, 30, 1240, 90]
+  },
+  {
+    "type": "text",
+    "text": "Market Outlook Highlights",
+    "role": "section_headings",
+    "page_idx": 1,
+    "bbox": [90, 150, 640, 230]
+  },
+  {
+    "type": "chart",
+    "img_path": "charts/page-2-growth.png",
+    "page_idx": 1,
+    "bbox": [120, 270, 710, 930],
+    "chart_caption": ["Chart caption on page 2"],
+    "chart_footnote": ["Chart footnote on page 2"]
+  },
+  {
+    "type": "table",
+    "page_idx": 1,
+    "bbox": [760, 270, 1210, 930],
+    "table_body": "<table><tr><td>North</td><td>42</td></tr></table>",
+    "table_caption": ["Table caption on page 2"],
+    "table_footnote": ["Table footnote on page 2"]
+  },
+  {
+    "type": "text",
+    "text": "Orphaned text without explicit page index.",
+    "bbox": [100, 980, 520, 1060]
+  },
+  {
+    "type": "text",
+    "text": "Page 2 footer",
+    "role": "footer",
+    "page_idx": 1,
+    "bbox": [60, 1720, 430, 1780]
+  },
+  {
+    "type": "text",
+    "text": "2",
+    "role": "page_number",
+    "page_idx": 1,
+    "bbox": [1180, 1720, 1230, 1780]
+  }
+]

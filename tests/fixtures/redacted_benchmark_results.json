@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-04-24T01:50:00Z",
+  "harness_version": "1.0",
+  "results": {
+    "mineru": {
+      "success_count": 5,
+      "failure_count": 1,
+      "timeout_count": 0,
+      "total_duration_seconds": 120.5,
+      "metrics": {
+        "average_page_count": 2.4,
+        "average_images_extracted": 1.2
+      }
+    }
+  }
+}

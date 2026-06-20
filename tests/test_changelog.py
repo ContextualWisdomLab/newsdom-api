@@ -27,7 +27,7 @@ def test_initial_release_entry_keeps_added_section_and_links():
         in text
     )
     assert (
-        "[Unreleased]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...HEAD"
+        "[Unreleased]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.2.0...HEAD"
         in text
     )
     assert (
@@ -42,7 +42,7 @@ def test_changelog_prepares_the_0_1_1_release_entry():
     assert "### Added" in text
     assert "*.intoto.jsonl" in text
     assert (
-        "[Unreleased]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...HEAD"
+        "[Unreleased]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.2.0...HEAD"
         in text
     )
     assert (

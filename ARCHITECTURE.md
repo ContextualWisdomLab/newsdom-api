@@ -13,9 +13,11 @@ orchestration, MinerU process execution, and DOM normalization.
 - `src/newsdom_api/service.py` orchestrates PDF parsing,
   temporary files, and response construction.
 - `src/newsdom_api/mineru_runner.py` shells out to the MinerU CLI,
-  collects JSON outputs, and surfaces process errors.
+  collects JSON outputs, and translates runtime or incomplete-output
+  failures into typed sanitized exceptions.
 - `src/newsdom_api/dom_builder.py` converts MinerU `content_list`
-  blocks into the canonical NewsDOM response model.
+  blocks plus page model metadata into the canonical NewsDOM response
+  model.
 - `src/newsdom_api/schemas.py` defines the public response schema.
 - `src/newsdom_api/synthetic.py` and
   `src/newsdom_api/equivalence.py` support synthetic fixture
@@ -27,9 +29,13 @@ orchestration, MinerU process execution, and DOM normalization.
 2. `src/newsdom_api/service.py` writes the upload to a temporary
    workspace and calls MinerU.
 3. `src/newsdom_api/mineru_runner.py` resolves the executable, runs
-   the OCR pipeline, and loads generated JSON artifacts.
-4. `src/newsdom_api/dom_builder.py` normalizes OCR blocks into the canonical response.
-5. FastAPI returns typed JSON from `src/newsdom_api/schemas.py`.
+   the OCR pipeline, loads generated JSON artifacts, and raises typed
+   sanitized errors for runtime-unavailable or incomplete-output cases.
+4. `src/newsdom_api/dom_builder.py` normalizes OCR blocks into the
+   canonical response while preserving page-aware structure from
+   MinerU model metadata.
+5. FastAPI returns typed JSON from `src/newsdom_api/schemas.py` and
+   maps MinerU runtime failures to 503 and incomplete output to 502.
 
 ## Supporting systems
 

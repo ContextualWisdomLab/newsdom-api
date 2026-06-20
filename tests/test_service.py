@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from newsdom_api.schemas import ParseResponse
@@ -6,7 +7,9 @@ from newsdom_api.service import parse_pdf_bytes
 
 def test_parse_pdf_bytes_writes_temp_file_and_builds_dom(monkeypatch):
     observed = {}
-    mineru_model = [{"page_info": {"page_no": 0, "width": 100.0, "height": 200.0}}]
+    model = json.loads(
+        Path("tests/fixtures/mineru_multi_page_model.json").read_text(encoding="utf-8")
+    )
 
     def fake_run_mineru(path: Path):
         observed["path_name"] = path.name
@@ -20,7 +23,7 @@ def test_parse_pdf_bytes_writes_temp_file_and_builds_dom(monkeypatch):
                     "bbox": [0, 0, 1, 1],
                 }
             ],
-            "model": mineru_model,
+            "model": model,
         }
 
     def fake_build_dom(content_list, document_id: str, model=None) -> ParseResponse:
@@ -36,7 +39,15 @@ def test_parse_pdf_bytes_writes_temp_file_and_builds_dom(monkeypatch):
     assert observed["path_name"] == "fixture.pdf"
     assert observed["bytes"] == b"pdf-bytes"
     assert observed["document_id"] == "fixture"
-    assert observed["model"] == mineru_model
+    assert observed["content_list"] == [
+        {
+            "type": "text",
+            "text": "headline",
+            "text_level": 1,
+            "bbox": [0, 0, 1, 1],
+        }
+    ]
+    assert observed["model"] == model
     assert result.document_id == "fixture"
 
 

@@ -33,4 +33,7 @@ nav:
   - 시작하기: index.md
   - 설치 가이드: installation.md
   - 사용 방법 및 API: api-reference.md
-  - 개발 및 기여: development.md
+  - 개발 및 기여:
+      - development.md
+      - 워크플로우:
+          - workflow/ocr-accuracy-evidence.md

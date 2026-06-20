@@ -1,0 +1,59 @@
+name: Build CI Environment Image
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'Dockerfile.test'
+      - '.github/workflows/build-ci-image.yml'
+  pull_request:
+    paths:
+      - 'Dockerfile.test'
+      - '.github/workflows/build-ci-image.yml'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Convert repository owner to lowercase for Docker compatibility
+      - name: Lowercase repository owner
+        id: lowercase_owner
+        run: |
+          echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051
+        with:
+          images: ghcr.io/${{ steps.lowercase_owner.outputs.owner }}/newsdom-api/ci-env
+          tags: |
+            type=raw,value=latest
+            type=sha
+
+      - name: Build and push test image
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25
+        with:
+          context: .
+          file: ./Dockerfile.test
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

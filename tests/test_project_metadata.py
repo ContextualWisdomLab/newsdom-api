@@ -87,17 +87,17 @@ def test_project_metadata_does_not_bundle_mineru_extra():
     assert "mineru[pipeline]" not in dependencies_section
 
 
-def test_project_version_is_prepared_for_v0_1_1_release():
+def test_project_version_is_prepared_for_v0_2_0_release():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
-    assert _project_version(text) == "0.1.1"
+    assert _project_version(text) == "0.2.0"
 
 
 def test_project_version_lookup_uses_project_section_only() -> None:
     text = (
         '[tool.example]\nversion = "9.9.9"\n\n'
-        '[project]\nname = "newsdom-api"\nversion = "0.1.1"\n'
+        '[project]\nname = "newsdom-api"\nversion = "0.2.0"\n'
     )
-    assert _project_version(text) == "0.1.1"
+    assert _project_version(text) == "0.2.0"
 
 
 def test_uv_lock_tracks_project_version() -> None:

@@ -27,8 +27,10 @@ class ImageNode(BaseModel):
     """Image metadata preserved in the canonical page structure."""
 
     path: str
+    media_type: str = "image"
     bbox: Optional[BoundingBox] = None
     captions: List[CaptionNode] = Field(default_factory=list)
+    footnotes: List[CaptionNode] = Field(default_factory=list)
 
 
 class ArticleNode(BaseModel):
@@ -40,6 +42,7 @@ class ArticleNode(BaseModel):
     body_blocks: List[str] = Field(default_factory=list)
     images: List[ImageNode] = Field(default_factory=list)
     captions: List[CaptionNode] = Field(default_factory=list)
+    footnotes: List[CaptionNode] = Field(default_factory=list)
 
 
 class PageNode(BaseModel):
@@ -51,6 +54,8 @@ class PageNode(BaseModel):
     articles: List[ArticleNode] = Field(default_factory=list)
     ads: List[str] = Field(default_factory=list)
     headers: List[str] = Field(default_factory=list)
+    footers: List[str] = Field(default_factory=list)
+    page_numbers: List[str] = Field(default_factory=list)
 
 
 class ParseQuality(BaseModel):

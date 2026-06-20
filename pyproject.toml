@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "newsdom-api"
-version = "0.1.1"
+version = "0.2.0"
 description = "DOM-style parser API for scanned Japanese newspaper PDFs"
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
@@ -17,7 +17,7 @@ dependencies = [
   "python-multipart>=0.0.9,<1.0",
   "reportlab>=4.2,<5.0",
   "Pillow>=11.0,<13.0",
-  "pypdf>=5.0,<7.0"
+  "pypdf>=6.10.2,<7.0",
 ]
 
 [project.optional-dependencies]
@@ -32,8 +32,6 @@ mineru = [
   "mineru[pipeline]==3.0.9",
   "transformers>=4.48.0",
 ]
-# Hold the docs toolchain below MkDocs 2.0 until a supported migration path
-# is available for the current Material-based manual stack.
 docs = [
     "mkdocs>=1.6,<2.0",
     "mkdocs-material>=9.6,<9.7",
@@ -43,24 +41,25 @@ fuzz = [
   "pyinstaller==6.16.0",
 ]
 
+[project.scripts]
+mineru = "mineru.cli.app:app"
+
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = { "" = "src", "tools" = "tools"}
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["src", "tools"]
+include = ["newsdom_api*", "tools*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_default_fixture_loop_scope = "function"
-filterwarnings = [
-    "ignore:the load_module\\(\\) method is deprecated:DeprecationWarning"
-]
 markers = [
   "integration: requires MinerU CLI and model cache"
 ]
 
 [tool.coverage.run]
-source = ["src/newsdom_api"]
+source = ["src/newsdom_api", "tools"]
 branch = true
 
 [tool.coverage.report]

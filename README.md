@@ -44,14 +44,13 @@ docker build -t newsdom-api .
 docker run -p 8000:8000 newsdom-api
 ```
 
-The default image exposes the REST API on port `8000` as a lean multi-arch
-service image. It is suitable for `linux/amd64` and `linux/arm64`, including
-Apple Silicon hosts running the API service inside Docker.
+The default image exposes the REST API on port `8000` as a multi-arch service
+image. It is suitable for `linux/amd64` and `linux/arm64`, including Apple
+Silicon hosts running the API service inside Docker.
 
-The lean image is intentionally a REST API shell: `/health`, `/docs`, and
-OpenAPI endpoints are available immediately, while real `/parse` execution
-still requires a compatible MinerU runtime to be available inside the
-container image.
+The default image already includes the MinerU runtime and sets
+`NEWSDOM_MINERU_BIN=mineru`, so `/parse` is available without layering an extra
+OCR package into the container at runtime.
 
 For heavier parsing deployments, build the optional NVIDIA-oriented variant:
 
@@ -74,6 +73,12 @@ provide the CUDA user-space/runtime stack required by MinerU.
 ```bash
 curl -F "file=@sample.pdf" http://127.0.0.1:8000/parse
 ```
+
+Each request is written to a request-scoped temporary directory before MinerU
+runs, and those temporary files are removed after the response completes.
+Sanitized parse failures return `503 MinerU runtime unavailable` when the
+runtime cannot be executed and `502 MinerU output was incomplete` when MinerU
+finishes without the required output artifacts.
 
 ### Run tests
 

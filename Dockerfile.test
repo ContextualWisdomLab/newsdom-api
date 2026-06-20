@@ -1,0 +1,36 @@
+FROM python:3.10-slim
+
+ENV UV_VERSION=0.11.3
+
+# Install system dependencies
+# Note: We do NOT switch to a non-root user (like `USER ciuser`) here.
+# GitHub Actions runs `container` jobs by bind-mounting workspace and runner temp directories.
+# If the container runs as a non-root user by default, it will not have permission to write
+# to the GitHub Actions runner directories (like /__w/_temp/_runner_file_commands/), causing EACCES errors.
+# @coderabbitai ignore
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libgl1 \
+    libglib2.0-0 \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv (pin to match .github/workflows/tests.yml)
+RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin sh
+
+ENV PATH="/usr/local/bin:${PATH}"
+
+WORKDIR /app
+
+# Pre-warm dependencies only (source is mounted at runtime by Actions)
+COPY pyproject.toml README.md ./
+COPY src/newsdom_api/__init__.py ./src/newsdom_api/__init__.py
+
+# Install dependencies using uv
+# Install to system Python so that it's accessible without activating a venv
+RUN uv pip install --system -e ".[dev,mineru]"
+
+ENV PYTHONPATH=/app/src
+
+CMD ["pytest"]

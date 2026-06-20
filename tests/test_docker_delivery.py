@@ -130,6 +130,15 @@ def test_readme_documents_docker_build_and_run():
     assert "NVIDIA" in text
 
 
+def test_readme_describes_default_image_as_shipping_mineru_runtime() -> None:
+    text = Path("README.md").read_text(encoding="utf-8")
+
+    assert "NEWSDOM_MINERU_BIN=mineru" in text
+    assert "includes the MinerU runtime" in text
+    assert "real `/parse` execution" not in text
+    assert "requires a compatible MinerU runtime to be available inside the container image" not in text
+
+
 def test_docker_command_matchers_allow_wrapped_whitespace():
     sample = "docker   build\n  -t   newsdom-api .\n\n docker run   -p 8000:8000\n newsdom-api"
 
