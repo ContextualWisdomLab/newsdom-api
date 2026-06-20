@@ -32,6 +32,8 @@ jobs:
       || (github.event.pull_request.draft != true
           && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     permissions:
       id-token: write
       contents: write
