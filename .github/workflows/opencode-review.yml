@@ -35,10 +35,13 @@ jobs:
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     permissions:
+      actions: read
+      checks: read
       id-token: write
       contents: write
       pull-requests: write
       issues: write
+      statuses: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -827,7 +830,8 @@ jobs:
       - name: Approve PR if OpenCode review passed
         if: always()
         env:
-          GH_TOKEN: ${{ secrets.OPENCODE_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REVIEW_GH_TOKEN: ${{ steps.opencode_app_token.outputs.token || secrets.OPENCODE_APPROVE_TOKEN || secrets.GITHUB_TOKEN }}
           GH_REPOSITORY: ${{ github.repository }}
           STRIX_GITHUB_MODELS_TOKEN: ${{ secrets.STRIX_GITHUB_MODELS_TOKEN }}
           OPENCODE_APP_TOKEN: ${{ steps.opencode_app_token.outputs.token }}
@@ -851,9 +855,11 @@ jobs:
           echo "::group::OpenCode Review Approval Gate"
           echo "PR=#${PR_NUMBER} head_sha=${HEAD_SHA} run_id=${RUN_ID} run_attempt=${RUN_ATTEMPT}"
           approval_token_source="configured"
+          review_token="$REVIEW_GH_TOKEN"
           if [ -n "${OPENCODE_APP_TOKEN:-}" ]; then
-            export GH_TOKEN="$OPENCODE_APP_TOKEN"
             approval_token_source="opencode-app"
+          elif [ "${REVIEW_GH_TOKEN:-}" = "${GH_TOKEN:-}" ]; then
+            approval_token_source="github-token"
           fi
           echo "approval token source=${approval_token_source}"
 
@@ -864,7 +870,8 @@ jobs:
               --arg body "$body" \
               --arg commit_id "$HEAD_SHA" \
               '{event: $event, body: $body, commit_id: $commit_id}' |
-              gh api -X POST "repos/${GH_REPOSITORY}/pulls/${PR_NUMBER}/reviews" --input - >/dev/null
+              env GH_TOKEN="$review_token" \
+                gh api -X POST "repos/${GH_REPOSITORY}/pulls/${PR_NUMBER}/reviews" --input - >/dev/null
           }
 
           request_changes_for_gate_failure() {
