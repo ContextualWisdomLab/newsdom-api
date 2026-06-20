@@ -16,10 +16,12 @@ query($owner: String!, $name: String!, $pageSize: Int!, $cursor: String) {
     pullRequests(first: $pageSize, after: $cursor, states: OPEN, orderBy: {field: CREATED_AT, direction: ASC}) {
       pageInfo { hasNextPage endCursor }
       nodes {
+        id
         number
         title
         isDraft
         mergeable
+        mergeStateStatus
         reviewDecision
         baseRefName
         baseRefOid
@@ -61,6 +63,20 @@ query($owner: String!, $name: String!, $pageSize: Int!, $cursor: String) {
           }
         }
       }
+    }
+  }
+}
+"""
+
+UPDATE_BRANCH_MUTATION = """\
+mutation($pullRequestId: ID!, $expectedHeadOid: GitObjectID!) {
+  updatePullRequestBranch(input: {
+    pullRequestId: $pullRequestId,
+    expectedHeadOid: $expectedHeadOid
+  }) {
+    pullRequest {
+      number
+      headRefOid
     }
   }
 }
@@ -193,6 +209,12 @@ def enable_auto_merge(repo: str, pr: dict[str, Any], *, dry_run: bool) -> None:
     run(["gh", "pr", "merge", number, "--repo", repo, "--auto", "--squash", "--match-head-commit", head])
 
 
+def update_pr_branch(pr: dict[str, Any], *, dry_run: bool) -> None:
+    if dry_run:
+        return
+    gh_graphql(UPDATE_BRANCH_MUTATION, pullRequestId=pr["id"], expectedHeadOid=pr["headRefOid"])
+
+
 def dispatch_opencode_review(repo: str, workflow: str, pr: dict[str, Any], *, dry_run: bool) -> None:
     if dry_run:
         return
@@ -249,6 +271,15 @@ def inspect_pr(
         return Decision(number, "block", "current-head OpenCode review requested changes")
 
     if has_current_head_approval(pr):
+        mergeable = (pr.get("mergeable") or "").upper()
+        merge_state = (pr.get("mergeStateStatus") or "").upper()
+        if mergeable == "CONFLICTING" or merge_state == "DIRTY":
+            return Decision(number, "block", "current head has merge conflicts")
+        if mergeable == "UNKNOWN":
+            return Decision(number, "wait", "mergeability is still being calculated")
+        if merge_state == "BEHIND":
+            update_pr_branch(pr, dry_run=dry_run)
+            return Decision(number, "update_branch", "current head is approved but behind base; branch update requested")
         if pr.get("autoMergeRequest"):
             return Decision(number, "wait", "current head is approved; auto-merge already enabled")
         if not enable_auto_merge_flag:
@@ -293,10 +324,15 @@ def print_summary(
 
 def self_test() -> None:
     sample = {
+        "id": "PR_1",
         "number": 1,
+        "baseRefName": "develop",
         "headRefOid": "abc",
         "isDraft": False,
+        "mergeable": "MERGEABLE",
+        "mergeStateStatus": "CLEAN",
         "headRepository": {"nameWithOwner": "owner/repo"},
+        "autoMergeRequest": None,
         "reviewDecision": "REVIEW_REQUIRED",
         "reviewThreads": {"nodes": []},
         "reviews": {
@@ -336,6 +372,55 @@ def self_test() -> None:
         {"__typename": "CheckRun", "name": "opencode-review", "status": "IN_PROGRESS"}
     )
     assert opencode_in_progress(sample)
+
+    approved = {
+        **sample,
+        "reviews": {
+            "nodes": [
+                {
+                    "state": "APPROVED",
+                    "author": {"login": "opencode-agent"},
+                    "commit": {"oid": "abc"},
+                }
+            ]
+        },
+        "statusCheckRollup": {"contexts": {"nodes": []}},
+    }
+    decision = inspect_pr(
+        "owner/repo",
+        approved,
+        dry_run=True,
+        trigger_reviews=True,
+        enable_auto_merge_flag=True,
+        workflow="OpenCode Review",
+        base_branch="develop",
+    )
+    assert decision.action == "auto_merge"
+
+    approved["mergeStateStatus"] = "BEHIND"
+    decision = inspect_pr(
+        "owner/repo",
+        approved,
+        dry_run=True,
+        trigger_reviews=True,
+        enable_auto_merge_flag=True,
+        workflow="OpenCode Review",
+        base_branch="develop",
+    )
+    assert decision.action == "update_branch"
+
+    approved["mergeable"] = "CONFLICTING"
+    approved["mergeStateStatus"] = "DIRTY"
+    decision = inspect_pr(
+        "owner/repo",
+        approved,
+        dry_run=True,
+        trigger_reviews=True,
+        enable_auto_merge_flag=True,
+        workflow="OpenCode Review",
+        base_branch="develop",
+    )
+    assert decision.action == "block"
     print("self-test passed")
 
 
