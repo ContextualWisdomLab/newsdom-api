@@ -99,6 +99,27 @@ def test_compare_fixture_to_baseline_derives_page_count_from_pages_list(tmp_path
     assert result["checks"]["page_count"] is True
 
 
+def test_derived_metrics_handles_mixed_article_structures():
+    from newsdom_api.equivalence import _derived_metrics
+
+    metrics = _derived_metrics(
+        {
+            "articles": [
+                "not-a-dict",
+                {"headline": "test", "vertical": True, "page_number": 1},
+                {"headline": "", "vertical": False, "page_number": 2},
+                {"headline_present": True, "page_number": "not-an-int"},
+            ]
+        }
+    )
+
+    assert metrics["article_count"] == 4
+    assert metrics["headline_blocks"] == 2
+    assert metrics["vertical_article_ratio"] == 0.25
+    assert metrics["page_count"] == 2
+    assert metrics["headline_page_coverage"] == 0.5
+
+
 def test_compare_fixture_to_baseline_handles_empty_structural_lists(tmp_path: Path):
     truth_path = tmp_path / "truth.json"
     truth_path.write_text(
