@@ -50,12 +50,14 @@ def _caption_nodes_from_items(items: Any) -> list[CaptionNode]:
     for item in items:
         if isinstance(item, dict):
             text = str(item.get("text") or item.get("contents") or "").strip()
-            bbox = _bbox_from_values(item.get("bbox") or item.get("box"))
+            if text:
+                # ⚡ Bolt: Defer expensive bbox parsing/float casting until we actually need it
+                bbox = _bbox_from_values(item.get("bbox") or item.get("box"))
+                nodes.append(CaptionNode(text=text, bbox=bbox))
         else:
             text = str(item).strip()
-            bbox = None
-        if text:
-            nodes.append(CaptionNode(text=text, bbox=bbox))
+            if text:
+                nodes.append(CaptionNode(text=text, bbox=None))
     return nodes
 
 
