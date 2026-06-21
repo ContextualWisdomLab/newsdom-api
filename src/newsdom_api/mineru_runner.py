@@ -7,6 +7,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -33,8 +34,9 @@ def build_mineru_command(
     ]
 
 
+@lru_cache
 def _resolve_mineru_bin() -> str:
-    """Resolve the MinerU executable path from env override or PATH."""
+    """Resolve and cache the MinerU executable path for this process."""
 
     configured = os.environ.get("NEWSDOM_MINERU_BIN")
     if configured:
@@ -58,7 +60,11 @@ def _find_output_dir(base_output_dir: Path) -> Path:
 
 
 def run_mineru(input_pdf: Path) -> dict[str, Any]:
-    """Run MinerU on a PDF and return parsed JSON artifacts plus raw process output."""
+    """Run MinerU on a PDF and return parsed JSON artifacts plus raw process output.
+
+    The resolved MinerU executable path is cached for the process lifetime. Restart
+    the service after changing NEWSDOM_MINERU_BIN or PATH.
+    """
 
     mineru_bin = _resolve_mineru_bin()
     with tempfile.TemporaryDirectory(prefix="newsdom-mineru-") as tempdir:
