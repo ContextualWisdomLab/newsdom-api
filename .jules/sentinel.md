@@ -1,4 +1,4 @@
-## 2025-02-28 - Normalize Windows Filenames
-**Vulnerability:** The API allowed users to upload files literally containing Windows-style backslashes in their names on POSIX systems, because `pathlib.Path` treats backslashes as regular filename characters. While not a path traversal vulnerability, this can cause cross-platform issues or edge cases.
-**Learning:** On POSIX systems, `pathlib.Path` treats backslashes as regular filename characters, not directory separators. A Windows-style path like `..\\..\\file.pdf` does not cause path traversal via `Path(filename).name`, but creates a file literally containing backslashes.
-**Prevention:** Always normalize backward slashes to forward slashes before applying `Path` extraction.
+## 2024-05-24 - Missing Input Validation on File Uploads
+**Vulnerability:** The `/parse` endpoint accepted file uploads without validating the `Content-Type` header, allowing arbitrary file types to be processed by the backend MinerU engine.
+**Learning:** Even internal backend services need explicit input validation at the API boundary, as delegating type checking entirely to external binaries like MinerU can lead to unexpected failures, resource exhaustion, or unintended processing behavior.
+**Prevention:** Validate upload media types at the API controller level before passing payloads to underlying processing engines, and keep extension validation notes separate unless the controller enforces them too.

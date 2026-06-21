@@ -3,19 +3,28 @@
 from __future__ import annotations
 
 import tempfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from .dom_builder import build_dom
 from .mineru_runner import run_mineru
 from .schemas import ParseResponse
 
 
+def _safe_upload_filename(filename: str) -> str:
+    """Return a basename for client-supplied upload filenames."""
+
+    normalized = filename.replace("\\", "/")
+    name = PurePosixPath(normalized).name
+    if name in ("", ".", ".."):
+        return "upload.pdf"
+    return name
+
+
 def parse_pdf_bytes(data: bytes, filename: str = "upload.pdf") -> ParseResponse:
     """Persist uploaded PDF bytes temporarily and return the normalized parse result."""
 
     with tempfile.TemporaryDirectory(prefix="newsdom-upload-") as tempdir:
-        normalized_filename = filename.replace("\\", "/")
-        safe_name = Path(normalized_filename).name or "upload.pdf"
+        safe_name = _safe_upload_filename(filename)
         pdf_path = Path(tempdir) / safe_name
         pdf_path.write_bytes(data)
         mineru_output = run_mineru(pdf_path)

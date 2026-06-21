@@ -11,7 +11,11 @@ from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 from .schemas import ParseResponse
 from .service import parse_pdf_bytes
 
-app = FastAPI(title="NewsDOM API")
+app = FastAPI(
+    title="NewsDOM API",
+    description="DOM-style parser API for scanned Japanese newspaper PDFs",
+    version="0.2.0",
+)
 
 
 @app.get("/health")
@@ -24,6 +28,12 @@ def health() -> dict[str, str]:
 @app.post("/parse", response_model=ParseResponse)
 async def parse(file: Annotated[UploadFile, File(...)]) -> ParseResponse:
     """Parse an uploaded PDF into the canonical DOM response model."""
+
+    media_type = (file.content_type or "").split(";", 1)[0].strip().lower()
+    if media_type != "application/pdf":
+        raise HTTPException(
+            status_code=415, detail="Unsupported Media Type: expected application/pdf"
+        )
 
     try:
         pdf_bytes = await file.read()
