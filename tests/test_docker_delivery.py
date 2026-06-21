@@ -185,7 +185,7 @@ def test_container_image_workflow_sets_up_qemu_for_multi_arch_builds():
     image_steps = data["jobs"]["image"]["steps"]
     assert any(
         step.get("uses")
-        == "docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a"
+        == "docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3"
         for step in image_steps
     )
 
