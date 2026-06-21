@@ -33,12 +33,21 @@ def health() -> dict[str, str]:
     "/parse",
     response_model=ParseResponse,
     summary="Parse Newspaper PDF",
-    description="Converts a scanned Japanese newspaper PDF into a canonical JSON DOM document using MinerU.",
+    description=(
+        "Converts a scanned Japanese newspaper PDF into a canonical JSON DOM "
+        "document using MinerU."
+    ),
 )
 async def parse(
     file: Annotated[UploadFile, File(description="The newspaper PDF file to parse.")]
 ) -> ParseResponse:
     """Parse an uploaded PDF into the canonical DOM response model."""
+
+    media_type = (file.content_type or "").split(";", 1)[0].strip().lower()
+    if media_type != "application/pdf":
+        raise HTTPException(
+            status_code=415, detail="Unsupported Media Type: expected application/pdf"
+        )
 
     try:
         pdf_bytes = await file.read()
