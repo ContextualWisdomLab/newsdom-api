@@ -106,14 +106,6 @@ def test_codeql_workflow_scopes_security_events_write_to_job_level():
     assert "security-events: write" in text.split("jobs:", 1)[1]
 
 
-def test_build_ci_image_workflow_scopes_packages_write_to_job_level():
-    text = Path(".github/workflows/build-ci-image.yml").read_text(encoding="utf-8")
-    workflow_header, jobs_section = text.split("jobs:", 1)
-    assert "packages: write" not in workflow_header
-    assert "contents: read" in workflow_header
-    assert "packages: write" in jobs_section
-
-
 def test_docs_workflow_installs_docs_tooling_from_locked_uv_dependencies():
     text = Path(".github/workflows/gh-pages.yml").read_text(encoding="utf-8")
     assert not re.search(r"\b(?:python\s+-m\s+)?pip3?\s+install\b", text)

@@ -42,34 +42,9 @@ def test_readme_documents_uv_run_entrypoints():
 
 
 def test_repo_docs_note_windows_uv_python_path_equivalent():
-    text = Path("CONTRIBUTING.md").read_text(encoding="utf-8")
-    assert ".venv\\Scripts\\python.exe" in text
-
-
-def test_repo_docs_describe_live_mineru_install_as_optional_follow_up():
     for path in [Path("README.md"), Path("CONTRIBUTING.md")]:
         text = path.read_text(encoding="utf-8")
-        assert 'uv sync --frozen --all-extras' in text
-    assert 'uv pip install --python .venv/bin/python "mineru[pipeline]==3.0.9"' in Path(
-        "CONTRIBUTING.md"
-    ).read_text(encoding="utf-8")
-    assert 'uv pip install --python .venv/bin/python "mineru[pipeline]==3.0.9"' not in Path(
-        "README.md"
-    ).read_text(encoding="utf-8")
-
-
-def test_repo_docs_explain_live_mineru_install_is_optional_security_isolation():
-    for path in [Path("README.md"), Path("CONTRIBUTING.md")]:
-        text = path.read_text(encoding="utf-8")
-        assert "optional" in text.lower()
-        assert "separate" in text.lower() or "separately" in text.lower()
-
-
-def test_readme_describes_default_container_as_api_only_runtime():
-    text = Path("README.md").read_text(encoding="utf-8")
-
-    assert "ships the API service only" in text
-    assert "does not bundle the MinerU runtime" in text
+        assert ".venv\\Scripts\\python.exe" in text, path
 
 
 def test_pull_request_template_exists():

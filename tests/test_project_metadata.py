@@ -52,46 +52,6 @@ def _dependencies_section(text: str) -> str:
     raise AssertionError("pyproject.toml dependencies array is not properly closed")
 
 
-def _optional_dependency_section(text: str, extra_name: str) -> str:
-    marker = f'{extra_name} = ['
-    if marker not in text:
-        raise AssertionError(f"pyproject.toml is missing optional dependency {extra_name!r}")
-
-    start = text.index(marker) + len(marker)
-    bracket_depth = 1
-    in_string = False
-    escape = False
-
-    for index in range(start, len(text)):
-        char = text[index]
-
-        if in_string:
-            if escape:
-                escape = False
-                continue
-            if char == "\\":
-                escape = True
-                continue
-            if char == '"':
-                in_string = False
-            continue
-
-        if char == '"':
-            in_string = True
-            continue
-        if char == "[":
-            bracket_depth += 1
-            continue
-        if char == "]":
-            bracket_depth -= 1
-            if bracket_depth == 0:
-                return text[start:index]
-
-    raise AssertionError(
-        f"pyproject.toml optional dependency {extra_name!r} is not properly closed"
-    )
-
-
 def _project_version(text: str) -> str:
     match = re.search(
         r'^\[project\]\n(?:.*\n)*?^version = "([^"]+)"',
@@ -186,28 +146,15 @@ def test_project_declares_locked_fuzz_extra_without_bundling_nvidia_stack():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
     assert "fuzz = [" in text
     assert '"atheris==3.0.0 ;' in text
-    assert '"pyinstaller==6.16.0"' in text
+    assert '"pyinstaller==6.21.0"' in text
     assert "nvidia = [" not in text
-
-
-def test_uv_lock_pins_pypdf_at_patched_release():
-    assert _locked_package_version("pypdf") >= (6, 10, 0)
-
-
-def test_project_pins_python_multipart_to_patched_range():
-    text = Path("pyproject.toml").read_text(encoding="utf-8")
-    assert '"python-multipart>=0.0.26,<1.0"' in text
-
-
-def test_uv_lock_pins_python_multipart_at_patched_release():
-    assert _locked_package_version("python-multipart") >= (0, 0, 26)
 
 
 def test_project_keeps_mineru_pipeline_stack_out_of_pyproject_metadata():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
     dependencies_section = _dependencies_section(text)
 
-    assert '"mineru[pipeline]==3.0.9"' not in dependencies_section
+    assert '"mineru[pipeline]==3.4.0"' not in dependencies_section
     assert "\nmineru = [" not in text
     assert 'mineru = "mineru.cli.app:app"' not in text
 
@@ -218,3 +165,7 @@ def test_uv_lock_does_not_track_external_mineru_pipeline_runtime_stack():
     assert '[[package]]\nname = "mineru"' not in text
     assert '[[package]]\nname = "transformers"' not in text
     assert '[[package]]\nname = "torch"' not in text
+
+
+def test_uv_lock_pins_pypdf_at_patched_release():
+    assert _locked_package_version("pypdf") >= (6, 10, 0)

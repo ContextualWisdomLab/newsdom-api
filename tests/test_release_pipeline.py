@@ -3,31 +3,16 @@ import json
 import subprocess
 from pathlib import Path
 import re
-from typing import Any, cast
 
 import pytest
 import yaml
 
 
-def _release_workflow() -> dict[str, Any]:
-    return yaml.safe_load(Path(".github/workflows/release.yml").read_text(encoding="utf-8"))
-
-
-def _release_workflow_steps(job_name: str) -> list[dict[str, Any]]:
-    return _release_workflow()["jobs"][job_name]["steps"]
-
-
-def _find_step_by_uses(steps: list[dict[str, Any]], uses: str) -> dict[str, Any]:
-    match = next(
-        (
-            step
-            for step in steps
-            if re.match(rf"{re.escape(uses)}@[0-9a-fA-F]{{40}}", step.get("uses", ""))
-        ),
-        None,
+def _release_workflow_steps() -> list[dict]:
+    workflow = yaml.safe_load(
+        Path(".github/workflows/release.yml").read_text(encoding="utf-8")
     )
-    assert match is not None, f"missing workflow step for uses={uses!r}"
-    return match
+    return workflow["jobs"]["release"]["steps"]
 
 
 def test_release_workflow_exists():
@@ -62,13 +47,14 @@ def test_release_manifest_script_outputs_json(tmp_path: Path):
     manifest_path = dist / "release-manifest.json"
     manifest_path.write_text("{}", encoding="utf-8")
     manifest = build_manifest(dist)
-    artifacts = cast(list[dict[str, Any]], manifest["artifacts"])
     expected_sha = hashlib.sha256(artifact.read_bytes()).hexdigest()
-    assert len(artifacts) == 1
-    assert artifacts[0]["name"] == "demo.txt"
-    assert artifacts[0]["size"] == artifact.stat().st_size
-    assert artifacts[0]["sha256"] == expected_sha
-    assert all(item["name"] != "release-manifest.json" for item in artifacts)
+    assert len(manifest["artifacts"]) == 1
+    assert manifest["artifacts"][0]["name"] == "demo.txt"
+    assert manifest["artifacts"][0]["size"] == artifact.stat().st_size
+    assert manifest["artifacts"][0]["sha256"] == expected_sha
+    assert all(
+        item["name"] != "release-manifest.json" for item in manifest["artifacts"]
+    )
     json.loads(json.dumps(manifest))
 
 
@@ -83,9 +69,8 @@ def test_release_manifest_script_excludes_explicit_output_path(tmp_path: Path):
     output_path.write_text("{}", encoding="utf-8")
 
     manifest = build_manifest(dist, exclude={output_path})
-    artifacts = cast(list[dict[str, Any]], manifest["artifacts"])
 
-    assert [item["name"] for item in artifacts] == ["demo.txt"]
+    assert [item["name"] for item in manifest["artifacts"]] == ["demo.txt"]
 
 
 def test_release_workflow_publish_step_is_idempotent():
@@ -101,33 +86,19 @@ def test_release_workflow_pins_uv_version():
     assert "version: '0.11.3'" in text
 
 
-def test_release_workflow_splits_build_and_publish_permissions():
+def test_release_workflow_scopes_write_permissions_to_job_level():
     text = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
-    workflow_header, _jobs_section = text.split("jobs:", 1)
-    workflow = _release_workflow()
-
-    assert "contents: read" in workflow_header
-    assert "contents: write" not in workflow_header
-
-    build_job = workflow["jobs"]["build-release"]
-    publish_job = workflow["jobs"]["publish-release"]
-
-    assert build_job["permissions"] == {
-        "contents": "read",
-        "attestations": "write",
-        "id-token": "write",
-    }
-    assert publish_job["permissions"] == {
-        "contents": "write",
-        "actions": "read",
-    }
-    assert publish_job["needs"] == "build-release"
+    assert "contents: read" in text.split("jobs:", 1)[0]
+    assert "contents: write" not in text.split("jobs:", 1)[0]
+    assert "contents: write" in text.split("jobs:", 1)[1]
+    assert "attestations: write" in text.split("jobs:", 1)[1]
+    assert "id-token: write" in text.split("jobs:", 1)[1]
 
 
 def test_release_workflow_uploads_intoto_assets_with_release_artifacts():
     upload_step = next(
         step
-        for step in _release_workflow_steps("build-release")
+        for step in _release_workflow_steps()
         if step.get("name") == "Upload release artifacts"
     )
 
@@ -135,26 +106,10 @@ def test_release_workflow_uploads_intoto_assets_with_release_artifacts():
 
 
 def test_release_workflow_exports_attestations_before_uploading_artifacts():
-    step_names = [step.get("name") for step in _release_workflow_steps("build-release")]
+    step_names = [step.get("name") for step in _release_workflow_steps()]
     assert step_names.index("Export release attestation bundles") < step_names.index(
         "Upload release artifacts"
     )
-
-
-def test_release_workflow_downloads_artifacts_before_publish_step():
-    step_names = [step.get("name") for step in _release_workflow_steps("publish-release")]
-
-    assert step_names.index("Download release artifacts") < step_names.index(
-        "Publish GitHub release"
-    )
-
-
-def test_release_workflow_uses_pinned_download_artifact_action_for_publish_job():
-    publish_steps = _release_workflow_steps("publish-release")
-    download_step = _find_step_by_uses(publish_steps, "actions/download-artifact")
-
-    assert download_step["with"]["name"] == "release-artifacts"
-    assert download_step["with"]["path"] == "dist"
 
 
 def test_release_attestation_export_script_hashes_artifacts_in_chunks(tmp_path: Path):

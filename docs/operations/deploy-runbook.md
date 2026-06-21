@@ -19,9 +19,14 @@ delivery paths.
 1. `docker build -t newsdom-api .`
 2. `docker run --rm -p 18080:8000 newsdom-api`
 3. Verify:
-    - `curl -fsS http://127.0.0.1:18080/health`
- 
-Container smoke should validate `/health` by default. Real `/parse` checks require a container image or runtime variant that includes MinerU.
+   - `curl -fsS http://127.0.0.1:18080/health`
+   - `curl -fsS -F "file=@sample.pdf" http://127.0.0.1:18080/parse`
+     only after a compatible MinerU runtime is installed or exposed through
+     `NEWSDOM_MINERU_BIN`
+
+The default image ships the API service only and does not bundle the MinerU runtime,
+so container smoke should treat `/parse` as an external-runtime check rather
+than a default-image contract.
 
 `/health` proves the API process is serving but does not validate a full `/parse` round-trip, MinerU execution, or OCR artifact production.
 

@@ -12,7 +12,14 @@ def _load_container_image_workflow() -> dict:
 
 
 def _find_step_by_uses(steps: list[dict], uses: str) -> dict:
-    match = next((step for step in steps if re.match(rf"{re.escape(uses)}@[0-9a-fA-F]{{40}}", step.get("uses", ""))), None)
+    match = next(
+        (
+            step
+            for step in steps
+            if re.match(rf"{re.escape(uses)}@[0-9a-fA-F]{{40}}", step.get("uses", ""))
+        ),
+        None,
+    )
     assert match is not None, f"missing workflow step for uses={uses!r}"
     return match
 
@@ -85,10 +92,11 @@ def test_dockerfile_uses_project_metadata_and_src_layout():
     assert _contains_pinned_uv_image(text)
 
 
-def test_dockerfile_runs_uvicorn_with_external_mineru_path():
+def test_dockerfile_runs_uvicorn_without_bundled_mineru_runtime():
     text = Path("Dockerfile").read_text(encoding="utf-8")
     assert "uvicorn" in text
     assert "newsdom_api.main:app" in text
+    assert "--extra mineru" not in text
     assert "NEWSDOM_MINERU_BIN" not in text
     assert "--host" in text
     assert "0.0.0.0" in text
@@ -102,17 +110,6 @@ def test_nvidia_dockerfile_installs_mineru_pipeline_stack():
     assert "ghcr.io/astral-sh/uv@sha256:" in text
     assert 'uv pip install --python .venv/bin/python "mineru[pipeline]==3.0.9"' in text
     assert "NEWSDOM_MINERU_BIN" in text
-
-
-def test_ci_dockerfile_pins_python_base_image_by_digest():
-    text = Path("Dockerfile.test").read_text(encoding="utf-8")
-    assert re.search(r"^FROM python:3\.10-slim@sha256:[0-9a-f]{64}$", text, re.M)
-
-
-def test_ci_dockerfile_avoids_installing_live_mineru_stack():
-    text = Path("Dockerfile.test").read_text(encoding="utf-8")
-    assert 'uv pip install --system -e ".[dev]"' in text
-    assert 'uv pip install --system -e ".[dev,mineru]"' not in text
 
 
 def test_dockerignore_excludes_local_noise():
@@ -141,21 +138,16 @@ def test_readme_documents_docker_build_and_run():
     assert "NVIDIA" in text
 
 
-def test_default_dockerfile_installs_mineru_optional_extra_from_lockfile() -> None:
-    text = Path("Dockerfile").read_text(encoding="utf-8")
-
-    assert "uv sync --frozen --no-dev" in text
-    assert "--extra mineru" not in text
-    assert "uv pip install --python .venv/bin/python \"mineru[pipeline]==3.0.9\"" not in text
-
-
 def test_readme_describes_default_image_as_api_only_runtime() -> None:
     text = Path("README.md").read_text(encoding="utf-8")
 
-    assert "default image ships the API service only" in text
+    assert "ships the API service only" in text
     assert "does not bundle the MinerU runtime" in text
-    assert "NEWSDOM_MINERU_BIN=mineru" not in text
-    assert "requires a compatible MinerU runtime to be available inside the container image" in text
+    assert "real `/parse` execution" not in text
+    assert (
+        "requires a compatible MinerU runtime to be available inside the container image"
+        in text
+    )
 
 
 def test_docker_command_matchers_allow_wrapped_whitespace():

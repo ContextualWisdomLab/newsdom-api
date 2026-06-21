@@ -22,10 +22,14 @@ repository-managed virtual environment:
 uv sync --frozen --all-extras
 ```
 
-Live OCR is optional and uses a separately managed MinerU CLI runtime. Keep the
-`uv sync` environment for tests and API development, then follow
-`CONTRIBUTING.md` or `manual/installation.md` when you need a compatible MinerU
-runtime on `PATH` or via `NEWSDOM_MINERU_BIN`.
+To enable real parsing with MinerU, install the MinerU CLI separately in the
+same `.venv` that `uv sync` created:
+
+```bash
+uv pip install --python .venv/bin/python "mineru[pipeline]==3.4.0"
+```
+
+On Windows, replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
 
 ### Run
 
@@ -44,7 +48,8 @@ The default image exposes the REST API on port `8000` as a multi-arch service
 image. It is suitable for `linux/amd64` and `linux/arm64`, including Apple
 Silicon hosts running the API service inside Docker.
 
-The default image ships the API service only and does not bundle the MinerU runtime, so `/health` works out of the box but real `/parse` execution requires a compatible MinerU runtime to be available inside the container image.
+The default image ships the API service only and does not bundle the MinerU runtime.
+`/parse` requires a compatible MinerU runtime to be available inside the container image or exposed through `NEWSDOM_MINERU_BIN`.
 
 For heavier parsing deployments, build the optional NVIDIA-oriented variant:
 

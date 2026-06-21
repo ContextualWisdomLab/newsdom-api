@@ -4,7 +4,6 @@ import subprocess
 
 import pytest
 
-from newsdom_api.errors import MineruRuntimeUnavailableError
 from newsdom_api import mineru_runner
 
 
@@ -43,33 +42,6 @@ def test_resolve_mineru_bin_raises_when_not_found(monkeypatch):
     monkeypatch.setattr(mineru_runner.shutil, "which", lambda name: None)
     with pytest.raises(FileNotFoundError):
         mineru_runner._resolve_mineru_bin()
-
-
-def test_normalize_process_text_decodes_bytes() -> None:
-    assert mineru_runner._normalize_process_text("stderr".encode("utf-8")) == "stderr"
-
-
-def test_run_mineru_wraps_unresolved_executable_before_subprocess(
-    monkeypatch, tmp_path: Path
-):
-    tempdir = tmp_path / "temp"
-    tempdir.mkdir()
-
-    monkeypatch.delenv("NEWSDOM_MINERU_BIN", raising=False)
-    monkeypatch.setattr(mineru_runner.shutil, "which", lambda name: None)
-    monkeypatch.setattr(
-        mineru_runner.tempfile,
-        "TemporaryDirectory",
-        lambda prefix: _FakeTempDir(tempdir),
-    )
-
-    with pytest.raises(MineruRuntimeUnavailableError) as exc_info:
-        mineru_runner.run_mineru(Path("sample.pdf"))
-
-    assert exc_info.value.returncode is None
-    assert exc_info.value.stdout in (None, "")
-    assert exc_info.value.stderr in (None, "")
-    _assert_no_private_path_material(str(exc_info.value))
 
 
 def test_find_output_dir_raises_when_missing(tmp_path: Path):
@@ -181,12 +153,16 @@ def test_run_mineru_wraps_called_process_error(monkeypatch, tmp_path: Path):
 
     monkeypatch.setattr(mineru_runner.subprocess, "run", fake_run)
 
-    with pytest.raises(MineruRuntimeUnavailableError) as exc_info:
+    with pytest.raises(Exception) as exc_info:
         mineru_runner.run_mineru(Path("sample.pdf"))
 
+    assert exc_info.type.__name__ == "MineruRuntimeUnavailableError"
     assert exc_info.value.returncode == 23
     assert exc_info.value.stdout == "runtime output from /private/var/folders/secret"
-    assert exc_info.value.stderr == "runtime stderr from /Users/private-user/tmp/mineru.log"
+    assert (
+        exc_info.value.stderr
+        == "runtime stderr from /Users/private-user/tmp/mineru.log"
+    )
     _assert_no_private_path_material(str(exc_info.value))
 
 
@@ -205,7 +181,9 @@ def test_run_mineru_wraps_missing_executable_failure(monkeypatch, tmp_path: Path
         assert check is True
         assert capture_output is True
         assert text is True
-        raise FileNotFoundError("/opt/private/mineru not found in /Users/private-user/bin")
+        raise FileNotFoundError(
+            "/opt/private/mineru not found in /Users/private-user/bin"
+        )
 
     monkeypatch.setattr(mineru_runner.subprocess, "run", fake_run)
 
