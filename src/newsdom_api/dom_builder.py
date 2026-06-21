@@ -89,7 +89,6 @@ def _build_page_dom(
     for block in content_list:
         block_type = block.get("type")
         text = (block.get("text") or block.get("contents") or "").strip()
-        text_level = block.get("text_level")
         role = block.get("role")
 
         if not text and block_type not in {"image", "table", "chart"}:
@@ -112,7 +111,6 @@ def _build_page_dom(
             continue
 
         if block_type in {"image", "chart"}:
-            # ⚡ Bolt: Defer expensive bbox parsing/float casting until we actually need it
             bbox = _bbox_from_values(block.get("bbox") or block.get("box"))
             image = ImageNode(
                 path=block.get("img_path") or block.get("path") or block_type,
@@ -142,9 +140,9 @@ def _build_page_dom(
             )
             continue
 
+        text_level = block.get("text_level")
         is_headline = bool(text_level == 1 or role == "section_headings")
         if is_headline:
-            # ⚡ Bolt: Defer expensive bbox parsing/float casting until we actually need it
             bbox = _bbox_from_values(block.get("bbox") or block.get("box"))
             current_article = _new_article(article_seq, text.replace("\n", " "), bbox)
             page.articles.append(current_article)
