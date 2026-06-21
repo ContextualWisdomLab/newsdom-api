@@ -34,7 +34,7 @@ mineru = [
 ]
 docs = [
     "mkdocs>=1.6,<2.0",
-    "mkdocs-material>=9.6,<9.8",
+    "mkdocs-material>=9.6,<9.7",
 ]
 fuzz = [
   "atheris==3.1.0 ; platform_system == 'Linux' and python_version >= '3.11'",
