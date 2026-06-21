@@ -29,10 +29,6 @@ dev = [
   "pyyaml>=6.0,<7.0",
   "httpx2>=2.4.0",
 ]
-mineru = [
-  "mineru[pipeline]==3.4.0",
-  "transformers>=4.48.0",
-]
 docs = [
     "mkdocs>=1.6,<2.0",
     "mkdocs-material>=9.6,<9.7",
@@ -41,9 +37,6 @@ fuzz = [
   "atheris==3.0.0 ; platform_system == 'Linux' and python_version >= '3.11'",
   "pyinstaller==6.21.0",
 ]
-
-[project.scripts]
-mineru = "mineru.cli.app:app"
 
 [tool.setuptools]
 package-dir = { "" = "src", "tools" = "tools"}
