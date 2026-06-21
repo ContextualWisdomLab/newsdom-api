@@ -16,10 +16,12 @@ query($owner: String!, $name: String!, $pageSize: Int!, $cursor: String) {
     pullRequests(first: $pageSize, after: $cursor, states: OPEN, orderBy: {field: CREATED_AT, direction: ASC}) {
       pageInfo { hasNextPage endCursor }
       nodes {
+        id
         number
         title
         isDraft
         mergeable
+        mergeStateStatus
         reviewDecision
         baseRefName
         baseRefOid
@@ -66,6 +68,20 @@ query($owner: String!, $name: String!, $pageSize: Int!, $cursor: String) {
 }
 """
 
+UPDATE_BRANCH_MUTATION = """\
+mutation($pullRequestId: ID!, $expectedHeadOid: GitObjectID!) {
+  updatePullRequestBranch(input: {
+    pullRequestId: $pullRequestId,
+    expectedHeadOid: $expectedHeadOid
+  }) {
+    pullRequest {
+      number
+      headRefOid
+    }
+  }
+}
+"""
+
 
 @dataclass
 class Decision:
@@ -74,8 +90,8 @@ class Decision:
     reason: str
 
 
-def run(args: list[str], *, stdin: str | None = None) -> str:
-    process = subprocess.run(args, input=stdin, capture_output=True, text=True)
+def run(args: list[str], *, stdin: str | None = None, env: dict[str, str] | None = None) -> str:
+    process = subprocess.run(args, input=stdin, capture_output=True, text=True, env=env)
     if process.returncode != 0:
         raise RuntimeError(
             f"Command failed ({process.returncode}): {' '.join(args)}\n{process.stderr}"
@@ -93,12 +109,12 @@ def split_repo(repo: str) -> tuple[str, str]:
     return owner, name
 
 
-def gh_graphql(query: str, **fields: str | int) -> dict[str, Any]:
+def gh_graphql(query: str, *, env: dict[str, str] | None = None, **fields: str | int) -> dict[str, Any]:
     cmd = ["gh", "api", "graphql", "-F", "query=@-"]
     for key, value in fields.items():
         flag = "-F" if isinstance(value, int) else "-f"
         cmd.extend([flag, f"{key}={value}"])
-    return json.loads(run(cmd, stdin=query))
+    return json.loads(run(cmd, stdin=query, env=env))
 
 
 def fetch_open_prs(repo: str, max_prs: int) -> list[dict[str, Any]]:
@@ -190,7 +206,27 @@ def enable_auto_merge(repo: str, pr: dict[str, Any], *, dry_run: bool) -> None:
     head = pr["headRefOid"]
     if dry_run:
         return
-    run(["gh", "pr", "merge", number, "--repo", repo, "--auto", "--merge", "--match-head-commit", head])
+    run(["gh", "pr", "merge", number, "--repo", repo, "--auto", "--squash", "--match-head-commit", head])
+
+
+def mutation_env() -> dict[str, str] | None:
+    token = os.environ.get("MUTATION_GH_TOKEN") or ""
+    default_token = os.environ.get("GH_TOKEN") or ""
+    if not token or token == default_token:
+        return None
+    env = os.environ.copy()
+    env["GH_TOKEN"] = token
+    return env
+
+
+def update_pr_branch(pr: dict[str, Any], *, dry_run: bool) -> bool:
+    if dry_run:
+        return True
+    env = mutation_env()
+    if env is None:
+        return False
+    gh_graphql(UPDATE_BRANCH_MUTATION, env=env, pullRequestId=pr["id"], expectedHeadOid=pr["headRefOid"])
+    return True
 
 
 def dispatch_opencode_review(repo: str, workflow: str, pr: dict[str, Any], *, dry_run: bool) -> None:
@@ -249,6 +285,16 @@ def inspect_pr(
         return Decision(number, "block", "current-head OpenCode review requested changes")
 
     if has_current_head_approval(pr):
+        mergeable = (pr.get("mergeable") or "").upper()
+        merge_state = (pr.get("mergeStateStatus") or "").upper()
+        if mergeable == "CONFLICTING" or merge_state == "DIRTY":
+            return Decision(number, "block", "current head has merge conflicts")
+        if mergeable == "UNKNOWN":
+            return Decision(number, "wait", "mergeability is still being calculated")
+        if merge_state == "BEHIND":
+            if update_pr_branch(pr, dry_run=dry_run):
+                return Decision(number, "update_branch", "current head is approved but behind base; branch update requested")
+            return Decision(number, "wait", "branch update needs a workflow-triggering token")
         if pr.get("autoMergeRequest"):
             return Decision(number, "wait", "current head is approved; auto-merge already enabled")
         if not enable_auto_merge_flag:
@@ -293,10 +339,15 @@ def print_summary(
 
 def self_test() -> None:
     sample = {
+        "id": "PR_1",
         "number": 1,
+        "baseRefName": "develop",
         "headRefOid": "abc",
         "isDraft": False,
+        "mergeable": "MERGEABLE",
+        "mergeStateStatus": "CLEAN",
         "headRepository": {"nameWithOwner": "owner/repo"},
+        "autoMergeRequest": None,
         "reviewDecision": "REVIEW_REQUIRED",
         "reviewThreads": {"nodes": []},
         "reviews": {
@@ -336,6 +387,55 @@ def self_test() -> None:
         {"__typename": "CheckRun", "name": "opencode-review", "status": "IN_PROGRESS"}
     )
     assert opencode_in_progress(sample)
+
+    approved = {
+        **sample,
+        "reviews": {
+            "nodes": [
+                {
+                    "state": "APPROVED",
+                    "author": {"login": "opencode-agent"},
+                    "commit": {"oid": "abc"},
+                }
+            ]
+        },
+        "statusCheckRollup": {"contexts": {"nodes": []}},
+    }
+    decision = inspect_pr(
+        "owner/repo",
+        approved,
+        dry_run=True,
+        trigger_reviews=True,
+        enable_auto_merge_flag=True,
+        workflow="OpenCode Review",
+        base_branch="develop",
+    )
+    assert decision.action == "auto_merge"
+
+    approved["mergeStateStatus"] = "BEHIND"
+    decision = inspect_pr(
+        "owner/repo",
+        approved,
+        dry_run=True,
+        trigger_reviews=True,
+        enable_auto_merge_flag=True,
+        workflow="OpenCode Review",
+        base_branch="develop",
+    )
+    assert decision.action == "update_branch"
+
+    approved["mergeable"] = "CONFLICTING"
+    approved["mergeStateStatus"] = "DIRTY"
+    decision = inspect_pr(
+        "owner/repo",
+        approved,
+        dry_run=True,
+        trigger_reviews=True,
+        enable_auto_merge_flag=True,
+        workflow="OpenCode Review",
+        base_branch="develop",
+    )
+    assert decision.action == "block"
     print("self-test passed")
 
 
