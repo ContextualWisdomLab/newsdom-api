@@ -139,13 +139,17 @@ def test_caption_nodes_from_items_uses_contents_and_bbox_variants_and_skips_empt
             {"contents": " Caption from contents ", "bbox": [1, 2, 3, 4]},
             {"text": "   ", "bbox": [9, 9, 9, 9]},
             {"contents": "Caption from box", "box": [5, 6, 7, 8]},
+            "Plain string caption",
+            "   ",
         ]
     )
 
     assert [node.text for node in nodes] == [
         "Caption from contents",
         "Caption from box",
+        "Plain string caption",
     ]
+    assert nodes[2].bbox is None
     assert nodes[0].bbox is not None
     assert nodes[0].bbox.x0 == 1.0
     assert nodes[0].bbox.y1 == 4.0
