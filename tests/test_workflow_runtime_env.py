@@ -74,3 +74,20 @@ def test_gh_pages_workflow_keeps_node24_force_off_upload_pages_artifact_step():
         is True
     )
     assert "env" not in build_steps_by_name["Upload GitHub Pages artifact"]
+
+
+def test_opencode_review_workflow_helper_scripts_exist_and_are_executable():
+    workflow_text = Path(".github/workflows/opencode-review.yml").read_text(
+        encoding="utf-8"
+    )
+    helper_paths = [
+        Path("scripts/ci/collect_failed_check_evidence.sh"),
+        Path("scripts/ci/opencode_review_approve_gate.sh"),
+        Path("scripts/ci/opencode_review_normalize_output.py"),
+        Path("scripts/ci/validate_opencode_failed_check_review.sh"),
+    ]
+
+    for helper_path in helper_paths:
+        assert str(helper_path) in workflow_text
+        assert helper_path.exists(), helper_path
+        assert helper_path.stat().st_mode & 0o111, helper_path

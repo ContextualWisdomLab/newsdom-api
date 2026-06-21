@@ -12,7 +12,14 @@ def _load_container_image_workflow() -> dict:
 
 
 def _find_step_by_uses(steps: list[dict], uses: str) -> dict:
-    match = next((step for step in steps if re.match(rf"{re.escape(uses)}@[0-9a-fA-F]{{40}}", step.get("uses", ""))), None)
+    match = next(
+        (
+            step
+            for step in steps
+            if re.match(rf"{re.escape(uses)}@[0-9a-fA-F]{{40}}", step.get("uses", ""))
+        ),
+        None,
+    )
     assert match is not None, f"missing workflow step for uses={uses!r}"
     return match
 
@@ -136,7 +143,10 @@ def test_readme_describes_default_image_as_shipping_mineru_runtime() -> None:
     assert "NEWSDOM_MINERU_BIN=mineru" in text
     assert "includes the MinerU runtime" in text
     assert "real `/parse` execution" not in text
-    assert "requires a compatible MinerU runtime to be available inside the container image" not in text
+    assert (
+        "requires a compatible MinerU runtime to be available inside the container image"
+        not in text
+    )
 
 
 def test_docker_command_matchers_allow_wrapped_whitespace():
@@ -175,7 +185,7 @@ def test_container_image_workflow_sets_up_qemu_for_multi_arch_builds():
     image_steps = data["jobs"]["image"]["steps"]
     assert any(
         step.get("uses")
-        == "docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a"
+        == "docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3"
         for step in image_steps
     )
 

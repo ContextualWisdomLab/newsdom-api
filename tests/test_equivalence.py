@@ -55,7 +55,10 @@ def test_article_has_headline_supports_boolean_and_text_forms():
     from newsdom_api.equivalence import _article_has_headline
 
     assert _article_has_headline({"headline_present": True}) is True
-    assert _article_has_headline({"headline_present": False, "headline": "headline"}) is False
+    assert (
+        _article_has_headline({"headline_present": False, "headline": "headline"})
+        is False
+    )
     assert _article_has_headline({"headline": "headline"}) is True
 
 
@@ -99,14 +102,16 @@ def test_compare_fixture_to_baseline_derives_page_count_from_pages_list(tmp_path
 def test_derived_metrics_handles_mixed_article_structures():
     from newsdom_api.equivalence import _derived_metrics
 
-    metrics = _derived_metrics({
-        "articles": [
-            "not-a-dict",
-            {"headline": "test", "vertical": True, "page_number": 1},
-            {"headline": "", "vertical": False, "page_number": 2},
-            {"headline_present": True, "page_number": "not-an-int"}
-        ]
-    })
+    metrics = _derived_metrics(
+        {
+            "articles": [
+                "not-a-dict",
+                {"headline": "test", "vertical": True, "page_number": 1},
+                {"headline": "", "vertical": False, "page_number": 2},
+                {"headline_present": True, "page_number": "not-an-int"},
+            ]
+        }
+    )
 
     assert metrics["article_count"] == 4
     assert metrics["headline_blocks"] == 2

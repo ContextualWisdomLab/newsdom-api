@@ -28,27 +28,25 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     """Normalize structural metrics, preferring derivation from structural data when present."""
 
     metrics = dict(payload)
-    articles = payload.get("articles") if isinstance(payload.get("articles"), list) else None
+    articles = (
+        payload.get("articles") if isinstance(payload.get("articles"), list) else None
+    )
     images = payload.get("images") if isinstance(payload.get("images"), list) else None
     ads = payload.get("ads") if isinstance(payload.get("ads"), list) else None
     pages = payload.get("pages") if isinstance(payload.get("pages"), list) else None
 
     if articles is not None:
         metrics["article_count"] = len(articles)
-
-        # ⚡ Bolt: Single pass over articles array to compute all derived metrics simultaneously
-        # instead of making 4 separate O(N) passes and redundant function calls.
         headline_blocks = 0
         vertical_count = 0
-        article_page_numbers = set()
-        headline_page_numbers = set()
+        article_page_numbers: set[int] = set()
+        headline_page_numbers: set[int] = set()
 
         for article in articles:
             if not isinstance(article, dict):
                 continue
 
             has_headline = _article_has_headline(article)
-
             if has_headline:
                 headline_blocks += 1
 
@@ -62,13 +60,14 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
                     headline_page_numbers.add(page_number)
 
         metrics["headline_blocks"] = headline_blocks
-
         if articles:
             metrics["vertical_article_ratio"] = vertical_count / len(articles)
 
         if article_page_numbers:
             metrics["page_count"] = len(article_page_numbers)
-            metrics["headline_page_coverage"] = len(headline_page_numbers) / len(article_page_numbers)
+            metrics["headline_page_coverage"] = len(headline_page_numbers) / len(
+                article_page_numbers
+            )
 
     if images is not None:
         metrics["image_count"] = len(images)
@@ -83,7 +82,8 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
                 (
                     page.get("column_count", 0)
                     for page in pages
-                    if isinstance(page, dict) and isinstance(page.get("column_count"), int)
+                    if isinstance(page, dict)
+                    and isinstance(page.get("column_count"), int)
                 ),
                 default=metrics.get("column_count", 0),
             )
@@ -101,11 +101,15 @@ def compare_fixture_to_baseline(
     failures: list[str] = []
 
     checks = {
-        "column_count": abs(truth["column_count"] - baseline_metrics["column_count"]) <= 1,
-        "article_count": abs(truth["article_count"] - baseline_metrics["article_count"]) <= 1,
+        "column_count": abs(truth["column_count"] - baseline_metrics["column_count"])
+        <= 1,
+        "article_count": abs(truth["article_count"] - baseline_metrics["article_count"])
+        <= 1,
         "image_count": abs(truth["image_count"] - baseline_metrics["image_count"]) <= 1,
         "ad_count": abs(truth["ad_count"] - baseline_metrics["ad_count"]) <= 1,
-        "headline_blocks": abs(truth["headline_blocks"] - baseline_metrics["headline_blocks"])
+        "headline_blocks": abs(
+            truth["headline_blocks"] - baseline_metrics["headline_blocks"]
+        )
         <= 2,
         "vertical_article_ratio": abs(
             truth["vertical_article_ratio"] - baseline_metrics["vertical_article_ratio"]

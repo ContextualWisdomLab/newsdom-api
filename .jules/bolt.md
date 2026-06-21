@@ -1,3 +1,3 @@
-## 2025-06-09 - Consolidate Multiple O(N) Passes into a Single Loop
-**Learning:** Found redundant generator iterations and comprehensions in `src/newsdom_api/equivalence.py`. Iterating over a list four separate times and repeating function calls (`_article_has_headline()`) is less efficient than completing everything in a single `for` loop pass.
-**Action:** When gathering multiple metrics from the same array of dictionaries or objects, consolidate the work into a single iteration to avoid creating intermediate generators/sets, saving time and memory overhead.
+## 2024-05-24 - Eager BoundingBox Float Casting
+**Learning:** A performance anti-pattern in `newsdom-api` parsing loops is eager allocation and expensive type-conversions (e.g., float casting for `BoundingBox`) at the start of block iterations. We found ~45% overhead was caused by converting unused `bbox` values to floats in blocks that were early-returned (like headers/footers).
+**Action:** Defer expensive conversions and allocations into the specific conditional branches that actually consume them to reduce overhead on unused block types.
