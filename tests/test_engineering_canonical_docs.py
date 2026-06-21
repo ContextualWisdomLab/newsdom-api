@@ -143,8 +143,9 @@ def test_deploy_runbook_describes_current_runtime_and_probe_contract() -> None:
     text = Path("docs/operations/deploy-runbook.md").read_text(encoding="utf-8")
 
     for expected in (
-        "default image already includes the MinerU runtime",
-        "`NEWSDOM_MINERU_BIN=mineru`",
+        "default image ships the API service only",
+        "does not bundle the MinerU runtime",
+        "`NEWSDOM_MINERU_BIN`",
         "`/health` proves the API process is serving but does not validate a full `/parse` round-trip",
         "no in-tree Kubernetes manifests",
     ):

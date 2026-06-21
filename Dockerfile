@@ -20,13 +20,12 @@ COPY --from=uv-bin /uv /uvx /bin/
 COPY pyproject.toml uv.lock README.md ./
 COPY src/ src/
 
-RUN uv sync --frozen --no-dev --extra mineru
+RUN uv sync --frozen --no-dev
 
 FROM ${PYTHON_BASE} AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    NEWSDOM_MINERU_BIN=mineru \
     PATH="/app/.venv/bin:${PATH}"
 
 WORKDIR /app

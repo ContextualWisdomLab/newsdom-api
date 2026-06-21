@@ -1,3 +1,3 @@
-## 2024-06-03 - Avoid Multiple Iterations Over Large JSON Payloads
-**Learning:** MinerU's OCR payload (`content_list`) can contain thousands of layout blocks for long PDF documents. The `dom_builder.py` script was executing `any()` loop comprehension passes multiple times across this potentially massive list to evaluate boolean flags (`has_page_idx`, `has_missing_page_idx`) before finally running a `for` loop over it to build the structure dictionary. This O(3n) traversal is inefficient when the data fits perfectly into a single O(n) structural pass where those flags can be set opportunistically.
-**Action:** When validating complex JSON lists, always try to compute validation state flags during the structural parsing/grouping loops rather than making separate `any()` passes, especially for large external payloads.
+## 2024-05-24 - Eager BoundingBox Float Casting
+**Learning:** A performance anti-pattern in `newsdom-api` parsing loops is eager allocation and expensive type-conversions (e.g., float casting for `BoundingBox`) at the start of block iterations. We found ~45% overhead was caused by converting unused `bbox` values to floats in blocks that were early-returned (like headers/footers).
+**Action:** Defer expensive conversions and allocations into the specific conditional branches that actually consume them to reduce overhead on unused block types.
