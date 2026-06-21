@@ -11,7 +11,11 @@ from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 from .schemas import ParseResponse
 from .service import parse_pdf_bytes
 
-app = FastAPI(title="NewsDOM API")
+app = FastAPI(
+    title="NewsDOM API",
+    description="DOM-style parser API for scanned Japanese newspaper PDFs",
+    version="0.2.0",
+)
 
 
 @app.get("/health")
