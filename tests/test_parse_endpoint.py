@@ -50,6 +50,29 @@ def test_parse_endpoint_rejects_non_pdf_content_type():
     )
 
 
+def test_parse_endpoint_accepts_pdf_content_type_parameters(monkeypatch):
+    def fake_parse_pdf_bytes(pdf_bytes, filename):
+        assert pdf_bytes == b"%PDF-1.4\n%synthetic\n"
+        assert filename == "fixture.pdf"
+        return {"document_id": "fixture", "pages": []}
+
+    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={
+            "file": (
+                "fixture.pdf",
+                b"%PDF-1.4\n%synthetic\n",
+                "Application/PDF; charset=binary",
+            )
+        },
+    )
+
+    assert response.status_code == 200
+
+
 def test_parse_endpoint_returns_503_for_mineru_runtime_failure(monkeypatch):
     def fake_run(cmd, check, capture_output, text, timeout=None):
         assert check is True
@@ -62,6 +85,7 @@ def test_parse_endpoint_returns_503_for_mineru_runtime_failure(monkeypatch):
             stderr="stderr from /Users/private-user/tmp/mineru.stderr",
         )
 
+    monkeypatch.setattr(mineru_runner, "_resolve_mineru_bin", lambda: "mineru")
     monkeypatch.setattr(mineru_runner.subprocess, "run", fake_run)
 
     client = TestClient(app, raise_server_exceptions=False)
@@ -102,6 +126,7 @@ def test_parse_endpoint_returns_502_for_incomplete_mineru_output(
 
         return Result()
 
+    monkeypatch.setattr(mineru_runner, "_resolve_mineru_bin", lambda: "mineru")
     monkeypatch.setattr(mineru_runner.subprocess, "run", fake_run)
 
     client = TestClient(app, raise_server_exceptions=False)
