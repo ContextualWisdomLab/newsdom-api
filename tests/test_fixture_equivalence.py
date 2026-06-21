@@ -96,7 +96,11 @@ def test_fixture_equivalence_derives_page_metrics_from_structural_data(tmp_path:
                 "page_count": 1,
                 "headline_page_coverage": 1.0,
                 "articles": [
-                    {"headline": "Page one headline", "page_number": 1, "vertical": True},
+                    {
+                        "headline": "Page one headline",
+                        "page_number": 1,
+                        "vertical": True,
+                    },
                     {"headline": "", "page_number": 2, "vertical": True},
                 ],
                 "images": [],
