@@ -184,7 +184,19 @@ def build_dom(
             page_info = page_model.get("page_info") or {}
             page_info_by_idx[index] = page_info
 
-    has_page_idx = any(isinstance(block.get("page_idx"), int) for block in content_list)
+    has_page_idx = False
+    has_missing_page_idx = False
+    blocks_by_page_idx: dict[int, list[dict[str, Any]]] = {}
+    for block in content_list:
+        raw_page_idx = block.get("page_idx")
+        if isinstance(raw_page_idx, int):
+            has_page_idx = True
+            normalized_page_idx = raw_page_idx
+        else:
+            has_missing_page_idx = True
+            normalized_page_idx = 0
+        blocks_by_page_idx.setdefault(normalized_page_idx, []).append(block)
+
     if not has_page_idx:
         article_seq = count(1)
         if len(page_info_by_idx) > 1:
@@ -223,19 +235,10 @@ def build_dom(
             ],
         )
 
-    has_missing_page_idx = any(
-        not isinstance(block.get("page_idx"), int) for block in content_list
-    )
     if has_missing_page_idx and len(page_info_by_idx) > 1:
         quality_warnings.append(
             "Some blocks are missing page_idx; untagged blocks were assigned to page_idx 0 for deterministic grouping."
         )
-
-    blocks_by_page_idx: dict[int, list[dict[str, Any]]] = {}
-    for block in content_list:
-        raw_page_idx = block.get("page_idx")
-        normalized_page_idx = raw_page_idx if isinstance(raw_page_idx, int) else 0
-        blocks_by_page_idx.setdefault(normalized_page_idx, []).append(block)
 
     pages = []
     article_seq = count(1)
