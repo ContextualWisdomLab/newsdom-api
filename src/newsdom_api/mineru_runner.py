@@ -34,7 +34,7 @@ def build_mineru_command(
     ]
 
 
-@lru_cache()
+@lru_cache
 def _resolve_mineru_bin() -> str:
     """Resolve the MinerU executable path from env override or PATH."""
 
@@ -71,7 +71,11 @@ def run_mineru(input_pdf: Path) -> dict[str, Any]:
                 cmd, check=True, capture_output=True, text=True, timeout=300
             )
         except subprocess.TimeoutExpired as exc:
-            stdout_str = exc.stdout.decode("utf-8", "replace") if isinstance(exc.stdout, bytes) else exc.stdout
+            stdout_str = (
+                exc.stdout.decode("utf-8", "replace")
+                if isinstance(exc.stdout, bytes)
+                else exc.stdout
+            )
             raise MineruRuntimeUnavailableError(
                 returncode=-1,
                 stdout=stdout_str or "",

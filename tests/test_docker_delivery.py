@@ -12,7 +12,14 @@ def _load_container_image_workflow() -> dict:
 
 
 def _find_step_by_uses(steps: list[dict], uses: str) -> dict:
-    match = next((step for step in steps if re.match(rf"{re.escape(uses)}@[0-9a-fA-F]{{40}}", step.get("uses", ""))), None)
+    match = next(
+        (
+            step
+            for step in steps
+            if re.match(rf"{re.escape(uses)}@[0-9a-fA-F]{{40}}", step.get("uses", ""))
+        ),
+        None,
+    )
     assert match is not None, f"missing workflow step for uses={uses!r}"
     return match
 
@@ -85,11 +92,12 @@ def test_dockerfile_uses_project_metadata_and_src_layout():
     assert _contains_pinned_uv_image(text)
 
 
-def test_dockerfile_runs_uvicorn_with_external_mineru_path():
+def test_dockerfile_runs_uvicorn_without_bundled_mineru_runtime():
     text = Path("Dockerfile").read_text(encoding="utf-8")
     assert "uvicorn" in text
     assert "newsdom_api.main:app" in text
-    assert "NEWSDOM_MINERU_BIN" in text
+    assert "--extra mineru" not in text
+    assert "NEWSDOM_MINERU_BIN" not in text
     assert "--host" in text
     assert "0.0.0.0" in text
     assert "8000" in text
@@ -130,13 +138,16 @@ def test_readme_documents_docker_build_and_run():
     assert "NVIDIA" in text
 
 
-def test_readme_describes_default_image_as_shipping_mineru_runtime() -> None:
+def test_readme_describes_default_image_as_api_only_runtime() -> None:
     text = Path("README.md").read_text(encoding="utf-8")
 
-    assert "NEWSDOM_MINERU_BIN=mineru" in text
-    assert "includes the MinerU runtime" in text
+    assert "ships the API service only" in text
+    assert "does not bundle the MinerU runtime" in text
     assert "real `/parse` execution" not in text
-    assert "requires a compatible MinerU runtime to be available inside the container image" not in text
+    assert (
+        "requires a compatible MinerU runtime to be available inside the container image"
+        in text
+    )
 
 
 def test_docker_command_matchers_allow_wrapped_whitespace():
@@ -175,7 +186,7 @@ def test_container_image_workflow_sets_up_qemu_for_multi_arch_builds():
     image_steps = data["jobs"]["image"]["steps"]
     assert any(
         step.get("uses")
-        == "docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a"
+        == "docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3"
         for step in image_steps
     )
 

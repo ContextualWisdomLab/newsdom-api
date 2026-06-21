@@ -1,3 +1,3 @@
-## 2024-06-08 - Using lru_cache with monkeypatch
-**Learning:** When using `functools.lru_cache` to optimize performance of functions that rely on environment variables or global state (like `os.environ` or `shutil.which`), `monkeypatch` in tests will fail to alter the behavior across different test cases due to the cached result.
-**Action:** When adding `@lru_cache` to a function, check if it relies on environment variables or external state that is modified via `monkeypatch` during tests. Always explicitly call `<function_name>.cache_clear()` within an `autouse=True` test fixture to prevent cross-test contamination and failures.
+## 2024-05-24 - Eager BoundingBox Float Casting
+**Learning:** A performance anti-pattern in `newsdom-api` parsing loops is eager allocation and expensive type-conversions (e.g., float casting for `BoundingBox`) at the start of block iterations. We found ~45% overhead was caused by converting unused `bbox` values to floats in blocks that were early-returned (like headers/footers).
+**Action:** Defer expensive conversions and allocations into the specific conditional branches that actually consume them to reduce overhead on unused block types.
