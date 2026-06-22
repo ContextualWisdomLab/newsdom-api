@@ -1,0 +1,10 @@
+## 🎯 What
+`src/newsdom_api/errors.py` 파일 내에 정의된 커스텀 예외 클래스들의 초기화 코드에 대한 테스트가 누락되어 있었습니다. 이를 개선하기 위해 `tests/test_errors.py`를 생성하고 관련 테스트를 추가했습니다.
+
+## 📊 Coverage
+다음 시나리오들이 테스트됩니다:
+- `MineruRuntimeUnavailableError` 생성 시 전달된 `returncode`, `stdout`, `stderr` 값이 내부 속성에 올바르게 할당되는지 확인.
+- `MineruRuntimeUnavailableError` 및 `MineruIncompleteOutputError` 생성 후 `str(error)` 호출 시 올바른 public 메시지가 반환되는지 확인.
+
+## ✨ Result
+해당 모듈에 대한 테스트 커버리지가 100%로 향상되어, 향후 리팩토링 시 안전망을 제공합니다.
