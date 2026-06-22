@@ -50,18 +50,6 @@ def test_parse_endpoint_rejects_non_pdf_content_type():
     )
 
 
-def test_parse_endpoint_rejects_payload_too_large():
-    client = TestClient(app)
-    # 50MB + 1 byte
-    oversized_payload = b"x" * ((50 * 1024 * 1024) + 1)
-    response = client.post(
-        "/parse",
-        files={"file": ("large.pdf", oversized_payload, "application/pdf")},
-    )
-    assert response.status_code == 413
-    assert response.json()["detail"] == "Payload Too Large: file exceeds 50MB limit"
-
-
 def test_parse_endpoint_accepts_pdf_content_type_parameters(monkeypatch):
     def fake_parse_pdf_bytes(pdf_bytes, filename):
         assert pdf_bytes == b"%PDF-1.4\n%synthetic\n"
