@@ -24,6 +24,67 @@ def _article_has_headline(article: dict[str, Any]) -> bool:
     return isinstance(headline, str) and bool(headline.strip())
 
 
+def _process_articles(metrics: dict[str, Any], articles: list[Any]) -> None:
+    """Process articles and update metrics."""
+    metrics["article_count"] = len(articles)
+    headline_blocks = 0
+    vertical_count = 0
+    article_page_numbers: set[int] = set()
+    headline_page_numbers: set[int] = set()
+
+    for article in articles:
+        if not isinstance(article, dict):
+            continue
+
+        has_headline = _article_has_headline(article)
+        if has_headline:
+            headline_blocks += 1
+
+        if bool(article.get("vertical")):
+            vertical_count += 1
+
+        page_number = article.get("page_number")
+        if isinstance(page_number, int):
+            article_page_numbers.add(page_number)
+            if has_headline:
+                headline_page_numbers.add(page_number)
+
+    metrics["headline_blocks"] = headline_blocks
+    if articles:
+        metrics["vertical_article_ratio"] = vertical_count / len(articles)
+
+    if article_page_numbers:
+        metrics["page_count"] = len(article_page_numbers)
+        metrics["headline_page_coverage"] = len(headline_page_numbers) / len(
+            article_page_numbers
+        )
+
+
+def _process_images(metrics: dict[str, Any], images: list[Any]) -> None:
+    """Process images and update metrics."""
+    metrics["image_count"] = len(images)
+
+
+def _process_ads(metrics: dict[str, Any], ads: list[Any]) -> None:
+    """Process ads and update metrics."""
+    metrics["ad_count"] = len(ads)
+
+
+def _process_pages(metrics: dict[str, Any], pages: list[Any]) -> None:
+    """Process pages and update metrics."""
+    metrics["page_count"] = len(pages)
+    if pages:
+        metrics["column_count"] = max(
+            (
+                page.get("column_count", 0)
+                for page in pages
+                if isinstance(page, dict)
+                and isinstance(page.get("column_count"), int)
+            ),
+            default=metrics.get("column_count", 0),
+        )
+
+
 def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     """Normalize structural metrics, preferring derivation from structural data when present."""
 
@@ -36,57 +97,16 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     pages = payload.get("pages") if isinstance(payload.get("pages"), list) else None
 
     if articles is not None:
-        metrics["article_count"] = len(articles)
-        headline_blocks = 0
-        vertical_count = 0
-        article_page_numbers: set[int] = set()
-        headline_page_numbers: set[int] = set()
-
-        for article in articles:
-            if not isinstance(article, dict):
-                continue
-
-            has_headline = _article_has_headline(article)
-            if has_headline:
-                headline_blocks += 1
-
-            if bool(article.get("vertical")):
-                vertical_count += 1
-
-            page_number = article.get("page_number")
-            if isinstance(page_number, int):
-                article_page_numbers.add(page_number)
-                if has_headline:
-                    headline_page_numbers.add(page_number)
-
-        metrics["headline_blocks"] = headline_blocks
-        if articles:
-            metrics["vertical_article_ratio"] = vertical_count / len(articles)
-
-        if article_page_numbers:
-            metrics["page_count"] = len(article_page_numbers)
-            metrics["headline_page_coverage"] = len(headline_page_numbers) / len(
-                article_page_numbers
-            )
+        _process_articles(metrics, articles)
 
     if images is not None:
-        metrics["image_count"] = len(images)
+        _process_images(metrics, images)
 
     if ads is not None:
-        metrics["ad_count"] = len(ads)
+        _process_ads(metrics, ads)
 
     if pages is not None:
-        metrics["page_count"] = len(pages)
-        if pages:
-            metrics["column_count"] = max(
-                (
-                    page.get("column_count", 0)
-                    for page in pages
-                    if isinstance(page, dict)
-                    and isinstance(page.get("column_count"), int)
-                ),
-                default=metrics.get("column_count", 0),
-            )
+        _process_pages(metrics, pages)
 
     return metrics
 
