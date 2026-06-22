@@ -90,9 +90,7 @@ class Decision:
     reason: str
 
 
-def run(
-    args: list[str], *, stdin: str | None = None, env: dict[str, str] | None = None
-) -> str:
+def run(args: list[str], *, stdin: str | None = None, env: dict[str, str] | None = None) -> str:
     process = subprocess.run(args, input=stdin, capture_output=True, text=True, env=env)
     if process.returncode != 0:
         raise RuntimeError(
@@ -111,9 +109,7 @@ def split_repo(repo: str) -> tuple[str, str]:
     return owner, name
 
 
-def gh_graphql(
-    query: str, *, env: dict[str, str] | None = None, **fields: str | int
-) -> dict[str, Any]:
+def gh_graphql(query: str, *, env: dict[str, str] | None = None, **fields: str | int) -> dict[str, Any]:
     cmd = ["gh", "api", "graphql", "-F", "query=@-"]
     for key, value in fields.items():
         flag = "-F" if isinstance(value, int) else "-f"
@@ -153,13 +149,11 @@ def context_nodes(pr: dict[str, Any]) -> list[dict[str, Any]]:
 
 def is_opencode_context(node: dict[str, Any]) -> bool:
     if node.get("__typename") == "CheckRun":
-        workflow = ((node.get("checkSuite") or {}).get("workflowRun") or {}).get(
-            "workflow"
-        ) or {}
-        return (
-            node.get("name") == "opencode-review"
-            or workflow.get("name") == "OpenCode Review"
+        workflow = (
+            ((node.get("checkSuite") or {}).get("workflowRun") or {}).get("workflow")
+            or {}
         )
+        return node.get("name") == "opencode-review" or workflow.get("name") == "OpenCode Review"
     return node.get("context") == "opencode-review"
 
 
@@ -174,12 +168,8 @@ def opencode_in_progress(pr: dict[str, Any]) -> bool:
 
 
 def unresolved_thread_count(pr: dict[str, Any]) -> int:
-    threads = (pr.get("reviewThreads") or {}).get("nodes") or []
-    return sum(
-        1
-        for thread in threads
-        if not thread.get("isResolved") and not thread.get("isOutdated")
-    )
+    threads = ((pr.get("reviewThreads") or {}).get("nodes") or [])
+    return sum(1 for thread in threads if not thread.get("isResolved") and not thread.get("isOutdated"))
 
 
 def review_author_login(review: dict[str, Any]) -> str:
@@ -216,20 +206,7 @@ def enable_auto_merge(repo: str, pr: dict[str, Any], *, dry_run: bool) -> None:
     head = pr["headRefOid"]
     if dry_run:
         return
-    run(
-        [
-            "gh",
-            "pr",
-            "merge",
-            number,
-            "--repo",
-            repo,
-            "--auto",
-            "--squash",
-            "--match-head-commit",
-            head,
-        ]
-    )
+    run(["gh", "pr", "merge", number, "--repo", repo, "--auto", "--squash", "--match-head-commit", head])
 
 
 def mutation_env() -> dict[str, str] | None:
@@ -248,18 +225,11 @@ def update_pr_branch(pr: dict[str, Any], *, dry_run: bool) -> bool:
     env = mutation_env()
     if env is None:
         return False
-    gh_graphql(
-        UPDATE_BRANCH_MUTATION,
-        env=env,
-        pullRequestId=pr["id"],
-        expectedHeadOid=pr["headRefOid"],
-    )
+    gh_graphql(UPDATE_BRANCH_MUTATION, env=env, pullRequestId=pr["id"], expectedHeadOid=pr["headRefOid"])
     return True
 
 
-def dispatch_opencode_review(
-    repo: str, workflow: str, pr: dict[str, Any], *, dry_run: bool
-) -> None:
+def dispatch_opencode_review(repo: str, workflow: str, pr: dict[str, Any], *, dry_run: bool) -> None:
     if dry_run:
         return
     run(
@@ -303,9 +273,7 @@ def inspect_pr(
     if pr.get("isDraft"):
         return Decision(number, "skip", "draft PR")
     if base_ref != base_branch:
-        return Decision(
-            number, "skip", f"base branch is {base_ref}; expected {base_branch}"
-        )
+        return Decision(number, "skip", f"base branch is {base_ref}; expected {base_branch}")
     if head_repo != repo:
         return Decision(number, "skip", f"fork or external head repo: {head_repo}")
 
@@ -314,9 +282,7 @@ def inspect_pr(
         return Decision(number, "block", f"{unresolved} unresolved review thread(s)")
 
     if has_current_head_changes_requested(pr):
-        return Decision(
-            number, "block", "current-head OpenCode review requested changes"
-        )
+        return Decision(number, "block", "current-head OpenCode review requested changes")
 
     if has_current_head_approval(pr):
         mergeable = (pr.get("mergeable") or "").upper()
@@ -327,37 +293,21 @@ def inspect_pr(
             return Decision(number, "wait", "mergeability is still being calculated")
         if merge_state == "BEHIND":
             if update_pr_branch(pr, dry_run=dry_run):
-                return Decision(
-                    number,
-                    "update_branch",
-                    "current head is approved but behind base; branch update requested",
-                )
-            return Decision(
-                number, "wait", "branch update needs a workflow-triggering token"
-            )
+                return Decision(number, "update_branch", "current head is approved but behind base; branch update requested")
+            return Decision(number, "wait", "branch update needs a workflow-triggering token")
         if pr.get("autoMergeRequest"):
-            return Decision(
-                number, "wait", "current head is approved; auto-merge already enabled"
-            )
+            return Decision(number, "wait", "current head is approved; auto-merge already enabled")
         if not enable_auto_merge_flag:
-            return Decision(
-                number,
-                "wait",
-                "current head is approved; auto-merge disabled by scheduler inputs",
-            )
+            return Decision(number, "wait", "current head is approved; auto-merge disabled by scheduler inputs")
         enable_auto_merge(repo, pr, dry_run=dry_run)
-        return Decision(
-            number, "auto_merge", "current head is approved; auto-merge enabled"
-        )
+        return Decision(number, "auto_merge", "current head is approved; auto-merge enabled")
 
     if opencode_in_progress(pr):
         return Decision(number, "wait", "OpenCode review is already in progress")
 
     if trigger_reviews:
         dispatch_opencode_review(repo, workflow, pr, dry_run=dry_run)
-        return Decision(
-            number, "review_dispatch", "current head has no OpenCode approval"
-        )
+        return Decision(number, "review_dispatch", "current head has no OpenCode approval")
 
     return Decision(number, "block", "current head has no OpenCode approval")
 
@@ -496,12 +446,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--project-flow", default=os.environ.get("PROJECT_FLOW", ""))
     parser.add_argument("--max-prs", type=int, default=100)
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument(
-        "--trigger-reviews", action=argparse.BooleanOptionalAction, default=True
-    )
-    parser.add_argument(
-        "--enable-auto-merge", action=argparse.BooleanOptionalAction, default=True
-    )
+    parser.add_argument("--trigger-reviews", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--enable-auto-merge", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--review-workflow", default="OpenCode Review")
     parser.add_argument("--self-test", action="store_true")
     return parser.parse_args(argv)
