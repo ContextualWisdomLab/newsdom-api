@@ -43,12 +43,12 @@ def _safe_draw_text(
     """Draw text with a fallback mechanism to prevent UnicodeEncodeError on default fonts."""
     try:
         draw.text(xy, text, fill=fill, font=font)
-    except UnicodeEncodeError:  # pragma: no cover
+    except UnicodeEncodeError:
         # Fallback for ImageFont.load_default() which only supports latin-1
         fallback_text = "".join(
             c if ord(c) < 256 else "?" for c in text
-        )  # pragma: no cover
-        draw.text(xy, fallback_text, fill=fill, font=font)  # pragma: no cover
+        )
+        draw.text(xy, fallback_text, fill=fill, font=font)
 
 
 def _draw_vertical_text(
