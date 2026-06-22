@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
 from itertools import count
 from typing import Any
 
@@ -186,7 +187,8 @@ def build_dom(
 
     has_page_idx = False
     has_missing_page_idx = False
-    blocks_by_page_idx: dict[int, list[dict[str, Any]]] = {}
+    # ⚡ Bolt: setdefault 대신 defaultdict를 사용하여 매 반복마다 빈 리스트를 할당하는 것을 방지
+    blocks_by_page_idx: dict[int, list[dict[str, Any]]] = defaultdict(list)
     for block in content_list:
         raw_page_idx = block.get("page_idx")
         if isinstance(raw_page_idx, int):
@@ -195,7 +197,7 @@ def build_dom(
         else:
             has_missing_page_idx = True
             normalized_page_idx = 0
-        blocks_by_page_idx.setdefault(normalized_page_idx, []).append(block)
+        blocks_by_page_idx[normalized_page_idx].append(block)
 
     if not has_page_idx:
         article_seq = count(1)
