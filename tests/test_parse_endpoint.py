@@ -138,3 +138,17 @@ def test_parse_endpoint_returns_502_for_incomplete_mineru_output(
     assert response.status_code == 502
     assert response.json()["detail"] == "MinerU output was incomplete"
     _assert_no_private_path_material(response.json()["detail"])
+
+
+def test_parse_endpoint_rejects_missing_magic_bytes():
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={
+            "file": ("fixture.pdf", b"MZ\x90\x00\x03\x00\x00\x00", "application/pdf")
+        },
+    )
+    assert response.status_code == 415
+    assert (
+        response.json()["detail"] == "Unsupported Media Type: missing PDF magic bytes"
+    )
