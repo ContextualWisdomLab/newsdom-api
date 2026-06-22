@@ -88,26 +88,31 @@ def _build_page_dom(
 
     for block in content_list:
         block_type = block.get("type")
-        text = (block.get("text") or block.get("contents") or "").strip()
         role = block.get("role")
 
-        if not text and block_type not in {"image", "table", "chart"}:
-            continue
-
         if role == "header":
-            page.headers.append(text)
+            # ⚡ Bolt: Defer expensive text operations
+            text = (block.get("text") or block.get("contents") or "").strip()
+            if text:
+                page.headers.append(text)
             continue
 
         if role == "footer":
-            page.footers.append(text)
+            text = (block.get("text") or block.get("contents") or "").strip()
+            if text:
+                page.footers.append(text)
             continue
 
         if role == "page_number":
-            page.page_numbers.append(text)
+            text = (block.get("text") or block.get("contents") or "").strip()
+            if text:
+                page.page_numbers.append(text)
             continue
 
         if role == "ad" or block_type == "ad":
-            page.ads.append(text)
+            text = (block.get("text") or block.get("contents") or "").strip()
+            if text:
+                page.ads.append(text)
             continue
 
         if block_type in {"image", "chart"}:
@@ -138,6 +143,10 @@ def _build_page_dom(
             current_article.footnotes.extend(
                 _caption_nodes_from_items(block.get("table_footnote"))
             )
+            continue
+
+        text = (block.get("text") or block.get("contents") or "").strip()
+        if not text:
             continue
 
         text_level = block.get("text_level")

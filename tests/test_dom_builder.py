@@ -344,3 +344,19 @@ def test_build_dom_keeps_article_ids_unique_across_pages():
         article.article_id for page in dom.pages for article in page.articles
     ]
     assert article_ids == ["article-1", "article-2"]
+
+
+def test_build_dom_empty_texts():
+    content = [
+        {"role": "header", "text": "   "},
+        {"role": "footer", "text": "   "},
+        {"role": "page_number", "text": "   "},
+        {"role": "ad", "text": "   "},
+    ]
+    response = build_dom(content, "doc_empty")
+    assert len(response.pages) == 1
+    page = response.pages[0]
+    assert len(page.headers) == 0
+    assert len(page.footers) == 0
+    assert len(page.page_numbers) == 0
+    assert len(page.ads) == 0
