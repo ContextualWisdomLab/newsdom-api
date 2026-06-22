@@ -138,3 +138,39 @@ def test_parse_endpoint_returns_502_for_incomplete_mineru_output(
     assert response.status_code == 502
     assert response.json()["detail"] == "MinerU output was incomplete"
     _assert_no_private_path_material(response.json()["detail"])
+
+
+def test_parse_endpoint_catches_incomplete_output_error(monkeypatch):
+    from newsdom_api.errors import MineruIncompleteOutputError
+
+    def fake_parse_pdf_bytes(pdf_bytes, filename):
+        raise MineruIncompleteOutputError()
+
+    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
+
+    client = TestClient(app, raise_server_exceptions=False)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+    )
+
+    assert response.status_code == 502
+    assert response.json()["detail"] == "MinerU output was incomplete"
+
+
+def test_parse_endpoint_catches_runtime_unavailable_error(monkeypatch):
+    from newsdom_api.errors import MineruRuntimeUnavailableError
+
+    def fake_parse_pdf_bytes(pdf_bytes, filename):
+        raise MineruRuntimeUnavailableError()
+
+    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
+
+    client = TestClient(app, raise_server_exceptions=False)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "MinerU runtime unavailable"
