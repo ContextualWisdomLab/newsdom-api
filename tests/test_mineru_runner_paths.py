@@ -21,9 +21,9 @@ class _FakeTempDir:
 
 @pytest.fixture(autouse=True)
 def clear_mineru_bin_cache():
-    mineru_runner._resolve_mineru_bin.cache_clear()
+    mineru_runner._cached_which.cache_clear()
     yield
-    mineru_runner._resolve_mineru_bin.cache_clear()
+    mineru_runner._cached_which.cache_clear()
 
 
 def _assert_no_private_path_material(value: str) -> None:
