@@ -5,6 +5,7 @@ from newsdom_api.dom_builder import (
     _bbox_from_values,
     _caption_nodes_from_items,
     _coerce_page_number,
+    _page_number_from_info,
     build_dom,
 )
 
@@ -344,3 +345,21 @@ def test_build_dom_keeps_article_ids_unique_across_pages():
         article.article_id for page in dom.pages for article in page.articles
     ]
     assert article_ids == ["article-1", "article-2"]
+
+def test_page_number_from_info():
+    # Test valid page_number
+    assert _page_number_from_info({"page_number": 5}, fallback=1) == 5
+
+    # Test valid page_no (0-indexed, so 5 means page 6)
+    assert _page_number_from_info({"page_no": 5}, fallback=1) == 6
+
+    # Test precedence: page_number should win
+    assert _page_number_from_info({"page_number": 5, "page_no": 10}, fallback=1) == 5
+
+    # Test invalid values (not int)
+    assert _page_number_from_info({"page_number": "5"}, fallback=1) == 1
+    assert _page_number_from_info({"page_no": "5"}, fallback=1) == 1
+    assert _page_number_from_info({"page_number": None}, fallback=1) == 1
+
+    # Test missing keys
+    assert _page_number_from_info({}, fallback=1) == 1
