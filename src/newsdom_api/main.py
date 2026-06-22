@@ -39,7 +39,7 @@ def health() -> dict[str, str]:
     ),
 )
 async def parse(
-    file: Annotated[UploadFile, File(description="The newspaper PDF file to parse.")]
+    file: Annotated[UploadFile, File(description="The newspaper PDF file to parse.")],
 ) -> ParseResponse:
     """Parse an uploaded PDF into the canonical DOM response model."""
 
@@ -49,8 +49,22 @@ async def parse(
             status_code=415, detail="Unsupported Media Type: expected application/pdf"
         )
 
+    # Limit upload size to 50MB to prevent memory exhaustion DoS
+    MAX_FILE_SIZE = 50 * 1024 * 1024
+    chunks = []
+    total_size = 0
+
     try:
-        pdf_bytes = await file.read()
+        while chunk := await file.read(65536):
+            total_size += len(chunk)
+            if total_size > MAX_FILE_SIZE:
+                raise HTTPException(
+                    status_code=413, detail="Payload Too Large: file exceeds 50MB limit"
+                )
+            chunks.append(chunk)
+
+        pdf_bytes = b"".join(chunks)
+
         return await asyncio.to_thread(
             parse_pdf_bytes, pdf_bytes, filename=file.filename or "upload.pdf"
         )
