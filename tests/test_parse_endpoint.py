@@ -50,6 +50,18 @@ def test_parse_endpoint_rejects_non_pdf_content_type():
     )
 
 
+def test_parse_endpoint_rejects_missing_magic_bytes():
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"MZ\x90\x00\x03\x00\x00\x00", "application/pdf")},
+    )
+    assert response.status_code == 415
+    assert (
+        response.json()["detail"] == "Unsupported Media Type: expected application/pdf signature"
+    )
+
+
 def test_parse_endpoint_accepts_pdf_content_type_parameters(monkeypatch):
     def fake_parse_pdf_bytes(pdf_bytes, filename):
         assert pdf_bytes == b"%PDF-1.4\n%synthetic\n"
