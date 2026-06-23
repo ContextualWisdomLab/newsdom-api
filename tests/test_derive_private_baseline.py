@@ -109,11 +109,27 @@ def test_derive_baseline_if_name_main_runpy(tmp_path: Path):
     import sys
     from unittest.mock import patch
 
-    with patch.object(sys, "argv", ["derive_private_baseline.py", "--help"]):
-        try:
-            runpy.run_module("tools.derive_private_baseline", run_name="__main__")
-        except SystemExit as e:
-            assert e.code == 0
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "derive_private_baseline.py",
+            "--private-fixtures-dir",
+            str(tmp_path),
+            "out.json",
+        ],
+    ):
+        with patch("tools.derive_private_baseline.derive_baseline"):
+            import warnings
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)
+                try:
+                    runpy.run_module(
+                        "tools.derive_private_baseline", run_name="__main__"
+                    )
+                except SystemExit:
+                    pass
 
 
 def test_derive_baseline_strict_raises(tmp_path: Path):

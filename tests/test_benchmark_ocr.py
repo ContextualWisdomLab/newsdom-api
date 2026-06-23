@@ -185,7 +185,11 @@ def test_if_name_main(tmp_path: Path):
     from unittest.mock import patch
 
     with patch.object(sys, "argv", ["benchmark_ocr.py", "--help"]):
-        try:
-            runpy.run_module("tools.benchmark_ocr", run_name="__main__")
-        except SystemExit as e:
-            assert e.code == 0
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            try:
+                runpy.run_module("tools.benchmark_ocr", run_name="__main__")
+            except SystemExit as e:
+                assert e.code == 0
