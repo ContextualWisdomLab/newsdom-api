@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- 성능 개선: `dom_builder.py`에서 `setdefault` 대신 `collections.defaultdict`를 사용하여 불필요한 메모리 할당(리스트 생성) 오버헤드를 줄였습니다.
+
 ## [0.2.0] - 2026-04-24
 
 ### Added
