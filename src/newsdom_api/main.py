@@ -37,6 +37,11 @@ def health() -> dict[str, str]:
         "Converts a scanned Japanese newspaper PDF into a canonical JSON DOM "
         "document using MinerU."
     ),
+    responses={
+        415: {"description": "Unsupported Media Type (expected application/pdf)"},
+        502: {"description": "MinerU output was incomplete"},
+        503: {"description": "MinerU runtime unavailable"},
+    },
 )
 async def parse(
     file: Annotated[UploadFile, File(description="The newspaper PDF file to parse.")]
