@@ -1,0 +1,25 @@
+{
+  "mcp": {
+    "codegraph": {
+      "command": "serve",
+      "args": ["serve", "--mcp"]
+    },
+    "deepwiki": {
+      "url": "https://mcp.deepwiki.com/mcp"
+    },
+    "context7": {
+      "package": "@upstash/context7-mcp@3.1.0"
+    },
+    "web_search": {
+      "package": "@guhcostan/web-search-mcp@1.0.5"
+    }
+  },
+  "small_model": "github-models/deepseek/deepseek-v3-0324",
+  "models": [
+    "openai/gpt-5",
+    "deepseek/deepseek-r1-0528",
+    "deepseek/deepseek-v3-0324"
+  ],
+  "context": 200000,
+  "output": 100000
+}
