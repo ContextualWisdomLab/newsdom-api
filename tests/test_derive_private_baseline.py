@@ -180,7 +180,6 @@ def test_derive_baseline_main_known_error(tmp_path: Path):
 def test_derive_baseline_main_unknown_error(tmp_path: Path):
     from tools.derive_private_baseline import main
     from unittest.mock import patch
-    import builtins
 
     fixtures_dir = tmp_path / "fixtures"
     output_path = tmp_path / "baseline.json"

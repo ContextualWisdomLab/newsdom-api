@@ -184,12 +184,6 @@ def test_if_name_main(tmp_path: Path):
     import sys
     from unittest.mock import patch
 
-    # In order to patch a function inside the module executed by runpy,
-    # we need to mock it in the sys.modules before runpy gets to it,
-    # or just use subprocess which gives true coverage of __main__ block.
-    # Since pytest-cov doesn't always track subprocess easily without config,
-    # we can just use runpy and mock 'sys.exit' or the argparse parse_args so it exits cleanly.
-
     with patch.object(sys, "argv", ["benchmark_ocr.py", "--help"]):
         try:
             runpy.run_module("tools.benchmark_ocr", run_name="__main__")
