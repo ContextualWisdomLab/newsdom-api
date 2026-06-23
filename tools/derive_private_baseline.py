@@ -10,12 +10,18 @@ from fastapi import HTTPException
 from newsdom_api.service import parse_pdf_bytes
 
 
-def derive_baseline(fixtures_dir: Path, output_path: Path) -> None:
+def derive_baseline(
+    fixtures_dir: Path, output_path: Path, recursive: bool = False, strict: bool = True
+) -> None:
     """
     Run MinerU OCR on a directory of private PDFs and derive a redacted
     structural baseline for equivalence testing.
     """
-    pdf_paths = sorted(list(fixtures_dir.glob("*.pdf")))
+    if recursive:
+        pdf_paths = sorted(list(fixtures_dir.rglob("*.pdf")))
+    else:
+        pdf_paths = sorted(list(fixtures_dir.glob("*.pdf")))
+
     if not pdf_paths:
         raise FileNotFoundError(f"No PDF files found in {fixtures_dir}")
 
@@ -28,10 +34,17 @@ def derive_baseline(fixtures_dir: Path, output_path: Path) -> None:
         try:
             response = parse_pdf_bytes(pdf_bytes, filename=pdf_path.name)
         except HTTPException as e:
-            # Re-raise as a more generic exception for a CLI context
-            raise RuntimeError(
-                f"OCR processing failed for {pdf_path.name}: {e.detail}"
-            ) from e
+            if strict:
+                # Re-raise as a more generic exception for a CLI context
+                raise RuntimeError(
+                    f"OCR processing failed for {pdf_path.name}: {e.detail}"
+                ) from e
+            else:
+                print(
+                    f"Warning: OCR processing failed for {pdf_path.name}: {e.detail}",
+                    file=sys.stderr,
+                )
+                continue
 
         total_pages += len(response.pages)
 
@@ -60,7 +73,7 @@ def derive_baseline(fixtures_dir: Path, output_path: Path) -> None:
     )
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--private-fixtures-dir",
@@ -73,10 +86,23 @@ def main() -> None:
         type=Path,
         help="Path to write the derived JSON baseline file.",
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--recursive",
+        action="store_true",
+        help="Recursively search for PDF files in the private fixtures directory.",
+    )
+    parser.add_argument(
+        "--strict",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Fail fast if parsing any single PDF fails (default: True). Use --no-strict to continue processing other PDFs.",
+    )
+    args = parser.parse_args(argv)
 
     try:
-        derive_baseline(args.private_fixtures_dir, args.output)
+        derive_baseline(
+            args.private_fixtures_dir, args.output, args.recursive, args.strict
+        )
     except (RuntimeError, FileNotFoundError) as e:
         print(f"Error: Failed to derive baseline. Reason: {e}", file=sys.stderr)
         sys.exit(1)
