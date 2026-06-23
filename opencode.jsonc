@@ -1,10 +1,12 @@
 {
   "mcp": {
     "codegraph": {
-      "command": "npx",
-      "args": ["-y", "@colbymchenry/codegraph@0.9.9", "serve", "--mcp"]
+      "command": "codegraph",
+      "args": ["serve", "--mcp"]
     },
     "deepwiki": {
+      "command": "deepwiki",
+      "args": ["serve"],
       "url": "https://mcp.deepwiki.com/mcp"
     },
     "context7": {
@@ -17,11 +19,19 @@
     }
   },
   "small_model": "github-models/deepseek/deepseek-v3-0324",
-  "models": [
-    "openai/gpt-5",
-    "deepseek/deepseek-r1-0528",
-    "deepseek/deepseek-v3-0324"
-  ],
-  "context": 200000,
-  "output": 100000
+  "models": {
+    "primary": {
+      "id": "openai/gpt-5",
+      "context": 200000,
+      "output": 100000
+    },
+    "fallbacks": [
+      {
+        "id": "deepseek/deepseek-r1-0528"
+      },
+      {
+        "id": "deepseek/deepseek-v3-0324"
+      }
+    ]
+  }
 }
