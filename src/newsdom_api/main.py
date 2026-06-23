@@ -39,7 +39,7 @@ def health() -> dict[str, str]:
     ),
 )
 async def parse(
-    file: Annotated[UploadFile, File(description="The newspaper PDF file to parse.")]
+    file: Annotated[UploadFile, File(description="The newspaper PDF file to parse.")],
 ) -> ParseResponse:
     """Parse an uploaded PDF into the canonical DOM response model."""
 
@@ -51,6 +51,11 @@ async def parse(
 
     try:
         pdf_bytes = await file.read()
+        if not pdf_bytes.startswith(b"%PDF-"):
+            raise HTTPException(
+                status_code=415,
+                detail="Unsupported Media Type: expected application/pdf",
+            )
         return await asyncio.to_thread(
             parse_pdf_bytes, pdf_bytes, filename=file.filename or "upload.pdf"
         )
