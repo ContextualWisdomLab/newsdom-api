@@ -138,3 +138,19 @@ def test_parse_endpoint_returns_502_for_incomplete_mineru_output(
     assert response.status_code == 502
     assert response.json()["detail"] == "MinerU output was incomplete"
     _assert_no_private_path_material(response.json()["detail"])
+
+
+def test_parse_endpoint_rejects_invalid_filename():
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={
+            "file": (
+                "malicious;command.pdf",
+                b"%PDF-1.4\n%synthetic\n",
+                "application/pdf",
+            )
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid filename"
