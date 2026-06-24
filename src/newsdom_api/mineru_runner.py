@@ -146,8 +146,8 @@ def _parse_mineru_output(
 def run_mineru(input_pdf: Path) -> dict[str, Any]:
     """Run MinerU on a PDF and return parsed JSON artifacts plus raw process output.
 
-    The resolved MinerU executable path is cached for the process lifetime. Restart
-    the service after changing NEWSDOM_MINERU_BIN or PATH.
+    PATH lookups for the default MinerU executable are cached, while
+    NEWSDOM_MINERU_BIN is evaluated on each call to allow runtime overrides.
     """
 
     mineru_bin = _resolve_mineru_bin()
