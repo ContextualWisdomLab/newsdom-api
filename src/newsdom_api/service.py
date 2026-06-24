@@ -34,5 +34,3 @@ def parse_pdf_bytes(data: bytes, filename: str = "upload.pdf") -> ParseResponse:
             model=mineru_output.get("model"),
         )
         return response
-
-# End of service orchestration module.
