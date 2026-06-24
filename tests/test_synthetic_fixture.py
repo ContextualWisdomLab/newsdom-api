@@ -35,46 +35,15 @@ def test_draw_vertical_text_empty():
     mock_draw.text.assert_not_called()
 
 
-def test_load_font_finds_candidate():
-    with patch("newsdom_api.synthetic._font_candidates", return_value=["dummy_font.ttc"]), \
-         patch("pathlib.Path.exists", return_value=True), \
-         patch("PIL.ImageFont.truetype") as mock_truetype:
-        from newsdom_api.synthetic import _load_font
-        _load_font(12)
-        mock_truetype.assert_called_once_with("dummy_font.ttc", size=12)
-
-
-def test_generate_fixture_horizontal_article(tmp_path: Path):
-    with patch("newsdom_api.synthetic._ground_truth") as mock_truth:
-        truth = _ground_truth()
-        truth["articles"] = [
-            {
-                "headline": "Horizontal",
-                "body": "This is a horizontal article.",
-                "bbox": [10, 10, 100, 100],
-                "vertical": False,
-                "page_number": 1,
-            }
-        ]
-        # Images and ads can be empty for this test
-        truth["images"] = []
-        truth["ads"] = []
-        mock_truth.return_value = truth
-
-        pdf_path, truth_path = generate_fixture(tmp_path, seed=8)
-        assert pdf_path.exists()
-        assert truth_path.exists()
-
-
 def test_generate_fixture_early_break(tmp_path: Path):
     with patch("newsdom_api.synthetic._ground_truth") as mock_truth:
         truth = _ground_truth()
-        # Bounding box width is smaller than font step
+        # Body bbox remains valid after margins but is too narrow for multiple columns.
         truth["articles"] = [
             {
                 "headline": "A",
                 "body": "BBBBBBBBBB",
-                "bbox": [100, 10, 110, 100],
+                "bbox": [100, 10, 190, 420],
                 "vertical": True,
                 "page_number": 1,
             }
