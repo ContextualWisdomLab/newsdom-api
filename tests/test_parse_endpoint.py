@@ -1,9 +1,12 @@
-from fastapi.testclient import TestClient
 import subprocess
 from pathlib import Path
 
-from newsdom_api.main import app
+import pytest
+from fastapi import HTTPException
+from fastapi.testclient import TestClient
+
 from newsdom_api import mineru_runner
+from newsdom_api.main import app, parse
 
 
 class _FakeTempDir:
@@ -16,6 +19,24 @@ class _FakeTempDir:
 
     def __exit__(self, exc_type, exc, tb):
         return False
+
+
+class _ReadTrackingUpload:
+    content_type = "application/pdf"
+    filename = "fixture.pdf"
+
+    def __init__(self, payload: bytes):
+        self._payload = payload
+        self._offset = 0
+        self.read_sizes: list[int] = []
+
+    async def read(self, size: int = -1) -> bytes:
+        self.read_sizes.append(size)
+        if size < 0:
+            size = len(self._payload) - self._offset
+        chunk = self._payload[self._offset : self._offset + size]
+        self._offset += len(chunk)
+        return chunk
 
 
 def _assert_no_private_path_material(value: str) -> None:
@@ -138,3 +159,66 @@ def test_parse_endpoint_returns_502_for_incomplete_mineru_output(
     assert response.status_code == 502
     assert response.json()["detail"] == "MinerU output was incomplete"
     _assert_no_private_path_material(response.json()["detail"])
+
+
+def test_parse_endpoint_catches_incomplete_output_error(monkeypatch):
+    from newsdom_api.errors import MineruIncompleteOutputError
+
+    def fake_parse_pdf_bytes(pdf_bytes, filename):
+        raise MineruIncompleteOutputError()
+
+    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
+
+    client = TestClient(app, raise_server_exceptions=False)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+    )
+
+    assert response.status_code == 502
+    assert response.json()["detail"] == "MinerU output was incomplete"
+
+
+def test_parse_endpoint_catches_runtime_unavailable_error(monkeypatch):
+    from newsdom_api.errors import MineruRuntimeUnavailableError
+
+    def fake_parse_pdf_bytes(pdf_bytes, filename):
+        raise MineruRuntimeUnavailableError()
+
+    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
+
+    client = TestClient(app, raise_server_exceptions=False)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "MinerU runtime unavailable"
+    _assert_no_private_path_material(response.json()["detail"])
+
+
+def test_parse_endpoint_rejects_missing_magic_bytes():
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={
+            "file": ("fixture.pdf", b"MZ\x90\x00\x03\x00\x00\x00", "application/pdf")
+        },
+    )
+    assert response.status_code == 415
+    assert (
+        response.json()["detail"] == "Unsupported Media Type: missing PDF magic bytes"
+    )
+
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_rejects_magic_bytes_before_full_read():
+    upload = _ReadTrackingUpload(b"MZ\x90\x00\x03" + (b"x" * 1024 * 1024))
+
+    with pytest.raises(HTTPException) as exc_info:
+        await parse(upload)
+
+    assert exc_info.value.status_code == 415
+    assert exc_info.value.detail == "Unsupported Media Type: missing PDF magic bytes"
+    assert upload.read_sizes == [5]
