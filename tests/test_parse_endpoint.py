@@ -25,10 +25,11 @@ class _ReadTrackingUpload:
     content_type = "application/pdf"
     filename = "fixture.pdf"
 
-    def __init__(self, payload: bytes):
+    def __init__(self, payload: bytes, size: int | None = None):
         self._payload = payload
         self._offset = 0
         self.read_sizes: list[int] = []
+        self.size = size if size is not None else len(payload)
 
     async def read(self, size: int = -1) -> bytes:
         self.read_sizes.append(size)
@@ -210,6 +211,19 @@ def test_parse_endpoint_rejects_missing_magic_bytes():
     assert (
         response.json()["detail"] == "Unsupported Media Type: missing PDF magic bytes"
     )
+
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_rejects_large_files():
+    """Verify that the parse endpoint rejects files larger than 10MB."""
+    large_size = 11 * 1024 * 1024  # 11MB
+    upload = _ReadTrackingUpload(b"%PDF-" + (b"x" * (large_size - 5)), size=large_size)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await parse(upload)
+
+    assert exc_info.value.status_code == 413
+    assert "Payload Too Large" in exc_info.value.detail
 
 
 @pytest.mark.asyncio

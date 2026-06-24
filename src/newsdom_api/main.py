@@ -65,6 +65,11 @@ async def parse(
 ) -> ParseResponse:
     """Parse an uploaded PDF into the canonical DOM response model."""
 
+    if getattr(file, "size", None) is not None and file.size > 10 * 1024 * 1024:
+        raise HTTPException(
+            status_code=413, detail="Payload Too Large: maximum file size is 10MB"
+        )
+
     media_type = (file.content_type or "").split(";", 1)[0].strip().lower()
     if media_type != "application/pdf":
         raise HTTPException(
