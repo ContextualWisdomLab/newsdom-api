@@ -158,6 +158,7 @@ def test_compare_fixture_to_baseline_handles_empty_structural_lists(tmp_path: Pa
 
     assert result["equivalent"] is True
 
+
 def test_derived_metrics_empty_payload():
     from newsdom_api.equivalence import _derived_metrics
 
