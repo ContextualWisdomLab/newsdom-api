@@ -74,6 +74,75 @@ def _new_article(
     )
 
 
+def _handle_media_block(
+    block: dict[str, Any],
+    block_type: str,
+    current_article: ArticleNode | None,
+    article_seq: count,
+    page: PageNode,
+) -> ArticleNode:
+    """Extract and process media blocks into an ArticleNode."""
+    bbox = _bbox_from_values(block.get("bbox") or block.get("box"))
+    image = ImageNode(
+        path=block.get("img_path") or block.get("path") or block_type,
+        media_type=block_type,
+        bbox=bbox,
+    )
+    caption_key = f"{block_type}_caption"
+    footnote_key = f"{block_type}_footnote"
+    image.captions.extend(_caption_nodes_from_items(block.get(caption_key)))
+    image.footnotes.extend(_caption_nodes_from_items(block.get(footnote_key)))
+    if current_article is None:
+        current_article = _new_article(article_seq, "(untitled)")
+        page.articles.append(current_article)
+    current_article.images.append(image)
+    return current_article
+
+
+def _handle_table_block(
+    block: dict[str, Any],
+    current_article: ArticleNode | None,
+    article_seq: count,
+    page: PageNode,
+) -> ArticleNode:
+    """Extract and process table blocks into an ArticleNode."""
+    if current_article is None:
+        current_article = _new_article(article_seq, "(table-block)")
+        page.articles.append(current_article)
+    current_article.body_blocks.append(block.get("table_body", ""))
+    current_article.captions.extend(
+        _caption_nodes_from_items(block.get("table_caption"))
+    )
+    current_article.footnotes.extend(
+        _caption_nodes_from_items(block.get("table_footnote"))
+    )
+    return current_article
+
+
+def _handle_text_block(
+    block: dict[str, Any],
+    text: str,
+    role: Any,
+    current_article: ArticleNode | None,
+    article_seq: count,
+    page: PageNode,
+) -> ArticleNode:
+    """Extract and process text and headline blocks into an ArticleNode."""
+    text_level = block.get("text_level")
+    is_headline = bool(text_level == 1 or role == "section_headings")
+    if is_headline:
+        bbox = _bbox_from_values(block.get("bbox") or block.get("box"))
+        current_article = _new_article(article_seq, text.replace("\n", " "), bbox)
+        page.articles.append(current_article)
+        return current_article
+
+    if current_article is None:
+        current_article = _new_article(article_seq, "(untitled)")
+        page.articles.append(current_article)
+    current_article.body_blocks.append(text.replace("\n", " "))
+    return current_article
+
+
 def _build_page_dom(
     content_list: list[dict[str, Any]],
     *,
@@ -112,47 +181,20 @@ def _build_page_dom(
             continue
 
         if block_type in {"image", "chart"}:
-            bbox = _bbox_from_values(block.get("bbox") or block.get("box"))
-            image = ImageNode(
-                path=block.get("img_path") or block.get("path") or block_type,
-                media_type=block_type,
-                bbox=bbox,
+            current_article = _handle_media_block(
+                block, block_type, current_article, article_seq, page
             )
-            caption_key = f"{block_type}_caption"
-            footnote_key = f"{block_type}_footnote"
-            image.captions.extend(_caption_nodes_from_items(block.get(caption_key)))
-            image.footnotes.extend(_caption_nodes_from_items(block.get(footnote_key)))
-            if current_article is None:
-                current_article = _new_article(article_seq, "(untitled)")
-                page.articles.append(current_article)
-            current_article.images.append(image)
             continue
 
         if block_type == "table":
-            if current_article is None:
-                current_article = _new_article(article_seq, "(table-block)")
-                page.articles.append(current_article)
-            current_article.body_blocks.append(block.get("table_body", ""))
-            current_article.captions.extend(
-                _caption_nodes_from_items(block.get("table_caption"))
-            )
-            current_article.footnotes.extend(
-                _caption_nodes_from_items(block.get("table_footnote"))
+            current_article = _handle_table_block(
+                block, current_article, article_seq, page
             )
             continue
 
-        text_level = block.get("text_level")
-        is_headline = bool(text_level == 1 or role == "section_headings")
-        if is_headline:
-            bbox = _bbox_from_values(block.get("bbox") or block.get("box"))
-            current_article = _new_article(article_seq, text.replace("\n", " "), bbox)
-            page.articles.append(current_article)
-            continue
-
-        if current_article is None:
-            current_article = _new_article(article_seq, "(untitled)")
-            page.articles.append(current_article)
-        current_article.body_blocks.append(text.replace("\n", " "))
+        current_article = _handle_text_block(
+            block, text, role, current_article, article_seq, page
+        )
 
     return page
 
@@ -171,25 +213,28 @@ def _page_number_from_info(page_info: dict[str, Any], fallback: int) -> int:
     return fallback
 
 
-def build_dom(
-    content_list: list[dict[str, Any]],
-    document_id: str,
-    model: list[dict[str, Any]] | None = None,
-) -> ParseResponse:
-    """Normalize MinerU-style content blocks into the canonical NewsDOM schema."""
-
+def _extract_page_info_by_idx(
+    model: list[dict[str, Any]] | None,
+) -> dict[int, dict[str, Any]]:
+    """Extract page information from the model payload by index."""
     page_info_by_idx: dict[int, dict[str, Any]] = {}
-    quality_warnings: list[str] = []
     if model:
         for index, page_model in enumerate(model):
             page_info = page_model.get("page_info") or {}
             page_info_by_idx[index] = page_info
+    return page_info_by_idx
 
+
+def _group_blocks_by_page_idx(
+    content_list: list[dict[str, Any]],
+) -> tuple[bool, bool, dict[int, list[dict[str, Any]]]]:
+    """Group content blocks by their page index."""
     has_page_idx = False
     has_missing_page_idx = False
     # ⚡ Bolt: Use defaultdict instead of dict.setdefault in this hot grouping loop
     # to avoid the overhead of instantiating an empty list on every single iteration
     blocks_by_page_idx: defaultdict[int, list[dict[str, Any]]] = defaultdict(list)
+
     for block in content_list:
         raw_page_idx = block.get("page_idx")
         if isinstance(raw_page_idx, int):
@@ -200,44 +245,53 @@ def build_dom(
             normalized_page_idx = 0
         blocks_by_page_idx[normalized_page_idx].append(block)
 
-    if not has_page_idx:
-        article_seq = count(1)
-        if len(page_info_by_idx) > 1:
-            quality_warnings.append(
-                "Some blocks are missing page_idx; content was assigned to page_idx 0 while preserving model-declared page count."
-            )
-            pages = []
-            for page_idx in sorted(page_info_by_idx):
-                page_info = page_info_by_idx.get(page_idx, {})
-                pages.append(
-                    _build_page_dom(
-                        content_list if page_idx == 0 else [],
-                        page_number=_page_number_from_info(page_info, page_idx + 1),
-                        article_seq=article_seq,
-                        width=page_info.get("width"),
-                        height=page_info.get("height"),
-                    )
-                )
-            return ParseResponse(
-                document_id=document_id,
-                pages=pages,
-                quality=ParseQuality(warnings=quality_warnings),
-            )
+    return has_page_idx, has_missing_page_idx, blocks_by_page_idx
 
-        page_info = page_info_by_idx.get(0, {})
-        return ParseResponse(
-            document_id=document_id,
-            pages=[
+
+def _build_pages_without_page_idx(
+    content_list: list[dict[str, Any]],
+    page_info_by_idx: dict[int, dict[str, Any]],
+    quality_warnings: list[str],
+) -> list[PageNode]:
+    """Build pages when no blocks have a page_idx."""
+    article_seq = count(1)
+    if len(page_info_by_idx) > 1:
+        quality_warnings.append(
+            "Some blocks are missing page_idx; content was assigned to page_idx 0 while preserving model-declared page count."
+        )
+        pages = []
+        for page_idx in sorted(page_info_by_idx):
+            page_info = page_info_by_idx.get(page_idx, {})
+            pages.append(
                 _build_page_dom(
-                    content_list,
-                    page_number=_page_number_from_info(page_info, 1),
+                    content_list if page_idx == 0 else [],
+                    page_number=_page_number_from_info(page_info, page_idx + 1),
                     article_seq=article_seq,
                     width=page_info.get("width"),
                     height=page_info.get("height"),
                 )
-            ],
-        )
+            )
+        return pages
 
+    page_info = page_info_by_idx.get(0, {})
+    return [
+        _build_page_dom(
+            content_list,
+            page_number=_page_number_from_info(page_info, 1),
+            article_seq=article_seq,
+            width=page_info.get("width"),
+            height=page_info.get("height"),
+        )
+    ]
+
+
+def _build_pages_with_page_idx(
+    blocks_by_page_idx: dict[int, list[dict[str, Any]]],
+    page_info_by_idx: dict[int, dict[str, Any]],
+    has_missing_page_idx: bool,
+    quality_warnings: list[str],
+) -> list[PageNode]:
+    """Build pages when at least some blocks have a page_idx."""
     if has_missing_page_idx and len(page_info_by_idx) > 1:
         quality_warnings.append(
             "Some blocks are missing page_idx; untagged blocks were assigned to page_idx 0 for deterministic grouping."
@@ -255,6 +309,34 @@ def build_dom(
                 width=page_info.get("width"),
                 height=page_info.get("height"),
             )
+        )
+    return pages
+
+
+def build_dom(
+    content_list: list[dict[str, Any]],
+    document_id: str,
+    model: list[dict[str, Any]] | None = None,
+) -> ParseResponse:
+    """Normalize MinerU-style content blocks into the canonical NewsDOM schema."""
+
+    page_info_by_idx = _extract_page_info_by_idx(model)
+    quality_warnings: list[str] = []
+
+    has_page_idx, has_missing_page_idx, blocks_by_page_idx = _group_blocks_by_page_idx(
+        content_list
+    )
+
+    if not has_page_idx:
+        pages = _build_pages_without_page_idx(
+            content_list, page_info_by_idx, quality_warnings
+        )
+    else:
+        pages = _build_pages_with_page_idx(
+            blocks_by_page_idx,
+            page_info_by_idx,
+            has_missing_page_idx,
+            quality_warnings,
         )
 
     return ParseResponse(
