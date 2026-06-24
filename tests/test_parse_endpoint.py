@@ -80,6 +80,47 @@ def test_parse_endpoint_rejects_prefixed_non_pdf_payload():
     )
 
 
+def test_parse_endpoint_rejects_pdf_without_pages(monkeypatch):
+    class EmptyPdfReader:
+        pages = []
+
+    monkeypatch.setattr(
+        "newsdom_api.main.PdfReader", lambda *_args, **_kwargs: EmptyPdfReader()
+    )
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%%EOF", "application/pdf")},
+    )
+    assert response.status_code == 415
+    assert (
+        response.json()["detail"] == "Unsupported Media Type: expected application/pdf"
+    )
+
+
+def test_parse_endpoint_accepts_structurally_valid_pdf(monkeypatch):
+    class OnePagePdfReader:
+        pages = [object()]
+
+    def fake_parse_pdf_bytes(pdf_bytes, filename):
+        assert pdf_bytes == b"%PDF-1.4\n%%EOF"
+        assert filename == "fixture.pdf"
+        return {"document_id": "fixture", "pages": []}
+
+    monkeypatch.setattr(
+        "newsdom_api.main.PdfReader", lambda *_args, **_kwargs: OnePagePdfReader()
+    )
+    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%%EOF", "application/pdf")},
+    )
+    assert response.status_code == 200
+
+
 def test_parse_endpoint_accepts_pdf_content_type_parameters(monkeypatch):
     def fake_parse_pdf_bytes(pdf_bytes, filename):
         assert pdf_bytes == b"%PDF-1.4\n%synthetic\n"
