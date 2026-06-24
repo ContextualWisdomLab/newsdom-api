@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `src/newsdom_api/dom_builder.py`에서 파싱 핫 루프의 성능을 최적화:
+  - `_handle_text_block`에서 불필요한 `bool()` 캐스팅 제거 및 조건부 치환(`
+`가 있을 때만 `replace` 호출)을 통해 불필요한 문자열 메모리 할당 방지.
+  - `_bbox_from_values`에서 `float()` 명시적 캐스팅을 제거하여, `Pydantic v2`의 내부 Rust 강제 변환(coercion) 로직을 활용해 불필요한 연산 오버헤드 감소.
+
+
 ### Added
 - `tools/benchmark_ocr.py`에 `--recursive` 인자를 추가하여 하위 디렉토리에 있는 PDF 파일도 재귀적으로 탐색할 수 있도록 기능 보강.
 - `tools/benchmark_ocr.py`에 `--format` 인자를 추가하여 벤치마크 결과를 `json` 및 `csv` 포맷으로 내보낼 수 있는 기능 추가.
