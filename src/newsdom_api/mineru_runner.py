@@ -97,6 +97,20 @@ def _execute_mineru(cmd: list[str]) -> subprocess.CompletedProcess[str]:
         raise MineruRuntimeUnavailableError() from exc
 
 
+def _read_mineru_json(path: Path, *, artifact: str) -> Any:
+    """Read a MinerU JSON artifact with safe, differentiated failure messages."""
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise MineruIncompleteOutputError(
+            f"{artifact} JSON was malformed"
+        ) from exc
+    except (OSError, UnicodeDecodeError) as exc:
+        raise MineruIncompleteOutputError(
+            f"{artifact} JSON could not be read"
+        ) from exc
+
+
 def _parse_mineru_output(
     output_dir: Path, input_pdf: Path
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
@@ -114,11 +128,8 @@ def _parse_mineru_output(
             raise FileNotFoundError("MinerU model JSON was not produced")
     except FileNotFoundError as exc:
         raise MineruIncompleteOutputError() from exc
-    try:
-        content_list = json.loads(content_path.read_text(encoding="utf-8"))
-        model = json.loads(model_candidates[0].read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise MineruIncompleteOutputError() from exc
+    content_list = _read_mineru_json(content_path, artifact="content list")
+    model = _read_mineru_json(model_candidates[0], artifact="model")
 
     return content_list, model
 
