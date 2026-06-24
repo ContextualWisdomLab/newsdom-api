@@ -6,7 +6,7 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from newsdom_api import mineru_runner
-from newsdom_api.main import app, parse
+from newsdom_api.main import app, parse, _validate_pdf_structure
 
 
 class _FakeTempDir:
@@ -81,6 +81,14 @@ def test_parse_endpoint_rejects_invalid_pdf_magic_bytes():
     assert (
         response.json()["detail"] == "Unsupported Media Type: missing PDF magic bytes"
     )
+
+
+def test_validate_pdf_structure_rejects_invalid_magic_bytes():
+    with pytest.raises(HTTPException) as exc_info:
+        _validate_pdf_structure(b"not a pdf")
+
+    assert exc_info.value.status_code == 415
+    assert exc_info.value.detail == "Unsupported Media Type: expected application/pdf"
 
 
 def test_parse_endpoint_rejects_prefixed_non_pdf_payload():
