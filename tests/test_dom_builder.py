@@ -344,3 +344,22 @@ def test_build_dom_keeps_article_ids_unique_across_pages():
         article.article_id for page in dom.pages for article in page.articles
     ]
     assert article_ids == ["article-1", "article-2"]
+
+
+def test_build_dom_skips_whitespace_only_role_text():
+    dom = build_dom(
+        [
+            {"type": "text", "role": "header", "text": "   "},
+            {"type": "text", "role": "footer", "text": "   "},
+            {"type": "text", "role": "page_number", "text": "   "},
+            {"type": "text", "role": "ad", "text": "   "},
+        ],
+        document_id="doc10",
+    )
+
+    page = dom.pages[0]
+    assert page.headers == []
+    assert page.footers == []
+    assert page.page_numbers == []
+    assert page.ads == []
+    assert page.articles == []
