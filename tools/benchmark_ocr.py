@@ -36,20 +36,32 @@ OCR_ENGINES: dict[str, Callable[[Path], dict[str, Any]]] = {
 }
 
 
-def run_benchmark(fixtures_dir: Path, output_path: Path, engines: list[str]) -> None:
+def run_benchmark(
+    fixtures_dir: Path,
+    output_path: Path,
+    engines: list[str],
+    recursive: bool = False,
+    output_format: str = "json",
+) -> None:
     """
     Run the OCR benchmark against a directory of PDFs for a list of engines.
 
     It iterates through each PDF and runs each specified engine, capturing
     success, failure, or timeout, along with performance metrics. The
-    aggregated results are written to a JSON file.
+    aggregated results are written to a JSON or CSV file.
 
     Args:
         fixtures_dir: The directory containing the PDF files to benchmark.
-        output_path: The path to write the final JSON results file.
+        output_path: The path to write the final results file.
         engines: A list of engine names to run.
+        recursive: If True, search for PDFs recursively.
+        output_format: The format to save the results ('json' or 'csv').
     """
-    pdf_paths = sorted(list(fixtures_dir.glob("*.pdf")))
+    if recursive:
+        pdf_paths = sorted(list(fixtures_dir.rglob("*.pdf")))
+    else:
+        pdf_paths = sorted(list(fixtures_dir.glob("*.pdf")))
+
     if not pdf_paths:
         raise FileNotFoundError(f"No PDF files found in {fixtures_dir}")
 
@@ -107,9 +119,41 @@ def run_benchmark(fixtures_dir: Path, output_path: Path, engines: list[str]) -> 
 
         all_results[engine_name] = engine_results
 
-    output_path.write_text(
-        json.dumps(all_results, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    if output_format == "csv":
+        import csv
+
+        with output_path.open("w", newline="", encoding="utf-8") as csvfile:
+            fieldnames = [
+                "engine",
+                "pdf_name",
+                "status",
+                "duration_sec",
+                "page_count",
+                "article_count",
+                "error",
+            ]
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+
+            for engine_name in engines:
+                engine_data = all_results.get(engine_name, {})
+                results_data = engine_data.get("results", {})
+                for pdf_name, data in results_data.items():
+                    writer.writerow(
+                        {
+                            "engine": engine_name,
+                            "pdf_name": pdf_name,
+                            "status": data.get("status", ""),
+                            "duration_sec": data.get("duration", ""),
+                            "page_count": data.get("page_count", ""),
+                            "article_count": data.get("article_count", ""),
+                            "error": data.get("error", ""),
+                        }
+                    )
+    else:
+        output_path.write_text(
+            json.dumps(all_results, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
     print(f"\nBenchmark results written to {output_path}")
 
 
@@ -143,10 +187,23 @@ def main(argv: list[str] | None = None) -> None:
         default=["mineru"],
         help=f"Space-separated list of engines to benchmark. Available: {', '.join(OCR_ENGINES.keys())}",
     )
+    parser.add_argument(
+        "--recursive",
+        action="store_true",
+        help="Recursively search for PDF files in the fixtures directory.",
+    )
+    parser.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default="json",
+        help="Output format for the benchmark results (default: json).",
+    )
     args = parser.parse_args(argv)
 
-    run_benchmark(args.fixtures_dir, args.output, args.engines)
+    run_benchmark(
+        args.fixtures_dir, args.output, args.engines, args.recursive, args.format
+    )
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()
