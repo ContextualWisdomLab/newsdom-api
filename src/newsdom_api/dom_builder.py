@@ -90,27 +90,30 @@ def _build_page_dom(
         block_type = block.get("type")
         role = block.get("role")
 
+        def _get_text() -> str:
+            return (block.get("text") or block.get("contents") or "").strip()
+
         if role == "header":
             # ⚡ Bolt: Defer expensive string operations until we know we need the text
-            text = (block.get("text") or block.get("contents") or "").strip()
+            text = _get_text()
             if text:
                 page.headers.append(text)
             continue
 
         if role == "footer":
-            text = (block.get("text") or block.get("contents") or "").strip()
+            text = _get_text()
             if text:
                 page.footers.append(text)
             continue
 
         if role == "page_number":
-            text = (block.get("text") or block.get("contents") or "").strip()
+            text = _get_text()
             if text:
                 page.page_numbers.append(text)
             continue
 
         if role == "ad" or block_type == "ad":
-            text = (block.get("text") or block.get("contents") or "").strip()
+            text = _get_text()
             if text:
                 page.ads.append(text)
             continue
@@ -145,7 +148,7 @@ def _build_page_dom(
             )
             continue
 
-        text = (block.get("text") or block.get("contents") or "").strip()
+        text = _get_text()
         if not text:
             continue
 

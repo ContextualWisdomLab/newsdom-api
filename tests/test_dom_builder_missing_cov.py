@@ -1,6 +1,7 @@
-import pytest
-from newsdom_api.dom_builder import _build_page_dom
 from itertools import count
+
+from newsdom_api.dom_builder import _build_page_dom
+
 
 def test_missing_branches():
     content_list = [
@@ -15,3 +16,6 @@ def test_missing_branches():
         article_seq=count(1),
     )
     assert page.headers == []
+    assert page.footers == []
+    assert page.page_numbers == []
+    assert page.ads == []
