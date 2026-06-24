@@ -62,7 +62,7 @@ async def parse(
     if media_type != "application/pdf":
         raise HTTPException(
             status_code=415, detail="Unsupported Media Type: expected application/pdf"
-    )
+        )
 
     try:
         header = await file.read(5)
