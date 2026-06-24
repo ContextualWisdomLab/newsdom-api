@@ -75,3 +75,69 @@ def test_benchmark_ocr_harness(mock_pdf_dir: Path, tmp_path: Path):
     # Check summary
     assert results["summary"]["total_files"] == 3
     assert results["summary"]["total_runs"] == 6
+
+
+def test_benchmark_ocr_no_pdfs(tmp_path: Path):
+    """
+    If the fixtures directory contains no PDFs, a FileNotFoundError should be raised.
+    """
+    empty_dir = tmp_path / "empty"
+    empty_dir.mkdir()
+    output_path = tmp_path / "results.json"
+
+    with pytest.raises(FileNotFoundError, match="No PDF files found in"):
+        benchmark_ocr.main(
+            [
+                "--fixtures-dir",
+                str(empty_dir),
+                "--output",
+                str(output_path),
+            ]
+        )
+
+
+def test_benchmark_ocr_unknown_engine(mock_pdf_dir: Path, tmp_path: Path):
+    """
+    If an unknown engine is specified, a ValueError should be raised.
+    """
+    output_path = tmp_path / "results.json"
+
+    with pytest.raises(ValueError, match="Unknown engine: fake_engine"):
+        benchmark_ocr.main(
+            [
+                "--fixtures-dir",
+                str(mock_pdf_dir),
+                "--output",
+                str(output_path),
+                "--engines",
+                "fake_engine",
+            ]
+        )
+
+
+@patch("tools.benchmark_ocr.parse_pdf_bytes")
+def test_run_mineru_engine(mock_parse_pdf_bytes, tmp_path: Path):
+    """
+    run_mineru_engine should call parse_pdf_bytes and return aggregated metrics.
+    """
+    pdf_path = tmp_path / "sample.pdf"
+    pdf_path.write_bytes(b"dummy pdf content")
+
+    mock_response = MagicMock()
+    mock_page1 = MagicMock()
+    mock_page1.articles = ["article1", "article2"]
+    mock_page2 = MagicMock()
+    mock_page2.articles = ["article3"]
+    mock_response.pages = [mock_page1, mock_page2]
+    mock_parse_pdf_bytes.return_value = mock_response
+
+    result = benchmark_ocr.run_mineru_engine(pdf_path)
+
+    mock_parse_pdf_bytes.assert_called_once_with(
+        b"dummy pdf content", filename="sample.pdf"
+    )
+    assert result == {
+        "status": "success",
+        "page_count": 2,
+        "article_count": 3,
+    }
