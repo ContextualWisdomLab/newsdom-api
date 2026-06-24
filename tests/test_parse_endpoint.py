@@ -138,6 +138,7 @@ def test_parse_endpoint_returns_502_for_incomplete_mineru_output(
     assert response.status_code == 502
     assert response.json()["detail"] == "MinerU output was incomplete"
     _assert_no_private_path_material(response.json()["detail"])
+    _assert_no_private_path_material(response.json()["detail"])
 
 
 def test_parse_endpoint_catches_incomplete_output_error(monkeypatch):
@@ -174,3 +175,4 @@ def test_parse_endpoint_catches_runtime_unavailable_error(monkeypatch):
 
     assert response.status_code == 503
     assert response.json()["detail"] == "MinerU runtime unavailable"
+    _assert_no_private_path_material(response.json()["detail"])
