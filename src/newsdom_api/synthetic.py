@@ -43,12 +43,12 @@ def _safe_draw_text(
     """Draw text with a fallback mechanism to prevent UnicodeEncodeError on default fonts."""
     try:
         draw.text(xy, text, fill=fill, font=font)
-    except UnicodeEncodeError:  # pragma: no cover
+    except UnicodeEncodeError:
         # Fallback for ImageFont.load_default() which only supports latin-1
         fallback_text = "".join(
             c if ord(c) < 256 else "?" for c in text
-        )  # pragma: no cover
-        draw.text(xy, fallback_text, fill=fill, font=font)  # pragma: no cover
+        )
+        draw.text(xy, fallback_text, fill=fill, font=font)
 
 
 def _draw_vertical_text(
@@ -163,10 +163,16 @@ def _ground_truth() -> dict:
 def generate_fixture(output_dir: Path, seed: int = 7) -> tuple[Path, Path]:
     """Generate a synthetic scanned-newspaper PDF fixture and ground-truth JSON."""
 
-    output_dir.mkdir(parents=True, exist_ok=True)
-    image_path = output_dir / f"synthetic_newspaper_{seed}.png"
-    pdf_path = output_dir / f"synthetic_newspaper_{seed}.pdf"
-    truth_path = output_dir / f"synthetic_newspaper_{seed}.json"
+    resolved_dir = output_dir.resolve()
+    try:
+        resolved_dir.relative_to(Path.cwd().resolve())
+    except ValueError as exc:
+        if not output_dir.is_absolute():
+            raise ValueError("Path traversal detected") from exc
+    resolved_dir.mkdir(parents=True, exist_ok=True)
+    image_path = resolved_dir / f"synthetic_newspaper_{seed}.png"
+    pdf_path = resolved_dir / f"synthetic_newspaper_{seed}.pdf"
+    truth_path = resolved_dir / f"synthetic_newspaper_{seed}.json"
 
     truth = _ground_truth()
 
