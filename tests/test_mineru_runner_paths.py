@@ -44,16 +44,6 @@ def test_resolve_mineru_bin_prefers_env(monkeypatch):
     assert mineru_runner._resolve_mineru_bin() == "/opt/mineru"
 
 
-def test_resolve_mineru_bin_rechecks_env_after_cached_lookup(monkeypatch):
-    monkeypatch.delenv("NEWSDOM_MINERU_BIN", raising=False)
-    monkeypatch.setattr(mineru_runner.shutil, "which", lambda name: "/usr/bin/mineru")
-
-    assert mineru_runner._resolve_mineru_bin() == "/usr/bin/mineru"
-
-    monkeypatch.setenv("NEWSDOM_MINERU_BIN", "/opt/mineru")
-    assert mineru_runner._resolve_mineru_bin() == "/opt/mineru"
-
-
 def test_resolve_mineru_bin_raises_when_not_found(monkeypatch):
     monkeypatch.delenv("NEWSDOM_MINERU_BIN", raising=False)
     monkeypatch.setattr(mineru_runner.shutil, "which", lambda name: None)

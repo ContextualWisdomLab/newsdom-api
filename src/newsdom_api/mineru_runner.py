@@ -78,10 +78,11 @@ def run_mineru(input_pdf: Path) -> dict[str, Any]:
     mineru_bin = _resolve_mineru_bin()
     with tempfile.TemporaryDirectory(prefix="newsdom-mineru-") as tempdir:
         output_dir = Path(tempdir)
-        cmd = build_mineru_command(input_pdf, output_dir, mineru_bin=mineru_bin)
+        cmd = build_mineru_command(input_pdf.resolve(), output_dir, mineru_bin=mineru_bin)
+        # Ensure we quote each shell argument to prevent injection from malicious filenames
         try:
             completed = subprocess.run(
-                cmd, check=True, capture_output=True, text=True, timeout=300
+                [__import__('shlex').quote(str(arg)) for arg in cmd], check=True, capture_output=True, text=True, timeout=300
             )
         except subprocess.TimeoutExpired as exc:
             stdout_str = (
@@ -104,7 +105,8 @@ def run_mineru(input_pdf: Path) -> dict[str, Any]:
             raise MineruRuntimeUnavailableError() from exc
         try:
             ocr_dir = _find_output_dir(output_dir)
-            content_path = ocr_dir / f"{input_pdf.stem}_content_list.json"
+            safe_stem = input_pdf.stem.replace("..", "").replace("/", "").replace("\\", "")
+            content_path = ocr_dir / f"{safe_stem}_content_list.json"
             if not content_path.exists():
                 json_candidates = sorted(ocr_dir.glob("*_content_list.json"))
                 if not json_candidates:
