@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from newsdom_api.dom_builder import (
+    _new_article,
     _bbox_from_values,
     _caption_nodes_from_items,
     _coerce_page_number,
@@ -344,3 +345,23 @@ def test_build_dom_keeps_article_ids_unique_across_pages():
         article.article_id for page in dom.pages for article in page.articles
     ]
     assert article_ids == ["article-1", "article-2"]
+
+
+def test_new_article_creates_deterministic_ids_with_fields():
+    from itertools import count
+    from newsdom_api.schemas import BoundingBox
+
+    seq = count(1)
+
+    # Test without bbox
+    article1 = _new_article(seq, "First Headline")
+    assert article1.article_id == "article-1"
+    assert article1.headline == "First Headline"
+    assert article1.bbox is None
+
+    # Test with bbox
+    bbox = BoundingBox(x0=0.0, y0=0.0, x1=100.0, y1=100.0)
+    article2 = _new_article(seq, "Second Headline", bbox)
+    assert article2.article_id == "article-2"
+    assert article2.headline == "Second Headline"
+    assert article2.bbox == bbox
