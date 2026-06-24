@@ -62,7 +62,7 @@ async def parse(
     if media_type != "application/pdf":
         raise HTTPException(
             status_code=415, detail="Unsupported Media Type: expected application/pdf"
-    )
+        )
 
     if file.size is not None and file.size > 20 * 1024 * 1024:
         raise HTTPException(
