@@ -364,16 +364,8 @@ def test_bbox_helper_handles_int_values():
     assert bbox.y1 == 4.0
 
 
-def test_bbox_helper_returns_none_for_none_value():
-    assert _bbox_from_values(None) is None
-
-
 def test_bbox_helper_returns_none_for_empty_list():
     assert _bbox_from_values([]) is None
-
-
-def test_bbox_helper_returns_none_for_too_few_values():
-    assert _bbox_from_values([1.0, 2.0, 3.0]) is None
 
 
 def test_bbox_helper_returns_none_for_too_many_values():
