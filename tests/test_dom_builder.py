@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from newsdom_api.dom_builder import (
+    _new_article,
     _bbox_from_values,
     _caption_nodes_from_items,
     _coerce_page_number,
@@ -345,6 +346,7 @@ def test_build_dom_keeps_article_ids_unique_across_pages():
     ]
     assert article_ids == ["article-1", "article-2"]
 
+
 def test_build_dom_handles_all_header_footer_ad_roles():
     dom = build_dom(
         [
@@ -378,12 +380,6 @@ def test_build_dom_handles_all_header_footer_ad_roles():
                 "bbox": [0, 0, 10, 10],
                 "role": "other",
             },
-            {
-                "type": "text",
-                "text": "Empty text skip",
-                "bbox": [0, 0, 10, 10],
-                "role": "header",
-            }
         ],
         document_id="doc-hf",
     )
@@ -392,3 +388,37 @@ def test_build_dom_handles_all_header_footer_ad_roles():
     assert dom.pages[0].page_numbers[0] == "Page Number"
     assert "Ad by Role" in dom.pages[0].ads
     assert "Ad by Type" in dom.pages[0].ads
+
+
+def test_build_dom_skips_whitespace_only_role_text():
+    dom = build_dom(
+        [
+            {"type": "text", "text": "   ", "role": "header"},
+            {"type": "text", "contents": "\n", "role": "footer"},
+        ],
+        document_id="doc-empty-role",
+    )
+
+    assert dom.pages[0].headers == []
+    assert dom.pages[0].footers == []
+    assert dom.pages[0].articles == []
+
+
+def test_new_article_creates_deterministic_ids_with_fields():
+    from itertools import count
+    from newsdom_api.schemas import BoundingBox
+
+    seq = count(1)
+
+    # Test without bbox
+    article1 = _new_article(seq, "First Headline")
+    assert article1.article_id == "article-1"
+    assert article1.headline == "First Headline"
+    assert article1.bbox is None
+
+    # Test with bbox
+    bbox = BoundingBox(x0=0.0, y0=0.0, x1=100.0, y1=100.0)
+    article2 = _new_article(seq, "Second Headline", bbox)
+    assert article2.article_id == "article-2"
+    assert article2.headline == "Second Headline"
+    assert article2.bbox == bbox
