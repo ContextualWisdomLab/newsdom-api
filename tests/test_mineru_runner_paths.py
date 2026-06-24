@@ -56,6 +56,37 @@ def test_find_output_dir_raises_when_missing(tmp_path: Path):
         mineru_runner._find_output_dir(tmp_path)
 
 
+def test_build_mineru_command_preserves_safe_spaces(tmp_path: Path):
+    command = mineru_runner.build_mineru_command(
+        Path("safe upload.pdf"), tmp_path / "mineru output"
+    )
+
+    assert command[2] == "safe upload.pdf"
+    assert command[4] == str(tmp_path / "mineru output")
+
+
+@pytest.mark.parametrize(
+    ("input_pdf", "match"),
+    [
+        (Path("upload.pdf;touch-pwned"), "Unsafe input PDF path"),
+        (Path("upload`id`.pdf"), "Unsafe input PDF path"),
+        (Path("upload.pdf"), "Unsafe MinerU executable"),
+    ],
+    ids=["semicolon", "backtick", "executable"],
+)
+def test_build_mineru_command_rejects_shell_control_chars(
+    tmp_path: Path, input_pdf: Path, match: str
+):
+    mineru_bin = "mineru"
+    if match == "Unsafe MinerU executable":
+        mineru_bin = "mineru;touch-pwned"
+
+    with pytest.raises(ValueError, match=match):
+        mineru_runner.build_mineru_command(
+            input_pdf, tmp_path / "mineru-output", mineru_bin=mineru_bin
+        )
+
+
 def test_run_mineru_reads_generated_json(monkeypatch, tmp_path: Path):
     tempdir = tmp_path / "temp"
     ocr_dir = tempdir / "sample" / "ocr"
@@ -76,7 +107,7 @@ def test_run_mineru_reads_generated_json(monkeypatch, tmp_path: Path):
 
     called = {}
 
-    def fake_run(cmd, check, capture_output, text, timeout=None):
+    def fake_run(cmd, check, capture_output, text, timeout=None, shell=False):
         assert check is True
         assert capture_output is True
         assert text is True
@@ -118,7 +149,7 @@ def test_run_mineru_prefers_exact_stem_content_json(monkeypatch, tmp_path: Path)
         lambda prefix: _FakeTempDir(tempdir),
     )
 
-    def fake_run(cmd, check, capture_output, text, timeout=None):
+    def fake_run(cmd, check, capture_output, text, timeout=None, shell=False):
         assert check is True
         assert capture_output is True
         assert text is True
@@ -147,7 +178,7 @@ def test_run_mineru_wraps_called_process_error(monkeypatch, tmp_path: Path):
         lambda prefix: _FakeTempDir(tempdir),
     )
 
-    def fake_run(cmd, check, capture_output, text, timeout=None):
+    def fake_run(cmd, check, capture_output, text, timeout=None, shell=False):
         assert check is True
         assert capture_output is True
         assert text is True
@@ -184,7 +215,7 @@ def test_run_mineru_wraps_missing_executable_failure(monkeypatch, tmp_path: Path
         lambda prefix: _FakeTempDir(tempdir),
     )
 
-    def fake_run(cmd, check, capture_output, text, timeout=None):
+    def fake_run(cmd, check, capture_output, text, timeout=None, shell=False):
         assert check is True
         assert capture_output is True
         assert text is True
@@ -244,7 +275,7 @@ def test_run_mineru_raises_typed_incomplete_output_error(
         lambda prefix: _FakeTempDir(tempdir),
     )
 
-    def fake_run(cmd, check, capture_output, text, timeout=None):
+    def fake_run(cmd, check, capture_output, text, timeout=None, shell=False):
         assert check is True
         assert capture_output is True
         assert text is True
@@ -297,7 +328,7 @@ def test_run_mineru_raises_typed_incomplete_output_error_for_malformed_json(
         lambda prefix: _FakeTempDir(tempdir),
     )
 
-    def fake_run(cmd, check, capture_output, text, timeout=None):
+    def fake_run(cmd, check, capture_output, text, timeout=None, shell=False):
         assert check is True
         assert capture_output is True
         assert text is True
@@ -352,7 +383,7 @@ def test_run_mineru_wraps_output_read_failures(
         lambda prefix: _FakeTempDir(tempdir),
     )
 
-    def fake_run(cmd, check, capture_output, text, timeout=None):
+    def fake_run(cmd, check, capture_output, text, timeout=None, shell=False):
         assert check is True
         assert capture_output is True
         assert text is True

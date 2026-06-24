@@ -13,6 +13,17 @@ from typing import Any
 
 from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 
+_SHELL_CONTROL_CHARS = frozenset("&;|`$<>")
+
+
+def _mineru_command_arg(value: str | Path, *, label: str) -> str:
+    """Validate a path or executable string before passing it to MinerU argv."""
+
+    value_str = str(value)
+    if "\0" in value_str or any(char in value_str for char in _SHELL_CONTROL_CHARS):
+        raise ValueError(f"Unsafe {label} for MinerU command")
+    return value_str
+
 
 def build_mineru_command(
     input_pdf: Path, output_dir: Path, mineru_bin: str = "mineru"
@@ -20,11 +31,11 @@ def build_mineru_command(
     """Build the MinerU CLI command for OCR pipeline execution."""
 
     return [
-        mineru_bin,
+        _mineru_command_arg(mineru_bin, label="MinerU executable"),
         "-p",
-        str(input_pdf),
+        _mineru_command_arg(input_pdf, label="input PDF path"),
         "-o",
-        str(output_dir),
+        _mineru_command_arg(output_dir, label="output directory path"),
         "-b",
         "pipeline",
         "-m",
@@ -63,7 +74,7 @@ def _execute_mineru(cmd: list[str]) -> subprocess.CompletedProcess[str]:
     """Execute the MinerU command and handle runtime errors."""
     try:
         return subprocess.run(
-            cmd, check=True, capture_output=True, text=True, timeout=300
+            cmd, check=True, capture_output=True, text=True, timeout=300, shell=False
         )
     except subprocess.TimeoutExpired as exc:
         stdout_str = (
