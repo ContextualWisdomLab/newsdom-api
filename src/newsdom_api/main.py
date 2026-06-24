@@ -64,6 +64,11 @@ async def parse(
             status_code=415, detail="Unsupported Media Type: expected application/pdf"
     )
 
+    if file.size is not None and file.size > 20 * 1024 * 1024:
+        raise HTTPException(
+            status_code=413, detail="Payload Too Large: file exceeds 20MB limit"
+        )
+
     try:
         header = await file.read(5)
         if header != b"%PDF-":

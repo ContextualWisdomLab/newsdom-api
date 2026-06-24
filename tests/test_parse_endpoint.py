@@ -24,6 +24,7 @@ class _FakeTempDir:
 class _ReadTrackingUpload:
     content_type = "application/pdf"
     filename = "fixture.pdf"
+    size = 10 * 1024 * 1024
 
     def __init__(self, payload: bytes):
         self._payload = payload
@@ -196,6 +197,24 @@ def test_parse_endpoint_catches_runtime_unavailable_error(monkeypatch):
     assert response.status_code == 503
     assert response.json()["detail"] == "MinerU runtime unavailable"
     _assert_no_private_path_material(response.json()["detail"])
+
+
+def test_parse_endpoint_rejects_large_files(monkeypatch):
+    def fake_parse_pdf_bytes(pdf_bytes, filename):
+        return {"document_id": "fixture", "pages": []}
+
+    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
+
+    client = TestClient(app)
+
+    large_payload = b"%PDF-1.4\n" + (b"x" * 21 * 1024 * 1024)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", large_payload, "application/pdf")},
+    )
+
+    assert response.status_code == 413
+    assert response.json()["detail"] == "Payload Too Large: file exceeds 20MB limit"
 
 
 def test_parse_endpoint_rejects_missing_magic_bytes():
