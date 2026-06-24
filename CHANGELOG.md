@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Performance**: `dict.setdefault`에 의한 불필요한 배열 할당 방지를 위해 `dom_builder.py`의 파싱 루프를 `collections.defaultdict`로 최적화.
+
 ## [0.2.0] - 2026-04-24
 
 ### Added
