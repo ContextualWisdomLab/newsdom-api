@@ -187,7 +187,8 @@ def build_dom(
 
     has_page_idx = False
     has_missing_page_idx = False
-    # ⚡ Bolt: Use defaultdict to avoid eager list allocation ([]) in hot loop
+    # ⚡ Bolt: Use defaultdict instead of dict.setdefault in this hot grouping loop
+    # to avoid the overhead of instantiating an empty list on every single iteration
     blocks_by_page_idx: defaultdict[int, list[dict[str, Any]]] = defaultdict(list)
     for block in content_list:
         raw_page_idx = block.get("page_idx")
