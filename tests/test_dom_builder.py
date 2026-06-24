@@ -366,6 +366,32 @@ def test_page_number_from_info():
     # Test missing keys
     assert _page_number_from_info({}, fallback=1) == 1
 
+def test_bbox_helper_returns_bbox_for_valid_values():
+    bbox = _bbox_from_values([1.1, 2.2, 3.3, 4.4])
+    assert bbox is not None
+    assert bbox.x0 == 1.1
+    assert bbox.y0 == 2.2
+    assert bbox.x1 == 3.3
+    assert bbox.y1 == 4.4
+
+
+def test_bbox_helper_handles_int_values():
+    bbox = _bbox_from_values([1, 2, 3, 4])
+    assert bbox is not None
+    assert bbox.x0 == 1.0
+    assert bbox.y0 == 2.0
+    assert bbox.x1 == 3.0
+    assert bbox.y1 == 4.0
+
+
+def test_bbox_helper_returns_none_for_empty_list():
+    assert _bbox_from_values([]) is None
+
+
+def test_bbox_helper_returns_none_for_too_many_values():
+    assert _bbox_from_values([1.0, 2.0, 3.0, 4.0, 5.0]) is None
+
+
 def test_new_article_creates_deterministic_ids_with_fields():
     from itertools import count
     from newsdom_api.schemas import BoundingBox
