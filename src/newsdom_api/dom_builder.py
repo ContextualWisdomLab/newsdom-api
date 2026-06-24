@@ -41,6 +41,12 @@ def _coerce_page_number(value: Any) -> int | None:
         return None
 
 
+def _block_text(block: dict[str, Any]) -> str:
+    """Extract normalized text from a MinerU content block."""
+
+    return (block.get("text") or block.get("contents") or "").strip()
+
+
 def _caption_nodes_from_items(items: Any) -> list[CaptionNode]:
     """Normalize caption-like payloads into caption nodes."""
 
@@ -74,6 +80,75 @@ def _new_article(
     )
 
 
+def _handle_media_block(
+    block: dict[str, Any],
+    block_type: str,
+    current_article: ArticleNode | None,
+    article_seq: count,
+    page: PageNode,
+) -> ArticleNode:
+    """Extract and process media blocks into an ArticleNode."""
+    bbox = _bbox_from_values(block.get("bbox") or block.get("box"))
+    image = ImageNode(
+        path=block.get("img_path") or block.get("path") or block_type,
+        media_type=block_type,
+        bbox=bbox,
+    )
+    caption_key = f"{block_type}_caption"
+    footnote_key = f"{block_type}_footnote"
+    image.captions.extend(_caption_nodes_from_items(block.get(caption_key)))
+    image.footnotes.extend(_caption_nodes_from_items(block.get(footnote_key)))
+    if current_article is None:
+        current_article = _new_article(article_seq, "(untitled)")
+        page.articles.append(current_article)
+    current_article.images.append(image)
+    return current_article
+
+
+def _handle_table_block(
+    block: dict[str, Any],
+    current_article: ArticleNode | None,
+    article_seq: count,
+    page: PageNode,
+) -> ArticleNode:
+    """Extract and process table blocks into an ArticleNode."""
+    if current_article is None:
+        current_article = _new_article(article_seq, "(table-block)")
+        page.articles.append(current_article)
+    current_article.body_blocks.append(block.get("table_body", ""))
+    current_article.captions.extend(
+        _caption_nodes_from_items(block.get("table_caption"))
+    )
+    current_article.footnotes.extend(
+        _caption_nodes_from_items(block.get("table_footnote"))
+    )
+    return current_article
+
+
+def _handle_text_block(
+    block: dict[str, Any],
+    text: str,
+    role: Any,
+    current_article: ArticleNode | None,
+    article_seq: count,
+    page: PageNode,
+) -> ArticleNode:
+    """Extract and process text and headline blocks into an ArticleNode."""
+    text_level = block.get("text_level")
+    is_headline = bool(text_level == 1 or role == "section_headings")
+    if is_headline:
+        bbox = _bbox_from_values(block.get("bbox") or block.get("box"))
+        current_article = _new_article(article_seq, text.replace("\n", " "), bbox)
+        page.articles.append(current_article)
+        return current_article
+
+    if current_article is None:
+        current_article = _new_article(article_seq, "(untitled)")
+        page.articles.append(current_article)
+    current_article.body_blocks.append(text.replace("\n", " "))
+    return current_article
+
+
 def _build_page_dom(
     content_list: list[dict[str, Any]],
     *,
@@ -91,82 +166,50 @@ def _build_page_dom(
         block_type = block.get("type")
         role = block.get("role")
 
-        def _get_text() -> str:
-            """Extract normalized text only for branches that need it."""
-
-            return (block.get("text") or block.get("contents") or "").strip()
-
         if role == "header":
             # ⚡ Bolt: Defer expensive string operations until we know we need the text
-            text = _get_text()
+            text = _block_text(block)
             if text:
                 page.headers.append(text)
             continue
 
         if role == "footer":
-            text = _get_text()
+            text = _block_text(block)
             if text:
                 page.footers.append(text)
             continue
 
         if role == "page_number":
-            text = _get_text()
+            text = _block_text(block)
             if text:
                 page.page_numbers.append(text)
             continue
 
         if role == "ad" or block_type == "ad":
-            text = _get_text()
+            text = _block_text(block)
             if text:
                 page.ads.append(text)
             continue
 
         if block_type in {"image", "chart"}:
-            bbox = _bbox_from_values(block.get("bbox") or block.get("box"))
-            image = ImageNode(
-                path=block.get("img_path") or block.get("path") or block_type,
-                media_type=block_type,
-                bbox=bbox,
+            current_article = _handle_media_block(
+                block, block_type, current_article, article_seq, page
             )
-            caption_key = f"{block_type}_caption"
-            footnote_key = f"{block_type}_footnote"
-            image.captions.extend(_caption_nodes_from_items(block.get(caption_key)))
-            image.footnotes.extend(_caption_nodes_from_items(block.get(footnote_key)))
-            if current_article is None:
-                current_article = _new_article(article_seq, "(untitled)")
-                page.articles.append(current_article)
-            current_article.images.append(image)
             continue
 
         if block_type == "table":
-            if current_article is None:
-                current_article = _new_article(article_seq, "(table-block)")
-                page.articles.append(current_article)
-            current_article.body_blocks.append(block.get("table_body", ""))
-            current_article.captions.extend(
-                _caption_nodes_from_items(block.get("table_caption"))
-            )
-            current_article.footnotes.extend(
-                _caption_nodes_from_items(block.get("table_footnote"))
+            current_article = _handle_table_block(
+                block, current_article, article_seq, page
             )
             continue
 
-        text = _get_text()
+        text = _block_text(block)
         if not text:
             continue
 
-        text_level = block.get("text_level")
-        is_headline = bool(text_level == 1 or role == "section_headings")
-        if is_headline:
-            bbox = _bbox_from_values(block.get("bbox") or block.get("box"))
-            current_article = _new_article(article_seq, text.replace("\n", " "), bbox)
-            page.articles.append(current_article)
-            continue
-
-        if current_article is None:
-            current_article = _new_article(article_seq, "(untitled)")
-            page.articles.append(current_article)
-        current_article.body_blocks.append(text.replace("\n", " "))
+        current_article = _handle_text_block(
+            block, text, role, current_article, article_seq, page
+        )
 
     return page
 
