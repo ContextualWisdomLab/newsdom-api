@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
 from itertools import count
 from typing import Any
 
@@ -170,7 +171,9 @@ def _page_number_from_info(page_info: dict[str, Any], fallback: int) -> int:
     return fallback
 
 
-def _extract_page_info_by_idx(model: list[dict[str, Any]] | None) -> dict[int, dict[str, Any]]:
+def _extract_page_info_by_idx(
+    model: list[dict[str, Any]] | None,
+) -> dict[int, dict[str, Any]]:
     """Extract page information from the model payload by index."""
     page_info_by_idx: dict[int, dict[str, Any]] = {}
     if model:
@@ -181,12 +184,14 @@ def _extract_page_info_by_idx(model: list[dict[str, Any]] | None) -> dict[int, d
 
 
 def _group_blocks_by_page_idx(
-    content_list: list[dict[str, Any]]
+    content_list: list[dict[str, Any]],
 ) -> tuple[bool, bool, dict[int, list[dict[str, Any]]]]:
     """Group content blocks by their page index."""
     has_page_idx = False
     has_missing_page_idx = False
-    blocks_by_page_idx: dict[int, list[dict[str, Any]]] = {}
+    # ⚡ Bolt: Use defaultdict instead of dict.setdefault in this hot grouping loop
+    # to avoid the overhead of instantiating an empty list on every single iteration
+    blocks_by_page_idx: defaultdict[int, list[dict[str, Any]]] = defaultdict(list)
 
     for block in content_list:
         raw_page_idx = block.get("page_idx")
@@ -196,7 +201,7 @@ def _group_blocks_by_page_idx(
         else:
             has_missing_page_idx = True
             normalized_page_idx = 0
-        blocks_by_page_idx.setdefault(normalized_page_idx, []).append(block)
+        blocks_by_page_idx[normalized_page_idx].append(block)
 
     return has_page_idx, has_missing_page_idx, blocks_by_page_idx
 
@@ -276,7 +281,9 @@ def build_dom(
     page_info_by_idx = _extract_page_info_by_idx(model)
     quality_warnings: list[str] = []
 
-    has_page_idx, has_missing_page_idx, blocks_by_page_idx = _group_blocks_by_page_idx(content_list)
+    has_page_idx, has_missing_page_idx, blocks_by_page_idx = _group_blocks_by_page_idx(
+        content_list
+    )
 
     if not has_page_idx:
         pages = _build_pages_without_page_idx(
@@ -284,7 +291,10 @@ def build_dom(
         )
     else:
         pages = _build_pages_with_page_idx(
-            blocks_by_page_idx, page_info_by_idx, has_missing_page_idx, quality_warnings
+            blocks_by_page_idx,
+            page_info_by_idx,
+            has_missing_page_idx,
+            quality_warnings,
         )
 
     return ParseResponse(
