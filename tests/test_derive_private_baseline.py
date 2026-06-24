@@ -45,7 +45,8 @@ def test_derive_private_baseline_direct_call(tmp_path: Path) -> None:
 
 def test_derive_baseline_recursive_and_strict(tmp_path: Path):
     from unittest.mock import patch
-    from fastapi import HTTPException
+
+    from newsdom_api.errors import MineruRuntimeUnavailableError
     from newsdom_api.schemas import ArticleNode, PageNode, ParseResponse
 
     fixtures_dir = tmp_path / "fixtures"
@@ -67,7 +68,7 @@ def test_derive_baseline_recursive_and_strict(tmp_path: Path):
         # First file succeeds, second file fails
         mock_parse.side_effect = [
             mock_response,
-            HTTPException(status_code=500, detail="MinerU failed"),
+            MineruRuntimeUnavailableError(),
         ]
 
         # Test non-strict mode: Should catch exception and continue
@@ -129,12 +130,15 @@ def test_derive_baseline_if_name_main_runpy(tmp_path: Path):
                         "tools.derive_private_baseline", run_name="__main__"
                     )
                 except SystemExit:
+                    # argparse may exit after module-as-script execution; this test
+                    # only needs to verify the entrypoint can be invoked.
                     pass
 
 
 def test_derive_baseline_strict_raises(tmp_path: Path):
     from unittest.mock import patch
-    from fastapi import HTTPException
+
+    from newsdom_api.errors import MineruRuntimeUnavailableError
 
     fixtures_dir = tmp_path / "fixtures"
     fixtures_dir.mkdir()
@@ -142,7 +146,7 @@ def test_derive_baseline_strict_raises(tmp_path: Path):
     output_path = tmp_path / "baseline.json"
 
     with patch("tools.derive_private_baseline.parse_pdf_bytes") as mock_parse:
-        mock_parse.side_effect = HTTPException(status_code=500, detail="MinerU failed")
+        mock_parse.side_effect = MineruRuntimeUnavailableError()
 
         with pytest.raises(RuntimeError, match="OCR processing failed"):
             derive_baseline(fixtures_dir, output_path, strict=True)

@@ -33,15 +33,16 @@ def derive_baseline(
         pdf_bytes = pdf_path.read_bytes()
         try:
             response = parse_pdf_bytes(pdf_bytes, filename=pdf_path.name)
-        except HTTPException as e:
+        except (HTTPException, RuntimeError) as e:
+            detail = e.detail if isinstance(e, HTTPException) else str(e)
             if strict:
                 # Re-raise as a more generic exception for a CLI context
                 raise RuntimeError(
-                    f"OCR processing failed for {pdf_path.name}: {e.detail}"
+                    f"OCR processing failed for {pdf_path.name}: {detail}"
                 ) from e
             else:
                 print(
-                    f"Warning: OCR processing failed for {pdf_path.name}: {e.detail}",
+                    f"Warning: OCR processing failed for {pdf_path.name}: {detail}",
                     file=sys.stderr,
                 )
                 continue
