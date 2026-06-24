@@ -71,7 +71,13 @@ async def parse(
         )
 
     try:
-        pdf_bytes = await file.read()
+        header = await file.read(5)
+        if header != b"%PDF-":
+            raise HTTPException(
+                status_code=415,
+                detail="Unsupported Media Type: missing PDF magic bytes",
+            )
+        pdf_bytes = header + await file.read()
         _validate_pdf_structure(pdf_bytes)
         return await asyncio.to_thread(
             parse_pdf_bytes, pdf_bytes, filename=file.filename or "upload.pdf"
