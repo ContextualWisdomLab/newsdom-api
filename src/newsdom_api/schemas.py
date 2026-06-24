@@ -28,9 +28,16 @@ class CaptionNode(BaseModel):
 class ImageNode(BaseModel):
     """Image metadata preserved in the canonical page structure."""
 
-    path: str = Field(..., description="Path or URL to the extracted image file.")
+    path: str = Field(
+        ...,
+        description=(
+            "Path or URL to the extracted media file, or the parser block type "
+            "when no file path is available."
+        ),
+    )
     media_type: str = Field(
-        "image", description="Type of the media, defaults to 'image'."
+        "image",
+        description="Parser block type for the media, such as 'image' or 'chart'.",
     )
     bbox: Optional[BoundingBox] = Field(
         None, description="Bounding box of the image in page coordinates."
