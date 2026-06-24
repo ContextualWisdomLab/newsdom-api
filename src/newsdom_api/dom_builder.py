@@ -5,8 +5,15 @@ from __future__ import annotations
 from itertools import count
 from typing import Any
 
-from .schemas import (ArticleNode, BoundingBox, CaptionNode, ImageNode,
-                      PageNode, ParseQuality, ParseResponse)
+from .schemas import (
+    ArticleNode,
+    BoundingBox,
+    CaptionNode,
+    ImageNode,
+    PageNode,
+    ParseQuality,
+    ParseResponse,
+)
 
 
 def _bbox_from_values(values: list[float] | None) -> BoundingBox | None:
