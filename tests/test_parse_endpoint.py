@@ -250,6 +250,7 @@ def test_parse_endpoint_catches_incomplete_output_error(monkeypatch):
         raise MineruIncompleteOutputError()
 
     monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
 
     client = TestClient(app, raise_server_exceptions=False)
     response = client.post(
@@ -268,6 +269,7 @@ def test_parse_endpoint_catches_runtime_unavailable_error(monkeypatch):
         raise MineruRuntimeUnavailableError()
 
     monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
 
     client = TestClient(app, raise_server_exceptions=False)
     response = client.post(
