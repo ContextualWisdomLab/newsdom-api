@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 from typing import Annotated
 
-import re
 from fastapi import FastAPI, File, HTTPException, UploadFile
 
 from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
@@ -50,13 +49,11 @@ async def parse(
             status_code=415, detail="Unsupported Media Type: expected application/pdf"
         )
 
-    filename = file.filename or "upload.pdf"
-    if not re.match(r"^[a-zA-Z0-9_.-]+\.pdf$", filename, flags=re.IGNORECASE):
-        raise HTTPException(status_code=400, detail="Invalid filename")
-
     try:
         pdf_bytes = await file.read()
-        return await asyncio.to_thread(parse_pdf_bytes, pdf_bytes, filename=filename)
+        return await asyncio.to_thread(
+            parse_pdf_bytes, pdf_bytes, filename=file.filename or "upload.pdf"
+        )
     except MineruRuntimeUnavailableError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except MineruIncompleteOutputError as exc:
