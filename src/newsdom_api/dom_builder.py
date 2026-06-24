@@ -41,6 +41,12 @@ def _coerce_page_number(value: Any) -> int | None:
         return None
 
 
+def _block_text(block: dict[str, Any]) -> str:
+    """Extract normalized text from a MinerU content block."""
+
+    return (block.get("text") or block.get("contents") or "").strip()
+
+
 def _caption_nodes_from_items(items: Any) -> list[CaptionNode]:
     """Normalize caption-like payloads into caption nodes."""
 
@@ -158,26 +164,31 @@ def _build_page_dom(
 
     for block in content_list:
         block_type = block.get("type")
-        text = (block.get("text") or block.get("contents") or "").strip()
         role = block.get("role")
 
-        if not text and block_type not in {"image", "table", "chart"}:
-            continue
-
         if role == "header":
-            page.headers.append(text)
+            # ⚡ Bolt: Defer expensive string operations until we know we need the text
+            text = _block_text(block)
+            if text:
+                page.headers.append(text)
             continue
 
         if role == "footer":
-            page.footers.append(text)
+            text = _block_text(block)
+            if text:
+                page.footers.append(text)
             continue
 
         if role == "page_number":
-            page.page_numbers.append(text)
+            text = _block_text(block)
+            if text:
+                page.page_numbers.append(text)
             continue
 
         if role == "ad" or block_type == "ad":
-            page.ads.append(text)
+            text = _block_text(block)
+            if text:
+                page.ads.append(text)
             continue
 
         if block_type in {"image", "chart"}:
@@ -190,6 +201,10 @@ def _build_page_dom(
             current_article = _handle_table_block(
                 block, current_article, article_seq, page
             )
+            continue
+
+        text = _block_text(block)
+        if not text:
             continue
 
         current_article = _handle_text_block(
