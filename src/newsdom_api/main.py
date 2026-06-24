@@ -37,6 +37,7 @@ async def add_security_headers(request: Request, call_next: Callable) -> Respons
     "/health",
     summary="Health Check",
     description="Returns a minimal liveness response for deployment health checks.",
+    tags=["System"],
 )
 def health() -> dict[str, str]:
     """Return a minimal liveness response for health checks."""
@@ -52,6 +53,12 @@ def health() -> dict[str, str]:
         "Converts a scanned Japanese newspaper PDF into a canonical JSON DOM "
         "document using MinerU."
     ),
+    tags=["Parser"],
+    responses={
+        415: {"description": "Unsupported Media Type (Not a PDF)"},
+        502: {"description": "MinerU Incomplete Output (Bad Gateway)"},
+        503: {"description": "MinerU Runtime Unavailable (Service Unavailable)"},
+    },
 )
 async def parse(
     file: Annotated[UploadFile, File(description="The newspaper PDF file to parse.")],

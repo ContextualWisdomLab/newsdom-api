@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- OpenAPI(Swagger) 명세 강화를 통해 개발자 경험(DX)을 향상. `/health` 엔드포인트에 `System` 태그를, `/parse` 엔드포인트에 `Parser` 태그 및 에러 응답(415, 502, 503) 정보를 추가.
 - `tools/benchmark_ocr.py`에 `--recursive` 인자를 추가하여 하위 디렉토리에 있는 PDF 파일도 재귀적으로 탐색할 수 있도록 기능 보강.
 - `tools/benchmark_ocr.py`에 `--format` 인자를 추가하여 벤치마크 결과를 `json` 및 `csv` 포맷으로 내보낼 수 있는 기능 추가.
 - `tools/derive_private_baseline.py`에 `--recursive` 인자를 추가하여 하위 디렉토리에 있는 PDF 파일 재귀 탐색 기능 추가.
