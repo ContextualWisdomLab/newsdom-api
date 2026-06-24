@@ -345,21 +345,50 @@ def test_build_dom_keeps_article_ids_unique_across_pages():
     ]
     assert article_ids == ["article-1", "article-2"]
 
-
-def test_build_dom_skips_whitespace_only_role_text():
+def test_build_dom_handles_all_header_footer_ad_roles():
     dom = build_dom(
         [
-            {"type": "text", "role": "header", "text": "   "},
-            {"type": "text", "role": "footer", "text": "   "},
-            {"type": "text", "role": "page_number", "text": "   "},
-            {"type": "text", "role": "ad", "text": "   "},
+            {
+                "type": "text",
+                "text": "Header Text",
+                "bbox": [0, 0, 10, 10],
+                "role": "header",
+            },
+            {
+                "type": "text",
+                "text": "Footer Text",
+                "bbox": [0, 0, 10, 10],
+                "role": "footer",
+            },
+            {
+                "type": "text",
+                "text": "Page Number",
+                "bbox": [0, 0, 10, 10],
+                "role": "page_number",
+            },
+            {
+                "type": "text",
+                "text": "Ad by Role",
+                "bbox": [0, 0, 10, 10],
+                "role": "ad",
+            },
+            {
+                "type": "ad",
+                "text": "Ad by Type",
+                "bbox": [0, 0, 10, 10],
+                "role": "other",
+            },
+            {
+                "type": "text",
+                "text": "Empty text skip",
+                "bbox": [0, 0, 10, 10],
+                "role": "header",
+            }
         ],
-        document_id="doc10",
+        document_id="doc-hf",
     )
-
-    page = dom.pages[0]
-    assert page.headers == []
-    assert page.footers == []
-    assert page.page_numbers == []
-    assert page.ads == []
-    assert page.articles == []
+    assert dom.pages[0].headers[0] == "Header Text"
+    assert dom.pages[0].footers[0] == "Footer Text"
+    assert dom.pages[0].page_numbers[0] == "Page Number"
+    assert "Ad by Role" in dom.pages[0].ads
+    assert "Ad by Type" in dom.pages[0].ads
