@@ -16,17 +16,17 @@ def mock_pdf_dir(tmp_path: Path) -> Path:
     (pdf_dir / "doc1.pdf").write_text("dummy pdf 1")
     (pdf_dir / "doc2.pdf").write_text("dummy pdf 2")
     (pdf_dir / "doc3.pdf").write_text("dummy pdf 3")
+
+    sub_dir = pdf_dir / "sub"
+    sub_dir.mkdir()
+    (sub_dir / "doc4.pdf").write_text("dummy pdf 4")
     return pdf_dir
 
 
-def test_benchmark_ocr_harness(mock_pdf_dir: Path, tmp_path: Path):
-    """
-    The benchmark harness should run a set of engines against a corpus of PDFs
-    and correctly aggregate success, failure, and timeout results.
-    """
+def test_benchmark_ocr_harness_json(mock_pdf_dir: Path, tmp_path: Path) -> None:
+    """The harness should aggregate success, failure, and timeout results."""
     output_path = tmp_path / "results.json"
 
-    # Mock engine runners
     mock_engine1 = MagicMock(return_value={"status": "success", "page_count": 2})
     mock_engine2 = MagicMock()
     mock_engine2.side_effect = [
@@ -53,17 +53,14 @@ def test_benchmark_ocr_harness(mock_pdf_dir: Path, tmp_path: Path):
             ]
         )
 
-    assert output_path.exists()
     results = json.loads(output_path.read_text())
 
-    # Assert engine1 (always succeeds)
     assert results["engine1"]["success"] == 3
     assert results["engine1"]["failed"] == 0
     assert results["engine1"]["timed_out"] == 0
     assert "doc1.pdf" in results["engine1"]["results"]
     assert results["engine1"]["results"]["doc1.pdf"]["status"] == "success"
 
-    # Assert engine2 (fails, times out, then succeeds)
     assert results["engine2"]["success"] == 1
     assert results["engine2"]["failed"] == 1
     assert results["engine2"]["timed_out"] == 1
@@ -72,37 +69,18 @@ def test_benchmark_ocr_harness(mock_pdf_dir: Path, tmp_path: Path):
     assert "OCR process failed" in results["engine2"]["results"]["doc2.pdf"]["error"]
     assert results["engine2"]["results"]["doc3.pdf"]["status"] == "success"
 
-    # Check summary
     assert results["summary"]["total_files"] == 3
     assert results["summary"]["total_runs"] == 6
 
 
-def test_benchmark_ocr_no_pdfs(tmp_path: Path):
-    """
-    If the fixtures directory contains no PDFs, a FileNotFoundError should be raised.
-    """
-    empty_dir = tmp_path / "empty"
-    empty_dir.mkdir()
-    output_path = tmp_path / "results.json"
+def test_benchmark_ocr_recursive_and_csv(
+    mock_pdf_dir: Path, tmp_path: Path
+) -> None:
+    output_path = tmp_path / "results.csv"
 
-    with pytest.raises(FileNotFoundError, match="No PDF files found in"):
-        benchmark_ocr.main(
-            [
-                "--fixtures-dir",
-                str(empty_dir),
-                "--output",
-                str(output_path),
-            ]
-        )
+    mock_engine = MagicMock(return_value={"status": "success", "page_count": 2})
 
-
-def test_benchmark_ocr_unknown_engine(mock_pdf_dir: Path, tmp_path: Path):
-    """
-    If an unknown engine is specified, a ValueError should be raised.
-    """
-    output_path = tmp_path / "results.json"
-
-    with pytest.raises(ValueError, match="Unknown engine: fake_engine"):
+    with patch.dict(benchmark_ocr.OCR_ENGINES, {"engine1": mock_engine}):
         benchmark_ocr.main(
             [
                 "--fixtures-dir",
@@ -110,16 +88,56 @@ def test_benchmark_ocr_unknown_engine(mock_pdf_dir: Path, tmp_path: Path):
                 "--output",
                 str(output_path),
                 "--engines",
+                "engine1",
+                "--recursive",
+                "--format",
+                "csv",
+            ]
+        )
+
+    csv_text = output_path.read_text()
+    assert "doc1.pdf" in csv_text
+    assert "doc2.pdf" in csv_text
+    assert "doc3.pdf" in csv_text
+    assert "doc4.pdf" in csv_text
+
+
+def test_benchmark_ocr_no_pdfs(tmp_path: Path) -> None:
+    """If the fixtures directory contains no PDFs, FileNotFoundError is raised."""
+    empty_dir = tmp_path / "empty"
+    empty_dir.mkdir()
+
+    with pytest.raises(FileNotFoundError, match="No PDF files found in"):
+        benchmark_ocr.main(
+            [
+                "--fixtures-dir",
+                str(empty_dir),
+                "--output",
+                str(tmp_path / "results.json"),
+            ]
+        )
+
+
+def test_benchmark_ocr_unknown_engine(
+    mock_pdf_dir: Path, tmp_path: Path
+) -> None:
+    """If an unknown engine is specified, ValueError is raised."""
+    with pytest.raises(ValueError, match="Unknown engine: fake_engine"):
+        benchmark_ocr.main(
+            [
+                "--fixtures-dir",
+                str(mock_pdf_dir),
+                "--output",
+                str(tmp_path / "results.json"),
+                "--engines",
                 "fake_engine",
             ]
         )
 
 
 @patch("tools.benchmark_ocr.parse_pdf_bytes")
-def test_run_mineru_engine(mock_parse_pdf_bytes, tmp_path: Path):
-    """
-    run_mineru_engine should call parse_pdf_bytes and return aggregated metrics.
-    """
+def test_run_mineru_engine(mock_parse_pdf_bytes, tmp_path: Path) -> None:
+    """run_mineru_engine should call parse_pdf_bytes and return metrics."""
     pdf_path = tmp_path / "sample.pdf"
     pdf_path.write_bytes(b"dummy pdf content")
 
