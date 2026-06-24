@@ -13,7 +13,7 @@ from .schemas import ParseResponse
 def _safe_upload_filename(filename: str) -> str:
     """Return a basename for client-supplied upload filenames."""
 
-    normalized = filename.replace("\0", "").replace("\\", "/")
+    normalized = filename.replace("\\", "/")
     name = PurePosixPath(normalized).name
     if name in ("", ".", ".."):
         return "upload.pdf"

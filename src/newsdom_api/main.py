@@ -3,11 +3,9 @@
 from __future__ import annotations
 
 import asyncio
-from io import BytesIO
-from typing import Annotated, Callable
+from typing import Annotated
 
-from fastapi import FastAPI, File, HTTPException, Request, Response, UploadFile
-from pypdf import PdfReader
+from fastapi import FastAPI, File, HTTPException, UploadFile
 
 from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 from .schemas import ParseResponse
@@ -20,21 +18,6 @@ app = FastAPI(
 )
 
 
-@app.middleware("http")
-async def add_security_headers(request: Request, call_next: Callable) -> Response:
-    """Inject standard security headers into all API responses."""
-    response = await call_next(request)
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    forwarded_proto = request.headers.get("x-forwarded-proto", "")
-    is_https = request.url.scheme == "https" or forwarded_proto.lower() == "https"
-    if is_https:
-        response.headers["Strict-Transport-Security"] = (
-            "max-age=31536000; includeSubDomains"
-        )
-    return response
-
-
 @app.get(
     "/health",
     summary="Health Check",
@@ -44,25 +27,6 @@ def health() -> dict[str, str]:
     """Return a minimal liveness response for health checks."""
 
     return {"status": "ok"}
-
-
-def _validate_pdf_structure(pdf_bytes: bytes) -> None:
-    """Reject payloads that are not structurally parseable PDFs."""
-
-    if not pdf_bytes.startswith(b"%PDF-"):
-        raise HTTPException(
-            status_code=415,
-            detail="Unsupported Media Type: expected application/pdf",
-        )
-    try:
-        reader = PdfReader(BytesIO(pdf_bytes), strict=False)
-        if len(reader.pages) < 1:
-            raise ValueError("PDF has no pages")
-    except Exception as exc:
-        raise HTTPException(
-            status_code=415,
-            detail="Unsupported Media Type: expected application/pdf",
-        ) from exc
 
 
 @app.post(
@@ -86,14 +50,12 @@ async def parse(
         )
 
     try:
-        header = await file.read(5)
-        if header != b"%PDF-":
+        pdf_bytes = await file.read()
+        if not pdf_bytes.startswith(b"%PDF-"):
             raise HTTPException(
                 status_code=415,
-                detail="Unsupported Media Type: missing PDF magic bytes",
+                detail="Unsupported Media Type: expected application/pdf",
             )
-        pdf_bytes = header + await file.read()
-        _validate_pdf_structure(pdf_bytes)
         return await asyncio.to_thread(
             parse_pdf_bytes, pdf_bytes, filename=file.filename or "upload.pdf"
         )
