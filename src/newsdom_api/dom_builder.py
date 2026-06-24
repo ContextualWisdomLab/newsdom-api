@@ -22,11 +22,14 @@ def _bbox_from_values(values: list[float] | None) -> BoundingBox | None:
 
     if not values or len(values) != 4:
         return None
+
+    x0, y0, x1, y1 = values
+    # ⚡ Bolt: Only cast to float if necessary to avoid overhead in hot path
     return BoundingBox(
-        x0=float(values[0]),
-        y0=float(values[1]),
-        x1=float(values[2]),
-        y1=float(values[3]),
+        x0=x0 if type(x0) is float else float(x0),
+        y0=y0 if type(y0) is float else float(y0),
+        x1=x1 if type(x1) is float else float(x1),
+        y1=y1 if type(y1) is float else float(y1),
     )
 
 
