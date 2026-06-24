@@ -7,11 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### 보안 개선 (Security)
-
-- 업로드된 파일의 매직 바이트를 검사하여 실제 PDF 파일인지 확인하는 기능을 추가했습니다.
-- 널 바이트 삽입 공격을 방지하기 위해 파일 이름 정리 시 널 바이트를 제거하도록 개선했습니다.
-
 ## [0.2.0] - 2026-04-24
 
 ### Added
