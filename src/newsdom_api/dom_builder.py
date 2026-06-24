@@ -91,6 +91,8 @@ def _build_page_dom(
         role = block.get("role")
 
         def _get_text() -> str:
+            """Extract normalized text only for branches that need it."""
+
             return (block.get("text") or block.get("contents") or "").strip()
 
         if role == "header":
