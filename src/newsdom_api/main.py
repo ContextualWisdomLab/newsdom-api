@@ -8,6 +8,7 @@ from typing import Annotated, Callable
 
 from fastapi import FastAPI, File, HTTPException, Request, Response, UploadFile
 from pypdf import PdfReader
+from pypdf.errors import PdfReadError
 
 from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 from .schemas import ParseResponse
@@ -75,10 +76,10 @@ def _validate_pdf_structure(pdf_bytes: bytes) -> None:
             detail=UNSUPPORTED_MEDIA_DETAIL,
         )
     try:
-        reader = PdfReader(BytesIO(pdf_bytes), strict=False)
+        reader = PdfReader(BytesIO(pdf_bytes), strict=True)
         if len(reader.pages) < 1:
             raise ValueError("PDF has no pages")
-    except Exception as exc:
+    except (PdfReadError, RecursionError, ValueError, OverflowError) as exc:
         raise HTTPException(
             status_code=415,
             detail=UNSUPPORTED_MEDIA_DETAIL,

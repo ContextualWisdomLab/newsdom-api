@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
+from pypdf.errors import PdfReadError
 
 from newsdom_api import mineru_runner
 from newsdom_api.main import (
@@ -88,6 +89,20 @@ def test_parse_endpoint_rejects_invalid_pdf_magic_bytes():
 def test_validate_pdf_structure_rejects_invalid_magic_bytes():
     with pytest.raises(HTTPException) as exc_info:
         _validate_pdf_structure(b"not a pdf")
+
+    assert exc_info.value.status_code == 415
+    assert exc_info.value.detail == "Unsupported Media Type"
+
+
+def test_validate_pdf_structure_rejects_pypdf_read_errors(monkeypatch):
+    def reject_pdf(_stream, *, strict):
+        assert strict is True
+        raise PdfReadError("invalid xref table")
+
+    monkeypatch.setattr("newsdom_api.main.PdfReader", reject_pdf)
+
+    with pytest.raises(HTTPException) as exc_info:
+        _validate_pdf_structure(b"%PDF-1.4\n%%EOF")
 
     assert exc_info.value.status_code == 415
     assert exc_info.value.detail == "Unsupported Media Type"
