@@ -17,7 +17,7 @@ from .schemas import (
 )
 
 
-def _bbox_from_values(values: list[float] | None) -> BoundingBox | None:
+def _bbox_from_values(values: list[float | int] | None) -> BoundingBox | None:
     """Convert a four-value bounding-box list into a typed schema object."""
 
     if not values or len(values) != 4:
