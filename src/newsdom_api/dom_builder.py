@@ -22,6 +22,7 @@ MAX_BBOX_COORDINATE = 1_000_000.0
 MAX_CONTENT_BLOCKS = 5_000
 MAX_MEDIA_PATH_LENGTH = 512
 MAX_PAGE_NUMBER = 100_000
+UNSAFE_MEDIA_PATH_CHARS = frozenset("\"'<>` \t\r\n")
 
 
 def _coerce_bbox_coordinate(value: Any) -> float | None:
@@ -98,6 +99,9 @@ def _safe_media_path(value: Any, fallback: str) -> str:
         return fallback
 
     if ":" in raw_path:
+        return fallback
+
+    if any(char in UNSAFE_MEDIA_PATH_CHARS or ord(char) < 32 for char in raw_path):
         return fallback
 
     for part in raw_path.split("/"):
@@ -205,7 +209,9 @@ def _handle_table_block(
     if current_article is None:
         current_article = _new_article(article_seq, "(table-block)")
         page.articles.append(current_article)
-    current_article.body_blocks.append(block.get("table_body", ""))
+    table_body = _html_safe_text(block.get("table_body"))
+    if table_body:
+        current_article.body_blocks.append(table_body)
     current_article.captions.extend(
         _caption_nodes_from_items(block.get("table_caption"))
     )

@@ -85,7 +85,7 @@ def test_build_dom_handles_non_headline_paths():
     assert page.ads == ["buy now"]
     assert page.articles[0].headline == "(untitled)"
     assert page.articles[0].images[0].captions[0].text == "caption"
-    assert "<table></table>" in page.articles[0].body_blocks
+    assert "&lt;table&gt;&lt;/table&gt;" in page.articles[0].body_blocks
     assert "body text" in page.articles[0].body_blocks
 
 
@@ -104,6 +104,8 @@ def test_build_dom_escapes_text_fields_for_html_renderers():
                 "img_path": "image.png",
                 "image_caption": ["<script>alert('caption')</script>"],
             },
+            {"type": "image", "img_path": "x\" onerror=\"alert(1)"},
+            {"type": "table", "table_body": "<script>alert('table')</script>"},
         ],
         document_id="doc-html-safe-text",
     )
@@ -114,11 +116,13 @@ def test_build_dom_escapes_text_fields_for_html_renderers():
         "&lt;script&gt;alert(&#x27;headline&#x27;)&lt;/script&gt;"
     )
     assert page.articles[0].body_blocks == [
-        "&lt;img src=x onerror=alert(&#x27;body&#x27;)&gt;"
+        "&lt;img src=x onerror=alert(&#x27;body&#x27;)&gt;",
+        "&lt;script&gt;alert(&#x27;table&#x27;)&lt;/script&gt;",
     ]
     assert page.articles[0].images[0].captions[0].text == (
         "&lt;script&gt;alert(&#x27;caption&#x27;)&lt;/script&gt;"
     )
+    assert page.articles[0].images[1].path == "image"
 
 
 def test_build_dom_uses_safe_relative_media_paths():
@@ -133,6 +137,10 @@ def test_build_dom_uses_safe_relative_media_paths():
             {"type": "image", "path": "images//bad.png"},
             {"type": "chart", "path": "./chart.png"},
             {"type": "image", "path": "x" * (MAX_MEDIA_PATH_LENGTH + 1)},
+            {"type": "chart", "path": "charts/bad name.png"},
+            {"type": "image", "path": "images/bad`name.png"},
+            {"type": "chart", "path": "charts/bad<name>.png"},
+            {"type": "image", "path": "images/bad'name.png"},
             {"type": "chart", "path": 123},
             {"type": "image", "path": "   "},
             {"type": "chart"},
@@ -153,6 +161,10 @@ def test_build_dom_uses_safe_relative_media_paths():
         "chart",
         "image",
         "chart",
+        "image",
+        "chart",
+        "image",
+        "chart",
     ]
 
 
@@ -162,6 +174,7 @@ def test_build_dom_creates_table_article_when_needed():
         document_id="doc3",
     )
     assert dom.pages[0].articles[0].headline == "(table-block)"
+    assert dom.pages[0].articles[0].body_blocks == ["&lt;table&gt;&lt;/table&gt;"]
 
 
 def test_build_dom_creates_untitled_article_for_plain_text():
