@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from html import escape as html_escape
 from itertools import count
+from math import isfinite
 from typing import Any
 
 from .schemas import (
@@ -16,35 +18,126 @@ from .schemas import (
     ParseResponse,
 )
 
+MAX_BBOX_COORDINATE = 1_000_000.0
+MAX_CONTENT_BLOCKS = 5_000
+MAX_MEDIA_PATH_LENGTH = 512
+MAX_PAGE_NUMBER = 100_000
+UNSAFE_MEDIA_PATH_CHARS = frozenset("\"'<>` \t\r\n")
 
-def _bbox_from_values(values: list[float] | None) -> BoundingBox | None:
+
+def _coerce_bbox_coordinate(value: Any) -> float | None:
+    """Convert a bounded, finite bounding-box coordinate into a float."""
+
+    if isinstance(value, bool):
+        return None
+
+    try:
+        coordinate = value if type(value) is float else float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+    if not isfinite(coordinate):
+        return None
+
+    if coordinate < 0 or coordinate > MAX_BBOX_COORDINATE:
+        return None
+
+    return coordinate
+
+
+def _bbox_from_values(values: list[Any] | None) -> BoundingBox | None:
     """Convert a four-value bounding-box list into a typed schema object."""
 
-    if not values or len(values) != 4:
+    if values is None:
         return None
-    return BoundingBox(
-        x0=float(values[0]),
-        y0=float(values[1]),
-        x1=float(values[2]),
-        y1=float(values[3]),
+
+    if len(values) != 4:
+        return None
+
+    coordinates = tuple(_coerce_bbox_coordinate(value) for value in values)
+    if any(coordinate is None for coordinate in coordinates):
+        return None
+
+    x0, y0, x1, y1 = (
+        coordinates[0],
+        coordinates[1],
+        coordinates[2],
+        coordinates[3],
     )
+    if x1 < x0:
+        return None
+
+    if y1 < y0:
+        return None
+
+    return BoundingBox(x0=x0, y0=y0, x1=x1, y1=y1)
+
+
+def _html_safe_text(value: Any) -> str:
+    """Normalize OCR text for safe downstream HTML rendering."""
+
+    return html_escape(str(value or "").strip())
+
+
+def _safe_media_path(value: Any, fallback: str) -> str:
+    """Return a bounded relative media path or a deterministic fallback."""
+
+    if not isinstance(value, str):
+        return fallback
+
+    raw_path = value.strip()
+    if not raw_path:
+        return fallback
+
+    if len(raw_path) > MAX_MEDIA_PATH_LENGTH:
+        return fallback
+
+    if raw_path.startswith("/"):
+        return fallback
+
+    if "\\" in raw_path:
+        return fallback
+
+    if ":" in raw_path:
+        return fallback
+
+    if any(char in UNSAFE_MEDIA_PATH_CHARS or ord(char) < 32 for char in raw_path):
+        return fallback
+
+    for part in raw_path.split("/"):
+        if part in {"", ".", ".."}:
+            return fallback
+
+    return raw_path
 
 
 def _coerce_page_number(value: Any) -> int | None:
     """Convert supported page-number values into integers."""
 
-    if value is None or isinstance(value, bool):
+    if value is None:
         return None
+
+    if isinstance(value, bool):
+        return None
+
     try:
-        return int(value)
-    except (TypeError, ValueError):
+        page_number = int(value)
+    except (TypeError, ValueError, OverflowError):
         return None
+
+    if page_number < 1:
+        return None
+
+    if page_number > MAX_PAGE_NUMBER:
+        return None
+
+    return page_number
 
 
 def _block_text(block: dict[str, Any]) -> str:
     """Extract normalized text from a MinerU content block."""
 
-    return (block.get("text") or block.get("contents") or "").strip()
+    return _html_safe_text(block.get("text") or block.get("contents"))
 
 
 def _caption_nodes_from_items(items: Any) -> list[CaptionNode]:
@@ -56,13 +149,13 @@ def _caption_nodes_from_items(items: Any) -> list[CaptionNode]:
 
     for item in items:
         if isinstance(item, dict):
-            text = str(item.get("text") or item.get("contents") or "").strip()
+            text = _html_safe_text(item.get("text") or item.get("contents"))
             if text:
                 # ⚡ Bolt: Defer expensive bbox parsing/float casting until we actually need it
                 bbox = _bbox_from_values(item.get("bbox") or item.get("box"))
                 nodes.append(CaptionNode(text=text, bbox=bbox))
         else:
-            text = str(item).strip()
+            text = _html_safe_text(item)
             if text:
                 nodes.append(CaptionNode(text=text, bbox=None))
     return nodes
@@ -89,8 +182,9 @@ def _handle_media_block(
 ) -> ArticleNode:
     """Extract and process media blocks into an ArticleNode."""
     bbox = _bbox_from_values(block.get("bbox") or block.get("box"))
+    path = _safe_media_path(block.get("img_path") or block.get("path"), block_type)
     image = ImageNode(
-        path=block.get("img_path") or block.get("path") or block_type,
+        path=path,
         media_type=block_type,
         bbox=bbox,
     )
@@ -115,7 +209,9 @@ def _handle_table_block(
     if current_article is None:
         current_article = _new_article(article_seq, "(table-block)")
         page.articles.append(current_article)
-    current_article.body_blocks.append(block.get("table_body", ""))
+    table_body = _html_safe_text(block.get("table_body"))
+    if table_body:
+        current_article.body_blocks.append(table_body)
     current_article.captions.extend(
         _caption_nodes_from_items(block.get("table_caption"))
     )
@@ -219,12 +315,22 @@ def _page_number_from_info(page_info: dict[str, Any], fallback: int) -> int:
     """Resolve page numbering from MinerU page metadata."""
 
     page_number = page_info.get("page_number")
+    if isinstance(page_number, bool):
+        page_number = None
+
     if isinstance(page_number, int):
-        return page_number
+        normalized_page_number = _coerce_page_number(page_number)
+        if normalized_page_number is not None:
+            return normalized_page_number
 
     page_no = page_info.get("page_no")
+    if isinstance(page_no, bool):
+        page_no = None
+
     if isinstance(page_no, int):
-        return page_no + 1
+        normalized_page_no = _coerce_page_number(page_no + 1)
+        if normalized_page_no is not None:
+            return normalized_page_no
 
     return fallback
 
@@ -335,6 +441,14 @@ def build_dom(
     model: list[dict[str, Any]] | None = None,
 ) -> ParseResponse:
     """Normalize MinerU-style content blocks into the canonical NewsDOM schema."""
+
+    if not isinstance(content_list, list):
+        raise ValueError("content_list must be a list of MinerU content blocks")
+
+    if len(content_list) > MAX_CONTENT_BLOCKS:
+        raise ValueError(
+            f"content_list contains more than {MAX_CONTENT_BLOCKS} content blocks"
+        )
 
     page_info_by_idx = _extract_page_info_by_idx(model)
     quality_warnings: list[str] = []
