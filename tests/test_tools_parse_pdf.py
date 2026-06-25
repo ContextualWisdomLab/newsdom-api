@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import runpy
+import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -69,8 +71,12 @@ def test_parse_pdf_exception(mock_parse, mock_pdf_file, capsys):
     assert "Mock parsing error" in err
 
 
-def test_parse_pdf_main_block():
-    # Let's bypass runpy and test the actual `if __name__ == "__main__":` logic by reading the file
-    content = Path("tools/parse_pdf.py").read_text()
-    assert 'if __name__ == "__main__":' in content
-    assert "main()" in content.split('if __name__ == "__main__":')[1]
+def test_parse_pdf_main_block(monkeypatch, capsys):
+    script_path = Path(__file__).resolve().parents[1] / "tools" / "parse_pdf.py"
+    monkeypatch.setattr(sys, "argv", [str(script_path), "--help"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        runpy.run_path(str(script_path), run_name="__main__")
+
+    assert exc_info.value.code == 0
+    assert "Parse a Japanese newspaper PDF" in capsys.readouterr().out
