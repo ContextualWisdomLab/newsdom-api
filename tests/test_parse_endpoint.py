@@ -217,6 +217,19 @@ def test_parse_endpoint_rejects_large_files(monkeypatch):
     assert response.json()["detail"] == "Payload Too Large: file exceeds 20MB limit"
 
 
+@pytest.mark.asyncio
+async def test_parse_endpoint_rejects_large_file_without_size_metadata():
+    upload = _ReadTrackingUpload(b"%PDF-" + (b"x" * (20 * 1024 * 1024)))
+    upload.size = None
+
+    with pytest.raises(HTTPException) as exc_info:
+        await parse(upload)
+
+    assert exc_info.value.status_code == 413
+    assert exc_info.value.detail == "Payload Too Large: file exceeds 20MB limit"
+    assert upload.read_sizes == [5, 20 * 1024 * 1024 - 5 + 1]
+
+
 def test_parse_endpoint_rejects_missing_magic_bytes():
     client = TestClient(app)
     response = client.post(

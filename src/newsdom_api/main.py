@@ -11,6 +11,8 @@ from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 from .schemas import ParseResponse
 from .service import parse_pdf_bytes
 
+MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
+
 app = FastAPI(
     title="NewsDOM API",
     description="DOM-style parser API for scanned Japanese newspaper PDFs.",
@@ -64,7 +66,7 @@ async def parse(
             status_code=415, detail="Unsupported Media Type: expected application/pdf"
     )
 
-    if file.size is not None and file.size > 20 * 1024 * 1024:
+    if file.size is not None and file.size > MAX_PARSE_UPLOAD_BYTES:
         raise HTTPException(
             status_code=413, detail="Payload Too Large: file exceeds 20MB limit"
         )
@@ -76,7 +78,12 @@ async def parse(
                 status_code=415,
                 detail="Unsupported Media Type: missing PDF magic bytes",
             )
-        pdf_bytes = header + await file.read()
+        body = await file.read(MAX_PARSE_UPLOAD_BYTES - len(header) + 1)
+        if len(header) + len(body) > MAX_PARSE_UPLOAD_BYTES:
+            raise HTTPException(
+                status_code=413, detail="Payload Too Large: file exceeds 20MB limit"
+            )
+        pdf_bytes = header + body
         return await asyncio.to_thread(
             parse_pdf_bytes, pdf_bytes, filename=file.filename or "upload.pdf"
         )
