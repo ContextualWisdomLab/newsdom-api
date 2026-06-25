@@ -23,11 +23,10 @@ def _bbox_from_values(values: list[float] | None) -> BoundingBox | None:
     if not values or len(values) != 4:
         return None
     return BoundingBox(
-        # ⚡ Bolt: Removed redundant `float()` casting since Pydantic v2 handles internal Rust coercion much faster
-        x0=values[0],
-        y0=values[1],
-        x1=values[2],
-        y1=values[3],
+        x0=float(values[0]),
+        y0=float(values[1]),
+        x1=float(values[2]),
+        y1=float(values[3]),
     )
 
 
@@ -136,9 +135,7 @@ def _handle_text_block(
 ) -> ArticleNode:
     """Extract and process text and headline blocks into an ArticleNode."""
     text_level = block.get("text_level")
-    # ⚡ Bolt: Removed redundant bool() wrapper
     is_headline = (text_level == 1) or (role == "section_headings")
-    # ⚡ Bolt: Avoid unconditional string allocations in this hot path by checking for "\n" first
     clean_text = text.replace("\n", " ") if "\n" in text else text
     if is_headline:
         bbox = _bbox_from_values(block.get("bbox") or block.get("box"))
