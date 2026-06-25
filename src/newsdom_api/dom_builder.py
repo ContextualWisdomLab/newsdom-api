@@ -24,7 +24,7 @@ def _bbox_from_values(values: list[float] | None) -> BoundingBox | None:
         return None
 
     x0, y0, x1, y1 = values
-    # ⚡ Bolt: Only cast to float if necessary to avoid overhead in hot path
+    # Avoid redundant casts in this hot path when MinerU already emitted floats.
     return BoundingBox(
         x0=x0 if type(x0) is float else float(x0),
         y0=y0 if type(y0) is float else float(y0),
