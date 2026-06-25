@@ -67,9 +67,7 @@ def test_parse_endpoint_rejects_non_pdf_content_type():
         files={"file": ("fixture.txt", b"not a pdf", "text/plain")},
     )
     assert response.status_code == 415
-    assert (
-        response.json()["detail"] == "Unsupported Media Type: expected application/pdf"
-    )
+    assert response.json()["detail"] == "Unsupported Media Type"
 
 
 def test_parse_endpoint_accepts_pdf_content_type_parameters(monkeypatch):
@@ -117,7 +115,7 @@ def test_parse_endpoint_returns_503_for_mineru_runtime_failure(monkeypatch):
     )
 
     assert response.status_code == 503
-    assert response.json()["detail"] == "MinerU runtime unavailable"
+    assert response.json()["detail"] == "Service Unavailable"
     _assert_no_private_path_material(response.json()["detail"])
 
 
@@ -158,7 +156,7 @@ def test_parse_endpoint_returns_502_for_incomplete_mineru_output(
     )
 
     assert response.status_code == 502
-    assert response.json()["detail"] == "MinerU output was incomplete"
+    assert response.json()["detail"] == "Bad Gateway"
     _assert_no_private_path_material(response.json()["detail"])
 
 
@@ -177,7 +175,7 @@ def test_parse_endpoint_catches_incomplete_output_error(monkeypatch):
     )
 
     assert response.status_code == 502
-    assert response.json()["detail"] == "MinerU output was incomplete"
+    assert response.json()["detail"] == "Bad Gateway"
 
 
 def test_parse_endpoint_catches_runtime_unavailable_error(monkeypatch):
@@ -195,7 +193,7 @@ def test_parse_endpoint_catches_runtime_unavailable_error(monkeypatch):
     )
 
     assert response.status_code == 503
-    assert response.json()["detail"] == "MinerU runtime unavailable"
+    assert response.json()["detail"] == "Service Unavailable"
     _assert_no_private_path_material(response.json()["detail"])
 
 
@@ -214,7 +212,7 @@ def test_parse_endpoint_rejects_large_files(monkeypatch):
     )
 
     assert response.status_code == 413
-    assert response.json()["detail"] == "Payload Too Large: file exceeds 20MB limit"
+    assert response.json()["detail"] == "Payload Too Large"
 
 
 @pytest.mark.asyncio
@@ -226,7 +224,7 @@ async def test_parse_endpoint_rejects_large_file_without_size_metadata():
         await parse(upload)
 
     assert exc_info.value.status_code == 413
-    assert exc_info.value.detail == "Payload Too Large: file exceeds 20MB limit"
+    assert exc_info.value.detail == "Payload Too Large"
     assert upload.read_sizes == [5, MAX_PARSE_UPLOAD_BYTES - 5 + 1]
 
 
@@ -239,9 +237,7 @@ def test_parse_endpoint_rejects_missing_magic_bytes():
         },
     )
     assert response.status_code == 415
-    assert (
-        response.json()["detail"] == "Unsupported Media Type: missing PDF magic bytes"
-    )
+    assert response.json()["detail"] == "Unsupported Media Type"
 
 
 @pytest.mark.asyncio
@@ -252,5 +248,5 @@ async def test_parse_endpoint_rejects_magic_bytes_before_full_read():
         await parse(upload)
 
     assert exc_info.value.status_code == 415
-    assert exc_info.value.detail == "Unsupported Media Type: missing PDF magic bytes"
+    assert exc_info.value.detail == "Unsupported Media Type"
     assert upload.read_sizes == [5]

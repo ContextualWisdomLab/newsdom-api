@@ -34,9 +34,8 @@ def test_api_reference_documents_sanitized_parse_failure_semantics() -> None:
 
     for expected in [
         "503 Service Unavailable",
-        "MinerU runtime unavailable",
         "502 Bad Gateway",
-        "MinerU output was incomplete",
+        "generic client-facing error details",
     ]:
         assert expected in text
 

@@ -69,9 +69,9 @@ def health() -> dict[str, str]:
     ),
     responses={
         413: {"description": "Payload Too Large"},
-        415: {"description": "Unsupported Media Type (expected application/pdf)"},
-        502: {"description": "MinerU output was incomplete"},
-        503: {"description": "MinerU runtime unavailable"},
+        415: {"description": "Unsupported Media Type"},
+        502: {"description": "Bad Gateway"},
+        503: {"description": "Service Unavailable"},
     },
     tags=["Parser"],
 )
@@ -82,32 +82,26 @@ async def parse(
 
     media_type = (file.content_type or "").split(";", 1)[0].strip().lower()
     if media_type != "application/pdf":
-        raise HTTPException(
-            status_code=415, detail="Unsupported Media Type: expected application/pdf"
-        )
+        raise HTTPException(status_code=415, detail="Unsupported Media Type")
 
     if file.size is not None and file.size > MAX_PARSE_UPLOAD_BYTES:
-        raise HTTPException(
-            status_code=413, detail="Payload Too Large: file exceeds 20MB limit"
-        )
+        raise HTTPException(status_code=413, detail="Payload Too Large")
 
     try:
         header = await file.read(5)
         if header != b"%PDF-":
             raise HTTPException(
                 status_code=415,
-                detail="Unsupported Media Type: missing PDF magic bytes",
+                detail="Unsupported Media Type",
             )
         body = await file.read(MAX_PARSE_UPLOAD_BYTES - len(header) + 1)
         if len(header) + len(body) > MAX_PARSE_UPLOAD_BYTES:
-            raise HTTPException(
-                status_code=413, detail="Payload Too Large: file exceeds 20MB limit"
-            )
+            raise HTTPException(status_code=413, detail="Payload Too Large")
         pdf_bytes = header + body
         return await asyncio.to_thread(
             parse_pdf_bytes, pdf_bytes, filename=file.filename or "upload.pdf"
         )
     except MineruRuntimeUnavailableError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        raise HTTPException(status_code=503, detail="Service Unavailable") from exc
     except MineruIncompleteOutputError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        raise HTTPException(status_code=502, detail="Bad Gateway") from exc
