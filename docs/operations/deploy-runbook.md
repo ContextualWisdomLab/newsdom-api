@@ -41,8 +41,9 @@ than a default-image contract.
 ## Failure handling
 
 - Capture sanitized logs outside `tmp/` when a delivery path fails.
-- Expect `/parse` failures to stay sanitized: `503 MinerU runtime
-  unavailable` when the runtime cannot execute, and `502 MinerU output
-  was incomplete` when required OCR artifacts are missing or invalid.
+- Expect `/parse` failures to stay sanitized: use generic
+  client-facing details for `503 Service Unavailable` when the backend
+  runtime cannot execute and `502 Bad Gateway` when required OCR
+  artifacts are missing or invalid.
 - Reconcile the failure against `README.md`, `CHANGELOG.md`, and the
   relevant workflow before closing the task.
