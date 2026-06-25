@@ -6,7 +6,7 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from newsdom_api import mineru_runner
-from newsdom_api.main import app, parse
+from newsdom_api.main import MAX_PARSE_UPLOAD_BYTES, app, parse
 
 
 class _FakeTempDir:
@@ -207,7 +207,7 @@ def test_parse_endpoint_rejects_large_files(monkeypatch):
 
     client = TestClient(app)
 
-    large_payload = b"%PDF-1.4\n" + (b"x" * 21 * 1024 * 1024)
+    large_payload = b"%PDF-" + (b"x" * (MAX_PARSE_UPLOAD_BYTES - 5 + 1))
     response = client.post(
         "/parse",
         files={"file": ("fixture.pdf", large_payload, "application/pdf")},
@@ -219,7 +219,7 @@ def test_parse_endpoint_rejects_large_files(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_parse_endpoint_rejects_large_file_without_size_metadata():
-    upload = _ReadTrackingUpload(b"%PDF-" + (b"x" * (20 * 1024 * 1024)))
+    upload = _ReadTrackingUpload(b"%PDF-" + (b"x" * MAX_PARSE_UPLOAD_BYTES))
     upload.size = None
 
     with pytest.raises(HTTPException) as exc_info:
@@ -227,7 +227,7 @@ async def test_parse_endpoint_rejects_large_file_without_size_metadata():
 
     assert exc_info.value.status_code == 413
     assert exc_info.value.detail == "Payload Too Large: file exceeds 20MB limit"
-    assert upload.read_sizes == [5, 20 * 1024 * 1024 - 5 + 1]
+    assert upload.read_sizes == [5, MAX_PARSE_UPLOAD_BYTES - 5 + 1]
 
 
 def test_parse_endpoint_rejects_missing_magic_bytes():
