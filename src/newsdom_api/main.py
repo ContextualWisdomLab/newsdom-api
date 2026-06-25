@@ -11,7 +11,7 @@ from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
 from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
-from .schemas import ParseResponse
+from .schemas import HealthResponse, ParseResponse
 from .service import parse_pdf_bytes
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
@@ -57,14 +57,15 @@ async def add_security_headers(request: Request, call_next: Callable) -> Respons
 
 @app.get(
     "/health",
+    response_model=HealthResponse,
     summary="Health Check",
     description="Returns a minimal liveness response for deployment health checks.",
     tags=["System"],
 )
-def health() -> dict[str, str]:
+def health() -> HealthResponse:
     """Return a minimal liveness response for health checks."""
 
-    return {"status": "ok"}
+    return HealthResponse(status="ok")
 
 
 def _validate_pdf_structure(pdf_bytes: bytes) -> None:
