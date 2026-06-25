@@ -1,9 +1,5 @@
 # Palette's UX/A11y Journal
 
-## 2026-06-02 - OpenAPI/Swagger Tagging Grouping
-**Learning:** Organizing API endpoints using `openapi_tags` significantly improves the readability of Swagger UI by logically grouping related endpoints (e.g., `Parser` vs `System`). This structural enhancement improves the Developer Experience (DX) for consumers of headless APIs.
-**Action:** Always assign descriptive metadata to endpoints and utilize `openapi_tags` when building or enhancing FastAPI applications.
-
 ## 2026-06-01 - [Developer Experience as UX for APIs]
 **Learning:** For backend-only services without a UI, UX is represented by Developer Experience (DX), specifically the OpenAPI/Swagger documentation.
 **Action:** Enhance the Swagger UI for the API with a description and version to make it more intuitive and pleasant to use for developers.
