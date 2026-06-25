@@ -24,6 +24,8 @@ MAX_PAGE_NUMBER = 100_000
 
 
 def _coerce_bbox_coordinate(value: Any) -> float | None:
+    """Convert a bounded, finite bounding-box coordinate into a float."""
+
     if isinstance(value, bool):
         return None
 
