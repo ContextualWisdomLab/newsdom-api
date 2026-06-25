@@ -11,10 +11,22 @@ from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 from .schemas import ParseResponse
 from .service import parse_pdf_bytes
 
+tags_metadata = [
+    {
+        "name": "Parser",
+        "description": "Core PDF parsing endpoints.",
+    },
+    {
+        "name": "System",
+        "description": "Health and deployment diagnostic endpoints.",
+    },
+]
+
 app = FastAPI(
     title="NewsDOM API",
     description="DOM-style parser API for scanned Japanese newspaper PDFs.",
     version="0.2.0",
+    openapi_tags=tags_metadata,
 )
 
 
@@ -37,6 +49,7 @@ async def add_security_headers(request: Request, call_next: Callable) -> Respons
     "/health",
     summary="Health Check",
     description="Returns a minimal liveness response for deployment health checks.",
+    tags=["System"],
 )
 def health() -> dict[str, str]:
     """Return a minimal liveness response for health checks."""
@@ -52,6 +65,12 @@ def health() -> dict[str, str]:
         "Converts a scanned Japanese newspaper PDF into a canonical JSON DOM "
         "document using MinerU."
     ),
+    responses={
+        415: {"description": "Unsupported Media Type (expected application/pdf)"},
+        502: {"description": "MinerU output was incomplete"},
+        503: {"description": "MinerU runtime unavailable"},
+    },
+    tags=["Parser"],
 )
 async def parse(
     file: Annotated[UploadFile, File(description="The newspaper PDF file to parse.")],
@@ -62,7 +81,7 @@ async def parse(
     if media_type != "application/pdf":
         raise HTTPException(
             status_code=415, detail="Unsupported Media Type: expected application/pdf"
-    )
+        )
 
     try:
         header = await file.read(5)

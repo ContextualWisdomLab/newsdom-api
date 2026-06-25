@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-import html
+from html import escape as html_escape
 from itertools import count
 from typing import Any
 
@@ -18,20 +18,26 @@ from .schemas import (
 )
 
 
-def _bbox_from_values(values: list[float] | None) -> BoundingBox | None:
+def _bbox_from_values(values: list[float | int] | None) -> BoundingBox | None:
     """Convert a four-value bounding-box list into a typed schema object."""
 
     if not values or len(values) != 4:
         return None
 
     x0, y0, x1, y1 = values
-    # ⚡ Bolt: Only cast to float if necessary to avoid overhead in hot path
+    # Avoid redundant casts in this hot path when MinerU already emitted floats.
     return BoundingBox(
         x0=x0 if type(x0) is float else float(x0),
         y0=y0 if type(y0) is float else float(y0),
         x1=x1 if type(x1) is float else float(x1),
         y1=y1 if type(y1) is float else float(y1),
     )
+
+
+def _html_safe_text(value: Any) -> str:
+    """Normalize OCR text for safe downstream HTML rendering."""
+
+    return html_escape(str(value or "").strip())
 
 
 def _coerce_page_number(value: Any) -> int | None:
@@ -48,8 +54,7 @@ def _coerce_page_number(value: Any) -> int | None:
 def _block_text(block: dict[str, Any]) -> str:
     """Extract normalized text from a MinerU content block."""
 
-    raw_text = (block.get("text") or block.get("contents") or "").strip()
-    return html.escape(raw_text)
+    return _html_safe_text(block.get("text") or block.get("contents"))
 
 
 def _caption_nodes_from_items(items: Any) -> list[CaptionNode]:
@@ -61,13 +66,13 @@ def _caption_nodes_from_items(items: Any) -> list[CaptionNode]:
 
     for item in items:
         if isinstance(item, dict):
-            text = str(item.get("text") or item.get("contents") or "").strip()
+            text = _html_safe_text(item.get("text") or item.get("contents"))
             if text:
                 # ⚡ Bolt: Defer expensive bbox parsing/float casting until we actually need it
                 bbox = _bbox_from_values(item.get("bbox") or item.get("box"))
                 nodes.append(CaptionNode(text=text, bbox=bbox))
         else:
-            text = str(item).strip()
+            text = _html_safe_text(item)
             if text:
                 nodes.append(CaptionNode(text=text, bbox=None))
     return nodes
