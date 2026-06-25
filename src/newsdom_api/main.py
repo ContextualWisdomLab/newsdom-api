@@ -13,6 +13,8 @@ from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 from .schemas import ParseResponse
 from .service import parse_pdf_bytes
 
+UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
+
 tags_metadata = [
     {
         "name": "Parser",
@@ -65,7 +67,7 @@ def _validate_pdf_structure(pdf_bytes: bytes) -> None:
     if not pdf_bytes.startswith(b"%PDF-"):
         raise HTTPException(
             status_code=415,
-            detail="Unsupported Media Type: expected application/pdf",
+            detail=UNSUPPORTED_MEDIA_DETAIL,
         )
     try:
         reader = PdfReader(BytesIO(pdf_bytes), strict=False)
@@ -74,7 +76,7 @@ def _validate_pdf_structure(pdf_bytes: bytes) -> None:
     except Exception as exc:
         raise HTTPException(
             status_code=415,
-            detail="Unsupported Media Type: expected application/pdf",
+            detail=UNSUPPORTED_MEDIA_DETAIL,
         ) from exc
 
 
@@ -87,7 +89,7 @@ def _validate_pdf_structure(pdf_bytes: bytes) -> None:
         "document using MinerU."
     ),
     responses={
-        415: {"description": "Unsupported Media Type (expected application/pdf)"},
+        415: {"description": "Unsupported Media Type"},
         502: {"description": "MinerU output was incomplete"},
         503: {"description": "MinerU runtime unavailable"},
     },
@@ -100,16 +102,14 @@ async def parse(
 
     media_type = (file.content_type or "").split(";", 1)[0].strip().lower()
     if media_type != "application/pdf":
-        raise HTTPException(
-            status_code=415, detail="Unsupported Media Type: expected application/pdf"
-        )
+        raise HTTPException(status_code=415, detail=UNSUPPORTED_MEDIA_DETAIL)
 
     try:
         header = await file.read(5)
         if header != b"%PDF-":
             raise HTTPException(
                 status_code=415,
-                detail="Unsupported Media Type: missing PDF magic bytes",
+                detail=UNSUPPORTED_MEDIA_DETAIL,
             )
         pdf_bytes = header + await file.read()
         _validate_pdf_structure(pdf_bytes)

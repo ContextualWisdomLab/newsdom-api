@@ -66,9 +66,7 @@ def test_parse_endpoint_rejects_non_pdf_content_type():
         files={"file": ("fixture.txt", b"not a pdf", "text/plain")},
     )
     assert response.status_code == 415
-    assert (
-        response.json()["detail"] == "Unsupported Media Type: expected application/pdf"
-    )
+    assert response.json()["detail"] == "Unsupported Media Type"
 
 
 def test_parse_endpoint_rejects_invalid_pdf_magic_bytes():
@@ -78,9 +76,7 @@ def test_parse_endpoint_rejects_invalid_pdf_magic_bytes():
         files={"file": ("fixture.pdf", b"not a pdf", "application/pdf")},
     )
     assert response.status_code == 415
-    assert (
-        response.json()["detail"] == "Unsupported Media Type: missing PDF magic bytes"
-    )
+    assert response.json()["detail"] == "Unsupported Media Type"
 
 
 def test_validate_pdf_structure_rejects_invalid_magic_bytes():
@@ -88,7 +84,7 @@ def test_validate_pdf_structure_rejects_invalid_magic_bytes():
         _validate_pdf_structure(b"not a pdf")
 
     assert exc_info.value.status_code == 415
-    assert exc_info.value.detail == "Unsupported Media Type: expected application/pdf"
+    assert exc_info.value.detail == "Unsupported Media Type"
 
 
 def test_parse_endpoint_rejects_prefixed_non_pdf_payload():
@@ -104,9 +100,7 @@ def test_parse_endpoint_rejects_prefixed_non_pdf_payload():
         },
     )
     assert response.status_code == 415
-    assert (
-        response.json()["detail"] == "Unsupported Media Type: expected application/pdf"
-    )
+    assert response.json()["detail"] == "Unsupported Media Type"
 
 
 def test_parse_endpoint_rejects_pdf_without_pages(monkeypatch):
@@ -123,9 +117,7 @@ def test_parse_endpoint_rejects_pdf_without_pages(monkeypatch):
         files={"file": ("fixture.pdf", b"%PDF-1.4\n%%EOF", "application/pdf")},
     )
     assert response.status_code == 415
-    assert (
-        response.json()["detail"] == "Unsupported Media Type: expected application/pdf"
-    )
+    assert response.json()["detail"] == "Unsupported Media Type"
 
 
 def test_parse_endpoint_accepts_structurally_valid_pdf(monkeypatch):
@@ -291,9 +283,7 @@ def test_parse_endpoint_rejects_missing_magic_bytes():
         },
     )
     assert response.status_code == 415
-    assert (
-        response.json()["detail"] == "Unsupported Media Type: missing PDF magic bytes"
-    )
+    assert response.json()["detail"] == "Unsupported Media Type"
 
 
 @pytest.mark.asyncio
@@ -304,5 +294,5 @@ async def test_parse_endpoint_rejects_magic_bytes_before_full_read():
         await parse(upload)
 
     assert exc_info.value.status_code == 415
-    assert exc_info.value.detail == "Unsupported Media Type: missing PDF magic bytes"
+    assert exc_info.value.detail == "Unsupported Media Type"
     assert upload.read_sizes == [5]
