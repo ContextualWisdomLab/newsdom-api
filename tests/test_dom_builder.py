@@ -6,6 +6,7 @@ import pytest
 from newsdom_api.dom_builder import (
     MAX_BBOX_COORDINATE,
     MAX_CONTENT_BLOCKS,
+    MAX_MEDIA_PATH_LENGTH,
     MAX_PAGE_NUMBER,
     _new_article,
     _bbox_from_values,
@@ -118,6 +119,41 @@ def test_build_dom_escapes_text_fields_for_html_renderers():
     assert page.articles[0].images[0].captions[0].text == (
         "&lt;script&gt;alert(&#x27;caption&#x27;)&lt;/script&gt;"
     )
+
+
+def test_build_dom_uses_safe_relative_media_paths():
+    dom = build_dom(
+        [
+            {"type": "image", "img_path": "images/page-1-photo.png"},
+            {"type": "chart", "path": " charts/growth.png "},
+            {"type": "image", "path": "../../etc/passwd"},
+            {"type": "chart", "path": "/tmp/chart.png"},
+            {"type": "image", "path": r"images\secret.png"},
+            {"type": "chart", "path": "https://example.test/chart.png"},
+            {"type": "image", "path": "images//bad.png"},
+            {"type": "chart", "path": "./chart.png"},
+            {"type": "image", "path": "x" * (MAX_MEDIA_PATH_LENGTH + 1)},
+            {"type": "chart", "path": 123},
+            {"type": "image", "path": "   "},
+            {"type": "chart"},
+        ],
+        document_id="doc-safe-media-paths",
+    )
+
+    assert [image.path for image in dom.pages[0].articles[0].images] == [
+        "images/page-1-photo.png",
+        "charts/growth.png",
+        "image",
+        "chart",
+        "image",
+        "chart",
+        "image",
+        "chart",
+        "image",
+        "chart",
+        "image",
+        "chart",
+    ]
 
 
 def test_build_dom_creates_table_article_when_needed():

@@ -20,6 +20,7 @@ from .schemas import (
 
 MAX_BBOX_COORDINATE = 1_000_000.0
 MAX_CONTENT_BLOCKS = 5_000
+MAX_MEDIA_PATH_LENGTH = 512
 MAX_PAGE_NUMBER = 100_000
 
 
@@ -75,6 +76,35 @@ def _html_safe_text(value: Any) -> str:
     """Normalize OCR text for safe downstream HTML rendering."""
 
     return html_escape(str(value or "").strip())
+
+
+def _safe_media_path(value: Any, fallback: str) -> str:
+    """Return a bounded relative media path or a deterministic fallback."""
+
+    if not isinstance(value, str):
+        return fallback
+
+    raw_path = value.strip()
+    if not raw_path:
+        return fallback
+
+    if len(raw_path) > MAX_MEDIA_PATH_LENGTH:
+        return fallback
+
+    if raw_path.startswith("/"):
+        return fallback
+
+    if "\\" in raw_path:
+        return fallback
+
+    if ":" in raw_path:
+        return fallback
+
+    for part in raw_path.split("/"):
+        if part in {"", ".", ".."}:
+            return fallback
+
+    return raw_path
 
 
 def _coerce_page_number(value: Any) -> int | None:
@@ -148,8 +178,9 @@ def _handle_media_block(
 ) -> ArticleNode:
     """Extract and process media blocks into an ArticleNode."""
     bbox = _bbox_from_values(block.get("bbox") or block.get("box"))
+    path = _safe_media_path(block.get("img_path") or block.get("path"), block_type)
     image = ImageNode(
-        path=block.get("img_path") or block.get("path") or block_type,
+        path=path,
         media_type=block_type,
         bbox=bbox,
     )
