@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from html import escape as html_escape
 from itertools import count
 from typing import Any
 
@@ -33,6 +34,12 @@ def _bbox_from_values(values: list[float | int] | None) -> BoundingBox | None:
     )
 
 
+def _html_safe_text(value: Any) -> str:
+    """Normalize OCR text for safe downstream HTML rendering."""
+
+    return html_escape(str(value or "").strip())
+
+
 def _coerce_page_number(value: Any) -> int | None:
     """Convert supported page-number values into integers."""
 
@@ -47,7 +54,7 @@ def _coerce_page_number(value: Any) -> int | None:
 def _block_text(block: dict[str, Any]) -> str:
     """Extract normalized text from a MinerU content block."""
 
-    return (block.get("text") or block.get("contents") or "").strip()
+    return _html_safe_text(block.get("text") or block.get("contents"))
 
 
 def _caption_nodes_from_items(items: Any) -> list[CaptionNode]:
@@ -59,13 +66,13 @@ def _caption_nodes_from_items(items: Any) -> list[CaptionNode]:
 
     for item in items:
         if isinstance(item, dict):
-            text = str(item.get("text") or item.get("contents") or "").strip()
+            text = _html_safe_text(item.get("text") or item.get("contents"))
             if text:
                 # ⚡ Bolt: Defer expensive bbox parsing/float casting until we actually need it
                 bbox = _bbox_from_values(item.get("bbox") or item.get("box"))
                 nodes.append(CaptionNode(text=text, bbox=bbox))
         else:
-            text = str(item).strip()
+            text = _html_safe_text(item)
             if text:
                 nodes.append(CaptionNode(text=text, bbox=None))
     return nodes

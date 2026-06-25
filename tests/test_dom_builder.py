@@ -61,6 +61,38 @@ def test_build_dom_handles_non_headline_paths():
     assert "body text" in page.articles[0].body_blocks
 
 
+def test_build_dom_escapes_text_fields_for_html_renderers():
+    dom = build_dom(
+        [
+            {
+                "type": "text",
+                "text": "<script>alert('headline')</script>",
+                "text_level": 1,
+            },
+            {"type": "text", "text": "<img src=x onerror=alert('body')>"},
+            {"type": "text", "text": "<b>masthead</b>", "role": "header"},
+            {
+                "type": "image",
+                "img_path": "image.png",
+                "image_caption": ["<script>alert('caption')</script>"],
+            },
+        ],
+        document_id="doc-html-safe-text",
+    )
+
+    page = dom.pages[0]
+    assert page.headers == ["&lt;b&gt;masthead&lt;/b&gt;"]
+    assert page.articles[0].headline == (
+        "&lt;script&gt;alert(&#x27;headline&#x27;)&lt;/script&gt;"
+    )
+    assert page.articles[0].body_blocks == [
+        "&lt;img src=x onerror=alert(&#x27;body&#x27;)&gt;"
+    ]
+    assert page.articles[0].images[0].captions[0].text == (
+        "&lt;script&gt;alert(&#x27;caption&#x27;)&lt;/script&gt;"
+    )
+
+
 def test_build_dom_creates_table_article_when_needed():
     dom = build_dom(
         [{"type": "table", "table_body": "<table></table>", "bbox": [1, 1, 2, 2]}],
