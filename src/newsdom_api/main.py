@@ -65,6 +65,11 @@ def health() -> dict[str, str]:
         "Converts a scanned Japanese newspaper PDF into a canonical JSON DOM "
         "document using MinerU."
     ),
+    responses={
+        415: {"description": "Unsupported Media Type (expected application/pdf)"},
+        502: {"description": "MinerU output was incomplete"},
+        503: {"description": "MinerU runtime unavailable"},
+    },
     tags=["Parser"],
 )
 async def parse(
