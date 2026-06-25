@@ -78,8 +78,7 @@ def _process_pages(metrics: dict[str, Any], pages: list[Any]) -> None:
             (
                 page.get("column_count", 0)
                 for page in pages
-                if isinstance(page, dict)
-                and isinstance(page.get("column_count"), int)
+                if isinstance(page, dict) and isinstance(page.get("column_count"), int)
             ),
             default=metrics.get("column_count", 0),
         )

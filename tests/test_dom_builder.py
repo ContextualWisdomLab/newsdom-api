@@ -347,6 +347,7 @@ def test_build_dom_keeps_article_ids_unique_across_pages():
     ]
     assert article_ids == ["article-1", "article-2"]
 
+
 def test_page_number_from_info():
     # Test valid page_number
     assert _page_number_from_info({"page_number": 5}, fallback=1) == 5
@@ -365,6 +366,7 @@ def test_page_number_from_info():
 
     # Test missing keys
     assert _page_number_from_info({}, fallback=1) == 1
+
 
 def test_bbox_helper_returns_bbox_for_valid_values():
     bbox = _bbox_from_values([1.1, 2.2, 3.3, 4.4])

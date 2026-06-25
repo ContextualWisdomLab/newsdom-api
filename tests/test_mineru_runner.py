@@ -25,7 +25,7 @@ def test_run_mineru_handles_timeout(tmp_path: Path):
 
     with (
         patch("subprocess.run") as mock_run,
-        patch("newsdom_api.mineru_runner._cached_which", return_value="mineru"),
+        patch("shutil.which", return_value="mineru"),
     ):
         mock_run.side_effect = subprocess.TimeoutExpired(cmd="mineru", timeout=0.1)
 
@@ -46,7 +46,7 @@ def test_run_mineru_handles_called_process_error(tmp_path: Path):
 
     with (
         patch("subprocess.run") as mock_run,
-        patch("newsdom_api.mineru_runner._cached_which", return_value="mineru"),
+        patch("shutil.which", return_value="mineru"),
     ):
         mock_run.side_effect = subprocess.CalledProcessError(
             returncode=1, cmd="mineru", stderr="Something went wrong"
