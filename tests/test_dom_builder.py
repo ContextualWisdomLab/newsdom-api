@@ -1,7 +1,12 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from newsdom_api.dom_builder import (
+    MAX_BBOX_COORDINATE,
+    MAX_CONTENT_BLOCKS,
+    MAX_PAGE_NUMBER,
     _new_article,
     _bbox_from_values,
     _caption_nodes_from_items,
@@ -28,6 +33,28 @@ def test_build_dom_extracts_articles_from_mineru_sample():
 def test_bbox_helper_returns_none_for_invalid_values():
     assert _bbox_from_values(None) is None
     assert _bbox_from_values([1, 2, 3]) is None
+    assert _bbox_from_values([object(), 0, 1, 1]) is None
+    assert _bbox_from_values(["bad", 0, 1, 1]) is None
+    assert _bbox_from_values([10**10000, 0, 1, 1]) is None
+    assert _bbox_from_values([True, 0, 1, 1]) is None
+    assert _bbox_from_values([float("inf"), 0, 1, 1]) is None
+    assert _bbox_from_values([-10, -20, -5, -15]) is None
+    assert _bbox_from_values([MAX_BBOX_COORDINATE + 1, 0, 1, 1]) is None
+    assert _bbox_from_values([5, 0, 1, 1]) is None
+    assert _bbox_from_values([0, 5, 1, 1]) is None
+
+
+def test_build_dom_rejects_oversized_content_list():
+    with pytest.raises(ValueError, match="more than"):
+        build_dom(
+            [{"type": "text", "text": "test"}] * (MAX_CONTENT_BLOCKS + 1),
+            document_id="doc-too-large",
+        )
+
+
+def test_build_dom_rejects_non_list_content():
+    with pytest.raises(ValueError, match="must be a list"):
+        build_dom(("not", "a", "list"), document_id="doc-not-list")
 
 
 def test_build_dom_handles_non_headline_paths():
@@ -165,6 +192,12 @@ def test_coerce_page_number_returns_none_for_type_and_value_errors():
     assert _coerce_page_number(None) is None
     assert _coerce_page_number(True) is None
     assert _coerce_page_number(False) is None
+    assert _coerce_page_number(float("inf")) is None
+    assert _coerce_page_number(0) is None
+    assert _coerce_page_number(-1) is None
+    assert _coerce_page_number(MAX_PAGE_NUMBER + 1) is None
+    assert _coerce_page_number("7") == 7
+    assert _coerce_page_number(MAX_PAGE_NUMBER) == MAX_PAGE_NUMBER
 
 
 def test_caption_nodes_from_items_uses_contents_and_bbox_variants_and_skips_empty_text():
@@ -379,6 +412,7 @@ def test_build_dom_keeps_article_ids_unique_across_pages():
     ]
     assert article_ids == ["article-1", "article-2"]
 
+
 def test_page_number_from_info():
     # Test valid page_number
     assert _page_number_from_info({"page_number": 5}, fallback=1) == 5
@@ -394,9 +428,16 @@ def test_page_number_from_info():
     assert _page_number_from_info({"page_number": "5", "page_no": 4}, fallback=1) == 5
     assert _page_number_from_info({"page_no": "5"}, fallback=1) == 1
     assert _page_number_from_info({"page_number": None}, fallback=1) == 1
+    assert _page_number_from_info({"page_number": -1, "page_no": 0}, fallback=9) == 1
+    assert _page_number_from_info({"page_number": True, "page_no": 0}, fallback=9) == 1
+    assert _page_number_from_info({"page_number": MAX_PAGE_NUMBER + 1}, fallback=9) == 9
+    assert _page_number_from_info({"page_no": -1}, fallback=9) == 9
+    assert _page_number_from_info({"page_no": True}, fallback=9) == 9
+    assert _page_number_from_info({"page_no": MAX_PAGE_NUMBER}, fallback=9) == 9
 
     # Test missing keys
     assert _page_number_from_info({}, fallback=1) == 1
+
 
 def test_bbox_helper_returns_bbox_for_valid_values():
     bbox = _bbox_from_values([1.1, 2.2, 3.3, 4.4])
