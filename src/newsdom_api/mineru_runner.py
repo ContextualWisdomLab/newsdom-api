@@ -46,13 +46,22 @@ def build_mineru_command(
 
 
 @lru_cache
+def _cached_which(cmd: str) -> str | None:
+    """Cache shutil.which to avoid redundant filesystem lookups."""
+    return shutil.which(cmd)
+
+
 def _resolve_mineru_bin() -> str:
-    """Resolve and cache the MinerU executable path for this process."""
+    """Resolve the MinerU executable path for this process.
+
+    The shutil.which result is cached, but NEWSDOM_MINERU_BIN is evaluated
+    on every call to allow runtime overrides.
+    """
 
     configured = os.environ.get("NEWSDOM_MINERU_BIN")
     if configured:
         return configured
-    found = shutil.which("mineru")
+    found = _cached_which("mineru")
     if not found:
         raise FileNotFoundError(
             "Could not find 'mineru' executable. "
@@ -137,8 +146,8 @@ def _parse_mineru_output(
 def run_mineru(input_pdf: Path) -> dict[str, Any]:
     """Run MinerU on a PDF and return parsed JSON artifacts plus raw process output.
 
-    The resolved MinerU executable path is cached for the process lifetime. Restart
-    the service after changing NEWSDOM_MINERU_BIN or PATH.
+    PATH lookups for the default MinerU executable are cached, while
+    NEWSDOM_MINERU_BIN is evaluated on each call to allow runtime overrides.
     """
 
     mineru_bin = _resolve_mineru_bin()
