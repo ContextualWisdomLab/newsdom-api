@@ -13,7 +13,9 @@ from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 from .schemas import ParseResponse
 from .service import parse_pdf_bytes
 
+MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
+PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
 
 tags_metadata = [
     {
@@ -40,6 +42,9 @@ async def add_security_headers(request: Request, call_next: Callable) -> Respons
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+    )
     forwarded_proto = request.headers.get("x-forwarded-proto", "")
     is_https = request.url.scheme == "https" or forwarded_proto.lower() == "https"
     if is_https:
@@ -89,9 +94,10 @@ def _validate_pdf_structure(pdf_bytes: bytes) -> None:
         "document using MinerU."
     ),
     responses={
+        413: {"description": "Payload Too Large"},
         415: {"description": "Unsupported Media Type"},
-        502: {"description": "MinerU output was incomplete"},
-        503: {"description": "MinerU runtime unavailable"},
+        502: {"description": "Bad Gateway"},
+        503: {"description": "Service Unavailable"},
     },
     tags=["Parser"],
 )
@@ -104,6 +110,9 @@ async def parse(
     if media_type != "application/pdf":
         raise HTTPException(status_code=415, detail=UNSUPPORTED_MEDIA_DETAIL)
 
+    if file.size is not None and file.size > MAX_PARSE_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL)
+
     try:
         header = await file.read(5)
         if header != b"%PDF-":
@@ -111,12 +120,15 @@ async def parse(
                 status_code=415,
                 detail=UNSUPPORTED_MEDIA_DETAIL,
             )
-        pdf_bytes = header + await file.read()
+        body = await file.read(MAX_PARSE_UPLOAD_BYTES - len(header) + 1)
+        if len(header) + len(body) > MAX_PARSE_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL)
+        pdf_bytes = header + body
         _validate_pdf_structure(pdf_bytes)
         return await asyncio.to_thread(
             parse_pdf_bytes, pdf_bytes, filename=file.filename or "upload.pdf"
         )
     except MineruRuntimeUnavailableError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        raise HTTPException(status_code=503, detail="Service Unavailable") from exc
     except MineruIncompleteOutputError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        raise HTTPException(status_code=502, detail="Bad Gateway") from exc
