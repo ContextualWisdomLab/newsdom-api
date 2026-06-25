@@ -24,11 +24,7 @@ class MineruRuntimeUnavailableError(RuntimeError):
 class MineruIncompleteOutputError(RuntimeError):
     """MinerU finished without producing the required artifacts."""
 
-    def __init__(self, detail: str | None = None) -> None:
+    def __init__(self) -> None:
         """Expose a stable sanitized message for incomplete MinerU artifacts."""
 
-        self.detail = detail
-        message = "MinerU output was incomplete"
-        if detail:
-            message = f"{message}: {detail}"
-        super().__init__(message)
+        super().__init__("MinerU output was incomplete")
