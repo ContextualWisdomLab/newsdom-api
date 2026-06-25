@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import runpy
+import sys
 from pathlib import Path
 from unittest.mock import patch
 
@@ -56,7 +58,14 @@ def test_generate_synthetic_exception(mock_generate, tmp_path, capsys):
     assert "Mock generator error" in err
 
 
-def test_generate_synthetic_main_block():
-    content = Path("tools/generate_synthetic.py").read_text()
-    assert 'if __name__ == "__main__":' in content
-    assert "main()" in content.split('if __name__ == "__main__":')[1]
+def test_generate_synthetic_main_block(monkeypatch, capsys):
+    script_path = (
+        Path(__file__).resolve().parents[1] / "tools" / "generate_synthetic.py"
+    )
+    monkeypatch.setattr(sys, "argv", [str(script_path), "--help"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        runpy.run_path(str(script_path), run_name="__main__")
+
+    assert exc_info.value.code == 0
+    assert "Generate synthetic newspaper PDFs" in capsys.readouterr().out

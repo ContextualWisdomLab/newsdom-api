@@ -183,7 +183,9 @@ def test_derived_metrics_ads():
 def test_derived_metrics_pages():
     from newsdom_api.equivalence import _derived_metrics
 
-    metrics = _derived_metrics({"pages": [{"column_count": 3}, {"column_count": 5}]})
+    metrics = _derived_metrics(
+        {"pages": [{"column_count": 3}, {"column_count": 5}]}
+    )
     assert metrics == {
         "pages": [{"column_count": 3}, {"column_count": 5}],
         "page_count": 2,
