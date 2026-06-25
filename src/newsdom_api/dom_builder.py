@@ -231,17 +231,18 @@ def _handle_text_block(
 ) -> ArticleNode:
     """Extract and process text and headline blocks into an ArticleNode."""
     text_level = block.get("text_level")
-    is_headline = bool(text_level == 1 or role == "section_headings")
+    is_headline = (text_level == 1) or (role == "section_headings")
+    clean_text = text.replace("\n", " ") if "\n" in text else text
     if is_headline:
         bbox = _bbox_from_values(block.get("bbox") or block.get("box"))
-        current_article = _new_article(article_seq, text.replace("\n", " "), bbox)
+        current_article = _new_article(article_seq, clean_text, bbox)
         page.articles.append(current_article)
         return current_article
 
     if current_article is None:
         current_article = _new_article(article_seq, "(untitled)")
         page.articles.append(current_article)
-    current_article.body_blocks.append(text.replace("\n", " "))
+    current_article.body_blocks.append(clean_text)
     return current_article
 
 
