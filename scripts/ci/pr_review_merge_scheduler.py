@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -77,6 +78,25 @@ class Decision:
     pr: int
     action: str
     reason: str
+
+
+HEX_SHA_RE = re.compile(r"^[0-9a-fA-F]{40}$")
+
+
+def pr_number_arg(pr: dict[str, Any]) -> str:
+    """Return a validated PR number string for gh CLI arguments."""
+    number = str(pr.get("number", ""))
+    if not number.isdecimal() or int(number) <= 0:
+        raise ValueError(f"PR number must be a positive integer, got {number!r}")
+    return number
+
+
+def git_sha_arg(value: Any, *, field: str) -> str:
+    """Return a validated full git SHA string for gh CLI arguments."""
+    sha = str(value)
+    if not HEX_SHA_RE.fullmatch(sha):
+        raise ValueError(f"{field} must be a 40-character git SHA, got {sha!r}")
+    return sha
 
 
 def run(args: list[str], *, stdin: str | None = None) -> str:
@@ -272,8 +292,8 @@ def failed_status_checks(pr: dict[str, Any]) -> list[str]:
 
 def enable_auto_merge(repo: str, pr: dict[str, Any], *, dry_run: bool) -> None:
     """Enable merge-commit auto-merge for a PR at its current head."""
-    number = str(pr["number"])
-    head = pr["headRefOid"]
+    number = pr_number_arg(pr)
+    head = git_sha_arg(pr["headRefOid"], field="headRefOid")
     if dry_run:
         return
     run(["gh", "pr", "merge", number, "--repo", repo, "--auto", "--merge", "--match-head-commit", head])
@@ -281,8 +301,8 @@ def enable_auto_merge(repo: str, pr: dict[str, Any], *, dry_run: bool) -> None:
 
 def update_branch(repo: str, pr: dict[str, Any], *, dry_run: bool) -> None:
     """Ask GitHub to update a PR branch, guarded by the observed head SHA."""
-    number = str(pr["number"])
-    head = pr["headRefOid"]
+    number = pr_number_arg(pr)
+    head = git_sha_arg(pr["headRefOid"], field="headRefOid")
     if dry_run:
         return
     run(
@@ -300,6 +320,9 @@ def update_branch(repo: str, pr: dict[str, Any], *, dry_run: bool) -> None:
 
 def dispatch_opencode_review(repo: str, workflow: str, pr: dict[str, Any], *, dry_run: bool) -> None:
     """Dispatch the OpenCode Review workflow for the PR head."""
+    number = pr_number_arg(pr)
+    base_sha = git_sha_arg(pr["baseRefOid"], field="baseRefOid")
+    head_sha = git_sha_arg(pr["headRefOid"], field="headRefOid")
     if dry_run:
         return
     run(
@@ -313,21 +336,24 @@ def dispatch_opencode_review(repo: str, workflow: str, pr: dict[str, Any], *, dr
             "--ref",
             pr["baseRefName"],
             "-f",
-            f"pr_number={pr['number']}",
+            f"pr_number={number}",
             "-f",
             f"pr_base_ref={pr['baseRefName']}",
             "-f",
-            f"pr_base_sha={pr['baseRefOid']}",
+            f"pr_base_sha={base_sha}",
             "-f",
             f"pr_head_ref={pr['headRefName']}",
             "-f",
-            f"pr_head_sha={pr['headRefOid']}",
+            f"pr_head_sha={head_sha}",
         ]
     )
 
 
 def dispatch_strix_evidence(repo: str, workflow: str, pr: dict[str, Any], *, dry_run: bool) -> None:
     """Dispatch same-head Strix workflow evidence before OpenCode reviews."""
+    number = pr_number_arg(pr)
+    base_sha = git_sha_arg(pr["baseRefOid"], field="baseRefOid")
+    head_sha = git_sha_arg(pr["headRefOid"], field="headRefOid")
     if dry_run:
         return
     run(
@@ -341,11 +367,11 @@ def dispatch_strix_evidence(repo: str, workflow: str, pr: dict[str, Any], *, dry
             "--ref",
             pr["baseRefName"],
             "-f",
-            f"pr_number={pr['number']}",
+            f"pr_number={number}",
             "-f",
-            f"pr_base_sha={pr['baseRefOid']}",
+            f"pr_base_sha={base_sha}",
             "-f",
-            f"pr_head_sha={pr['headRefOid']}",
+            f"pr_head_sha={head_sha}",
         ]
     )
 
@@ -479,11 +505,13 @@ def summarize_action_error(exc: RuntimeError) -> str:
 
 def self_test() -> None:
     """Exercise scheduler invariants without GitHub network access."""
+    head_sha = "a" * 40
+    base_sha = "b" * 40
     sample = {
         "number": 1,
-        "headRefOid": "abc",
+        "headRefOid": head_sha,
         "baseRefName": "main",
-        "baseRefOid": "base",
+        "baseRefOid": base_sha,
         "headRefName": "feature",
         "mergeStateStatus": "CLEAN",
         "isDraft": False,
@@ -496,7 +524,7 @@ def self_test() -> None:
                     "state": "APPROVED",
                     "author": {"login": "opencode-agent"},
                     "body": "OpenCode Agent approved this head.",
-                    "commit": {"oid": "abc"},
+                    "commit": {"oid": head_sha},
                 }
             ]
         },
@@ -538,7 +566,7 @@ def self_test() -> None:
             "state": "APPROVED",
             "author": {"login": "not-opencode-agent"},
             "body": "OpenCode Agent approved this head.",
-            "commit": {"oid": "abc"},
+            "commit": {"oid": head_sha},
         }
     )
     assert has_current_head_approval(sample)
@@ -548,7 +576,7 @@ def self_test() -> None:
         {
             "state": "CHANGES_REQUESTED",
             "author": {"login": "opencode-agent"},
-            "commit": {"oid": "old"},
+            "commit": {"oid": "d" * 40},
         }
     )
     assert not has_current_head_changes_requested(sample)
@@ -562,7 +590,7 @@ def self_test() -> None:
         {
             "state": "APPROVED",
             "author": {"login": "opencode-agent"},
-            "commit": {"oid": "old"},
+            "commit": {"oid": "c" * 40},
         }
     ]
     decision = inspect_pr(
@@ -598,7 +626,7 @@ def self_test() -> None:
         base_branch="main",
     )
     assert decision.action == "review_dispatch"
-    sample["reviews"]["nodes"][0]["commit"]["oid"] = "abc"
+    sample["reviews"]["nodes"][0]["commit"]["oid"] = head_sha
     decision = inspect_pr(
         "owner/repo",
         sample,
@@ -627,6 +655,20 @@ def self_test() -> None:
     assert "merge origin/main into feature, or rebase feature onto origin/main" in decision.reason
     assert "resolve conflict markers in the PR branch" in decision.reason
     assert "push the same feature branch" in decision.reason
+    invalid_number = {**sample, "number": "1; echo injected"}
+    try:
+        enable_auto_merge("owner/repo", invalid_number, dry_run=True)
+    except ValueError as exc:
+        assert "positive integer" in str(exc)
+    else:
+        raise AssertionError("invalid PR number was accepted")
+    invalid_head = {**sample, "number": 1, "headRefOid": "not-a-sha"}
+    try:
+        update_branch("owner/repo", invalid_head, dry_run=True)
+    except ValueError as exc:
+        assert "40-character git SHA" in str(exc)
+    else:
+        raise AssertionError("invalid head SHA was accepted")
     print("self-test passed")
 
 
