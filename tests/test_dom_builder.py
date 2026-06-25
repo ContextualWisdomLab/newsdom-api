@@ -177,6 +177,15 @@ def test_build_dom_creates_table_article_when_needed():
     assert dom.pages[0].articles[0].body_blocks == ["&lt;table&gt;&lt;/table&gt;"]
 
 
+def test_build_dom_skips_empty_table_body():
+    dom = build_dom(
+        [{"type": "table", "table_body": "   ", "bbox": [1, 1, 2, 2]}],
+        document_id="doc-empty-table",
+    )
+    assert dom.pages[0].articles[0].headline == "(table-block)"
+    assert dom.pages[0].articles[0].body_blocks == []
+
+
 def test_build_dom_creates_untitled_article_for_plain_text():
     dom = build_dom(
         [{"type": "text", "text": "plain body", "bbox": [1, 1, 2, 2]}],
