@@ -61,14 +61,27 @@ class PageNode(BaseModel):
 class ParseQuality(BaseModel):
     """Quality metadata describing parser provenance and warnings."""
 
-    status: str = "success"
-    parser: str = "mineru"
-    warnings: List[str] = Field(default_factory=list)
+    status: str = Field(
+        default="success", description="Parsing operation status indicator."
+    )
+    parser: str = Field(
+        default="mineru", description="The underlying engine used to parse the PDF."
+    )
+    warnings: List[str] = Field(
+        default_factory=list,
+        description="Non-fatal warnings encountered during the parsing process.",
+    )
 
 
 class ParseResponse(BaseModel):
     """Top-level API response for a parsed document."""
 
-    document_id: str
-    pages: List[PageNode] = Field(default_factory=list)
-    quality: ParseQuality = Field(default_factory=ParseQuality)
+    document_id: str = Field(description="Unique identifier for the parsed document.")
+    pages: List[PageNode] = Field(
+        default_factory=list,
+        description="Sequential list of structured pages extracted from the PDF.",
+    )
+    quality: ParseQuality = Field(
+        default_factory=ParseQuality,
+        description="Metadata detailing parsing provenance and encountered warnings.",
+    )

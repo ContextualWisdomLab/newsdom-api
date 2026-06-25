@@ -11,3 +11,7 @@
 ## 2025-03-01 - Enhance OpenAPI/Swagger DX for Headless API
 **Learning:** For a backend-only headless API where there is no frontend UI, the OpenAPI/Swagger documentation page acts as the primary user interface. Improving metadata such as `summary`, `description`, and parameter descriptions significantly improves Developer Experience (DX) and makes the API much more intuitive and accessible for developers testing or integrating the service.
 **Action:** When working on backend-only services, prioritize adding rich, clear OpenAPI metadata (titles, descriptions, summaries, file parameter descriptions) to endpoints. This provides the most significant "UX" value for these types of repositories.
+
+## 2026-06-25 - Pydantic Field Descriptions for OpenAPI DX
+**Learning:** For a backend-only FastAPI service without a frontend UI, adding `description` parameters to Pydantic `Field`s directly improves the generated Swagger UI/OpenAPI schema. Providing clear field descriptions inside top-level schemas (like API responses) makes the interface much more intuitive for developers.
+**Action:** Always include helpful `description` arguments in Pydantic models used as API schemas to provide an accessible Developer Experience (DX).
