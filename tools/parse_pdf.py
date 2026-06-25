@@ -13,6 +13,18 @@ if str(_SRC_ROOT) not in sys.path:
 from newsdom_api.service import parse_pdf_bytes  # noqa: E402
 
 
+def _resolve_pdf_input(input_path: Path) -> Path:
+    """Resolve a local PDF input while rejecting traversal-style paths."""
+
+    if ".." in input_path.parts:
+        raise ValueError("The input path must not contain parent directory segments.")
+    if input_path.suffix.lower() != ".pdf":
+        raise ValueError("The input file must use a .pdf extension.")
+    if not input_path.is_file():
+        raise ValueError(f"The input file {input_path} does not exist or is not a file.")
+    return input_path.resolve(strict=True)
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         description="Parse a Japanese newspaper PDF and output the resulting DOM as JSON."
@@ -37,16 +49,15 @@ def main(argv: list[str] | None = None) -> None:
 
     args = parser.parse_args(argv)
 
-    if not args.input.is_file():
-        print(
-            f"Error: The input file {args.input} does not exist or is not a file.",
-            file=sys.stderr,
-        )
+    try:
+        input_path = _resolve_pdf_input(args.input)
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
 
     try:
-        pdf_bytes = args.input.read_bytes()
-        response = parse_pdf_bytes(pdf_bytes, filename=args.input.name)
+        pdf_bytes = input_path.read_bytes()
+        response = parse_pdf_bytes(pdf_bytes, filename=input_path.name)
 
         # Serialize to dictionary for JSON output
         output_dict = response.model_dump(mode="json")

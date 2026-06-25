@@ -59,6 +59,29 @@ def test_parse_pdf_file_not_found(tmp_path, capsys):
     assert "does not exist or is not a file" in err
 
 
+def test_parse_pdf_rejects_parent_directory_segments(tmp_path, capsys):
+    traversal_path = tmp_path / "nested" / ".." / "sample.pdf"
+
+    with pytest.raises(SystemExit) as e:
+        parse_pdf.main([str(traversal_path)])
+
+    assert e.value.code == 1
+    err = capsys.readouterr().err
+    assert "must not contain parent directory segments" in err
+
+
+def test_parse_pdf_rejects_non_pdf_extension(tmp_path, capsys):
+    txt_path = tmp_path / "sample.txt"
+    txt_path.write_text("not a pdf")
+
+    with pytest.raises(SystemExit) as e:
+        parse_pdf.main([str(txt_path)])
+
+    assert e.value.code == 1
+    err = capsys.readouterr().err
+    assert "must use a .pdf extension" in err
+
+
 @patch("tools.parse_pdf.parse_pdf_bytes")
 def test_parse_pdf_exception(mock_parse, mock_pdf_file, capsys):
     mock_parse.side_effect = Exception("Mock parsing error")
