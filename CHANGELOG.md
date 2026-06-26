@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adjusted the `/parse` endpoint to return specific HTTP error codes (`502` and `503`) mapped to `MineruIncompleteOutputError` and `MineruRuntimeUnavailableError` rather than raw `500` errors.
 
 ### Fixed
-- CI 환경에서 `opencode-review` 테스트 시 `fastapi`, `pydantic`, `pillow` 모듈 누락으로 인한 커버리지 측정 실패 수정
+- CI 환경에서 `opencode-review` 테스트 시 커버리지 스크립트 내부 `install_python_project_dependencies` 누락 문제 수정 및 tools 커버리지 포함
 
 - Mitigated infinite hang issues when processing specific PDFs by enforcing a strict timeout (300 seconds) in the `mineru` subprocess runner.
 - Resolved permission (`EACCES`) issues in GitHub Actions by running tests locally instead of inside a non-root container context for GitHub's restricted runner environment.
