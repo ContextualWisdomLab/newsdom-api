@@ -103,3 +103,15 @@ def test_parse_pdf_main_block(monkeypatch, capsys):
 
     assert exc_info.value.code == 0
     assert "Parse a Japanese newspaper PDF" in capsys.readouterr().out
+
+
+def test_parse_pdf_import_sys_path(monkeypatch):
+    script_path = Path(__file__).resolve().parents[1] / "tools" / "parse_pdf.py"
+    src_root = str(script_path.parents[1] / "src")
+
+    # Remove src_root from sys.path if it exists to test the branch
+    if src_root in sys.path:
+        monkeypatch.setattr(sys, "path", [p for p in sys.path if p != src_root])
+
+    # Run the module to execute top-level code including the if condition
+    runpy.run_path(str(script_path))
