@@ -91,9 +91,8 @@ def _html_safe_text(value: Any) -> str:
     s = s.strip()
     if not s:
         return ""
-    if "&" in s or "<" in s or ">" in s or '"' in s or "'" in s:
-        return html_escape(s)
-    return s
+    return html_escape(s)
+
 
 
 def _safe_media_path(value: Any, fallback: str) -> str:
