@@ -103,3 +103,25 @@ def test_parse_pdf_main_block(monkeypatch, capsys):
 
     assert exc_info.value.code == 0
     assert "Parse a Japanese newspaper PDF" in capsys.readouterr().out
+
+
+def test_sys_path_insertion():
+    import sys
+    from pathlib import Path
+    import importlib
+
+    # Store original sys.path
+    original_sys_path = sys.path[:]
+
+    # Remove the src path if it's there
+    _REPO_ROOT = Path(__file__).resolve().parents[1]
+    _SRC_ROOT = _REPO_ROOT / "src"
+
+    if str(_SRC_ROOT) in sys.path:
+        sys.path.remove(str(_SRC_ROOT))
+
+    try:
+        importlib.reload(parse_pdf)
+    finally:
+        sys.path = original_sys_path
+        importlib.reload(parse_pdf)
