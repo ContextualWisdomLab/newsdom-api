@@ -112,9 +112,10 @@ jobs:
 
           if has_tracked_files '*.py'; then
             measured_any=1
+            install_python_project_dependencies
             if [ -f pyproject.toml ] && [ -f uv.lock ] && command -v uv >/dev/null 2>&1; then
               run_and_capture "Python dependency sync" uv sync --frozen --all-extras
-              run_and_capture "Python test coverage" env PYTHONWARNINGS=error PYTHONPATH=src uv run pytest --cov=src/newsdom_api --cov-branch --cov-report=term-missing --cov-fail-under=100
+              run_and_capture "Python test coverage" env PYTHONWARNINGS=error PYTHONPATH=src uv run pytest --cov=src/newsdom_api --cov=tools --cov-branch --cov-report=term-missing --cov-fail-under=100
               if [ -f tests/test_docstrings.py ]; then
                 run_and_capture "Python docstring coverage" uv run pytest tests/test_docstrings.py
               else
