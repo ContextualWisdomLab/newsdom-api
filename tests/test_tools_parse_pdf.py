@@ -125,3 +125,120 @@ def test_sys_path_insertion():
     finally:
         sys.path = original_sys_path
         importlib.reload(parse_pdf)
+
+
+def test_sys_path_insertion_not_in_path():
+    import sys
+    from pathlib import Path
+    import importlib
+
+    # Store original sys.path
+    original_sys_path = sys.path[:]
+
+    # Remove the src path if it's there
+    _REPO_ROOT = Path(__file__).resolve().parents[1]
+    _SRC_ROOT = _REPO_ROOT / "src"
+
+    # Ensure it's not in sys.path
+    while str(_SRC_ROOT) in sys.path:
+        sys.path.remove(str(_SRC_ROOT))
+
+    try:
+        importlib.reload(parse_pdf)
+    finally:
+        sys.path = original_sys_path
+        importlib.reload(parse_pdf)
+
+
+def test_sys_path_insertion_already_in_path():
+    import sys
+    from pathlib import Path
+    import importlib
+
+    # Store original sys.path
+    original_sys_path = sys.path[:]
+
+    # Remove the src path if it's there
+    _REPO_ROOT = Path(__file__).resolve().parents[1]
+    _SRC_ROOT = _REPO_ROOT / "src"
+
+    # Ensure it is in sys.path
+    if str(_SRC_ROOT) not in sys.path:
+        sys.path.insert(0, str(_SRC_ROOT))
+
+    try:
+        importlib.reload(parse_pdf)
+    finally:
+        sys.path = original_sys_path
+        importlib.reload(parse_pdf)
+
+
+def test_sys_path_insertion_already_in_path_force_not():
+    import sys
+    from pathlib import Path
+    import importlib
+
+    # Store original sys.path
+    original_sys_path = sys.path[:]
+
+    # Remove the src path if it's there
+    _REPO_ROOT = Path(__file__).resolve().parents[1]
+    _SRC_ROOT = _REPO_ROOT / "src"
+
+    # Ensure it is NOT in sys.path so we trigger the other branch too
+    while str(_SRC_ROOT) in sys.path:
+        sys.path.remove(str(_SRC_ROOT))
+
+    try:
+        importlib.reload(parse_pdf)
+    finally:
+        sys.path = original_sys_path
+        importlib.reload(parse_pdf)
+
+
+def test_sys_path_insertion_already_in_path_force_not2():
+    import sys
+    from pathlib import Path
+    import importlib
+    import tools.parse_pdf as parse_pdf
+
+    # Store original sys.path
+    original_sys_path = sys.path[:]
+
+    # Remove the src path if it's there
+    _REPO_ROOT = Path(__file__).resolve().parents[1]
+    _SRC_ROOT = _REPO_ROOT / "src"
+
+    # Ensure it is in sys.path
+    if str(_SRC_ROOT) not in sys.path:
+        sys.path.insert(0, str(_SRC_ROOT))
+
+    try:
+        importlib.reload(parse_pdf)
+    finally:
+        sys.path = original_sys_path
+        importlib.reload(parse_pdf)
+
+
+def test_sys_path_insertion_already_in_path_force_not3():
+    import sys
+    from pathlib import Path
+    import importlib
+    import tools.parse_pdf as parse_pdf
+
+    # Store original sys.path
+    original_sys_path = sys.path[:]
+
+    # Remove the src path if it's there
+    _REPO_ROOT = Path(__file__).resolve().parents[1]
+    _SRC_ROOT = _REPO_ROOT / "src"
+
+    # Ensure it is NOT in sys.path
+    while str(_SRC_ROOT) in sys.path:
+        sys.path.remove(str(_SRC_ROOT))
+
+    try:
+        importlib.reload(parse_pdf)
+    finally:
+        sys.path = original_sys_path
+        importlib.reload(parse_pdf)
