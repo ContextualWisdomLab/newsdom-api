@@ -30,6 +30,7 @@ def _resolve_pdf_input(input_path: Path) -> Path:
 
 
 def main(argv: list[str] | None = None) -> None:
+    """Execute the PDF parsing CLI command."""
     parser = argparse.ArgumentParser(
         description="Parse a Japanese newspaper PDF and output the resulting DOM as JSON."
     )

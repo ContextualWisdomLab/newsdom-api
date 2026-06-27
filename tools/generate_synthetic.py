@@ -8,6 +8,7 @@ from newsdom_api.synthetic import generate_fixture
 
 
 def main(argv: list[str] | None = None) -> None:
+    """Execute the synthetic fixture generation CLI command."""
     parser = argparse.ArgumentParser(
         description="Generate synthetic newspaper PDFs and corresponding truth JSONs."
     )

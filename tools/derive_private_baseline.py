@@ -75,6 +75,7 @@ def derive_baseline(
 
 
 def main(argv: list[str] | None = None) -> None:
+    """Execute the baseline derivation CLI command."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--private-fixtures-dir",
