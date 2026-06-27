@@ -98,6 +98,12 @@ def test_parse_pdf_main_block(monkeypatch, capsys):
     script_path = Path(__file__).resolve().parents[1] / "tools" / "parse_pdf.py"
     monkeypatch.setattr(sys, "argv", [str(script_path), "--help"])
 
+    # We remove the sys.path insertion so the branch can be hit during testing
+    import tools.parse_pdf
+
+    if str(tools.parse_pdf._SRC_ROOT) in sys.path:
+        sys.path.remove(str(tools.parse_pdf._SRC_ROOT))
+
     with pytest.raises(SystemExit) as exc_info:
         runpy.run_path(str(script_path), run_name="__main__")
 
