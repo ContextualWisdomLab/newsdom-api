@@ -57,6 +57,7 @@ def main(argv: list[str] | None = None) -> int:
     import atheris
 
     def test_one_input(data: bytes) -> None:
+        """Fuzz harness entry point."""
         exercise_dom_builder(data)
 
     atheris.Setup([sys.argv[0], *forwarded], test_one_input)

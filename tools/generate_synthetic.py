@@ -1,3 +1,6 @@
+"""
+CLI tool for generate_synthetic.py.
+"""
 from __future__ import annotations
 
 import argparse
@@ -8,6 +11,7 @@ from newsdom_api.synthetic import generate_fixture
 
 
 def main(argv: list[str] | None = None) -> None:
+    """Entry point for the CLI."""
     parser = argparse.ArgumentParser(
         description="Generate synthetic newspaper PDFs and corresponding truth JSONs."
     )

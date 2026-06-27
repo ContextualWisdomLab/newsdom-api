@@ -1,3 +1,6 @@
+"""
+CLI tool for benchmark_ocr.py.
+"""
 from __future__ import annotations
 
 import argparse

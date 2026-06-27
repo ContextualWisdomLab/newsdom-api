@@ -1,3 +1,6 @@
+"""
+CLI tool for parse_pdf.py.
+"""
 from __future__ import annotations
 
 import argparse
@@ -26,6 +29,7 @@ def _resolve_pdf_input(input_path: Path) -> Path:
 
 
 def main(argv: list[str] | None = None) -> None:
+    """Entry point for the CLI."""
     parser = argparse.ArgumentParser(
         description="Parse a Japanese newspaper PDF and output the resulting DOM as JSON."
     )

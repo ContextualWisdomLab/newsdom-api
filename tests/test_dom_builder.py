@@ -104,7 +104,7 @@ def test_build_dom_escapes_text_fields_for_html_renderers():
                 "img_path": "image.png",
                 "image_caption": ["<script>alert('caption')</script>"],
             },
-            {"type": "image", "img_path": "x\" onerror=\"alert(1)"},
+            {"type": "image", "img_path": 'x" onerror="alert(1)'},
             {"type": "table", "table_body": "<script>alert('table')</script>"},
         ],
         document_id="doc-html-safe-text",
@@ -541,3 +541,21 @@ def test_new_article_creates_deterministic_ids_with_fields():
     assert article2.article_id == "article-2"
     assert article2.headline == "Second Headline"
     assert article2.bbox == bbox
+
+
+def test_build_dom_handles_empty_roles():
+    dom = build_dom(
+        [
+            {"role": "header", "text": None},
+            {"role": "footer", "text": ""},
+            {"role": "page_number", "text": "   "},
+            {"role": "ad", "text": None},
+            {"type": "ad", "text": ""},
+        ],
+        document_id="doc-empty-roles",
+    )
+    page = dom.pages[0]
+    assert page.headers == []
+    assert page.footers == []
+    assert page.page_numbers == []
+    assert page.ads == []

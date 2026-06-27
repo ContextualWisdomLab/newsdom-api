@@ -1,3 +1,6 @@
+"""
+CLI tool for derive_private_baseline.py.
+"""
 from __future__ import annotations
 
 import argparse
@@ -75,6 +78,7 @@ def derive_baseline(
 
 
 def main(argv: list[str] | None = None) -> None:
+    """Entry point for the CLI."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--private-fixtures-dir",
