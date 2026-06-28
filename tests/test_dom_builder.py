@@ -544,6 +544,8 @@ def test_new_article_creates_deterministic_ids_with_fields():
 
 
 def test_bbox_helper_returns_none_for_missing_y0_x1_y1():
+    from newsdom_api.dom_builder import _bbox_from_values
+
     assert _bbox_from_values([1.0, None, 3.0, 4.0]) is None
     assert _bbox_from_values([1.0, 2.0, None, 4.0]) is None
     assert _bbox_from_values([1.0, 2.0, 3.0, None]) is None

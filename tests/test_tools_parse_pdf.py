@@ -103,3 +103,18 @@ def test_parse_pdf_main_block(monkeypatch, capsys):
 
     assert exc_info.value.code == 0
     assert "Parse a Japanese newspaper PDF" in capsys.readouterr().out
+
+
+def test_parse_pdf_missing_sys_path(monkeypatch):
+    import sys
+    import importlib
+
+    # Remove the src directory from sys.path
+    import tools.parse_pdf
+
+    if str(tools.parse_pdf._SRC_ROOT) in sys.path:
+        sys.path.remove(str(tools.parse_pdf._SRC_ROOT))
+
+    # Reload the module to trigger the if condition at line 11
+    importlib.reload(tools.parse_pdf)
+    assert str(tools.parse_pdf._SRC_ROOT) in sys.path
