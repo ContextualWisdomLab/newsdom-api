@@ -16,3 +16,7 @@
 ## 2026-06-24 - Avoiding unnecessary float casting and validation in Pydantic hot paths
 **Learning:** Instantiating Pydantic schemas natively (`BoundingBox(x0=..., y0=...)`) or parsing values forces expensive float conversions/validations inside deep loops, particularly with redundant `float()` parsing and validation overhead. In our codebase profiling showed that skipping explicit `float()` calls for values that are already floats, while still casting integer-like JSON numeric inputs, reduces redundant type-casts and offers a 35% speedup inside parsing hot loops.
 **Action:** When mapping dictionary values to Pydantic objects inside hot iteration loops, avoid defensive `float()` calls for values that are already floats, and conditionally cast only non-float numeric primitives before schema construction. This preserves the `BoundingBox` float contract while avoiding double-validation overhead.
+
+## 2024-06-28 - _html_safe_text Early Return Optimization
+**Learning:** Evaluating `str()`, `.strip()`, and `html_escape()` on empty or `None` values introduces measurable overhead. Using early returns avoids these unnecessary allocations and function calls.
+**Action:** Always add early returns for falsy/empty values before performing string transformations and formatting operations in hot loops.
