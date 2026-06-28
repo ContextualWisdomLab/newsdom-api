@@ -16,3 +16,6 @@
 ## 2026-06-24 - Avoiding unnecessary float casting and validation in Pydantic hot paths
 **Learning:** Instantiating Pydantic schemas natively (`BoundingBox(x0=..., y0=...)`) or parsing values forces expensive float conversions/validations inside deep loops, particularly with redundant `float()` parsing and validation overhead. In our codebase profiling showed that skipping explicit `float()` calls for values that are already floats, while still casting integer-like JSON numeric inputs, reduces redundant type-casts and offers a 35% speedup inside parsing hot loops.
 **Action:** When mapping dictionary values to Pydantic objects inside hot iteration loops, avoid defensive `float()` calls for values that are already floats, and conditionally cast only non-float numeric primitives before schema construction. This preserves the `BoundingBox` float contract while avoiding double-validation overhead.
+## 2024-06-28 - Unrolling Fixed-Size Array Extractions in Hot Paths
+**Learning:** Generator expressions, tuple allocations, and `any()` checks when extracting coordinates in hot loops cause measurable overhead.
+**Action:** Unroll extraction and validation into sequential variables to eliminate unnecessary allocations and enable immediate early returns.

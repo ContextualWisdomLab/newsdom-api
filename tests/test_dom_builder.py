@@ -35,6 +35,9 @@ def test_bbox_helper_returns_none_for_invalid_values():
     assert _bbox_from_values(None) is None
     assert _bbox_from_values([1, 2, 3]) is None
     assert _bbox_from_values([object(), 0, 1, 1]) is None
+    assert _bbox_from_values([0, object(), 1, 1]) is None
+    assert _bbox_from_values([0, 0, object(), 1]) is None
+    assert _bbox_from_values([0, 0, 1, object()]) is None
     assert _bbox_from_values(["bad", 0, 1, 1]) is None
     assert _bbox_from_values([10**10000, 0, 1, 1]) is None
     assert _bbox_from_values([True, 0, 1, 1]) is None

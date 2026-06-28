@@ -54,20 +54,20 @@ def _bbox_from_values(values: list[Any] | None) -> BoundingBox | None:
     if len(values) != 4:
         return None
 
-    coordinates = tuple(_coerce_bbox_coordinate(value) for value in values)
-    if any(coordinate is None for coordinate in coordinates):
+    x0 = _coerce_bbox_coordinate(values[0])
+    if x0 is None:
         return None
 
-    x0, y0, x1, y1 = (
-        coordinates[0],
-        coordinates[1],
-        coordinates[2],
-        coordinates[3],
-    )
-    if x1 < x0:
+    y0 = _coerce_bbox_coordinate(values[1])
+    if y0 is None:
         return None
 
-    if y1 < y0:
+    x1 = _coerce_bbox_coordinate(values[2])
+    if x1 is None or x1 < x0:
+        return None
+
+    y1 = _coerce_bbox_coordinate(values[3])
+    if y1 is None or y1 < y0:
         return None
 
     return BoundingBox(x0=x0, y0=y0, x1=x1, y1=y1)
