@@ -10,27 +10,35 @@ from pydantic import BaseModel, Field
 class BoundingBox(BaseModel):
     """Axis-aligned bounding box expressed in page coordinates."""
 
-    x0: float
-    y0: float
-    x1: float
-    y1: float
+    x0: float = Field(..., description="The x-coordinate of the top-left corner.")
+    y0: float = Field(..., description="The y-coordinate of the top-left corner.")
+    x1: float = Field(..., description="The x-coordinate of the bottom-right corner.")
+    y1: float = Field(..., description="The y-coordinate of the bottom-right corner.")
 
 
 class CaptionNode(BaseModel):
     """Caption text associated with an image or figure."""
 
-    text: str
-    bbox: Optional[BoundingBox] = None
+    text: str = Field(..., description="The text content of the caption.")
+    bbox: Optional[BoundingBox] = Field(
+        None, description="The bounding box of the caption."
+    )
 
 
 class ImageNode(BaseModel):
     """Image metadata preserved in the canonical page structure."""
 
-    path: str
-    media_type: str = "image"
-    bbox: Optional[BoundingBox] = None
-    captions: List[CaptionNode] = Field(default_factory=list)
-    footnotes: List[CaptionNode] = Field(default_factory=list)
+    path: str = Field(..., description="The path or identifier to the image.")
+    media_type: str = Field("image", description="The media type of the node.")
+    bbox: Optional[BoundingBox] = Field(
+        None, description="The bounding box of the image."
+    )
+    captions: List[CaptionNode] = Field(
+        default_factory=list, description="Captions associated with the image."
+    )
+    footnotes: List[CaptionNode] = Field(
+        default_factory=list, description="Footnotes associated with the image."
+    )
 
 
 class ArticleNode(BaseModel):
