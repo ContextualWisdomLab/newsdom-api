@@ -56,16 +56,20 @@ def _bbox_from_values(values: list[Any] | None) -> BoundingBox | None:
 
     # ⚡ Bolt: Unroll generator expression and explicit checks to avoid tuple allocation and enable fast-path early returns
     x0 = _coerce_bbox_coordinate(values[0])
-    if x0 is None: return None
+    if x0 is None:
+        return None
 
     y0 = _coerce_bbox_coordinate(values[1])
-    if y0 is None: return None
+    if y0 is None:
+        return None
 
     x1 = _coerce_bbox_coordinate(values[2])
-    if x1 is None: return None
+    if x1 is None:
+        return None
 
     y1 = _coerce_bbox_coordinate(values[3])
-    if y1 is None: return None
+    if y1 is None:
+        return None
 
     if x1 < x0:
         return None
