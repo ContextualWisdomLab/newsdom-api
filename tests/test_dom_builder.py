@@ -541,3 +541,8 @@ def test_new_article_creates_deterministic_ids_with_fields():
     assert article2.article_id == "article-2"
     assert article2.headline == "Second Headline"
     assert article2.bbox == bbox
+
+def test_bbox_helper_returns_none_for_missing_y0_x1_y1():
+    assert _bbox_from_values([1.0, None, 3.0, 4.0]) is None
+    assert _bbox_from_values([1.0, 2.0, None, 4.0]) is None
+    assert _bbox_from_values([1.0, 2.0, 3.0, None]) is None

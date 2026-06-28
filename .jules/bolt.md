@@ -16,3 +16,11 @@
 ## 2026-06-24 - Avoiding unnecessary float casting and validation in Pydantic hot paths
 **Learning:** Instantiating Pydantic schemas natively (`BoundingBox(x0=..., y0=...)`) or parsing values forces expensive float conversions/validations inside deep loops, particularly with redundant `float()` parsing and validation overhead. In our codebase profiling showed that skipping explicit `float()` calls for values that are already floats, while still casting integer-like JSON numeric inputs, reduces redundant type-casts and offers a 35% speedup inside parsing hot loops.
 **Action:** When mapping dictionary values to Pydantic objects inside hot iteration loops, avoid defensive `float()` calls for values that are already floats, and conditionally cast only non-float numeric primitives before schema construction. This preserves the `BoundingBox` float contract while avoiding double-validation overhead.
+
+## 2026-06-25 - Avoid tuple allocation and early return in fixed-size loop parsing
+**Learning:** Generator expressions `tuple(func(x) for x in list)` allocate a full tuple in memory and prevent fast-path early returns when coercion logic encounters an invalid state (e.g. `None`). In `newsdom-api` parsing loops, early returns for invalid boundaries were blocked behind full iterator exhaustion.
+**Action:** Unroll fixed-size lists into explicit bounds checks (`x0`, `y0`, `x1`, `y1`). This avoids tuple allocation entirely and allows immediate early returns upon encountering `None`, improving bounding box parsing performance.
+
+## 2026-06-25 - Avoid string conversions for falsy inputs in hot paths
+**Learning:** Falsy string checks via `str(value or "").strip()` unconditionally allocate new strings even for `None` or `False`, putting unnecessary pressure on the garbage collector in hot text cleaning paths.
+**Action:** Introduce an explicit truthiness guard `if not value: return ""` before any `str()` or `strip()` calls to bypass string allocations for empty or missing text.
