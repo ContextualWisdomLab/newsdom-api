@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import json
 import runpy
 import sys
@@ -105,3 +106,15 @@ def test_parse_pdf_main_block(monkeypatch, capsys):
 
     assert exc_info.value.code == 0
     assert "Parse a Japanese newspaper PDF" in capsys.readouterr().out
+
+
+def test_parse_pdf_sys_path_insertion():
+    src_path = str(Path(parse_pdf.__file__).resolve().parents[1] / "src")
+    original_sys_path = sys.path.copy()
+    try:
+        sys.path[:] = [path for path in sys.path if path != src_path]
+        importlib.reload(parse_pdf)
+        assert sys.path[0] == src_path
+    finally:
+        sys.path[:] = original_sys_path
+        importlib.reload(parse_pdf)
