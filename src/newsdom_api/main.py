@@ -65,7 +65,7 @@ async def add_security_headers(request: Request, call_next: Callable) -> Respons
 def health() -> HealthResponse:
     """Return a minimal liveness response for health checks."""
 
-    return HealthResponse(status="ok")
+    return HealthResponse()
 
 
 def _validate_pdf_structure(pdf_bytes: bytes) -> None:
