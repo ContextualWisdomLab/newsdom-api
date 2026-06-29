@@ -16,3 +16,8 @@
 **Vulnerability:** The API lacked a `Referrer-Policy` header, potentially leaking sensitive information in the URL to external domains if a user navigates away from the application.
 **Learning:** Adding a `Referrer-Policy: no-referrer` header is a simple yet effective defense-in-depth measure that prevents the browser from sending the `Referer` header.
 **Prevention:** Include `Referrer-Policy: no-referrer` in the global security headers middleware to consistently enforce this protection across all endpoints.
+
+## 2026-06-29 - Prevent Information Leakage via Exception Chaining
+**Vulnerability:** Exception chaining (`from exc`) when raising `HTTPException` attached internal exceptions (like `PdfReadError` or `MineruRuntimeUnavailableError`) to the resulting HTTP error object.
+**Learning:** While FastAPI does not leak chained exceptions in default responses, relying on this behavior is risky. Custom error handlers, logging middleware, or changes in the framework could unintentionally expose these chained tracebacks to clients, leaking sensitive internal logic or paths.
+**Prevention:** Use `from None` instead of `from exc` when mapping internal exceptions to user-facing `HTTPException`s to explicitly suppress the exception context and avoid attaching internal stack traces.

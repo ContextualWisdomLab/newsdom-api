@@ -81,11 +81,11 @@ def _validate_pdf_structure(pdf_bytes: bytes) -> None:
         reader = PdfReader(BytesIO(pdf_bytes), strict=True)
         if len(reader.pages) < 1:
             raise ValueError("PDF has no pages")
-    except (PdfReadError, RecursionError, ValueError, OverflowError) as exc:
+    except (PdfReadError, RecursionError, ValueError, OverflowError):
         raise HTTPException(
             status_code=415,
             detail=UNSUPPORTED_MEDIA_DETAIL,
-        ) from exc
+        ) from None
 
 
 @app.post(
@@ -131,7 +131,7 @@ async def parse(
         return await asyncio.to_thread(
             parse_pdf_bytes, pdf_bytes, filename=file.filename or "upload.pdf"
         )
-    except MineruRuntimeUnavailableError as exc:
-        raise HTTPException(status_code=503, detail="Service Unavailable") from exc
-    except MineruIncompleteOutputError as exc:
-        raise HTTPException(status_code=502, detail="Bad Gateway") from exc
+    except MineruRuntimeUnavailableError:
+        raise HTTPException(status_code=503, detail="Service Unavailable") from None
+    except MineruIncompleteOutputError:
+        raise HTTPException(status_code=502, detail="Bad Gateway") from None
