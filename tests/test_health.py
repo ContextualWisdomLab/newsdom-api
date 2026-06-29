@@ -20,6 +20,12 @@ def test_healthcheck():
         response.headers.get("Strict-Transport-Security")
         == "max-age=31536000; includeSubDomains"
     )
+    assert response.headers.get("Referrer-Policy") == "no-referrer"
+    assert response.headers.get("Cross-Origin-Opener-Policy") == "same-origin"
+    assert (
+        response.headers.get("Permissions-Policy")
+        == "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+    )
 
 
 def test_healthcheck_omits_hsts_for_plain_http():
