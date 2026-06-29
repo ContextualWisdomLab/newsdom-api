@@ -107,6 +107,9 @@ maintenance are documented in `CONTRIBUTING.md`.
 
 Mechanical branch updates and merges are attributed to `github-actions[bot]`.
 Scratch PoC files are not committed. Failed GitHub Checks are not reviewed as URL lists.
+OpenCode Review, Strix Security Scan, and PR Review Merge Scheduler are
+provided by the organization-level required workflows in
+`ContextualWisdomLab/.github`, not copied into this repository.
 
 Security reporting guidance is documented in `SECURITY.md`.
 Version tags trigger a GitHub-native release workflow that builds
