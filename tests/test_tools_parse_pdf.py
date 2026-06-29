@@ -96,6 +96,8 @@ def test_parse_pdf_exception(mock_parse, mock_pdf_file, capsys):
 
 def test_parse_pdf_main_block(monkeypatch, capsys):
     script_path = Path(__file__).resolve().parents[1] / "tools" / "parse_pdf.py"
+    src_path = str(script_path.parents[1] / "src")
+    monkeypatch.setattr(sys, "path", [path for path in sys.path if path != src_path])
     monkeypatch.setattr(sys, "argv", [str(script_path), "--help"])
 
     with pytest.raises(SystemExit) as exc_info:
