@@ -111,9 +111,13 @@ def _read_mineru_json(path: Path, *, artifact: str) -> Any:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        raise MineruIncompleteOutputError(f"{artifact} JSON was malformed") from exc
+        raise MineruIncompleteOutputError(
+            f"{artifact} JSON was malformed"
+        ) from exc
     except (OSError, UnicodeDecodeError) as exc:
-        raise MineruIncompleteOutputError(f"{artifact} JSON could not be read") from exc
+        raise MineruIncompleteOutputError(
+            f"{artifact} JSON could not be read"
+        ) from exc
 
 
 def _parse_mineru_output(

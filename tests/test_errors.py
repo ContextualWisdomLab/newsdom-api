@@ -1,7 +1,4 @@
-from newsdom_api.errors import (
-    MineruIncompleteOutputError,
-    MineruRuntimeUnavailableError,
-)
+from newsdom_api.errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 
 
 def test_mineru_runtime_unavailable_error_initialization():
