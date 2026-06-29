@@ -82,16 +82,11 @@ def _bbox_from_values(values: list[Any] | None) -> BoundingBox | None:
 
 def _html_safe_text(value: Any) -> str:
     """Normalize OCR text for safe downstream HTML rendering."""
-
-    # ⚡ Bolt: Early return for falsy values to avoid expensive str() and strip() overhead in hot paths
     if not value:
         return ""
-
-    text = str(value).strip()
-    if not text:
-        return ""
-
-    return html_escape(text)
+    # ⚡ Bolt: Fast path for str to avoid expensive str() cast
+    text = value if type(value) is str else str(value)
+    return html_escape(text.strip())
 
 
 def _safe_media_path(value: Any, fallback: str) -> str:
