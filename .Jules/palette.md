@@ -1,5 +1,9 @@
 # Palette's UX/A11y Journal
 
+## 2026-06-27 - OpenAPI Contact and License Metadata
+**Learning:** Contact and license metadata in generated OpenAPI documents helps API consumers quickly identify maintainers, support paths, and reuse terms without leaving the docs surface.
+**Action:** Include clear `contact` and SPDX-aligned `license_info` metadata when maintaining FastAPI services intended for third-party integration.
+
 ## 2026-06-26 - Backend Services UX via OpenAPI Documentation
 **Learning:** For backend-only services without a frontend UI, Developer Experience (DX) is the primary user experience. OpenAPI/Swagger documentation generated from Pydantic models plays a crucial role in providing a usable and intuitive interface for developers consuming the API.
 **Action:** Enhance Pydantic model properties with detailed `description` fields using `Field()` to automatically generate rich, self-documenting OpenAPI schemas for developers.
