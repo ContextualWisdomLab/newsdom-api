@@ -126,6 +126,10 @@ def test_build_dom_preserves_multi_page_structure_and_page_scoped_metadata():
 
 
 def test_coerce_page_number_returns_none_for_type_and_value_errors():
+    assert _coerce_page_number([1, 2, 3]) is None
+    assert _coerce_page_number({"a": 1}) is None
+    assert _coerce_page_number(1) == 1
+    assert _coerce_page_number("2") == 2
     assert _coerce_page_number(object()) is None
     assert _coerce_page_number("not-a-page-number") is None
     assert _coerce_page_number(None) is None
