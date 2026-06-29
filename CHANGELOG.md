@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- OpenAPI (Swagger UI) 메타데이터 개선: `/parse` 엔드포인트에 415, 502, 503 에러 응답에 대한 설명을 추가하여 개발자 경험(DX)을 향상시켰습니다.
+
 ## [0.2.0] - 2026-04-24
 
 ### Added
