@@ -40,3 +40,19 @@ def test_healthcheck_emits_hsts_for_forwarded_https():
         response.headers.get("Strict-Transport-Security")
         == "max-age=31536000; includeSubDomains"
     )
+
+
+def test_openapi_metadata_includes_contact_and_license():
+    client = TestClient(app)
+    response = client.get("/openapi.json")
+
+    assert response.status_code == 200
+    info = response.json()["info"]
+    assert info["contact"] == {
+        "name": "Seongho Bae",
+        "url": "https://github.com/Seongho-Bae/newsdom-api",
+    }
+    assert info["license"] == {
+        "name": "MIT License",
+        "identifier": "MIT",
+    }
