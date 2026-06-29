@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import asyncio
 from io import BytesIO
+import logging
 from typing import Annotated, Callable
 
 from fastapi import FastAPI, File, HTTPException, Request, Response, UploadFile
+from fastapi.responses import JSONResponse
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
@@ -40,7 +42,15 @@ app = FastAPI(
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next: Callable) -> Response:
     """Inject standard security headers into all API responses."""
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+    except Exception:
+        # 🛡️ Sentinel: Log the error for observability, but fail securely to the client
+        logging.exception("Unhandled error processing request")
+        response = JSONResponse(
+            status_code=500,
+            content={"detail": "Internal Server Error"},
+        )
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Content-Security-Policy"] = (
