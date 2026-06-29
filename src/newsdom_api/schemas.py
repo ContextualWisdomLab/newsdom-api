@@ -85,3 +85,12 @@ class ParseResponse(BaseModel):
         default_factory=ParseQuality,
         description="Metadata detailing parsing provenance and encountered warnings.",
     )
+
+
+class HealthResponse(BaseModel):
+    """Liveness response model for deployment health checks."""
+
+    status: str = Field(
+        default="ok",
+        description="Current operational status of the service.",
+    )
