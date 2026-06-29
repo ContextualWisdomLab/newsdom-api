@@ -54,23 +54,16 @@ def _bbox_from_values(values: list[Any] | None) -> BoundingBox | None:
     if len(values) != 4:
         return None
 
-    # ⚡ Bolt: Unroll generator comprehension into explicit checks to avoid iteration overhead
-    x0 = _coerce_bbox_coordinate(values[0])
-    if x0 is None:
+    coordinates = tuple(_coerce_bbox_coordinate(value) for value in values)
+    if any(coordinate is None for coordinate in coordinates):
         return None
 
-    y0 = _coerce_bbox_coordinate(values[1])
-    if y0 is None:
-        return None
-
-    x1 = _coerce_bbox_coordinate(values[2])
-    if x1 is None:
-        return None
-
-    y1 = _coerce_bbox_coordinate(values[3])
-    if y1 is None:
-        return None
-
+    x0, y0, x1, y1 = (
+        coordinates[0],
+        coordinates[1],
+        coordinates[2],
+        coordinates[3],
+    )
     if x1 < x0:
         return None
 
@@ -83,16 +76,7 @@ def _bbox_from_values(values: list[Any] | None) -> BoundingBox | None:
 def _html_safe_text(value: Any) -> str:
     """Normalize OCR text for safe downstream HTML rendering."""
 
-    if not value:
-        return ""
-
-    # ⚡ Bolt: Avoid redundant type casts and escaping overhead in hot text processing path
-    s = value if type(value) is str else str(value)
-    s = s.strip()
-    if not s:
-        return ""
-    return html_escape(s)
-
+    return html_escape(str(value or "").strip())
 
 
 def _safe_media_path(value: Any, fallback: str) -> str:

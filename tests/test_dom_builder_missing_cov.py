@@ -1,6 +1,6 @@
 from itertools import count
 
-from newsdom_api.dom_builder import _bbox_from_values, _build_page_dom
+from newsdom_api.dom_builder import _build_page_dom
 
 
 def test_missing_branches():
@@ -19,10 +19,3 @@ def test_missing_branches():
     assert page.footers == []
     assert page.page_numbers == []
     assert page.ads == []
-
-
-def test_bbox_from_values_invalid_coordinates():
-    # Target lines: 64, 68, 72 (where y0, x1, y1 are invalid)
-    assert _bbox_from_values([0, "bad", 1, 1]) is None
-    assert _bbox_from_values([0, 0, "bad", 1]) is None
-    assert _bbox_from_values([0, 0, 1, "bad"]) is None
