@@ -10,52 +10,103 @@ from pydantic import BaseModel, Field
 class BoundingBox(BaseModel):
     """Axis-aligned bounding box expressed in page coordinates."""
 
-    x0: float
-    y0: float
-    x1: float
-    y1: float
+    x0: float = Field(description="Leftmost X coordinate of the bounding box.")
+    y0: float = Field(description="Topmost Y coordinate of the bounding box.")
+    x1: float = Field(description="Rightmost X coordinate of the bounding box.")
+    y1: float = Field(description="Bottommost Y coordinate of the bounding box.")
 
 
 class CaptionNode(BaseModel):
     """Caption text associated with an image or figure."""
 
-    text: str
-    bbox: Optional[BoundingBox] = None
+    text: str = Field(description="Text content of the caption.")
+    bbox: Optional[BoundingBox] = Field(
+        default=None,
+        description="Bounding box of the caption when parser coordinates are available.",
+    )
 
 
 class ImageNode(BaseModel):
     """Image metadata preserved in the canonical page structure."""
 
-    path: str
-    media_type: str = "image"
-    bbox: Optional[BoundingBox] = None
-    captions: List[CaptionNode] = Field(default_factory=list)
-    footnotes: List[CaptionNode] = Field(default_factory=list)
+    path: str = Field(description="Relative path to the extracted image asset.")
+    media_type: str = Field(
+        default="image",
+        description="Media type label for the extracted image node.",
+    )
+    bbox: Optional[BoundingBox] = Field(
+        default=None,
+        description="Bounding box of the image when parser coordinates are available.",
+    )
+    captions: List[CaptionNode] = Field(
+        default_factory=list,
+        description="Captions associated with this image.",
+    )
+    footnotes: List[CaptionNode] = Field(
+        default_factory=list,
+        description="Footnotes associated with this image.",
+    )
 
 
 class ArticleNode(BaseModel):
     """Article-level grouping of headline, body blocks, and related media."""
 
-    article_id: str
-    headline: str
-    bbox: Optional[BoundingBox] = None
-    body_blocks: List[str] = Field(default_factory=list)
-    images: List[ImageNode] = Field(default_factory=list)
-    captions: List[CaptionNode] = Field(default_factory=list)
-    footnotes: List[CaptionNode] = Field(default_factory=list)
+    article_id: str = Field(description="Stable identifier for the article within the parsed document.")
+    headline: str = Field(description="Primary headline text for the article.")
+    bbox: Optional[BoundingBox] = Field(
+        default=None,
+        description="Bounding box enclosing the article when parser coordinates are available.",
+    )
+    body_blocks: List[str] = Field(
+        default_factory=list,
+        description="Ordered text blocks that make up the article body.",
+    )
+    images: List[ImageNode] = Field(
+        default_factory=list,
+        description="Images associated with the article.",
+    )
+    captions: List[CaptionNode] = Field(
+        default_factory=list,
+        description="Captions associated with the article.",
+    )
+    footnotes: List[CaptionNode] = Field(
+        default_factory=list,
+        description="Footnotes associated with the article.",
+    )
 
 
 class PageNode(BaseModel):
     """Single parsed page including article, ad, and header groupings."""
 
-    page_number: int
-    width: Optional[float] = None
-    height: Optional[float] = None
-    articles: List[ArticleNode] = Field(default_factory=list)
-    ads: List[str] = Field(default_factory=list)
-    headers: List[str] = Field(default_factory=list)
-    footers: List[str] = Field(default_factory=list)
-    page_numbers: List[str] = Field(default_factory=list)
+    page_number: int = Field(description="One-based page number from the parsed PDF.")
+    width: Optional[float] = Field(
+        default=None,
+        description="Page width reported by the parser, if available.",
+    )
+    height: Optional[float] = Field(
+        default=None,
+        description="Page height reported by the parser, if available.",
+    )
+    articles: List[ArticleNode] = Field(
+        default_factory=list,
+        description="Articles extracted from this page.",
+    )
+    ads: List[str] = Field(
+        default_factory=list,
+        description="Advertisement text blocks extracted from this page.",
+    )
+    headers: List[str] = Field(
+        default_factory=list,
+        description="Header text blocks extracted from this page.",
+    )
+    footers: List[str] = Field(
+        default_factory=list,
+        description="Footer text blocks extracted from this page.",
+    )
+    page_numbers: List[str] = Field(
+        default_factory=list,
+        description="Visible page-number text blocks extracted from this page.",
+    )
 
 
 class ParseQuality(BaseModel):
