@@ -1,3 +1,4 @@
+"""Parse a PDF document and emit canonical JSON DOM structure."""
 from __future__ import annotations
 
 import argparse
@@ -26,6 +27,7 @@ def _resolve_pdf_input(input_path: Path) -> Path:
 
 
 def main(argv: list[str] | None = None) -> None:
+    """Execute the PDF parser via CLI arguments."""
     parser = argparse.ArgumentParser(
         description="Parse a Japanese newspaper PDF and output the resulting DOM as JSON."
     )

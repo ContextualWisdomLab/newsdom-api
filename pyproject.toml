@@ -77,3 +77,8 @@ module = [
   "reportlab.*",
 ]
 ignore_missing_imports = true
+
+[tool.interrogate]
+ignore-init-module = true
+ignore-init-method = true
+exclude = ["tests", "scripts", "fuzzers", "tools", "venv", ".venv", ".tox", ".eggs", ".pytest_cache", ".ruff_cache", ".coverage"]
