@@ -137,3 +137,27 @@ def test_parse_pdf_bytes_uses_default_for_parent_only_filename(monkeypatch):
     result = parse_pdf_bytes(b"pdf-bytes", filename="../..")
     assert observed["path_name"] == "upload.pdf"
     assert result.document_id == "upload"
+
+
+def test_parse_pdf_bytes_truncates_long_filename(monkeypatch):
+    observed = {}
+
+    def fake_run_mineru(path: Path):
+        observed["path_name"] = path.name
+        return {
+            "content_list": [
+                {
+                    "type": "text",
+                    "text": "headline",
+                    "text_level": 1,
+                    "bbox": [0, 0, 1, 1],
+                }
+            ]
+        }
+
+    monkeypatch.setattr("newsdom_api.service.run_mineru", fake_run_mineru)
+    long_filename = "a" * 300 + ".pdf"
+    result = parse_pdf_bytes(b"pdf-bytes", filename=long_filename)
+    assert len(observed["path_name"]) == 255
+    assert observed["path_name"] == long_filename[:255]
+    assert result.document_id == long_filename[:255]

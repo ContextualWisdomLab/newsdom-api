@@ -17,7 +17,7 @@ def _safe_upload_filename(filename: str) -> str:
     name = PurePosixPath(normalized).name
     if name in ("", ".", ".."):
         return "upload.pdf"
-    return name
+    return name[:255]
 
 
 def parse_pdf_bytes(data: bytes, filename: str = "upload.pdf") -> ParseResponse:
