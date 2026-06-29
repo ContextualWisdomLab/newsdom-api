@@ -103,14 +103,27 @@ def _safe_media_path(value: Any, fallback: str) -> str:
     if ":" in raw_path:
         return fallback
 
-    if any(char in UNSAFE_MEDIA_PATH_CHARS or ord(char) < 32 for char in raw_path):
+    import urllib.parse
+
+    # We must explicitly reject backslashes and colons *before* or *during* validation
+    # because normpath on POSIX doesn't treat backslashes as path separators,
+    # but the test suite explicitly forbids them.
+
+    # Double decode to prevent %252e%252e%252f style attacks
+    # The try/except handles invalid encodings gracefully (though unquote doesn't throw)
+    try:
+        normalized = urllib.parse.unquote(urllib.parse.unquote(raw_path))
+    except Exception:  # pragma: no cover
         return fallback
 
-    for part in raw_path.split("/"):
+    if any(char in UNSAFE_MEDIA_PATH_CHARS or ord(char) < 32 for char in normalized):
+        return fallback
+
+    for part in normalized.split("/"):
         if part in {"", ".", ".."}:
             return fallback
 
-    return raw_path
+    return normalized
 
 
 def _coerce_page_number(value: Any) -> int | None:
