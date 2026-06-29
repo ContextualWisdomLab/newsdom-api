@@ -5,7 +5,10 @@ import subprocess
 import pytest
 
 from newsdom_api import mineru_runner
-from newsdom_api.errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
+from newsdom_api.errors import (
+    MineruIncompleteOutputError,
+    MineruRuntimeUnavailableError,
+)
 
 
 class _FakeTempDir:

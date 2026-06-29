@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Developer Experience(DX) 향상을 위해 Pydantic 모델(`BoundingBox`, `CaptionNode`, `ImageNode`, `ArticleNode`, `PageNode`)에 OpenAPI 설명(Description)을 추가하여 Swagger UI 문서를 개선했습니다.
+
 ### Performance
 - `newsdom_api.dom_builder._html_safe_text` 함수에 early return과 타입 체크를 도입하여 불필요한 `str()` 캐스팅을 제거함으로써 처리 속도를 개선했습니다.
 
