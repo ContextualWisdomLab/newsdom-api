@@ -24,3 +24,7 @@
 ## 2026-06-25 - Avoid expensive str() casting for HTML safe text
 **Learning:** In hot loops where text values are normalized for HTML rendering, eagerly casting all values with `str()` adds measurable overhead, especially since many values are already strings. In our benchmarking, adding an early return for empty values and conditionally bypassing `str()` for strings improved execution speed by ~23% for these operations.
 **Action:** When normalizing inputs for string operations, check for truthiness first (early return) and use type checks (`type(value) is str`) to bypass redundant string casting.
+
+## 2026-06-27 - Avoid unnecessary HTML escaping in hot text paths
+**Learning:** `html.escape()` is useful for unsafe text, but calling it on already plain strings adds avoidable work in parsing hot paths.
+**Action:** After truthiness and string fast-path checks, detect whether text contains HTML-sensitive characters before calling `html.escape()`.
