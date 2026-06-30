@@ -5,7 +5,10 @@ import subprocess
 import pytest
 
 from newsdom_api import mineru_runner
-from newsdom_api.errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
+from newsdom_api.errors import (
+    MineruIncompleteOutputError,
+    MineruRuntimeUnavailableError,
+)
 
 
 class _FakeTempDir:
@@ -121,9 +124,7 @@ def test_build_mineru_command_rejects_option_like_arguments(
     input_pdf: Path, output_dir: Path, mineru_bin: str, match: str
 ):
     with pytest.raises(ValueError, match=match):
-        mineru_runner.build_mineru_command(
-            input_pdf, output_dir, mineru_bin=mineru_bin
-        )
+        mineru_runner.build_mineru_command(input_pdf, output_dir, mineru_bin=mineru_bin)
 
 
 def test_execute_mineru_uses_safe_subprocess_options(monkeypatch):
