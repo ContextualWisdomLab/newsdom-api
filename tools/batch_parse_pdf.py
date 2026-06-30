@@ -13,14 +13,16 @@ if str(_SRC_ROOT) not in sys.path:  # pragma: no cover
 from newsdom_api.service import parse_pdf_bytes  # noqa: E402
 
 
-def batch_parse(input_dir: Path, output_dir: Path, indent: int = 2) -> None:
+def batch_parse(
+    input_dir: Path, output_dir: Path, indent: int = 2, recursive: bool = False
+) -> None:
     """Batch parse PDFs."""
     if not input_dir.is_dir():
         raise NotADirectoryError(f"Input is not a directory: {input_dir}")
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    pdf_files = sorted(list(input_dir.glob("*.pdf")))
+    pdf_files = sorted(input_dir.rglob("*.pdf") if recursive else input_dir.glob("*.pdf"))
     if not pdf_files:
         print(f"No PDF files found in {input_dir}")
         return
@@ -36,7 +38,11 @@ def batch_parse(input_dir: Path, output_dir: Path, indent: int = 2) -> None:
             output_dict = response.model_dump(mode="json")
             json_output = json.dumps(output_dict, ensure_ascii=False, indent=indent)
 
-            out_path = output_dir / f"{pdf_path.stem}.json"
+            if recursive:
+                out_path = output_dir / pdf_path.relative_to(input_dir).with_suffix(".json")
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+            else:
+                out_path = output_dir / f"{pdf_path.stem}.json"
             out_path.write_text(json_output, encoding="utf-8")
             success_count += 1
         except Exception as e:
@@ -54,11 +60,16 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("input_dir", type=Path, help="Directory containing PDF files.")
     parser.add_argument("output_dir", type=Path, help="Directory to save JSON output.")
     parser.add_argument("--indent", type=int, default=2, help="JSON indentation.")
+    parser.add_argument(
+        "--recursive",
+        action="store_true",
+        help="Recursively search for PDF files under the input directory.",
+    )
 
     args = parser.parse_args(argv)
 
     try:
-        batch_parse(args.input_dir, args.output_dir, args.indent)
+        batch_parse(args.input_dir, args.output_dir, args.indent, args.recursive)
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

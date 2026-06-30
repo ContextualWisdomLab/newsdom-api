@@ -33,6 +33,25 @@ def test_batch_parse_success(mock_parse, mock_pdf_dir, tmp_path, capsys):
 
 
 @patch("tools.batch_parse_pdf.parse_pdf_bytes")
+def test_batch_parse_recursive_preserves_relative_paths(mock_parse, mock_pdf_dir, tmp_path):
+    nested_dir = mock_pdf_dir / "section"
+    nested_dir.mkdir()
+    (nested_dir / "doc3.pdf").write_bytes(b"content3")
+
+    mock_response = MagicMock()
+    mock_response.model_dump.return_value = {"status": "ok"}
+    mock_parse.return_value = mock_response
+
+    out_dir = tmp_path / "out"
+    batch_parse_pdf.main([str(mock_pdf_dir), str(out_dir), "--recursive"])
+
+    assert (out_dir / "doc1.json").exists()
+    assert (out_dir / "doc2.json").exists()
+    assert (out_dir / "section" / "doc3.json").exists()
+    assert mock_parse.call_count == 3
+
+
+@patch("tools.batch_parse_pdf.parse_pdf_bytes")
 def test_batch_parse_partial_failure(mock_parse, mock_pdf_dir, tmp_path, capsys):
     def side_effect(b, filename):
         if filename == "doc2.pdf":
