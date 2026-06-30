@@ -367,3 +367,50 @@ async def test_parse_endpoint_rejects_magic_bytes_before_full_read():
     assert exc_info.value.status_code == 415
     assert exc_info.value.detail == "Unsupported Media Type"
     assert upload.read_sizes == [5]
+
+
+def test_unhandled_exception_includes_security_headers(monkeypatch):
+    def fake_parse_pdf_bytes(pdf_bytes, filename):
+        raise RuntimeError("unexpected internal explosion")
+
+    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+
+    client = TestClient(app, raise_server_exceptions=False)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+    )
+
+    assert response.status_code == 500
+    assert response.json()["detail"] == "Internal Server Error"
+    assert response.headers.get("X-Content-Type-Options") == "nosniff"
+    assert response.headers.get("X-Frame-Options") == "DENY"
+    assert (
+        response.headers.get("Content-Security-Policy")
+        == "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+    )
+    assert response.headers.get("Referrer-Policy") == "no-referrer"
+    assert response.headers.get("Cache-Control") == "no-store, max-age=0"
+    assert "Strict-Transport-Security" not in response.headers
+
+
+def test_unhandled_exception_includes_hsts_for_forwarded_https(monkeypatch):
+    def fake_parse_pdf_bytes(pdf_bytes, filename):
+        raise RuntimeError("unexpected internal explosion")
+
+    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+
+    client = TestClient(app, raise_server_exceptions=False)
+    response = client.post(
+        "/parse",
+        headers={"X-Forwarded-Proto": "https"},
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+    )
+
+    assert response.status_code == 500
+    assert (
+        response.headers.get("Strict-Transport-Security")
+        == "max-age=31536000; includeSubDomains"
+    )

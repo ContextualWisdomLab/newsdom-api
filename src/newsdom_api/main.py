@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from io import BytesIO
 from typing import Annotated, Callable
 
 from fastapi import FastAPI, File, HTTPException, Request, Response, UploadFile
+from fastapi.responses import JSONResponse
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
@@ -17,6 +19,7 @@ from .service import parse_pdf_bytes
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
 PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
+LOGGER = logging.getLogger("newsdom_api")
 
 tags_metadata = [
     {
@@ -45,10 +48,9 @@ app = FastAPI(
 )
 
 
-@app.middleware("http")
-async def add_security_headers(request: Request, call_next: Callable) -> Response:
-    """Inject standard security headers into all API responses."""
-    response = await call_next(request)
+def _apply_security_headers(response: Response, request: Request) -> Response:
+    """Inject standard security headers into an API response."""
+
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Content-Security-Policy"] = (
@@ -63,6 +65,25 @@ async def add_security_headers(request: Request, call_next: Callable) -> Respons
             "max-age=31536000; includeSubDomains"
         )
     return response
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next: Callable) -> Response:
+    """Inject standard security headers into all API responses."""
+    response = await call_next(request)
+    return _apply_security_headers(response, request)
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception) -> Response:
+    """Return sanitized 500 responses with the standard security headers."""
+
+    LOGGER.error("Unhandled server exception", exc_info=exc)
+    response = JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error"},
+    )
+    return _apply_security_headers(response, request)
 
 
 @app.get(
