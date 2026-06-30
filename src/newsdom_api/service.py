@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 import tempfile
 from pathlib import Path, PurePosixPath
 
@@ -16,8 +15,7 @@ def _safe_upload_filename(filename: str) -> str:
 
     normalized = filename.replace("\0", "").replace("\\", "/")
     name = PurePosixPath(normalized).name
-    name = re.sub(r"[^a-zA-Z0-9_.-]", "_", name)
-    if name in ("", ".", "..") or not name.strip("_."):
+    if name in ("", ".", ".."):
         return "upload.pdf"
     return name
 
