@@ -184,12 +184,49 @@ def test_derived_metrics_pages():
     from newsdom_api.equivalence import _derived_metrics
 
     metrics = _derived_metrics(
-        {"pages": [{"column_count": 3}, {"column_count": 5}]}
+        {
+            "column_count": "fallback",
+            "pages": [
+                "not-dict",
+                {"column_count": "str"},
+                {"column_count": 5},
+                {"column_count": 3},
+            ],
+        }
     )
     assert metrics == {
-        "pages": [{"column_count": 3}, {"column_count": 5}],
-        "page_count": 2,
         "column_count": 5,
+        "pages": [
+            "not-dict",
+            {"column_count": "str"},
+            {"column_count": 5},
+            {"column_count": 3},
+        ],
+        "page_count": 4,
+    }
+
+
+def test_derived_metrics_pages_preserves_column_fallback_without_valid_columns():
+    from newsdom_api.equivalence import _derived_metrics
+
+    metrics = _derived_metrics(
+        {"column_count": "fallback", "pages": ["not-dict", {"column_count": "str"}]}
+    )
+    assert metrics == {
+        "column_count": "fallback",
+        "pages": ["not-dict", {"column_count": "str"}],
+        "page_count": 2,
+    }
+
+
+def test_derived_metrics_pages_uses_zero_default_without_valid_columns():
+    from newsdom_api.equivalence import _derived_metrics
+
+    metrics = _derived_metrics({"pages": ["not-dict", {"column_count": "str"}]})
+    assert metrics == {
+        "pages": ["not-dict", {"column_count": "str"}],
+        "page_count": 2,
+        "column_count": 0,
     }
 
 

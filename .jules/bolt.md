@@ -32,3 +32,7 @@
 ## 2026-06-30 - Avoid Sorting Single-Artifact Glob Matches
 **Learning:** Sorting all glob matches allocates and orders every candidate even when the parser only needs one fallback MinerU artifact path.
 **Action:** Use `next(path.glob(...))` with `StopIteration` handling for single-artifact fallback lookups in hot or repeated file discovery paths.
+
+## 2026-06-30 - Replace Max Generator in Page Metrics
+**Learning:** Generator expressions passed to `max()` add iterator overhead in simple list scans and can obscure fallback semantics when no valid values are found.
+**Action:** Use an explicit loop for hot structural metric scans, preserving the previous fallback behavior while avoiding generator allocation.
