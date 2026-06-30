@@ -24,7 +24,7 @@ MAX_CONTENT_BLOCKS = 5_000
 MAX_MEDIA_PATH_LENGTH = 512
 MAX_PAGE_NUMBER = 100_000
 HTML_ESCAPE_PATTERN = re.compile(r"[&<>\"']")
-UNSAFE_MEDIA_PATH_CHARS = frozenset("\"'<>` \t\r\n")
+UNSAFE_MEDIA_PATH_PATTERN = re.compile(r"[\x00-\x1f\"'<>` \t\r\n]")
 
 
 def _coerce_bbox_coordinate(value: Any) -> float | None:
@@ -111,7 +111,7 @@ def _safe_media_path(value: Any, fallback: str) -> str:
     if ":" in raw_path:
         return fallback
 
-    if any(char in UNSAFE_MEDIA_PATH_CHARS or ord(char) < 32 for char in raw_path):
+    if UNSAFE_MEDIA_PATH_PATTERN.search(raw_path):
         return fallback
 
     for part in raw_path.split("/"):
