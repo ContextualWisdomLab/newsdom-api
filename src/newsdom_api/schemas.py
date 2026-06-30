@@ -151,3 +151,12 @@ class HealthResponse(BaseModel):
         default="ok",
         description="Current operational status of the service.",
     )
+
+
+class ErrorResponse(BaseModel):
+    """Standardized error response model for HTTP exceptions."""
+
+    detail: str = Field(
+        ...,
+        description="A clear and specific error message describing what went wrong.",
+    )
