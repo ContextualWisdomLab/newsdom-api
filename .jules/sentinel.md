@@ -31,3 +31,8 @@
 **Vulnerability:** User-influenced paths or executable overrides that begin with `-` can be interpreted by downstream CLI tools as options even when subprocess execution uses `shell=False`.
 **Learning:** Shell metacharacter filtering and argv lists reduce command injection risk, but option injection remains possible unless CLI arguments reject leading dashes or insert an explicit option terminator supported by the tool.
 **Prevention:** Reject MinerU command arguments that begin with `-` before constructing the subprocess argv.
+
+## 2026-06-30 - Preserve Security Headers on 500 Responses
+**Vulnerability:** Unhandled FastAPI exceptions can produce sanitized 500 responses without the same defense-in-depth headers applied by normal middleware responses.
+**Learning:** Error response paths need explicit coverage because exception handlers can bypass or duplicate header logic differently from successful request paths.
+**Prevention:** Route both middleware responses and global 500 exception responses through a shared security-header helper.
