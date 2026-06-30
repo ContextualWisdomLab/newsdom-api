@@ -92,6 +92,7 @@ def test_validate_pdf_structure_rejects_invalid_magic_bytes():
 
     assert exc_info.value.status_code == 415
     assert exc_info.value.detail == "Unsupported Media Type"
+    assert exc_info.value.__cause__ is None
 
 
 def test_validate_pdf_structure_rejects_pypdf_read_errors(monkeypatch):
@@ -293,6 +294,24 @@ def test_parse_endpoint_catches_runtime_unavailable_error(monkeypatch):
     assert response.status_code == 503
     assert response.json()["detail"] == "Service Unavailable"
     _assert_no_private_path_material(response.json()["detail"])
+
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_suppresses_service_exception_chain(monkeypatch):
+    from newsdom_api.errors import MineruRuntimeUnavailableError
+
+    def fake_parse_pdf_bytes(pdf_bytes, filename):
+        raise MineruRuntimeUnavailableError()
+
+    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await parse(_ReadTrackingUpload(b"%PDF-1.4\n%synthetic\n"))
+
+    assert exc_info.value.status_code == 503
+    assert exc_info.value.detail == "Service Unavailable"
+    assert exc_info.value.__cause__ is None
 
 
 def test_parse_endpoint_rejects_large_files(monkeypatch):

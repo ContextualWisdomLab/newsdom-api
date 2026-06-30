@@ -21,3 +21,8 @@
 **Vulnerability:** API responses can contain parsed document data that should remain ephemeral, but default HTTP caching behavior may allow browsers or intermediaries to retain sensitive response payloads.
 **Learning:** Security headers should cover response storage as well as framing, MIME sniffing, and referrer leakage. `Cache-Control: no-store, max-age=0` explicitly opts sensitive API responses out of caching.
 **Prevention:** Set a global no-store cache directive in the FastAPI security headers middleware so all endpoints inherit the response storage policy.
+
+## 2026-06-30 - Suppress Public HTTP Exception Chains
+**Vulnerability:** Chaining internal parser or runtime exceptions into public `HTTPException` instances can retain implementation details, dependency errors, or local path fragments in traceback material.
+**Learning:** API handlers should return sanitized status codes and messages while suppressing internal exception causes at the public boundary.
+**Prevention:** Raise generic client-facing `HTTPException` responses with `from None` after mapping parser and runtime failures to safe error details.
