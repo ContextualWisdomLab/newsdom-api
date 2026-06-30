@@ -25,3 +25,6 @@
 ## 2024-05-18 - Improve Swagger UI DX with swagger_ui_parameters
 **Learning:** The default Swagger UI configuration for FastAPI applications often lacks helpful features like request duration display or dark-themed syntax highlighting, and requires users to manually click "Try it out" for every endpoint.
 **Action:** Always configure `swagger_ui_parameters` in the `FastAPI()` instantiation with options like `{"displayRequestDuration": True, "syntaxHighlight.theme": "monokai", "tryItOutEnabled": True}` to significantly improve the Developer Experience (DX) when interacting with the API documentation.
+## 2025-02-17 - Improve OpenAPI DX
+**Learning:** For backend-only services without UI, the Developer Experience (DX) via OpenAPI docs is the primary user experience. Adding Pydantic examples and omitting unnecessary explicit ellipses (`...`) makes schemas cleaner and APIs significantly more intuitive.
+**Action:** Always enrich Pydantic schemas with examples to improve OpenAPI visualization in FastAPI.

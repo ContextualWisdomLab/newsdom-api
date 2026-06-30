@@ -140,9 +140,7 @@ def _validate_pdf_structure(pdf_bytes: bytes) -> None:
     tags=["Parser"],
 )
 async def parse(
-    file: Annotated[
-        UploadFile, File(..., description="The newspaper PDF file to parse.")
-    ],
+    file: Annotated[UploadFile, File(description="The newspaper PDF file to parse.")],
 ) -> ParseResponse:
     """Parse an uploaded PDF into the canonical DOM response model."""
 
