@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
 from functools import lru_cache
 from pathlib import Path
-import re
 from typing import Any
 
 from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError

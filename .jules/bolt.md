@@ -40,6 +40,3 @@
 ## 2026-06-30 - Regex over Generator `any` string loops
 **Learning:** Using `any(...)` with a generator comprehension in string evaluation paths allocates a new generator and adds Python-level loop overhead for every character.
 **Action:** Replace `any()` generators with a pre-compiled regex (`re.compile().search()`) to evaluate string patterns in C, achieving a ~7x speedup for text-heavy operations.
-## 2026-06-30 - Pre-compile regex for character evaluation
-**Learning:** Using `any()` with a generator comprehension for string character evaluation adds significant Python-level overhead in hot paths.
-**Action:** Use pre-compiled regular expressions (`re.compile().search()`) to push pattern matching to C for substantial speedups in text-heavy operations.
