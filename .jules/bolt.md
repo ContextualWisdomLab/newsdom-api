@@ -28,3 +28,7 @@
 ## 2026-06-27 - Avoid unnecessary HTML escaping in hot text paths
 **Learning:** `html.escape()` is useful for unsafe text, but calling it on already plain strings adds avoidable work in parsing hot paths.
 **Action:** After truthiness and string fast-path checks, detect whether text contains HTML-sensitive characters before calling `html.escape()`.
+
+## 2026-06-30 - Avoid Sorting Single-Artifact Glob Matches
+**Learning:** Sorting all glob matches allocates and orders every candidate even when the parser only needs one fallback MinerU artifact path.
+**Action:** Use `next(path.glob(...))` with `StopIteration` handling for single-artifact fallback lookups in hot or repeated file discovery paths.

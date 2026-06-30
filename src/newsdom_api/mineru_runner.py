@@ -128,17 +128,18 @@ def _parse_mineru_output(
         ocr_dir = _find_output_dir(output_dir)
         content_path = ocr_dir / f"{input_pdf.stem}_content_list.json"
         if not content_path.exists():
-            json_candidates = sorted(ocr_dir.glob("*_content_list.json"))
-            if not json_candidates:
+            try:
+                content_path = next(ocr_dir.glob("*_content_list.json"))
+            except StopIteration:
                 raise FileNotFoundError("MinerU content list JSON was not produced")
-            content_path = json_candidates[0]
-        model_candidates = sorted(ocr_dir.glob("*_model.json"))
-        if not model_candidates:
+        try:
+            model_path = next(ocr_dir.glob("*_model.json"))
+        except StopIteration:
             raise FileNotFoundError("MinerU model JSON was not produced")
     except FileNotFoundError as exc:
         raise MineruIncompleteOutputError() from exc
     content_list = _read_mineru_json(content_path, artifact="content list")
-    model = _read_mineru_json(model_candidates[0], artifact="model")
+    model = _read_mineru_json(model_path, artifact="model")
 
     return content_list, model
 
