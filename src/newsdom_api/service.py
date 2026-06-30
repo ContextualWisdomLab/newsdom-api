@@ -15,7 +15,7 @@ def _safe_upload_filename(filename: str) -> str:
 
     normalized = filename.replace("\0", "").replace("\\", "/")
     name = PurePosixPath(normalized).name
-    if name in ("", ".", ".."):
+    if name in ("", ".", "..") or len(name.encode("utf-8", "ignore")) > 200:
         return "upload.pdf"
     return name
 

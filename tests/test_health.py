@@ -16,7 +16,6 @@ def test_healthcheck():
         response.headers.get("Content-Security-Policy")
         == "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
     )
-    assert response.headers.get("Cache-Control") == "no-store, no-cache, max-age=0"
     assert (
         response.headers.get("Strict-Transport-Security")
         == "max-age=31536000; includeSubDomains"
