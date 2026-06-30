@@ -40,3 +40,6 @@
 ## 2026-06-30 - Regex over Generator `any` string loops
 **Learning:** Using `any(...)` with a generator comprehension in string evaluation paths allocates a new generator and adds Python-level loop overhead for every character.
 **Action:** Replace `any()` generators with a pre-compiled regex (`re.compile().search()`) to evaluate string patterns in C, achieving a ~7x speedup for text-heavy operations.
+## 2024-07-01 - Avoid Generator Overhead in Path Validation
+**Learning:** Using `any(char in value_str for char in _SHELL_CONTROL_CHARS)` with a generator comprehension to validate shell command arguments (e.g. paths) adds Python-level loop overhead for every character. For common file paths, this approach is more than 2x slower than using a compiled regular expression (`re.compile().search()`).
+**Action:** Replace `any()` generators with a pre-compiled regex to evaluate string patterns in C when validating user input strings or paths.

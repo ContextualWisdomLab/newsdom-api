@@ -84,3 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
+
+## [0.2.0-perf] - 2024-07-01
+### 성능 개선
+- `mineru_runner.py`의 셸 명령어 인자 검증 로직에서 파이썬 제너레이터 `any()` 방식 대신 사전 컴파일된 정규 표현식(`re.compile`)을 사용하여 문자열 검증 속도를 절반 이상으로 단축했습니다.
