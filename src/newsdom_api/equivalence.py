@@ -74,15 +74,18 @@ def _process_pages(metrics: dict[str, Any], pages: list[Any]) -> None:
     """Process pages and update metrics."""
     metrics["page_count"] = len(pages)
     if pages:
-        metrics["column_count"] = max(
-            (
-                page.get("column_count", 0)
-                for page in pages
-                if isinstance(page, dict)
-                and isinstance(page.get("column_count"), int)
-            ),
-            default=metrics.get("column_count", 0),
-        )
+        max_col = metrics.get("column_count", 0)
+        found_column_count = False
+        for page in pages:
+            if not isinstance(page, dict):
+                continue
+            column_count = page.get("column_count")
+            if not isinstance(column_count, int):
+                continue
+            if not found_column_count or column_count > max_col:
+                max_col = column_count
+                found_column_count = True
+        metrics["column_count"] = max_col
 
 
 def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
