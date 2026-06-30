@@ -22,6 +22,8 @@ def _mineru_command_arg(value: str | Path, *, label: str) -> str:
     value_str = str(value)
     if "\0" in value_str or any(char in value_str for char in _SHELL_CONTROL_CHARS):
         raise ValueError(f"Unsafe {label} for MinerU command")
+    if value_str.startswith("-"):
+        raise ValueError(f"Unsafe {label} for MinerU command")
     return value_str
 
 

@@ -98,6 +98,34 @@ def test_build_mineru_command_rejects_shell_control_chars(
         )
 
 
+@pytest.mark.parametrize(
+    ("input_pdf", "output_dir", "mineru_bin", "match"),
+    [
+        (Path("-sample.pdf"), Path("mineru-output"), "mineru", "Unsafe input PDF path"),
+        (
+            Path("sample.pdf"),
+            Path("-mineru-output"),
+            "mineru",
+            "Unsafe output directory path",
+        ),
+        (
+            Path("sample.pdf"),
+            Path("mineru-output"),
+            "-mineru",
+            "Unsafe MinerU executable",
+        ),
+    ],
+    ids=["input", "output", "executable"],
+)
+def test_build_mineru_command_rejects_option_like_arguments(
+    input_pdf: Path, output_dir: Path, mineru_bin: str, match: str
+):
+    with pytest.raises(ValueError, match=match):
+        mineru_runner.build_mineru_command(
+            input_pdf, output_dir, mineru_bin=mineru_bin
+        )
+
+
 def test_execute_mineru_uses_safe_subprocess_options(monkeypatch):
     captured = {}
 
