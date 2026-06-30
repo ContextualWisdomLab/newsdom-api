@@ -19,3 +19,9 @@
 ## 2025-03-01 - Enhance OpenAPI/Swagger DX for Headless API
 **Learning:** For a backend-only headless API where there is no frontend UI, the OpenAPI/Swagger documentation page acts as the primary user interface. Improving metadata such as `summary`, `description`, and parameter descriptions significantly improves Developer Experience (DX) and makes the API much more intuitive and accessible for developers testing or integrating the service.
 **Action:** When working on backend-only services, prioritize adding rich, clear OpenAPI metadata (titles, descriptions, summaries, file parameter descriptions) to endpoints. This provides the most significant "UX" value for these types of repositories.
+## 2024-05-18 - Preserve required field status in Pydantic V2 schemas for OpenAPI
+**Learning:** When using Pydantic V2 schemas and FastAPI `File` dependency for OpenAPI documentation with `description` properties, `Field(description="...")` will silently mark fields as optional (not required) in the generated OpenAPI specs since there's an implicit `default=None` when `default` or `default_factory` are not defined.
+**Action:** Always explicitly use `Field(..., description="...")` (or `File(..., description="...")`) to properly preserve the required status for mandatory API fields and enhance Developer Experience (DX).
+## 2024-05-18 - Improve Swagger UI DX with swagger_ui_parameters
+**Learning:** The default Swagger UI configuration for FastAPI applications often lacks helpful features like request duration display or dark-themed syntax highlighting, and requires users to manually click "Try it out" for every endpoint.
+**Action:** Always configure `swagger_ui_parameters` in the `FastAPI()` instantiation with options like `{"displayRequestDuration": True, "syntaxHighlight.theme": "monokai", "tryItOutEnabled": True}` to significantly improve the Developer Experience (DX) when interacting with the API documentation.
