@@ -26,3 +26,8 @@
 **Vulnerability:** Chaining internal parser or runtime exceptions into public `HTTPException` instances can retain implementation details, dependency errors, or local path fragments in traceback material.
 **Learning:** API handlers should return sanitized status codes and messages while suppressing internal exception causes at the public boundary.
 **Prevention:** Raise generic client-facing `HTTPException` responses with `from None` after mapping parser and runtime failures to safe error details.
+
+## 2026-06-30 - Reject Option-Like MinerU Arguments
+**Vulnerability:** User-influenced paths or executable overrides that begin with `-` can be interpreted by downstream CLI tools as options even when subprocess execution uses `shell=False`.
+**Learning:** Shell metacharacter filtering and argv lists reduce command injection risk, but option injection remains possible unless CLI arguments reject leading dashes or insert an explicit option terminator supported by the tool.
+**Prevention:** Reject MinerU command arguments that begin with `-` before constructing the subprocess argv.
