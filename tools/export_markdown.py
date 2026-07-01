@@ -54,12 +54,16 @@ def generate_markdown(data: dict[str, Any]) -> str:
 
             captions = article.get("captions", [])
             if captions:
-                lines.extend(f"- Caption: {_caption_text(caption)}" for caption in captions)
+                lines.extend(
+                    f"- Caption: {_caption_text(caption)}" for caption in captions
+                )
                 lines.append("")
 
             footnotes = article.get("footnotes", [])
             if footnotes:
-                lines.extend(f"- Footnote: {_caption_text(footnote)}" for footnote in footnotes)
+                lines.extend(
+                    f"- Footnote: {_caption_text(footnote)}" for footnote in footnotes
+                )
                 lines.append("")
 
         ads = page.get("ads", [])
