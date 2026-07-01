@@ -40,6 +40,28 @@ def test_api_reference_documents_sanitized_parse_failure_semantics() -> None:
         assert expected in text
 
 
+def test_api_reference_embeds_checked_in_visual_previews() -> None:
+    text = Path("manual/api-reference.md").read_text(encoding="utf-8")
+
+    for expected in [
+        "### 문서 UI 미리보기",
+        "assets/swagger-ui.png",
+        "assets/redoc.png",
+        "정적 레이아웃 예시",
+        "/openapi.json",
+    ]:
+        assert expected in text
+
+    for image_path in [
+        Path("manual/assets/swagger-ui.png"),
+        Path("manual/assets/redoc.png"),
+    ]:
+        assert image_path.is_file()
+        image_bytes = image_path.read_bytes()
+        assert image_bytes.startswith(b"\x89PNG\r\n\x1a\n")
+        assert image_bytes
+
+
 def test_development_doc_uses_tree_wording():
     text = Path("manual/development.md").read_text(encoding="utf-8")
     assert "트리 구조의 DOM" in text
