@@ -62,6 +62,24 @@ def test_api_reference_embeds_checked_in_visual_previews() -> None:
         assert image_bytes
 
 
+def test_manual_security_page_documents_private_reporting_flow() -> None:
+    text = Path("manual/security.md").read_text(encoding="utf-8")
+
+    for expected in [
+        "# 보안 및 취약점 제보",
+        "https://github.com/ContextualWisdomLab/newsdom-api/security/advisories/new",
+        "공개 이슈를 열지 말고",
+        "합성 fixture",
+        "secret",
+        "production credential",
+        "`develop`",
+        "`main`",
+        "7일 이내",
+        "30일 이내",
+    ]:
+        assert expected in text
+
+
 def test_development_doc_uses_tree_wording():
     text = Path("manual/development.md").read_text(encoding="utf-8")
     assert "트리 구조의 DOM" in text

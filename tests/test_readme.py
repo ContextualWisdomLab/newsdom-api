@@ -32,6 +32,12 @@ def test_public_docs_point_to_current_org_repository():
     assert "https://seongho-bae.github.io/newsdom-api/" not in mkdocs_text
 
 
+def test_mkdocs_nav_exposes_security_reporting_page():
+    text = Path("mkdocs.yml").read_text(encoding="utf-8")
+    assert "보안 제보: security.md" in text
+    assert Path("manual/security.md").is_file()
+
+
 def test_contributing_mentions_develop_branch():
     text = Path("CONTRIBUTING.md").read_text(encoding="utf-8")
     assert "develop" in text
