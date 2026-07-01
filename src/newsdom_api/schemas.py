@@ -6,6 +6,53 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
+BOUNDING_BOX_EXAMPLE = {"x0": 120.0, "y0": 320.0, "x1": 420.0, "y1": 560.0}
+CAPTION_EXAMPLE = {
+    "text": "Photo caption text extracted from the newspaper page.",
+    "bbox": {"x0": 120.0, "y0": 565.0, "x1": 420.0, "y1": 620.0},
+}
+IMAGE_EXAMPLE = {
+    "path": "extracted_images/page1_img1.jpg",
+    "media_type": "image",
+    "bbox": BOUNDING_BOX_EXAMPLE,
+    "captions": [CAPTION_EXAMPLE],
+    "footnotes": [],
+}
+ARTICLE_EXAMPLE = {
+    "article_id": "page-1-article-1",
+    "headline": "Morning edition headline",
+    "bbox": {"x0": 10.0, "y0": 20.0, "x1": 760.0, "y1": 900.0},
+    "body_blocks": [
+        "First paragraph of the article body.",
+        "Second paragraph continues the story.",
+    ],
+    "images": [IMAGE_EXAMPLE],
+    "captions": [],
+    "footnotes": [],
+}
+PAGE_EXAMPLE = {
+    "page_number": 1,
+    "width": 800.5,
+    "height": 1200.0,
+    "articles": [ARTICLE_EXAMPLE],
+    "ads": ["Advertisement block text"],
+    "headers": ["2026-04-09 morning edition"],
+    "footers": ["Published by NewsDOM sample publisher"],
+    "page_numbers": ["1"],
+}
+PARSE_QUALITY_EXAMPLE = {
+    "status": "success",
+    "parser": "mineru",
+    "warnings": ["Page 1: overlapping layout blocks were normalized."],
+}
+PARSE_RESPONSE_EXAMPLE = {
+    "document_id": "sample-newspaper",
+    "pages": [PAGE_EXAMPLE],
+    "quality": PARSE_QUALITY_EXAMPLE,
+}
+HEALTH_RESPONSE_EXAMPLE = {"status": "ok"}
+ERROR_RESPONSE_EXAMPLE = {"detail": "Unsupported Media Type"}
+
 
 class BoundingBox(BaseModel):
     """Axis-aligned bounding box expressed in page coordinates."""
@@ -14,6 +61,8 @@ class BoundingBox(BaseModel):
     y0: float = Field(..., description="Topmost Y coordinate of the bounding box.")
     x1: float = Field(..., description="Rightmost X coordinate of the bounding box.")
     y1: float = Field(..., description="Bottommost Y coordinate of the bounding box.")
+
+    model_config = {"json_schema_extra": {"example": BOUNDING_BOX_EXAMPLE}}
 
 
 class CaptionNode(BaseModel):
@@ -24,6 +73,8 @@ class CaptionNode(BaseModel):
         default=None,
         description="Bounding box of the caption when parser coordinates are available.",
     )
+
+    model_config = {"json_schema_extra": {"example": CAPTION_EXAMPLE}}
 
 
 class ImageNode(BaseModel):
@@ -46,6 +97,8 @@ class ImageNode(BaseModel):
         default_factory=list,
         description="Footnotes associated with this image.",
     )
+
+    model_config = {"json_schema_extra": {"example": IMAGE_EXAMPLE}}
 
 
 class ArticleNode(BaseModel):
@@ -75,6 +128,8 @@ class ArticleNode(BaseModel):
         default_factory=list,
         description="Footnotes associated with the article.",
     )
+
+    model_config = {"json_schema_extra": {"example": ARTICLE_EXAMPLE}}
 
 
 class PageNode(BaseModel):
@@ -112,6 +167,8 @@ class PageNode(BaseModel):
         description="Visible page-number text blocks extracted from this page.",
     )
 
+    model_config = {"json_schema_extra": {"example": PAGE_EXAMPLE}}
+
 
 class ParseQuality(BaseModel):
     """Quality metadata describing parser provenance and warnings."""
@@ -126,6 +183,8 @@ class ParseQuality(BaseModel):
         default_factory=list,
         description="Non-fatal warnings encountered during the parsing process.",
     )
+
+    model_config = {"json_schema_extra": {"example": PARSE_QUALITY_EXAMPLE}}
 
 
 class ParseResponse(BaseModel):
@@ -143,6 +202,8 @@ class ParseResponse(BaseModel):
         description="Metadata detailing parsing provenance and encountered warnings.",
     )
 
+    model_config = {"json_schema_extra": {"example": PARSE_RESPONSE_EXAMPLE}}
+
 
 class HealthResponse(BaseModel):
     """Liveness response model for deployment health checks."""
@@ -151,3 +212,16 @@ class HealthResponse(BaseModel):
         default="ok",
         description="Current operational status of the service.",
     )
+
+    model_config = {"json_schema_extra": {"example": HEALTH_RESPONSE_EXAMPLE}}
+
+
+class ErrorResponse(BaseModel):
+    """Standardized error response model for HTTP exceptions."""
+
+    detail: str = Field(
+        ...,
+        description="A clear and specific error message describing what went wrong.",
+    )
+
+    model_config = {"json_schema_extra": {"example": ERROR_RESPONSE_EXAMPLE}}
