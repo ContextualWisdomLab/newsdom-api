@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -13,14 +14,14 @@ from typing import Any
 
 from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 
-_SHELL_CONTROL_CHARS = frozenset("&;|`$<>")
+_MINERU_COMMAND_ARG_PATTERN = re.compile(r"[\w /\\.:~()+\-@=,\[\]!']+")
 
 
 def _mineru_command_arg(value: str | Path, *, label: str) -> str:
     """Validate a path or executable string before passing it to MinerU argv."""
 
     value_str = str(value)
-    if "\0" in value_str or any(char in value_str for char in _SHELL_CONTROL_CHARS):
+    if not _MINERU_COMMAND_ARG_PATTERN.fullmatch(value_str):
         raise ValueError(f"Unsafe {label} for MinerU command")
     if value_str.startswith("-"):
         raise ValueError(f"Unsafe {label} for MinerU command")
@@ -113,13 +114,9 @@ def _read_mineru_json(path: Path, *, artifact: str) -> Any:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        raise MineruIncompleteOutputError(
-            f"{artifact} JSON was malformed"
-        ) from exc
+        raise MineruIncompleteOutputError(f"{artifact} JSON was malformed") from exc
     except (OSError, UnicodeDecodeError) as exc:
-        raise MineruIncompleteOutputError(
-            f"{artifact} JSON could not be read"
-        ) from exc
+        raise MineruIncompleteOutputError(f"{artifact} JSON could not be read") from exc
 
 
 def _parse_mineru_output(
