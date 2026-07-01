@@ -14,16 +14,14 @@ from typing import Any
 
 from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 
-# ⚡ Bolt: Use a pre-compiled regex to push pattern matching to C,
-# avoiding the Python-level overhead of `any()` and generator comprehensions
-_UNSAFE_CHARS_PATTERN = re.compile(r"[\0&;|`$<>]")
+_MINERU_COMMAND_ARG_PATTERN = re.compile(r"[^\w /\\.:~()+\-@=,\[\]!']")
 
 
 def _mineru_command_arg(value: str | Path, *, label: str) -> str:
     """Validate a path or executable string before passing it to MinerU argv."""
 
     value_str = str(value)
-    if _UNSAFE_CHARS_PATTERN.search(value_str):
+    if _MINERU_COMMAND_ARG_PATTERN.search(value_str):
         raise ValueError(f"Unsafe {label} for MinerU command")
     if value_str.startswith("-"):
         raise ValueError(f"Unsafe {label} for MinerU command")
