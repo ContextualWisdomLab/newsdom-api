@@ -17,8 +17,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `newsdom_api.dom_builder._html_safe_text` 함수에 early return과 타입 체크를 도입하여 불필요한 `str()` 캐스팅을 제거함으로써 처리 속도를 개선했습니다.
 
 ### Added
-- [CLI] 파싱된 DOM JSON 파일이 `ParseResponse` 스키마 형식을 만족하는지 검사하는 `tools/validate_dom.py` 도구를 추가했습니다.
-- [CLI] 파싱된 DOM JSON 파일에서 headline과 body_blocks 등 순수 텍스트만 추출하는 `tools/extract_text.py` 도구를 추가했습니다.
 - [CLI] 파싱된 NewsDOM JSON을 Markdown 포맷으로 변환하는 `tools/export_markdown.py` 도구를 추가했습니다.
 - [CLI] `tools/batch_parse_pdf.py`에 하위 디렉터리의 PDF를 일괄 처리하고 상대 경로로 JSON을 저장하는 `--recursive` 옵션을 추가했습니다.
 - OpenAPI 문서에 contact 및 MIT license metadata를 추가하여 API 소비자가 maintainer와 라이선스 정보를 더 쉽게 확인할 수 있도록 개선
