@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `newsdom_api.dom_builder._html_safe_text` 함수에 early return과 타입 체크를 도입하여 불필요한 `str()` 캐스팅을 제거함으로써 처리 속도를 개선했습니다.
 
 ### Added
+- Public documentation metadata now points to the current `ContextualWisdomLab/newsdom-api` repository, keeping the MkDocs header, OpenAPI contact link, Scorecard badges, and security reporting links aligned with the live project.
 - API reference manual now embeds the checked-in Swagger UI and ReDoc screenshots so the interactive documentation section renders with visible product context instead of text-only placeholders.
 - OpenAPI/ReDoc response samples now include concrete `HealthResponse`, `ParseResponse`, and error examples so visual API documentation no longer renders placeholder property names.
 - [CLI] 파싱된 NewsDOM JSON을 Markdown 포맷으로 변환하는 `tools/export_markdown.py` 도구를 추가했습니다.
@@ -82,7 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Synthetic newspaper fixture generation and structural equivalence checks
 - Protected-branch CI, security gates, release provenance workflow, and Git Flow documentation
 
-[Unreleased]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
-[0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
+[Unreleased]: https://github.com/ContextualWisdomLab/newsdom-api/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/ContextualWisdomLab/newsdom-api/compare/v0.1.1...v0.2.0
+[0.1.1]: https://github.com/ContextualWisdomLab/newsdom-api/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/ContextualWisdomLab/newsdom-api/releases/tag/v0.1.0
