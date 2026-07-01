@@ -84,12 +84,11 @@ def test_build_mineru_command_preserves_safe_spaces(tmp_path: Path):
     [
         (Path("upload.pdf;touch-pwned"), "Unsafe input PDF path"),
         (Path("upload`id`.pdf"), "Unsafe input PDF path"),
-        (Path("upload{brace}.pdf"), "Unsafe input PDF path"),
         (Path("upload.pdf"), "Unsafe MinerU executable"),
     ],
-    ids=["semicolon", "backtick", "brace", "executable"],
+    ids=["semicolon", "backtick", "executable"],
 )
-def test_build_mineru_command_rejects_non_allowlisted_chars(
+def test_build_mineru_command_rejects_shell_control_chars(
     tmp_path: Path, input_pdf: Path, match: str
 ):
     mineru_bin = "mineru"
