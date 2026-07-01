@@ -14,7 +14,10 @@ def test_security_policy_covers_reporting_and_supported_branches():
 
 def test_security_policy_includes_explicit_reporting_links():
     text = Path("SECURITY.md").read_text(encoding="utf-8")
-    assert "https://github.com/Seongho-Bae/newsdom-api/security/advisories/new" in text
+    assert (
+        "https://github.com/ContextualWisdomLab/newsdom-api/security/advisories/new"
+        in text
+    )
     assert "https://github.com/seonghobae" in text
 
 

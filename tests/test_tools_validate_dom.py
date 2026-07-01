@@ -34,14 +34,15 @@ def test_validate_dom_success(tmp_path: Path):
     assert validate_dom(valid_json) is True
 
 
-def test_validate_dom_json_decode_error(tmp_path: Path, capsys):
-    """Test validation failure with malformed JSON."""
-    malformed_json = tmp_path / "malformed.json"
-    malformed_json.write_text("{invalid json", encoding="utf-8")
+def test_validate_dom_malformed_json_reports_file_context(tmp_path: Path, capsys):
+    """Test malformed JSON reports the same file-scoped validation context."""
+    invalid_json = tmp_path / "malformed.json"
+    invalid_json.write_text("{not-json", encoding="utf-8")
 
-    assert validate_dom(malformed_json) is False
+    assert validate_dom(invalid_json) is False
     captured = capsys.readouterr()
-    assert "JSON Decode Error" in captured.err
+    assert "Validation Error in malformed.json:" in captured.err
+    assert "Expecting property name enclosed in double quotes" in captured.err
 
 
 def test_validate_dom_validation_error(tmp_path: Path, capsys):

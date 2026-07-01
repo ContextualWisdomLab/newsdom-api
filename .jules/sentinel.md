@@ -36,3 +36,8 @@
 **Vulnerability:** Unhandled FastAPI exceptions can produce sanitized 500 responses without the same defense-in-depth headers applied by normal middleware responses.
 **Learning:** Error response paths need explicit coverage because exception handlers can bypass or duplicate header logic differently from successful request paths.
 **Prevention:** Route both middleware responses and global 500 exception responses through a shared security-header helper.
+
+## 2025-02-14 - Fix Command Injection Risk in CLI arguments
+**Vulnerability:** Command arguments filtering relied on a denylist of shell control characters (`_SHELL_CONTROL_CHARS = frozenset("&;|`$<>")`), which can be bypassed. Furthermore, certain valid file path characters could still trigger issues or be blocked incorrectly.
+**Learning:** Checking for bad characters (denylist) is brittle and frequently bypassable. CLI tools and scripts should strictly validate user inputs (such as file paths) using regex allowlists rather than mutating paths or using weak character blocklists.
+**Prevention:** Apply a strict regex allowlist (e.g., `^[\w\s/\\.:~()-]+$`) to validate user-supplied file paths and arguments. Ensure the allowlist permits valid cross-OS path characters like colons, tildes, and parentheses to avoid functional regressions while maintaining security.
