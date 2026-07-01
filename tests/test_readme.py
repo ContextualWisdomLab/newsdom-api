@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import yaml
+
 
 def test_readme_points_to_user_and_maintainer_docs():
     text = Path("README.md").read_text(encoding="utf-8")
@@ -33,8 +35,8 @@ def test_public_docs_point_to_current_org_repository():
 
 
 def test_mkdocs_nav_exposes_security_reporting_page():
-    text = Path("mkdocs.yml").read_text(encoding="utf-8")
-    assert "보안 제보: security.md" in text
+    mkdocs_config = yaml.safe_load(Path("mkdocs.yml").read_text(encoding="utf-8"))
+    assert {"보안 제보": "security.md"} in mkdocs_config["nav"]
     assert Path("manual/security.md").is_file()
 
 
