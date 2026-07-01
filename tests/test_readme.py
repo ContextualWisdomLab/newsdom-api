@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import yaml
+
 
 def test_readme_points_to_user_and_maintainer_docs():
     text = Path("README.md").read_text(encoding="utf-8")
@@ -30,6 +32,12 @@ def test_public_docs_point_to_current_org_repository():
     mkdocs_text = Path("mkdocs.yml").read_text(encoding="utf-8")
     assert "https://contextwisdomlab.github.io/newsdom-api/" in mkdocs_text
     assert "https://seongho-bae.github.io/newsdom-api/" not in mkdocs_text
+
+
+def test_mkdocs_nav_exposes_security_reporting_page():
+    mkdocs_config = yaml.safe_load(Path("mkdocs.yml").read_text(encoding="utf-8"))
+    assert {"보안 제보": "security.md"} in mkdocs_config["nav"]
+    assert Path("manual/security.md").is_file()
 
 
 def test_contributing_mentions_develop_branch():
