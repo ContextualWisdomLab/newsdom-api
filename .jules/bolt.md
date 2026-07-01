@@ -40,3 +40,6 @@
 ## 2026-06-30 - Regex over Generator `any` string loops
 **Learning:** Using `any(...)` with a generator comprehension in string evaluation paths allocates a new generator and adds Python-level loop overhead for every character.
 **Action:** Replace `any()` generators with a pre-compiled regex (`re.compile().search()`) to evaluate string patterns in C, achieving a ~7x speedup for text-heavy operations.
+## 2026-07-01 - Precompile MinerU Argument Allowlist
+**Learning:** Recompiling the same allowlist pattern through repeated `re.match(...)` calls adds avoidable overhead in MinerU command argument validation.
+**Action:** Keep the strict allowlist semantics, but compile the regex once at module load and validate each argument with `Pattern.fullmatch()`.

@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Performance
 - `newsdom_api.dom_builder._html_safe_text` 함수에 early return과 타입 체크를 도입하여 불필요한 `str()` 캐스팅을 제거함으로써 처리 속도를 개선했습니다.
+- `mineru_runner.py`의 MinerU 명령어 인자 allowlist 검증 정규식을 사전 컴파일하여 반복 호출 비용을 줄였습니다.
 
 ### Added
 - Manual now includes a dedicated security reporting page so vulnerability disclosure, supported branches, and safe evidence handling are visible from the documentation navigation.
