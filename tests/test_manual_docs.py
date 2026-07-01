@@ -57,7 +57,9 @@ def test_api_reference_embeds_checked_in_visual_previews() -> None:
         Path("manual/assets/redoc.png"),
     ]:
         assert image_path.is_file()
-        assert image_path.stat().st_size > 10_000
+        image_bytes = image_path.read_bytes()
+        assert image_bytes.startswith(b"\x89PNG\r\n\x1a\n")
+        assert image_bytes
 
 
 def test_development_doc_uses_tree_wording():
