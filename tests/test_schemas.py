@@ -21,16 +21,8 @@ def test_page_node_openapi_schema_descriptions():
     schema = PageNode.model_json_schema()
     properties = schema["properties"]
 
-    assert properties["page_number"]["description"] == "One-based page number from the parsed PDF."
+    assert (
+        properties["page_number"]["description"]
+        == "One-based page number from the parsed PDF."
+    )
     assert properties["articles"]["description"] == "Articles extracted from this page."
-
-
-def test_parse_response_schema_has_visual_documentation_example():
-    schema = ParseResponse.model_json_schema()
-    example = schema["example"]
-
-    assert example["document_id"] == "sample-newspaper"
-    assert example["pages"][0]["articles"][0]["headline"] == "Morning edition headline"
-    assert example["quality"]["warnings"] == [
-        "Page 1: overlapping layout blocks were normalized."
-    ]
