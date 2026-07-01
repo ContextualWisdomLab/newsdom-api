@@ -1,6 +1,6 @@
 # NewsDOM API 개요 및 아키텍처
 
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/ContextualWisdomLab/newsdom-api/badge)](https://securityscorecards.dev/viewer/?uri=github.com/ContextualWisdomLab/newsdom-api)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/Seongho-Bae/newsdom-api/badge)](https://securityscorecards.dev/viewer/?uri=github.com/Seongho-Bae/newsdom-api)
 
 **NewsDOM API**는 스캔된 일본어 신문 PDF 문서를 분석하여, 웹 브라우저의 DOM(Document Object Model)과 유사한 기사(Article) 단위의 트리 구조로 파싱해주는 API 서비스입니다.
 
