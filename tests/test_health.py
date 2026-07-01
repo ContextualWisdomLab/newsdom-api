@@ -57,3 +57,18 @@ def test_openapi_metadata_includes_contact_and_license():
         "name": "MIT License",
         "identifier": "MIT",
     }
+
+
+def test_openapi_response_schemas_use_real_examples():
+    client = TestClient(app)
+    response = client.get("/openapi.json")
+
+    assert response.status_code == 200
+    schemas = response.json()["components"]["schemas"]
+
+    assert schemas["HealthResponse"]["example"] == {"status": "ok"}
+    assert schemas["ParseResponse"]["example"]["document_id"] == "sample-newspaper"
+    assert schemas["ParseResponse"]["example"]["quality"]["parser"] == "mineru"
+    assert schemas["ErrorResponse"]["example"] == {"detail": "Unsupported Media Type"}
+    assert "property1" not in str(schemas["HealthResponse"])
+    assert "property2" not in str(schemas["HealthResponse"])
