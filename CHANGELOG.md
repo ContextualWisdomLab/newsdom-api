@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `newsdom_api.dom_builder._html_safe_text` 함수에 early return과 타입 체크를 도입하여 불필요한 `str()` 캐스팅을 제거함으로써 처리 속도를 개선했습니다.
 
 ### Added
+- Package metadata now publishes Homepage, Documentation, Repository, Issues, and Security URLs so package indexes and developer tools show the same live project surfaces as the manual and OpenAPI docs.
 - Public documentation metadata now points to the current `ContextualWisdomLab/newsdom-api` repository, keeping the MkDocs header, OpenAPI contact link, Scorecard badges, and security reporting links aligned with the live project.
 - API reference manual now embeds the checked-in Swagger UI and ReDoc screenshots so the interactive documentation section renders with visible product context instead of text-only placeholders.
 - OpenAPI/ReDoc response samples now include concrete `HealthResponse`, `ParseResponse`, and error examples so visual API documentation no longer renders placeholder property names.

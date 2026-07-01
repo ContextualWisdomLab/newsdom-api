@@ -142,6 +142,23 @@ def test_project_uses_spdx_license_string_not_deprecated_table():
     assert 'license = {text = "MIT"}' not in text
 
 
+def test_project_urls_fill_public_package_metadata():
+    text = Path("pyproject.toml").read_text(encoding="utf-8")
+
+    expected_urls = {
+        "Homepage": "https://contextwisdomlab.github.io/newsdom-api/",
+        "Documentation": "https://contextwisdomlab.github.io/newsdom-api/",
+        "Repository": "https://github.com/ContextualWisdomLab/newsdom-api",
+        "Issues": "https://github.com/ContextualWisdomLab/newsdom-api/issues",
+        "Security": (
+            "https://github.com/ContextualWisdomLab/newsdom-api/security/advisories/new"
+        ),
+    }
+    assert "[project.urls]" in text
+    for label, url in expected_urls.items():
+        assert f'{label} = "{url}"' in text
+
+
 def test_project_declares_locked_fuzz_extra_without_bundling_nvidia_stack():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
     assert "fuzz = [" in text
