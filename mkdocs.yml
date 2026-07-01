@@ -1,8 +1,8 @@
 site_name: NewsDOM API 매뉴얼
-site_url: https://seongho-bae.github.io/newsdom-api/
+site_url: https://contextwisdomlab.github.io/newsdom-api/
 site_description: 일본어 신문 스캔 PDF를 DOM 형태의 트리로 파싱하는 API
-repo_url: https://github.com/Seongho-Bae/newsdom-api
-repo_name: Seongho-Bae/newsdom-api
+repo_url: https://github.com/ContextualWisdomLab/newsdom-api
+repo_name: ContextualWisdomLab/newsdom-api
 
 docs_dir: manual
 

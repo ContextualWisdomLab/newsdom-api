@@ -27,11 +27,11 @@ def test_initial_release_entry_keeps_added_section_and_links():
         in text
     )
     assert (
-        "[Unreleased]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.2.0...HEAD"
+        "[Unreleased]: https://github.com/ContextualWisdomLab/newsdom-api/compare/v0.2.0...HEAD"
         in text
     )
     assert (
-        "[0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0"
+        "[0.1.0]: https://github.com/ContextualWisdomLab/newsdom-api/releases/tag/v0.1.0"
         in text
     )
 
@@ -42,10 +42,10 @@ def test_changelog_prepares_the_0_1_1_release_entry():
     assert "### Added" in text
     assert "*.intoto.jsonl" in text
     assert (
-        "[Unreleased]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.2.0...HEAD"
+        "[Unreleased]: https://github.com/ContextualWisdomLab/newsdom-api/compare/v0.2.0...HEAD"
         in text
     )
     assert (
-        "[0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1"
+        "[0.1.1]: https://github.com/ContextualWisdomLab/newsdom-api/compare/v0.1.0...v0.1.1"
         in text
     )

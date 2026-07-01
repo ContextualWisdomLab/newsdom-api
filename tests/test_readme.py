@@ -13,6 +13,25 @@ def test_readme_includes_scorecard_badge():
     assert "securityscorecards.dev" in text
 
 
+def test_public_docs_point_to_current_org_repository():
+    expected_repo = "github.com/ContextualWisdomLab/newsdom-api"
+    old_repo = "github.com/Seongho-Bae/newsdom-api"
+
+    for path in [
+        Path("README.md"),
+        Path("manual/index.md"),
+        Path("manual/workflow/ocr-accuracy-evidence.md"),
+        Path("mkdocs.yml"),
+    ]:
+        text = path.read_text(encoding="utf-8")
+        assert expected_repo in text, path
+        assert old_repo not in text, path
+
+    mkdocs_text = Path("mkdocs.yml").read_text(encoding="utf-8")
+    assert "https://contextwisdomlab.github.io/newsdom-api/" in mkdocs_text
+    assert "https://seongho-bae.github.io/newsdom-api/" not in mkdocs_text
+
+
 def test_contributing_mentions_develop_branch():
     text = Path("CONTRIBUTING.md").read_text(encoding="utf-8")
     assert "develop" in text

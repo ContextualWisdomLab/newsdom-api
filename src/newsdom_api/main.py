@@ -38,7 +38,7 @@ app = FastAPI(
     version="0.2.0",
     contact={
         "name": "Seongho Bae",
-        "url": "https://github.com/Seongho-Bae/newsdom-api",
+        "url": "https://github.com/ContextualWisdomLab/newsdom-api",
     },
     license_info={
         "name": "MIT License",

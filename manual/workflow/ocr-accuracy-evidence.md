@@ -34,6 +34,6 @@ This will overwrite the existing placeholder fixture with a new baseline derived
 
 As of 2026-04-23, the execution of this harness is **BLOCKED**. The underlying `mineru` OCR process hangs indefinitely when processing the private PDF files.
 
-This issue is tracked in **[#70](https://github.com/Seongho-Bae/newsdom-api/issues/70)**.
+This issue is tracked in **[#70](https://github.com/ContextualWisdomLab/newsdom-api/issues/70)**.
 
 Until this blocker is resolved, generating a new `private_page_baseline.json` from the local corpus is not possible. The harness script and tests have been merged so that the tooling is in place once the blocker is fixed.
