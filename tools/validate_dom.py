@@ -26,7 +26,7 @@ def validate_dom(json_path: Path) -> bool:
         data = json.loads(json_path.read_text(encoding="utf-8"))
         ParseResponse.model_validate(data)
         return True
-    except ValidationError as e:
+    except (json.JSONDecodeError, ValidationError) as e:
         print(f"Validation Error in {json_path.name}:", file=sys.stderr)
         print(e, file=sys.stderr)
         return False

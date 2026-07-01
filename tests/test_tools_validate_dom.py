@@ -46,6 +46,17 @@ def test_validate_dom_validation_error(tmp_path: Path, capsys):
     assert "Validation Error" in captured.err
 
 
+def test_validate_dom_malformed_json_reports_file_context(tmp_path: Path, capsys):
+    """Test malformed JSON reports the same file-scoped validation context."""
+    invalid_json = tmp_path / "malformed.json"
+    invalid_json.write_text("{not-json", encoding="utf-8")
+
+    assert validate_dom(invalid_json) is False
+    captured = capsys.readouterr()
+    assert "Validation Error in malformed.json:" in captured.err
+    assert "Expecting property name enclosed in double quotes" in captured.err
+
+
 def test_validate_dom_file_not_found(tmp_path: Path):
     """Test validate_dom with a non-existent file."""
     non_existent = tmp_path / "non_existent.json"
