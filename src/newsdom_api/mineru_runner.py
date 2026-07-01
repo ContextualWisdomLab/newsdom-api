@@ -14,7 +14,7 @@ from typing import Any
 
 from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 
-_MINERU_COMMAND_ARG_PATTERN = re.compile(r"^[\w /\\.:~()+\-@=,\[\]!']+$")
+_MINERU_COMMAND_ARG_PATTERN = re.compile(r"[\w /\\.:~()+\-@=,\[\]!']+")
 
 
 def _mineru_command_arg(value: str | Path, *, label: str) -> str:
