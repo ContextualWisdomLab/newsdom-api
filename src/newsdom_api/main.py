@@ -13,7 +13,7 @@ from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
 from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
-from .schemas import HealthResponse, ParseResponse
+from .schemas import ErrorResponse, HealthResponse, ParseResponse
 from .service import parse_pdf_bytes
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
@@ -38,7 +38,7 @@ app = FastAPI(
     version="0.2.0",
     contact={
         "name": "Seongho Bae",
-        "url": "https://github.com/Seongho-Bae/newsdom-api",
+        "url": "https://github.com/ContextualWisdomLab/newsdom-api",
     },
     license_info={
         "name": "MIT License",
@@ -132,10 +132,10 @@ def _validate_pdf_structure(pdf_bytes: bytes) -> None:
         "document using MinerU."
     ),
     responses={
-        413: {"description": "Payload Too Large"},
-        415: {"description": "Unsupported Media Type"},
-        502: {"description": "Bad Gateway"},
-        503: {"description": "Service Unavailable"},
+        413: {"model": ErrorResponse, "description": "Payload Too Large"},
+        415: {"model": ErrorResponse, "description": "Unsupported Media Type"},
+        502: {"model": ErrorResponse, "description": "Bad Gateway"},
+        503: {"model": ErrorResponse, "description": "Service Unavailable"},
     },
     tags=["Parser"],
 )

@@ -4,25 +4,24 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
 from functools import lru_cache
 from pathlib import Path
-import re
 from typing import Any
 
 from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 
-_SHELL_CONTROL_PATTERN = re.compile(r"[&;|`$<>\x00]")
+_MINERU_COMMAND_ARG_PATTERN = re.compile(r"^[\w /\\.:~()+\-@=,\[\]!']+$")
 
 
 def _mineru_command_arg(value: str | Path, *, label: str) -> str:
     """Validate a path or executable string before passing it to MinerU argv."""
 
     value_str = str(value)
-    # ⚡ Bolt: Use pre-compiled regex instead of `any()` generator for 2x faster path validation
-    if _SHELL_CONTROL_PATTERN.search(value_str):
+    if not _MINERU_COMMAND_ARG_PATTERN.fullmatch(value_str):
         raise ValueError(f"Unsafe {label} for MinerU command")
     if value_str.startswith("-"):
         raise ValueError(f"Unsafe {label} for MinerU command")

@@ -2,6 +2,26 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
+import sys
+
+
+def _project_urls(text: str) -> dict[str, str]:
+    if sys.version_info >= (3, 11):
+        import tomllib
+
+        return tomllib.loads(text)["project"]["urls"]
+
+    match = re.search(
+        r"^\[project\.urls\]\n(?P<body>(?:^[A-Za-z].*\n?)+)",
+        text,
+        re.MULTILINE,
+    )
+    assert match is not None, "pyproject.toml is missing [project.urls]"
+    urls: dict[str, str] = {}
+    for line in match.group("body").splitlines():
+        key, value = line.split("=", 1)
+        urls[key.strip()] = value.strip().strip('"')
+    return urls
 
 
 def _locked_package_version(name: str) -> tuple[int, ...]:
@@ -140,6 +160,20 @@ def test_project_uses_spdx_license_string_not_deprecated_table():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
     assert 'license = "MIT"' in text
     assert 'license = {text = "MIT"}' not in text
+
+
+def test_project_urls_fill_public_package_metadata():
+    text = Path("pyproject.toml").read_text(encoding="utf-8")
+
+    assert _project_urls(text) == {
+        "Homepage": "https://contextwisdomlab.github.io/newsdom-api/",
+        "Documentation": "https://contextwisdomlab.github.io/newsdom-api/",
+        "Repository": "https://github.com/ContextualWisdomLab/newsdom-api",
+        "Issues": "https://github.com/ContextualWisdomLab/newsdom-api/issues",
+        "Security": (
+            "https://github.com/ContextualWisdomLab/newsdom-api/security/advisories/new"
+        ),
+    }
 
 
 def test_project_declares_locked_fuzz_extra_without_bundling_nvidia_stack():

@@ -21,6 +21,14 @@ FastAPI는 OpenAPI 기반의 대화형 API 문서를 자동으로 생성합니�
 
 해당 페이지에서 **`/parse`** 버튼을 클릭한 후, `Try it out` 기능을 통해 파일을 직접 첨부하고 결과물을 테스트해 볼 수 있습니다.
 
+### 문서 UI 미리보기
+
+아래 캡처는 `/docs`와 `/redoc`의 기본 배치를 빠르게 확인하기 위한 정적 레이아웃 예시입니다. 실제 응답 예시는 실행 중인 서버의 `/openapi.json` 스키마에서 생성됩니다.
+
+![Swagger UI에서 health와 parse 엔드포인트가 보이는 화면](assets/swagger-ui.png)
+
+![ReDoc에서 NewsDOM API 엔드포인트 문서가 보이는 화면](assets/redoc.png)
+
 ---
 
 ## 3. API 엔드포인트 세부 설명

@@ -15,8 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Performance
 - `newsdom_api.dom_builder._html_safe_text` 함수에 early return과 타입 체크를 도입하여 불필요한 `str()` 캐스팅을 제거함으로써 처리 속도를 개선했습니다.
+- `mineru_runner.py`의 MinerU 명령어 인자 allowlist 검증 정규식을 사전 컴파일하여 반복 호출 비용을 줄였습니다.
 
 ### Added
+- Manual now includes a dedicated security reporting page so vulnerability disclosure, supported branches, and safe evidence handling are visible from the documentation navigation.
+- Package metadata now publishes Homepage, Documentation, Repository, Issues, and Security URLs so package indexes and developer tools show the same live project surfaces as the manual and OpenAPI docs.
+- Public documentation metadata now points to the current `ContextualWisdomLab/newsdom-api` repository, keeping the MkDocs header, OpenAPI contact link, Scorecard badges, and security reporting links aligned with the live project.
+- API reference manual now embeds the checked-in Swagger UI and ReDoc screenshots so the interactive documentation section renders with visible product context instead of text-only placeholders.
+- OpenAPI/ReDoc response samples now include concrete `HealthResponse`, `ParseResponse`, and error examples so visual API documentation no longer renders placeholder property names.
 - [CLI] 파싱된 NewsDOM JSON을 Markdown 포맷으로 변환하는 `tools/export_markdown.py` 도구를 추가했습니다.
 - [CLI] `tools/batch_parse_pdf.py`에 하위 디렉터리의 PDF를 일괄 처리하고 상대 경로로 JSON을 저장하는 `--recursive` 옵션을 추가했습니다.
 - OpenAPI 문서에 contact 및 MIT license metadata를 추가하여 API 소비자가 maintainer와 라이선스 정보를 더 쉽게 확인할 수 있도록 개선
@@ -80,11 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Synthetic newspaper fixture generation and structural equivalence checks
 - Protected-branch CI, security gates, release provenance workflow, and Git Flow documentation
 
-[Unreleased]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
-[0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
-
-## [0.2.0-perf] - 2024-07-01
-### 성능 개선
-- `mineru_runner.py`의 셸 명령어 인자 검증 로직에서 파이썬 제너레이터 `any()` 방식 대신 사전 컴파일된 정규 표현식(`re.compile`)을 사용하여 문자열 검증 속도를 절반 이상으로 단축했습니다.
+[Unreleased]: https://github.com/ContextualWisdomLab/newsdom-api/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/ContextualWisdomLab/newsdom-api/compare/v0.1.1...v0.2.0
+[0.1.1]: https://github.com/ContextualWisdomLab/newsdom-api/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/ContextualWisdomLab/newsdom-api/releases/tag/v0.1.0
