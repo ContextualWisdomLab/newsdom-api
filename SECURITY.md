@@ -5,7 +5,7 @@
 Please report a vulnerability privately by opening a GitHub Security
 Advisory draft for this repository:
 
-- [GitHub Security Advisory draft](https://github.com/ContextualWisdomLab/newsdom-api/security/advisories/new)
+- [GitHub Security Advisory draft](https://github.com/Seongho-Bae/newsdom-api/security/advisories/new)
 - [Maintainer profile](https://github.com/seonghobae)
 
 Do not open a public issue for an unpatched vulnerability.
