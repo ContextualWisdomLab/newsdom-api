@@ -552,3 +552,28 @@ def test_bbox_helper_returns_none_for_invalid_y0_x1_y1():
     assert _bbox_from_values([0, "bad", 1, 1]) is None
     assert _bbox_from_values([0, 0, "bad", 1]) is None
     assert _bbox_from_values([0, 0, 1, "bad"]) is None
+
+
+def test_coerce_page_number_float():
+    from newsdom_api.dom_builder import _coerce_page_number
+
+    assert _coerce_page_number(2.5) == 2
+    assert _coerce_page_number(100001.0) is None
+    assert _coerce_page_number(1e200) is None
+
+
+def test_build_page_dom_empty_headers_footers_page_numbers():
+    from newsdom_api.dom_builder import _build_page_dom
+    from itertools import count
+
+    blocks = [
+        {"role": "header", "text": ""},
+        {"role": "footer", "text": ""},
+        {"role": "page_number", "text": ""},
+        {"role": "ad", "text": ""},
+    ]
+    page = _build_page_dom(blocks, page_number=1, article_seq=count(1))
+    assert page.headers == []
+    assert page.footers == []
+    assert page.page_numbers == []
+    assert page.ads == []

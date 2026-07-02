@@ -40,3 +40,7 @@
 ## 2026-06-30 - Regex over Generator `any` string loops
 **Learning:** Using `any(...)` with a generator comprehension in string evaluation paths allocates a new generator and adds Python-level loop overhead for every character.
 **Action:** Replace `any()` generators with a pre-compiled regex (`re.compile().search()`) to evaluate string patterns in C, achieving a ~7x speedup for text-heavy operations.
+
+## 2026-07-02 - Exact Type Checking for Built-ins in Hot Paths
+**Learning:** Using `isinstance(value, type)` adds unnecessary overhead compared to `type(value) is type` when checking built-in types (e.g., `int`, `str`, `float`, `list`, `dict`) where class inheritance is not a factor. In heavily iterated parsing loops (like bounding box coercion, page number validation, or data extraction), the overhead of `isinstance` becomes a measurable bottleneck.
+**Action:** When validating exact standard library/built-in primitive types inside hot paths where inheritance polymorphism is not expected or supported, use exact type matching (`type(value) is str`) instead of `isinstance()` to reduce validation latency.

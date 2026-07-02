@@ -30,13 +30,21 @@ UNSAFE_MEDIA_PATH_PATTERN = re.compile(r"[\x00-\x1f\"'<>` \t\r\n]")
 def _coerce_bbox_coordinate(value: Any) -> float | None:
     """Convert a bounded, finite bounding-box coordinate into a float."""
 
-    if isinstance(value, bool):
-        return None
-
-    try:
-        coordinate = value if type(value) is float else float(value)
-    except (TypeError, ValueError, OverflowError):
-        return None
+    t = type(value)
+    if t is float:
+        coordinate = value
+    elif t is int:
+        try:
+            coordinate = float(value)
+        except OverflowError:
+            return None
+    else:
+        if value is None or t is bool:
+            return None
+        try:
+            coordinate = float(value)
+        except (TypeError, ValueError, OverflowError):
+            return None
 
     if not isfinite(coordinate):
         return None
@@ -92,7 +100,7 @@ def _html_safe_text(value: Any) -> str:
 def _safe_media_path(value: Any, fallback: str) -> str:
     """Return a bounded relative media path or a deterministic fallback."""
 
-    if not isinstance(value, str):
+    if type(value) is not str:
         return fallback
 
     raw_path = value.strip()
@@ -124,24 +132,25 @@ def _safe_media_path(value: Any, fallback: str) -> str:
 def _coerce_page_number(value: Any) -> int | None:
     """Convert supported page-number values into integers."""
 
-    if value is None:
-        return None
+    t = type(value)
+    if t is int:
+        return value if 1 <= value <= MAX_PAGE_NUMBER else None
 
-    if isinstance(value, bool):
-        return None
+    if t is str:
+        try:
+            page_number = int(value)
+            return page_number if 1 <= page_number <= MAX_PAGE_NUMBER else None
+        except ValueError:
+            return None
 
-    try:
-        page_number = int(value)
-    except (TypeError, ValueError, OverflowError):
-        return None
+    if t is float:
+        try:
+            page_number = int(value)
+            return page_number if 1 <= page_number <= MAX_PAGE_NUMBER else None
+        except (ValueError, OverflowError):
+            return None
 
-    if page_number < 1:
-        return None
-
-    if page_number > MAX_PAGE_NUMBER:
-        return None
-
-    return page_number
+    return None
 
 
 def _block_text(block: dict[str, Any]) -> str:
@@ -154,11 +163,11 @@ def _caption_nodes_from_items(items: Any) -> list[CaptionNode]:
     """Normalize caption-like payloads into caption nodes."""
 
     nodes: list[CaptionNode] = []
-    if not isinstance(items, list):
+    if type(items) is not list:
         return nodes
 
     for item in items:
-        if isinstance(item, dict):
+        if type(item) is dict:
             text = _html_safe_text(item.get("text") or item.get("contents"))
             if text:
                 # ⚡ Bolt: Defer expensive bbox parsing/float casting until we actually need it
@@ -369,7 +378,7 @@ def _group_blocks_by_page_idx(
 
     for block in content_list:
         raw_page_idx = block.get("page_idx")
-        if isinstance(raw_page_idx, int):
+        if type(raw_page_idx) is int:
             has_page_idx = True
             normalized_page_idx = raw_page_idx
         else:
@@ -452,7 +461,7 @@ def build_dom(
 ) -> ParseResponse:
     """Normalize MinerU-style content blocks into the canonical NewsDOM schema."""
 
-    if not isinstance(content_list, list):
+    if type(content_list) is not list:
         raise ValueError("content_list must be a list of MinerU content blocks")
 
     if len(content_list) > MAX_CONTENT_BLOCKS:
