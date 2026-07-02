@@ -6,7 +6,6 @@ import re
 from collections import defaultdict
 from html import escape as html_escape
 from itertools import count
-from math import isfinite
 from typing import Any
 
 from .schemas import (
@@ -23,55 +22,43 @@ MAX_BBOX_COORDINATE = 1_000_000.0
 MAX_CONTENT_BLOCKS = 5_000
 MAX_MEDIA_PATH_LENGTH = 512
 MAX_PAGE_NUMBER = 100_000
-HTML_ESCAPE_PATTERN = re.compile(r"[&<>\"']")
 UNSAFE_MEDIA_PATH_PATTERN = re.compile(r"[\x00-\x1f\"'<>` \t\r\n]")
-
-
-def _coerce_bbox_coordinate(value: Any) -> float | None:
-    """Convert a bounded, finite bounding-box coordinate into a float."""
-
-    if isinstance(value, bool):
-        return None
-
-    try:
-        coordinate = value if type(value) is float else float(value)
-    except (TypeError, ValueError, OverflowError):
-        return None
-
-    if not isfinite(coordinate):
-        return None
-
-    if coordinate < 0 or coordinate > MAX_BBOX_COORDINATE:
-        return None
-
-    return coordinate
 
 
 def _bbox_from_values(values: list[Any] | None) -> BoundingBox | None:
     """Convert a four-value bounding-box list into a typed schema object."""
 
-    if values is None:
-        return None
-
-    if len(values) != 4:
+    if type(values) is not list or len(values) != 4:
         return None
 
     # ⚡ Bolt: Unroll coordinate extraction to avoid generator and tuple allocation overhead.
     # This also enables early returns, stopping the function immediately if any coordinate is invalid.
-    x0 = _coerce_bbox_coordinate(values[0])
-    if x0 is None:
+    # ⚡ Bolt: Inlined coordinate coercion directly here using a single try-except and batch float casts
+    # to eliminate the overhead of repeated function calls for every single coordinate.
+    try:
+        v0, v1, v2, v3 = values
+
+        # Explicit boolean rejection (float(True) is 1.0, but we do not accept booleans)
+        if type(v0) is bool or type(v1) is bool or type(v2) is bool or type(v3) is bool:
+            return None
+
+        x0 = float(v0)
+        y0 = float(v1)
+        x1 = float(v2)
+        y1 = float(v3)
+    except (TypeError, ValueError, OverflowError):
         return None
 
-    y0 = _coerce_bbox_coordinate(values[1])
-    if y0 is None:
+    # This single bounds check implicitly rejects NaN values (all < and > comparisons with NaN are False)
+    if not (
+        0 <= x0 <= MAX_BBOX_COORDINATE
+        and 0 <= y0 <= MAX_BBOX_COORDINATE
+        and 0 <= x1 <= MAX_BBOX_COORDINATE
+        and 0 <= y1 <= MAX_BBOX_COORDINATE
+    ):
         return None
 
-    x1 = _coerce_bbox_coordinate(values[2])
-    if x1 is None or x1 < x0:
-        return None
-
-    y1 = _coerce_bbox_coordinate(values[3])
-    if y1 is None or y1 < y0:
+    if x1 < x0 or y1 < y0:
         return None
 
     return BoundingBox(x0=x0, y0=y0, x1=x1, y1=y1)
@@ -84,8 +71,8 @@ def _html_safe_text(value: Any) -> str:
     # ⚡ Bolt: Fast path for str to avoid expensive str() cast
     text = value if type(value) is str else str(value)
     text = text.strip()
-    if not HTML_ESCAPE_PATTERN.search(text):
-        return text
+    # ⚡ Bolt: Remove python-level regex check overhead. html_escape is implemented in C
+    # and has its own highly-optimized internal fast-path for strings that don't need escaping.
     return html_escape(text)
 
 

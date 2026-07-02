@@ -40,3 +40,6 @@
 ## 2026-06-30 - Regex over Generator `any` string loops
 **Learning:** Using `any(...)` with a generator comprehension in string evaluation paths allocates a new generator and adds Python-level loop overhead for every character.
 **Action:** Replace `any()` generators with a pre-compiled regex (`re.compile().search()`) to evaluate string patterns in C, achieving a ~7x speedup for text-heavy operations.
+## 2024-11-25 - Python Overhead in DOM Builder
+**Learning:** Calling functions within list iterations, Python-level regex search checks before C-implemented stdlib functions (like `html.escape`), and individual type checking for lists of finite length add significant overhead during hot loops.
+**Action:** Unroll hot loops over fixed lists, inline coordinate coercion with batch `float()` casts wrapped in a single `try-except` block, and remove redundant Python-level pre-checks for functions that are implemented in C and have internal fast-paths.
