@@ -9,6 +9,10 @@
 **Learning:** In hot loops where data is grouped by a key (e.g., grouping parser blocks by page index), using `dict.setdefault(key, []).append(item)` forces the instantiation of an empty list `[]` on every single iteration, even though it's thrown away on all but the first insertion per key. This causes significant, unnecessary garbage collection overhead when processing tens of thousands of items.
 **Action:** Use `collections.defaultdict(list)` instead. This defers list creation only to the points where new keys are encountered, avoiding redundant allocations and showing a ~40% speedup in hot grouping paths.
 
+## 2024-11-25 - Python Overhead in DOM Builder
+**Learning:** Calling functions within list iterations and individual type checking for lists of finite length add significant overhead during hot loops.
+**Action:** Unroll hot loops over fixed lists, and inline coordinate coercion with batch `float()` casts wrapped in a single `try-except` block.
+
 ## 2026-06-24 - Avoid unnecessary string replacement
 **Learning:** Calling `text.replace("\n", " ")` on every text block allocates even when the text has no newline.
 **Action:** Check for `"\n"` before replacing in hot text-processing loops.
@@ -40,6 +44,3 @@
 ## 2026-06-30 - Regex over Generator `any` string loops
 **Learning:** Using `any(...)` with a generator comprehension in string evaluation paths allocates a new generator and adds Python-level loop overhead for every character.
 **Action:** Replace `any()` generators with a pre-compiled regex (`re.compile().search()`) to evaluate string patterns in C, achieving a ~7x speedup for text-heavy operations.
-## 2024-11-25 - Python Overhead in DOM Builder
-**Learning:** Calling functions within list iterations, Python-level regex search checks before C-implemented stdlib functions (like `html.escape`), and individual type checking for lists of finite length add significant overhead during hot loops.
-**Action:** Unroll hot loops over fixed lists, inline coordinate coercion with batch `float()` casts wrapped in a single `try-except` block, and remove redundant Python-level pre-checks for functions that are implemented in C and have internal fast-paths.

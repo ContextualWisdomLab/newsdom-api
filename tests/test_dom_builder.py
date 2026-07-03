@@ -552,3 +552,25 @@ def test_bbox_helper_returns_none_for_invalid_y0_x1_y1():
     assert _bbox_from_values([0, "bad", 1, 1]) is None
     assert _bbox_from_values([0, 0, "bad", 1]) is None
     assert _bbox_from_values([0, 0, 1, "bad"]) is None
+
+def test_bbox_from_values_typeerror_len():
+    # Pass an object that doesn't have __len__ to trigger TypeError
+    assert _bbox_from_values(object()) is None
+
+def test_build_dom_ignores_empty_header_footer_page_number_ad():
+    from newsdom_api.dom_builder import build_dom
+    dom = build_dom(
+        [
+            {"role": "header"},
+            {"role": "footer"},
+            {"role": "page_number"},
+            {"role": "ad"},
+            {"type": "ad"}
+        ],
+        document_id="doc-empty-blocks"
+    )
+    assert len(dom.pages) == 1
+    assert dom.pages[0].headers == []
+    assert dom.pages[0].footers == []
+    assert dom.pages[0].page_numbers == []
+    assert dom.pages[0].ads == []

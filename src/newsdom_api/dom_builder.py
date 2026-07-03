@@ -22,13 +22,20 @@ MAX_BBOX_COORDINATE = 1_000_000.0
 MAX_CONTENT_BLOCKS = 5_000
 MAX_MEDIA_PATH_LENGTH = 512
 MAX_PAGE_NUMBER = 100_000
+HTML_ESCAPE_PATTERN = re.compile(r"[&<>\"']")
 UNSAFE_MEDIA_PATH_PATTERN = re.compile(r"[\x00-\x1f\"'<>` \t\r\n]")
 
 
 def _bbox_from_values(values: list[Any] | None) -> BoundingBox | None:
     """Convert a four-value bounding-box list into a typed schema object."""
 
-    if type(values) is not list or len(values) != 4:
+    if values is None:
+        return None
+
+    try:
+        if len(values) != 4:
+            return None
+    except TypeError:
         return None
 
     # ⚡ Bolt: Unroll coordinate extraction to avoid generator and tuple allocation overhead.
@@ -49,7 +56,7 @@ def _bbox_from_values(values: list[Any] | None) -> BoundingBox | None:
     except (TypeError, ValueError, OverflowError):
         return None
 
-    # This single bounds check implicitly rejects NaN values (all < and > comparisons with NaN are False)
+    # Bounds comparisons reject NaN/inf because any comparison with NaN is False and infinities fail the MAX_BBOX_COORDINATE upper bound
     if not (
         0 <= x0 <= MAX_BBOX_COORDINATE
         and 0 <= y0 <= MAX_BBOX_COORDINATE
@@ -71,8 +78,8 @@ def _html_safe_text(value: Any) -> str:
     # ⚡ Bolt: Fast path for str to avoid expensive str() cast
     text = value if type(value) is str else str(value)
     text = text.strip()
-    # ⚡ Bolt: Remove python-level regex check overhead. html_escape is implemented in C
-    # and has its own highly-optimized internal fast-path for strings that don't need escaping.
+    if not HTML_ESCAPE_PATTERN.search(text):
+        return text
     return html_escape(text)
 
 
