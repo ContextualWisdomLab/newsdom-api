@@ -25,3 +25,6 @@
 ## 2024-05-18 - Improve Swagger UI DX with swagger_ui_parameters
 **Learning:** The default Swagger UI configuration for FastAPI applications often lacks helpful features like request duration display or dark-themed syntax highlighting, and requires users to manually click "Try it out" for every endpoint.
 **Action:** Always configure `swagger_ui_parameters` in the `FastAPI()` instantiation with options like `{"displayRequestDuration": True, "syntaxHighlight.theme": "monokai", "tryItOutEnabled": True}` to significantly improve the Developer Experience (DX) when interacting with the API documentation.
+## 2026-07-03 - Optimize OpenAPI Examples and Required Fields in Pydantic V2
+**Learning:** In Pydantic V2 and FastAPI, adding an explicit ellipsis `...` to fields without defaults is unnecessary as they are automatically required. Furthermore, when defining OpenAPI examples, using `json_schema_extra={"example": <value>}` avoids `PydanticDeprecatedSince20` warnings associated with passing `example` directly to `Field()` and ensures standard Swagger UI functionality.
+**Action:** Remove unnecessary `...` on required fields and use `json_schema_extra={"example": <value>}` for singular OpenAPI examples to significantly improve Developer Experience (DX) while maintaining strict `PYTHONWARNINGS` CI compatibility.
