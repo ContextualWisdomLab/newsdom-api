@@ -79,3 +79,20 @@ def test_validate_dom_main_execution(monkeypatch, mock_valid_json_file):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", RuntimeWarning)
         runpy.run_module("tools.validate_dom", run_name="__main__")
+
+
+def test_validate_dom_help_exit(capsys):
+    with pytest.raises(SystemExit) as e:
+        validate_dom.main(["--help"])
+    assert e.value.code == 0
+    assert "Validate a NewsDOM JSON output" in capsys.readouterr().out
+
+
+def test_validate_dom_interrupt(monkeypatch, mock_valid_json_file):
+    def mock_validate(*args, **kwargs):
+        raise KeyboardInterrupt()
+
+    monkeypatch.setattr(validate_dom, "validate_dom", mock_validate)
+
+    with pytest.raises(KeyboardInterrupt):
+        validate_dom.main([str(mock_valid_json_file)])
