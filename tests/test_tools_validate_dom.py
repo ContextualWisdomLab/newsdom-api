@@ -16,11 +16,7 @@ def mock_valid_json_file(tmp_path: Path) -> Path:
     data = {
         "document_id": "doc_123",
         "pages": [],
-        "quality": {
-            "status": "success",
-            "parser": "mineru",
-            "warnings": []
-        }
+        "quality": {"status": "success", "parser": "mineru", "warnings": []},
     }
     json_path.write_text(json.dumps(data), encoding="utf-8")
     return json_path
@@ -30,9 +26,7 @@ def mock_valid_json_file(tmp_path: Path) -> Path:
 def mock_invalid_schema_json_file(tmp_path: Path) -> Path:
     json_path = tmp_path / "invalid_schema.json"
     # Missing document_id which is required in ParseResponse
-    data = {
-        "pages": []
-    }
+    data = {"pages": []}
     json_path.write_text(json.dumps(data), encoding="utf-8")
     return json_path
 

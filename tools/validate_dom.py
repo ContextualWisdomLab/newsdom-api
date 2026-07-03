@@ -8,15 +8,10 @@ from typing import Any
 
 from pydantic import ValidationError
 
-_REPO_ROOT = Path(__file__).resolve().parents[1]
-_SRC_ROOT = _REPO_ROOT / "src"
-if str(_SRC_ROOT) not in sys.path:  # pragma: no cover
-    sys.path.insert(0, str(_SRC_ROOT))
-
-from newsdom_api.schemas import ParseResponse  # noqa: E402
+# We inject sys.path inside main() to avoid global side-effects during test imports.
 
 
-def validate_dom(json_path: Path) -> dict[str, Any]:
+def validate_dom(json_path: Path) -> Any:
     """Validate DOM JSON against ParseResponse schema."""
     if not json_path.is_file():
         raise FileNotFoundError(f"File not found or is not a file: {json_path}")
@@ -28,16 +23,23 @@ def validate_dom(json_path: Path) -> dict[str, Any]:
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON format: {e}") from e
 
+    from newsdom_api.schemas import ParseResponse
+
     try:
-        ParseResponse.model_validate(data)
+        validated_model = ParseResponse.model_validate(data)
     except ValidationError as e:
         raise ValueError(f"Schema validation failed:\n{e}") from e
 
-    return data
+    return validated_model
 
 
 def main(argv: list[str] | None = None) -> None:
     """Run validate_dom main entry point."""
+    _REPO_ROOT = Path(__file__).resolve().parents[1]
+    _SRC_ROOT = _REPO_ROOT / "src"
+    if str(_SRC_ROOT) not in sys.path:  # pragma: no cover
+        sys.path.insert(0, str(_SRC_ROOT))
+
     parser = argparse.ArgumentParser(
         description="Validate a NewsDOM JSON output against the ParseResponse schema."
     )
@@ -50,7 +52,7 @@ def main(argv: list[str] | None = None) -> None:
         print(
             "Validation successful: The JSON file strictly matches the ParseResponse schema."
         )
-    except Exception as e:
+    except (FileNotFoundError, ValueError, OSError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
