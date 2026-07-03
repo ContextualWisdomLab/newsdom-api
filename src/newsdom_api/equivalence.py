@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
-import collections.abc
 
 
 def load_metrics(path: Path) -> dict[str, Any]:
