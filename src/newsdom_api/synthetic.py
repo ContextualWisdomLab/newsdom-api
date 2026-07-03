@@ -45,9 +45,7 @@ def _safe_draw_text(
         draw.text(xy, text, fill=fill, font=font)
     except UnicodeEncodeError:
         # Fallback for ImageFont.load_default() which only supports latin-1
-        fallback_text = "".join(
-            c if ord(c) < 256 else "?" for c in text
-        )
+        fallback_text = "".join(c if ord(c) < 256 else "?" for c in text)
         draw.text(xy, fallback_text, fill=fill, font=font)
 
 

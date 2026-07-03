@@ -577,3 +577,14 @@ def test_build_page_dom_empty_headers_footers_page_numbers():
     assert page.footers == []
     assert page.page_numbers == []
     assert page.ads == []
+
+
+def test_build_dom_with_userlist():
+    from collections import UserList
+    from newsdom_api.dom_builder import build_dom
+
+    content = UserList([{"type": "text", "text": "hello"}])
+    response = build_dom(content, document_id="test")
+    assert response.document_id == "test"
+    assert len(response.pages) == 1
+    assert len(response.pages[0].articles) == 1

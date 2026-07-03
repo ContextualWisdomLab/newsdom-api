@@ -241,3 +241,25 @@ def test_derived_metrics_invalid_types():
     }
     metrics = _derived_metrics(payload)
     assert metrics == payload
+
+
+def test_derived_metrics_with_ordereddict():
+    from collections import OrderedDict
+    from newsdom_api.equivalence import _derived_metrics
+
+    payload = OrderedDict()
+    payload["articles"] = [
+        OrderedDict([("headline", "Test Headline"), ("vertical", True)]),
+        OrderedDict([("headline_present", False), ("page_number", 2)]),
+    ]
+    payload["pages"] = [
+        OrderedDict([("column_count", 3)]),
+        OrderedDict([("column_count", 4)]),
+    ]
+
+    metrics = _derived_metrics(payload)
+    assert metrics["article_count"] == 2
+    assert metrics["headline_blocks"] == 1
+    assert metrics["vertical_article_ratio"] == 0.5
+    assert metrics["page_count"] == 2
+    assert metrics["column_count"] == 4

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+import collections.abc
 
 
 def load_metrics(path: Path) -> dict[str, Any]:
@@ -33,7 +34,7 @@ def _process_articles(metrics: dict[str, Any], articles: list[Any]) -> None:
     headline_page_numbers: set[int] = set()
 
     for article in articles:
-        if type(article) is not dict:
+        if not isinstance(article, dict):
             continue
 
         has_headline = _article_has_headline(article)
@@ -77,7 +78,7 @@ def _process_pages(metrics: dict[str, Any], pages: list[Any]) -> None:
         max_col = metrics.get("column_count", 0)
         found_column_count = False
         for page in pages:
-            if type(page) is not dict:
+            if not isinstance(page, dict):
                 continue
             column_count = page.get("column_count")
             if type(column_count) is not int:
@@ -92,12 +93,17 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     """Normalize structural metrics, preferring derivation from structural data when present."""
 
     metrics = dict(payload)
-    articles = (
-        payload.get("articles") if type(payload.get("articles")) is list else None
-    )
-    images = payload.get("images") if type(payload.get("images")) is list else None
-    ads = payload.get("ads") if type(payload.get("ads")) is list else None
-    pages = payload.get("pages") if type(payload.get("pages")) is list else None
+    raw_articles = payload.get("articles")
+    articles = raw_articles if isinstance(raw_articles, list) else None
+
+    raw_images = payload.get("images")
+    images = raw_images if isinstance(raw_images, list) else None
+
+    raw_ads = payload.get("ads")
+    ads = raw_ads if isinstance(raw_ads, list) else None
+
+    raw_pages = payload.get("pages")
+    pages = raw_pages if isinstance(raw_pages, list) else None
 
     if articles is not None:
         _process_articles(metrics, articles)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
+import collections.abc
 from html import escape as html_escape
 from itertools import count
 from math import isfinite
@@ -461,7 +462,10 @@ def build_dom(
 ) -> ParseResponse:
     """Normalize MinerU-style content blocks into the canonical NewsDOM schema."""
 
-    if type(content_list) is not list:
+    if not isinstance(content_list, list) and not (
+        isinstance(content_list, collections.abc.Sequence)
+        and not isinstance(content_list, (str, bytes, tuple))
+    ):
         raise ValueError("content_list must be a list of MinerU content blocks")
 
     if len(content_list) > MAX_CONTENT_BLOCKS:
