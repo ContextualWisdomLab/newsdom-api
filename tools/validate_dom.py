@@ -52,6 +52,8 @@ def main(argv: list[str] | None = None) -> None:
         print(
             "Validation successful: The JSON file strictly matches the ParseResponse schema."
         )
+    except KeyboardInterrupt:
+        sys.exit(130)
     except (FileNotFoundError, ValueError, OSError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

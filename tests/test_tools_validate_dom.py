@@ -94,5 +94,6 @@ def test_validate_dom_interrupt(monkeypatch, mock_valid_json_file):
 
     monkeypatch.setattr(validate_dom, "validate_dom", mock_validate)
 
-    with pytest.raises(KeyboardInterrupt):
+    with pytest.raises(SystemExit) as e:
         validate_dom.main([str(mock_valid_json_file)])
+    assert e.value.code == 130
