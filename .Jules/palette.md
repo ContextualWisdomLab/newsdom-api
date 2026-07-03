@@ -27,5 +27,5 @@
 **Action:** Always configure `swagger_ui_parameters` in the `FastAPI()` instantiation with options like `{"displayRequestDuration": True, "syntaxHighlight.theme": "monokai", "tryItOutEnabled": True}` to significantly improve the Developer Experience (DX) when interacting with the API documentation.
 
 ## 2026-06-28 - Enhance OpenAPI DX with Pydantic Field Examples
-**Learning:** Adding concrete `examples` to Pydantic V2 `Field` definitions significantly improves Developer Experience (DX) for backend-only APIs by automatically populating realistic, copy-pasteable data in Swagger UI, acting as a crucial "UX" upgrade for API consumers.
-**Action:** When working on FastAPI schema definitions, proactively inject `examples=["value"]` lists into `Field(...)` declarations to guarantee the generated OpenAPI documentation is intuitive and self-documenting.
+**Learning:** Adding concrete examples to Pydantic V2 `Field` definitions significantly improves Developer Experience (DX) for backend-only APIs by automatically populating realistic, copy-pasteable data in Swagger UI. However, using the `examples` property directly can cause compatibility issues with OpenAPI/Swagger tooling.
+**Action:** When working on FastAPI schema definitions, proactively inject `json_schema_extra={"examples": ["value"]}` into `Field(...)` declarations for all fields to guarantee the generated OpenAPI documentation is intuitive, self-documenting, and compatible. For array/list typed fields, ensure the format is a nested list: `json_schema_extra={"examples": [["val1", "val2"]]}`.
