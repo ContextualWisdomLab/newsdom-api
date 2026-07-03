@@ -40,3 +40,7 @@
 ## 2026-06-30 - Regex over Generator `any` string loops
 **Learning:** Using `any(...)` with a generator comprehension in string evaluation paths allocates a new generator and adds Python-level loop overhead for every character.
 **Action:** Replace `any()` generators with a pre-compiled regex (`re.compile().search()`) to evaluate string patterns in C, achieving a ~7x speedup for text-heavy operations.
+
+## 2024-07-01 - Avoid List Evaluation on Glob Matches
+**Learning:** Calling `list()` on a generator like `path.glob("*/ocr")` iterates over all matches and allocates a list, even if we only need the first element. In our profiling of file discovery routines, eagerly resolving a glob generator caused unnecessary directory traversals and list allocations.
+**Action:** Use `next(path.glob(...))` with a `try/except StopIteration` block when looking for the first matching directory to avoid evaluating the entire glob iterator.
