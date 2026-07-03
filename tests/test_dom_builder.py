@@ -11,7 +11,6 @@ from newsdom_api.dom_builder import (
     _bbox_from_values,
     _caption_nodes_from_items,
     _coerce_page_number,
-    _html_safe_text,
     _new_article,
     _page_number_from_info,
     build_dom,
@@ -124,10 +123,6 @@ def test_build_dom_escapes_text_fields_for_html_renderers():
         "&lt;script&gt;alert(&#x27;caption&#x27;)&lt;/script&gt;"
     )
     assert page.articles[0].images[1].path == "image"
-
-
-def test_html_safe_text_skips_escape_when_no_special_chars():
-    assert _html_safe_text("plain body") == "plain body"
 
 
 def test_build_dom_uses_safe_relative_media_paths():
