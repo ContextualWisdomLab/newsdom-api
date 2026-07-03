@@ -36,3 +36,7 @@
 **Vulnerability:** Unhandled FastAPI exceptions can produce sanitized 500 responses without the same defense-in-depth headers applied by normal middleware responses.
 **Learning:** Error response paths need explicit coverage because exception handlers can bypass or duplicate header logic differently from successful request paths.
 **Prevention:** Route both middleware responses and global 500 exception responses through a shared security-header helper.
+## 2026-06-30 - Fix Resource Exhaustion DoS via In-Memory File Buffering
+**Vulnerability:** The `/parse` endpoint buffered entire client file uploads into an unbounded `bytearray` inside Python memory via `await file.read(MAX_PARSE_UPLOAD_BYTES)` before structural checks. This allowed attackers to flood the API with max-sized uploads, exhausting node memory regardless of FastAPI's underlying disk-spooling configurations.
+**Learning:** Collecting bytes incrementally into a single local variable provides zero memory savings over a bounded bulk `.read()`. Safe streaming means dumping chunks directly to a persistent downstream processor or temporary filesystem handle before moving on to the next chunk.
+**Prevention:** Always stream file uploads iteratively directly to a temporary file on disk using `await file.read(8192)` inside a loop, keeping the resident memory footprint restricted to the individual chunk size.

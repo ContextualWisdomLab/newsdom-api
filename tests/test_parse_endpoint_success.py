@@ -4,9 +4,12 @@ from newsdom_api.main import app
 from newsdom_api.schemas import PageNode, ParseQuality, ParseResponse
 
 
+from pathlib import Path
+
+
 def test_parse_endpoint_returns_dom(monkeypatch):
-    def fake_parse_pdf_bytes(
-        data: bytes, filename: str = "upload.pdf"
+    def fake_parse_pdf_file(
+        source_path: Path, filename: str = "upload.pdf"
     ) -> ParseResponse:
         return ParseResponse(
             document_id=filename,
@@ -22,7 +25,7 @@ def test_parse_endpoint_returns_dom(monkeypatch):
         )
 
     monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
-    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
+    monkeypatch.setattr("newsdom_api.main.parse_pdf_file", fake_parse_pdf_file)
 
     client = TestClient(app)
     response = client.post(
