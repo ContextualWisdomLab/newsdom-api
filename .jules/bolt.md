@@ -40,3 +40,6 @@
 ## 2026-06-30 - Regex over Generator `any` string loops
 **Learning:** Using `any(...)` with a generator comprehension in string evaluation paths allocates a new generator and adds Python-level loop overhead for every character.
 **Action:** Replace `any()` generators with a pre-compiled regex (`re.compile().search()`) to evaluate string patterns in C, achieving a ~7x speedup for text-heavy operations.
+## 2026-07-04 - Fast paths for basic type coercion
+**Learning:** Checking types with `type(value) is x` before `try-except` blocks can speed up coercion loops (e.g., `int()` or `float()`) significantly when the data contains mostly correct values. Specifically, benchmarking showed skipping `int(value)` for pre-existing integers reduced execution time by ~50%, and skipping `float(value)` for floats by ~27%.
+**Action:** Use fast path type checks like `type(value) is int` to bypass `try-except int(value)` on hot paths where most data conforms to expected types.

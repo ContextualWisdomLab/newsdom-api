@@ -30,18 +30,24 @@ UNSAFE_MEDIA_PATH_PATTERN = re.compile(r"[\x00-\x1f\"'<>` \t\r\n]")
 def _coerce_bbox_coordinate(value: Any) -> float | None:
     """Convert a bounded, finite bounding-box coordinate into a float."""
 
-    if isinstance(value, bool):
-        return None
+    # ⚡ Bolt: Type checking fast paths avoids redundant float() allocation and exception handling overhead
+    val_type = type(value)
+    if val_type is float:
+        coordinate = value
+    elif val_type is int:
+        try:
+            coordinate = float(value)
+        except OverflowError:
+            return None
+    else:
+        if isinstance(value, bool):
+            return None
+        try:
+            coordinate = float(value)
+        except (TypeError, ValueError, OverflowError):
+            return None
 
-    try:
-        coordinate = value if type(value) is float else float(value)
-    except (TypeError, ValueError, OverflowError):
-        return None
-
-    if not isfinite(coordinate):
-        return None
-
-    if coordinate < 0 or coordinate > MAX_BBOX_COORDINATE:
+    if not isfinite(coordinate) or coordinate < 0 or coordinate > MAX_BBOX_COORDINATE:
         return None
 
     return coordinate
@@ -124,16 +130,18 @@ def _safe_media_path(value: Any, fallback: str) -> str:
 def _coerce_page_number(value: Any) -> int | None:
     """Convert supported page-number values into integers."""
 
-    if value is None:
-        return None
+    # ⚡ Bolt: Fast path for type checks avoids expensive try/except int(value) on standard integer values
+    val_type = type(value)
+    if val_type is int:
+        page_number = value
+    else:
+        if value is None or isinstance(value, bool):
+            return None
 
-    if isinstance(value, bool):
-        return None
-
-    try:
-        page_number = int(value)
-    except (TypeError, ValueError, OverflowError):
-        return None
+        try:
+            page_number = int(value)
+        except (TypeError, ValueError, OverflowError):
+            return None
 
     if page_number < 1:
         return None
