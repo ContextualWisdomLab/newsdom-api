@@ -30,7 +30,7 @@ UNSAFE_MEDIA_PATH_PATTERN = re.compile(r"[\x00-\x1f\"'<>` \t\r\n]")
 def _coerce_bbox_coordinate(value: Any) -> float | None:
     """Convert a bounded, finite bounding-box coordinate into a float."""
 
-    if isinstance(value, bool):
+    if type(value) is bool:
         return None
 
     try:
@@ -92,7 +92,7 @@ def _html_safe_text(value: Any) -> str:
 def _safe_media_path(value: Any, fallback: str) -> str:
     """Return a bounded relative media path or a deterministic fallback."""
 
-    if not isinstance(value, str):
+    if type(value) is not str:
         return fallback
 
     raw_path = value.strip()
@@ -127,7 +127,7 @@ def _coerce_page_number(value: Any) -> int | None:
     if value is None:
         return None
 
-    if isinstance(value, bool):
+    if type(value) is bool:
         return None
 
     try:
@@ -154,11 +154,11 @@ def _caption_nodes_from_items(items: Any) -> list[CaptionNode]:
     """Normalize caption-like payloads into caption nodes."""
 
     nodes: list[CaptionNode] = []
-    if not isinstance(items, list):
+    if type(items) is not list:
         return nodes
 
     for item in items:
-        if isinstance(item, dict):
+        if type(item) is dict:
             text = _html_safe_text(item.get("text") or item.get("contents"))
             if text:
                 # ⚡ Bolt: Defer expensive bbox parsing/float casting until we actually need it
@@ -325,19 +325,13 @@ def _page_number_from_info(page_info: dict[str, Any], fallback: int) -> int:
     """Resolve page numbering from MinerU page metadata."""
 
     page_number = page_info.get("page_number")
-    if isinstance(page_number, bool):
-        page_number = None
-
-    if isinstance(page_number, int):
+    if type(page_number) is int:
         normalized_page_number = _coerce_page_number(page_number)
         if normalized_page_number is not None:
             return normalized_page_number
 
     page_no = page_info.get("page_no")
-    if isinstance(page_no, bool):
-        page_no = None
-
-    if isinstance(page_no, int):
+    if type(page_no) is int:
         normalized_page_no = _coerce_page_number(page_no + 1)
         if normalized_page_no is not None:
             return normalized_page_no
@@ -369,7 +363,7 @@ def _group_blocks_by_page_idx(
 
     for block in content_list:
         raw_page_idx = block.get("page_idx")
-        if isinstance(raw_page_idx, int):
+        if type(raw_page_idx) is int:
             has_page_idx = True
             normalized_page_idx = raw_page_idx
         else:
@@ -452,7 +446,7 @@ def build_dom(
 ) -> ParseResponse:
     """Normalize MinerU-style content blocks into the canonical NewsDOM schema."""
 
-    if not isinstance(content_list, list):
+    if type(content_list) is not list:
         raise ValueError("content_list must be a list of MinerU content blocks")
 
     if len(content_list) > MAX_CONTENT_BLOCKS:

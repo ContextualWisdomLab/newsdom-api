@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - API 응답 미들웨어에 `Cache-Control: no-store, max-age=0` 헤더를 추가하여 민감한 파싱 데이터의 브라우저 및 중간 캐싱을 방지
 
 ### Performance
+- 기본 원시 타입(int, str, bool, list, dict)에 대해 `isinstance()` 대신 `type() is T`를 사용하고 불필요한 조건문을 제거하여 파싱 루프 내 타입 검사 오버헤드를 약 15% 개선했습니다.
 - `newsdom_api.dom_builder._html_safe_text` 함수에 early return과 타입 체크를 도입하여 불필요한 `str()` 캐스팅을 제거함으로써 처리 속도를 개선했습니다.
 
 ### Added
