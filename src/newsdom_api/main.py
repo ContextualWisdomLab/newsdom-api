@@ -47,6 +47,7 @@ app = FastAPI(
     },
     openapi_tags=tags_metadata,
     swagger_ui_parameters={
+        "defaultModelsExpandDepth": -1,
         "displayRequestDuration": True,
         "syntaxHighlight.theme": "monokai",
         "tryItOutEnabled": True,
@@ -142,9 +143,7 @@ def _validate_pdf_structure(file_path: Path) -> None:
     tags=["Parser"],
 )
 async def parse(
-    file: Annotated[
-        UploadFile, File(..., description="The newspaper PDF file to parse.")
-    ],
+    file: Annotated[UploadFile, File(description="The newspaper PDF file to parse.")],
 ) -> ParseResponse:
     """Parse an uploaded PDF into the canonical DOM response model."""
 

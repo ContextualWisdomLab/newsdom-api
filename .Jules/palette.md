@@ -25,3 +25,7 @@
 ## 2024-05-18 - Improve Swagger UI DX with swagger_ui_parameters
 **Learning:** The default Swagger UI configuration for FastAPI applications often lacks helpful features like request duration display or dark-themed syntax highlighting, and requires users to manually click "Try it out" for every endpoint.
 **Action:** Always configure `swagger_ui_parameters` in the `FastAPI()` instantiation with options like `{"displayRequestDuration": True, "syntaxHighlight.theme": "monokai", "tryItOutEnabled": True}` to significantly improve the Developer Experience (DX) when interacting with the API documentation.
+## 2026-07-05 - Modernize Pydantic Schemas for Improved DX\n**Learning:** In Pydantic V2 and modern FastAPI, fields without a default value are automatically required. Adding an explicit `...` is unnecessary and clutters the code.\n**Action:** Omit explicit `...` arguments in Pydantic V2 `Field` declarations to improve Developer Experience (DX).
+## $(date +%Y-%m-%d) - Hide Models Section in Swagger UI
+**Learning:** For backend-only services without a frontend UI, Developer Experience (DX) acts as the user experience. By default, Swagger UI displays a large "Models" section at the bottom which often clutters the interface and distracts users from the actual endpoints.
+**Action:** Configure `swagger_ui_parameters` with `"defaultModelsExpandDepth": -1` to collapse/hide the Models section by default, streamlining the API documentation view.
