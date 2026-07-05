@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import shutil
 import tempfile
 from pathlib import Path, PurePosixPath
 
@@ -32,13 +33,13 @@ def _safe_upload_filename(filename: str) -> str:
     return name
 
 
-def parse_pdf_bytes(data: bytes, filename: str = "upload.pdf") -> ParseResponse:
-    """Persist uploaded PDF bytes temporarily and return the normalized parse result."""
+def parse_pdf(file_path: Path, filename: str = "upload.pdf") -> ParseResponse:
+    """Parse a local PDF file and return the normalized parse result."""
 
     with tempfile.TemporaryDirectory(prefix="newsdom-upload-") as tempdir:
         safe_name = _safe_upload_filename(filename)
         pdf_path = Path(tempdir) / safe_name
-        pdf_path.write_bytes(data)
+        shutil.copy2(file_path, pdf_path)
         mineru_output = run_mineru(pdf_path)
         response = build_dom(
             mineru_output["content_list"],
@@ -46,3 +47,12 @@ def parse_pdf_bytes(data: bytes, filename: str = "upload.pdf") -> ParseResponse:
             model=mineru_output.get("model"),
         )
         return response
+
+
+def parse_pdf_bytes(data: bytes, filename: str = "upload.pdf") -> ParseResponse:
+    """Persist uploaded PDF bytes temporarily and return the normalized parse result."""
+
+    with tempfile.TemporaryDirectory(prefix="newsdom-upload-") as tempdir:
+        pdf_path = Path(tempdir) / "upload.pdf"
+        pdf_path.write_bytes(data)
+        return parse_pdf(pdf_path, filename)
