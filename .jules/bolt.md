@@ -40,3 +40,6 @@
 ## 2026-06-30 - Regex over Generator `any` string loops
 **Learning:** Using `any(...)` with a generator comprehension in string evaluation paths allocates a new generator and adds Python-level loop overhead for every character.
 **Action:** Replace `any()` generators with a pre-compiled regex (`re.compile().search()`) to evaluate string patterns in C, achieving a ~7x speedup for text-heavy operations.
+## 2026-07-05 - Avoid Eager Glob Materialization in File Discovery
+**Learning:** In file discovery routines (like `_find_output_dir` in `mineru_runner.py`), eagerly resolving a glob generator into a list (e.g., `list(path.glob(...))`) causes unnecessary directory traversals and memory allocation when only a single match is needed.
+**Action:** Use `next(path.glob(...))` with a `try/except StopIteration` block efficiently avoids this performance overhead.
