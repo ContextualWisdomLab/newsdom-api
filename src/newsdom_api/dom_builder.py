@@ -30,11 +30,25 @@ UNSAFE_MEDIA_PATH_PATTERN = re.compile(r"[\x00-\x1f\"'<>` \t\r\n]")
 def _coerce_bbox_coordinate(value: Any) -> float | None:
     """Convert a bounded, finite bounding-box coordinate into a float."""
 
+    if type(value) is float:
+        if not isfinite(value) or value < 0 or value > MAX_BBOX_COORDINATE:
+            return None
+        return value
+
+    if type(value) is int:
+        try:
+            v = float(value)
+        except OverflowError:
+            return None
+        if not isfinite(v) or v < 0 or v > MAX_BBOX_COORDINATE:
+            return None
+        return v
+
     if isinstance(value, bool):
         return None
 
     try:
-        coordinate = value if type(value) is float else float(value)
+        coordinate = float(value)
     except (TypeError, ValueError, OverflowError):
         return None
 
@@ -84,8 +98,6 @@ def _html_safe_text(value: Any) -> str:
     # ⚡ Bolt: Fast path for str to avoid expensive str() cast
     text = value if type(value) is str else str(value)
     text = text.strip()
-    if not HTML_ESCAPE_PATTERN.search(text):
-        return text
     return html_escape(text)
 
 
@@ -123,6 +135,11 @@ def _safe_media_path(value: Any, fallback: str) -> str:
 
 def _coerce_page_number(value: Any) -> int | None:
     """Convert supported page-number values into integers."""
+
+    if type(value) is int:
+        if value < 1 or value > MAX_PAGE_NUMBER:
+            return None
+        return value
 
     if value is None:
         return None
@@ -369,7 +386,7 @@ def _group_blocks_by_page_idx(
 
     for block in content_list:
         raw_page_idx = block.get("page_idx")
-        if isinstance(raw_page_idx, int):
+        if type(raw_page_idx) is int:
             has_page_idx = True
             normalized_page_idx = raw_page_idx
         else:

@@ -40,3 +40,11 @@
 ## 2026-06-30 - Regex over Generator `any` string loops
 **Learning:** Using `any(...)` with a generator comprehension in string evaluation paths allocates a new generator and adds Python-level loop overhead for every character.
 **Action:** Replace `any()` generators with a pre-compiled regex (`re.compile().search()`) to evaluate string patterns in C, achieving a ~7x speedup for text-heavy operations.
+
+## 2024-05-24 - HTML escaping is faster unconditionally
+**Learning:** For Python standard library functions implemented in C like `html.escape`, unconditionally calling the function is often faster than adding a Python-level pre-check (such as a regex `search()`) to conditionally skip the call, as the C implementation typically contains its own highly optimized fast-paths. Our profiling showed ~20% overhead from the regex check alone.
+**Action:** Remove Python-level `re.compile().search()` pre-checks before calling C-implemented standard library functions like `html.escape()`.
+
+## 2024-05-24 - type() vs isinstance() and try...except
+**Learning:** In Python hot paths, checking types using `type(value) is int` or `type(value) is float` prior to executing `try...except` coercion blocks (e.g., `int()` or `float()`) substantially avoids redundant allocations and exception handling overhead when the input data is largely correct. `type() is` checks are also faster than `isinstance()`.
+**Action:** When validating primitive types in hot loops before parsing, use `type(value) is` fast paths instead of relying entirely on `isinstance` or throwing eager exceptions.
