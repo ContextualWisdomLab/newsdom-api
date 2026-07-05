@@ -126,7 +126,6 @@ def test_search_dom_unknown_type(
     tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     # Test the unexpected else branch in main() for line 86
-    import json
 
     json_path = tmp_path / "test.json"
     data = {"pages": []}
