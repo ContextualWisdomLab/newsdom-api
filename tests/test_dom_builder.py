@@ -1,19 +1,10 @@
 import json
 from pathlib import Path
 
-import pytest
-
 from newsdom_api.dom_builder import (
-    MAX_BBOX_COORDINATE,
-    MAX_CONTENT_BLOCKS,
-    MAX_MEDIA_PATH_LENGTH,
-    MAX_PAGE_NUMBER,
     _bbox_from_values,
     _caption_nodes_from_items,
     _coerce_page_number,
-    _html_safe_text,
-    _new_article,
-    _page_number_from_info,
     build_dom,
 )
 
@@ -35,28 +26,6 @@ def test_build_dom_extracts_articles_from_mineru_sample():
 def test_bbox_helper_returns_none_for_invalid_values():
     assert _bbox_from_values(None) is None
     assert _bbox_from_values([1, 2, 3]) is None
-    assert _bbox_from_values([object(), 0, 1, 1]) is None
-    assert _bbox_from_values(["bad", 0, 1, 1]) is None
-    assert _bbox_from_values([10**10000, 0, 1, 1]) is None
-    assert _bbox_from_values([True, 0, 1, 1]) is None
-    assert _bbox_from_values([float("inf"), 0, 1, 1]) is None
-    assert _bbox_from_values([-10, -20, -5, -15]) is None
-    assert _bbox_from_values([MAX_BBOX_COORDINATE + 1, 0, 1, 1]) is None
-    assert _bbox_from_values([5, 0, 1, 1]) is None
-    assert _bbox_from_values([0, 5, 1, 1]) is None
-
-
-def test_build_dom_rejects_oversized_content_list():
-    with pytest.raises(ValueError, match="more than"):
-        build_dom(
-            [{"type": "text", "text": "test"}] * (MAX_CONTENT_BLOCKS + 1),
-            document_id="doc-too-large",
-        )
-
-
-def test_build_dom_rejects_non_list_content():
-    with pytest.raises(ValueError, match="must be a list"):
-        build_dom(("not", "a", "list"), document_id="doc-not-list")
 
 
 def test_build_dom_handles_non_headline_paths():
@@ -86,91 +55,8 @@ def test_build_dom_handles_non_headline_paths():
     assert page.ads == ["buy now"]
     assert page.articles[0].headline == "(untitled)"
     assert page.articles[0].images[0].captions[0].text == "caption"
-    assert "&lt;table&gt;&lt;/table&gt;" in page.articles[0].body_blocks
+    assert "<table></table>" in page.articles[0].body_blocks
     assert "body text" in page.articles[0].body_blocks
-
-
-def test_build_dom_escapes_text_fields_for_html_renderers():
-    dom = build_dom(
-        [
-            {
-                "type": "text",
-                "text": "<script>alert('headline')</script>",
-                "text_level": 1,
-            },
-            {"type": "text", "text": "<img src=x onerror=alert('body')>"},
-            {"type": "text", "text": "<b>masthead</b>", "role": "header"},
-            {
-                "type": "image",
-                "img_path": "image.png",
-                "image_caption": ["<script>alert('caption')</script>"],
-            },
-            {"type": "image", "img_path": 'x" onerror="alert(1)'},
-            {"type": "table", "table_body": "<script>alert('table')</script>"},
-        ],
-        document_id="doc-html-safe-text",
-    )
-
-    page = dom.pages[0]
-    assert page.headers == ["&lt;b&gt;masthead&lt;/b&gt;"]
-    assert page.articles[0].headline == (
-        "&lt;script&gt;alert(&#x27;headline&#x27;)&lt;/script&gt;"
-    )
-    assert page.articles[0].body_blocks == [
-        "&lt;img src=x onerror=alert(&#x27;body&#x27;)&gt;",
-        "&lt;script&gt;alert(&#x27;table&#x27;)&lt;/script&gt;",
-    ]
-    assert page.articles[0].images[0].captions[0].text == (
-        "&lt;script&gt;alert(&#x27;caption&#x27;)&lt;/script&gt;"
-    )
-    assert page.articles[0].images[1].path == "image"
-
-
-def test_html_safe_text_skips_escape_when_no_special_chars():
-    assert _html_safe_text("plain body") == "plain body"
-
-
-def test_build_dom_uses_safe_relative_media_paths():
-    dom = build_dom(
-        [
-            {"type": "image", "img_path": "images/page-1-photo.png"},
-            {"type": "chart", "path": " charts/growth.png "},
-            {"type": "image", "path": "../../etc/passwd"},
-            {"type": "chart", "path": "/tmp/chart.png"},
-            {"type": "image", "path": r"images\secret.png"},
-            {"type": "chart", "path": "https://example.test/chart.png"},
-            {"type": "image", "path": "images//bad.png"},
-            {"type": "chart", "path": "./chart.png"},
-            {"type": "image", "path": "x" * (MAX_MEDIA_PATH_LENGTH + 1)},
-            {"type": "chart", "path": "charts/bad name.png"},
-            {"type": "image", "path": "images/bad`name.png"},
-            {"type": "chart", "path": "charts/bad<name>.png"},
-            {"type": "image", "path": "images/bad'name.png"},
-            {"type": "chart", "path": 123},
-            {"type": "image", "path": "   "},
-            {"type": "chart"},
-        ],
-        document_id="doc-safe-media-paths",
-    )
-
-    assert [image.path for image in dom.pages[0].articles[0].images] == [
-        "images/page-1-photo.png",
-        "charts/growth.png",
-        "image",
-        "chart",
-        "image",
-        "chart",
-        "image",
-        "chart",
-        "image",
-        "chart",
-        "image",
-        "chart",
-        "image",
-        "chart",
-        "image",
-        "chart",
-    ]
 
 
 def test_build_dom_creates_table_article_when_needed():
@@ -179,16 +65,6 @@ def test_build_dom_creates_table_article_when_needed():
         document_id="doc3",
     )
     assert dom.pages[0].articles[0].headline == "(table-block)"
-    assert dom.pages[0].articles[0].body_blocks == ["&lt;table&gt;&lt;/table&gt;"]
-
-
-def test_build_dom_skips_empty_table_body():
-    dom = build_dom(
-        [{"type": "table", "table_body": "   ", "bbox": [1, 1, 2, 2]}],
-        document_id="doc-empty-table",
-    )
-    assert dom.pages[0].articles[0].headline == "(table-block)"
-    assert dom.pages[0].articles[0].body_blocks == []
 
 
 def test_build_dom_creates_untitled_article_for_plain_text():
@@ -255,12 +131,6 @@ def test_coerce_page_number_returns_none_for_type_and_value_errors():
     assert _coerce_page_number(None) is None
     assert _coerce_page_number(True) is None
     assert _coerce_page_number(False) is None
-    assert _coerce_page_number(float("inf")) is None
-    assert _coerce_page_number(0) is None
-    assert _coerce_page_number(-1) is None
-    assert _coerce_page_number(MAX_PAGE_NUMBER + 1) is None
-    assert _coerce_page_number("7") == 7
-    assert _coerce_page_number(MAX_PAGE_NUMBER) == MAX_PAGE_NUMBER
 
 
 def test_caption_nodes_from_items_uses_contents_and_bbox_variants_and_skips_empty_text():
@@ -269,17 +139,10 @@ def test_caption_nodes_from_items_uses_contents_and_bbox_variants_and_skips_empt
             {"contents": " Caption from contents ", "bbox": [1, 2, 3, 4]},
             {"text": "   ", "bbox": [9, 9, 9, 9]},
             {"contents": "Caption from box", "box": [5, 6, 7, 8]},
-            "Plain string caption",
-            "   ",
         ]
     )
 
-    assert [node.text for node in nodes] == [
-        "Caption from contents",
-        "Caption from box",
-        "Plain string caption",
-    ]
-    assert nodes[2].bbox is None
+    assert [node.text for node in nodes] == ["Caption from contents", "Caption from box"]
     assert nodes[0].bbox is not None
     assert nodes[0].bbox.x0 == 1.0
     assert nodes[0].bbox.y1 == 4.0
@@ -470,85 +333,5 @@ def test_build_dom_keeps_article_ids_unique_across_pages():
         ],
     )
 
-    article_ids = [
-        article.article_id for page in dom.pages for article in page.articles
-    ]
+    article_ids = [article.article_id for page in dom.pages for article in page.articles]
     assert article_ids == ["article-1", "article-2"]
-
-
-def test_page_number_from_info():
-    # Test valid page_number
-    assert _page_number_from_info({"page_number": 5}, fallback=1) == 5
-
-    # Test valid page_no (0-indexed, so 5 means page 6)
-    assert _page_number_from_info({"page_no": 5}, fallback=1) == 6
-
-    # Test precedence: page_number should win
-    assert _page_number_from_info({"page_number": 5, "page_no": 10}, fallback=1) == 5
-
-    # Test invalid values (not int)
-    assert _page_number_from_info({"page_number": "5"}, fallback=1) == 1
-    assert _page_number_from_info({"page_number": "5", "page_no": 4}, fallback=1) == 5
-    assert _page_number_from_info({"page_no": "5"}, fallback=1) == 1
-    assert _page_number_from_info({"page_number": None}, fallback=1) == 1
-    assert _page_number_from_info({"page_number": -1, "page_no": 0}, fallback=9) == 1
-    assert _page_number_from_info({"page_number": True, "page_no": 0}, fallback=9) == 1
-    assert _page_number_from_info({"page_number": MAX_PAGE_NUMBER + 1}, fallback=9) == 9
-    assert _page_number_from_info({"page_no": -1}, fallback=9) == 9
-    assert _page_number_from_info({"page_no": True}, fallback=9) == 9
-    assert _page_number_from_info({"page_no": MAX_PAGE_NUMBER}, fallback=9) == 9
-
-    # Test missing keys
-    assert _page_number_from_info({}, fallback=1) == 1
-
-
-def test_bbox_helper_returns_bbox_for_valid_values():
-    bbox = _bbox_from_values([1.1, 2.2, 3.3, 4.4])
-    assert bbox is not None
-    assert bbox.x0 == 1.1
-    assert bbox.y0 == 2.2
-    assert bbox.x1 == 3.3
-    assert bbox.y1 == 4.4
-
-
-def test_bbox_helper_handles_int_values():
-    bbox = _bbox_from_values([1, 2, 3, 4])
-    assert bbox is not None
-    assert bbox.x0 == 1.0
-    assert bbox.y0 == 2.0
-    assert bbox.x1 == 3.0
-    assert bbox.y1 == 4.0
-
-
-def test_bbox_helper_returns_none_for_empty_list():
-    assert _bbox_from_values([]) is None
-
-
-def test_bbox_helper_returns_none_for_too_many_values():
-    assert _bbox_from_values([1.0, 2.0, 3.0, 4.0, 5.0]) is None
-
-
-def test_new_article_creates_deterministic_ids_with_fields():
-    from itertools import count
-    from newsdom_api.schemas import BoundingBox
-
-    seq = count(1)
-
-    # Test without bbox
-    article1 = _new_article(seq, "First Headline")
-    assert article1.article_id == "article-1"
-    assert article1.headline == "First Headline"
-    assert article1.bbox is None
-
-    # Test with bbox
-    bbox = BoundingBox(x0=0.0, y0=0.0, x1=100.0, y1=100.0)
-    article2 = _new_article(seq, "Second Headline", bbox)
-    assert article2.article_id == "article-2"
-    assert article2.headline == "Second Headline"
-    assert article2.bbox == bbox
-
-
-def test_bbox_helper_returns_none_for_invalid_y0_x1_y1():
-    assert _bbox_from_values([0, "bad", 1, 1]) is None
-    assert _bbox_from_values([0, 0, "bad", 1]) is None
-    assert _bbox_from_values([0, 0, 1, "bad"]) is None

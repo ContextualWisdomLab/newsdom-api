@@ -76,25 +76,18 @@ def test_gh_pages_workflow_keeps_node24_force_off_upload_pages_artifact_step():
     assert "env" not in build_steps_by_name["Upload GitHub Pages artifact"]
 
 
-def test_central_review_workflows_are_not_copied_into_this_repository():
-    central_only_paths = [
-        Path(".github/workflows/opencode-review.yml"),
-        Path(".github/workflows/pr-review-merge-scheduler.yml"),
-        Path(".github/workflows/strix.yml"),
-        Path("requirements-opencode-review-ci.txt"),
-        Path("requirements-strix-ci.txt"),
-        Path("requirements-strix-ci-hashes.txt"),
+def test_opencode_review_workflow_helper_scripts_exist_and_are_executable():
+    workflow_text = Path(".github/workflows/opencode-review.yml").read_text(
+        encoding="utf-8"
+    )
+    helper_paths = [
         Path("scripts/ci/collect_failed_check_evidence.sh"),
-        Path("scripts/ci/emit_opencode_failed_check_fallback_findings.sh"),
         Path("scripts/ci/opencode_review_approve_gate.sh"),
         Path("scripts/ci/opencode_review_normalize_output.py"),
-        Path("scripts/ci/pr_review_merge_scheduler.py"),
-        Path("scripts/ci/strix_model_utils.sh"),
-        Path("scripts/ci/strix_quick_gate.sh"),
-        Path("scripts/ci/test_opencode_fact_gate_contract.sh"),
-        Path("scripts/ci/test_strix_quick_gate.sh"),
         Path("scripts/ci/validate_opencode_failed_check_review.sh"),
     ]
 
-    for central_only_path in central_only_paths:
-        assert not central_only_path.exists(), central_only_path
+    for helper_path in helper_paths:
+        assert str(helper_path) in workflow_text
+        assert helper_path.exists(), helper_path
+        assert helper_path.stat().st_mode & 0o111, helper_path
