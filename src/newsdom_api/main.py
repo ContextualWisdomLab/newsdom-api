@@ -152,7 +152,8 @@ async def parse(
     if media_type != "application/pdf":
         raise HTTPException(status_code=415, detail=UNSUPPORTED_MEDIA_DETAIL)
 
-    if file.size is not None and file.size > MAX_PARSE_UPLOAD_BYTES:
+    file_size = getattr(file, "size", None)
+    if file_size is not None and file_size > MAX_PARSE_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL)
 
     try:
@@ -163,21 +164,20 @@ async def parse(
                 detail=UNSUPPORTED_MEDIA_DETAIL,
             )
 
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp_path = Path(tmp.name)
-            tmp.write(header)
-
-            bytes_read = len(header)
-            while chunk := await file.read(8192):
-                bytes_read += len(chunk)
-                if bytes_read > MAX_PARSE_UPLOAD_BYTES:
-                    tmp_path.unlink()
-                    raise HTTPException(
-                        status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL
-                    )
-                tmp.write(chunk)
-
+        tmp = tempfile.NamedTemporaryFile(delete=False)
+        tmp_path = Path(tmp.name)
         try:
+            with tmp:
+                tmp.write(header)
+                bytes_read = len(header)
+                while chunk := await file.read(8192):
+                    bytes_read += len(chunk)
+                    if bytes_read > MAX_PARSE_UPLOAD_BYTES:
+                        raise HTTPException(
+                            status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL
+                        )
+                    tmp.write(chunk)
+
             _validate_pdf_structure(tmp_path)
             return await asyncio.to_thread(
                 parse_pdf, tmp_path, filename=file.filename or "upload.pdf"
