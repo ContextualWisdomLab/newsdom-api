@@ -40,3 +40,7 @@
 ## 2026-06-30 - Regex over Generator `any` string loops
 **Learning:** Using `any(...)` with a generator comprehension in string evaluation paths allocates a new generator and adds Python-level loop overhead for every character.
 **Action:** Replace `any()` generators with a pre-compiled regex (`re.compile().search()`) to evaluate string patterns in C, achieving a ~7x speedup for text-heavy operations.
+
+## 2024-05-18 - Fast primitive type checks
+**Learning:** For hot paths parsing generic JSON payloads in `newsdom_api`, using `isinstance(value, T)` for built-in primitive types (bool, int, str, float, dict, list) introduces unnecessary overhead because of subclass/ABC checking. `type(value) is T` provides exact matching which is faster for primitives and skips subclass checks entirely. Additionally, exact matching allows boolean guard clauses that protect integer checks to be safely removed, because `type(True) is int` evaluates to `False`.
+**Action:** Default to `type(value) is T` instead of `isinstance` for built-in primitives in hot parsing or schema-mapping loops unless inheritance support is explicitly required. Combine or remove boolean guards that formerly protected `isinstance(..., int)` checks.
