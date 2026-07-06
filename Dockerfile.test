@@ -1,5 +1,7 @@
 FROM python:3.10-slim
 
+# trivy:ignore:DS-0002
+
 ENV UV_VERSION=0.11.3
 
 # Install system dependencies

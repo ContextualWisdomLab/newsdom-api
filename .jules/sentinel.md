@@ -41,3 +41,8 @@
 **Vulnerability:** FastAPIs `UploadFile.read()` was called on the remainder of large files and accumulated entirely into an in-memory `bytes` object (or `bytearray` inside the event loop). Although it respected `file.size`, processing a maximum allowed payload size into memory before writing to disk could still cause memory exhaustion when under heavy load.
 **Learning:** For large file uploads, loading the entire payload into a single Python object (even just to process or save it) creates a bottleneck where large chunks of contiguous memory are required simultaneously. The Strix security scanner will flag this as a Resource Exhaustion Vulnerability ("security theater") if you attempt to just bound a single `file.read()`.
 **Prevention:** Stream the chunks (e.g. 8192 bytes) directly to a `NamedTemporaryFile` on disk while verifying the accumulation does not exceed the maximum allowed payload size. Ensure the temporary file is securely unlinked in a `finally` block or when an upload limit exception is raised.
+
+## 2024-05-24 - Ignoring Trivy DS-0002 in Test/Fuzzing Containers
+**Vulnerability:** DS-0002 (Specify at least 1 USER command in Dockerfile with non-root user as argument)
+**Learning:** Test and fuzzing Docker containers (e.g. `Dockerfile.test` and `.clusterfuzzlite/Dockerfile`) often require root execution because GitHub Actions mounts the runner workspace as root, causing permission issues (`EACCES`) when a non-root user tries to write to it.
+**Prevention:** Explicitly ignore the DS-0002 rule for test/fuzzing containers by adding `# trivy:ignore:DS-0002` directly beneath the relevant `FROM` directive.
