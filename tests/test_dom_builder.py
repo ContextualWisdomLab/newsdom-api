@@ -1,3 +1,4 @@
+from newsdom_api.dom_builder import _coerce_bbox_coordinate
 import json
 from pathlib import Path
 
@@ -552,3 +553,125 @@ def test_bbox_helper_returns_none_for_invalid_y0_x1_y1():
     assert _bbox_from_values([0, "bad", 1, 1]) is None
     assert _bbox_from_values([0, 0, "bad", 1]) is None
     assert _bbox_from_values([0, 0, 1, "bad"]) is None
+
+
+def test_caption_nodes_from_items_not_a_list():
+    nodes = _caption_nodes_from_items("not a list")
+    assert len(nodes) == 0
+
+
+def test_bbox_from_values_early_returns():
+    # Covers x0 is None
+    assert _bbox_from_values(["bad", 1, 2, 3]) is None
+    # Covers y0 is None
+    assert _bbox_from_values([1, "bad", 2, 3]) is None
+    # Covers x1 is None
+    assert _bbox_from_values([1, 2, "bad", 3]) is None
+    # Covers y1 is None
+    assert _bbox_from_values([1, 2, 3, "bad"]) is None
+
+    # Covers x1 < x0
+    assert _bbox_from_values([2.0, 1.0, 1.0, 3.0]) is None
+    # Covers y1 < y0
+    assert _bbox_from_values([1.0, 2.0, 3.0, 1.0]) is None
+
+
+def test_caption_nodes_from_items_missing_cov():
+    nodes = _caption_nodes_from_items(
+        [{"text": "caption with invalid bbox", "bbox": [1, 2, 3, -1]}]
+    )
+    assert len(nodes) == 1
+    assert nodes[0].bbox is None
+
+
+def test_bbox_from_values_various_invalid_lengths():
+    assert _bbox_from_values([]) is None
+    assert _bbox_from_values([1.0, 2.0, 3.0, 4.0, 5.0]) is None
+
+
+def test_coerce_bbox_coordinate_extra():
+    assert _coerce_bbox_coordinate(float("nan")) is None
+    assert _coerce_bbox_coordinate(-1.0) is None
+    assert _coerce_bbox_coordinate(MAX_BBOX_COORDINATE + 1.0) is None
+
+    assert _coerce_bbox_coordinate(float("inf")) is None
+    assert _coerce_bbox_coordinate(float("-inf")) is None
+
+    assert _coerce_bbox_coordinate(MAX_BBOX_COORDINATE + 1) is None
+
+    assert _coerce_bbox_coordinate("-1.0") is None
+    assert _coerce_bbox_coordinate(str(MAX_BBOX_COORDINATE + 1.0)) is None
+    assert _coerce_bbox_coordinate("nan") is None
+    assert _coerce_bbox_coordinate("inf") is None
+
+    assert _coerce_bbox_coordinate([1]) is None
+
+
+def test_coerce_bbox_coordinate_valid_string():
+    assert _coerce_bbox_coordinate("123.45") == 123.45
+
+
+def test_build_page_dom_empty_texts():
+    from newsdom_api.dom_builder import _build_page_dom
+    from itertools import count
+
+    content_list = [
+        {"type": "text", "role": "header", "text": "   "},
+        {"type": "text", "role": "footer", "text": "   "},
+        {"type": "text", "role": "page_number", "text": "   "},
+        {"type": "text", "role": "ad", "text": "   "},
+    ]
+    page = _build_page_dom(
+        content_list,
+        page_number=1,
+        article_seq=count(1),
+    )
+    assert page.headers == []
+    assert page.footers == []
+    assert page.page_numbers == []
+    assert page.ads == []
+
+
+def test_caption_nodes_from_items_skip_invalid():
+    nodes = _caption_nodes_from_items(
+        [{"text": "caption with valid text", "bbox": [1.0, 2.0, 3.0, 4.0]}]
+    )
+    assert len(nodes) == 1
+
+    assert _caption_nodes_from_items(None) == []
+
+    assert len(_caption_nodes_from_items([{"text": ""}])) == 0
+    assert len(_caption_nodes_from_items([{"contents": "   "}])) == 0
+
+    assert len(_caption_nodes_from_items([""])) == 0
+    assert len(_caption_nodes_from_items(["   "])) == 0
+
+    assert len(_caption_nodes_from_items([{}])) == 0
+
+
+def test_caption_nodes_from_items_skip_invalid_bbox_in_dict():
+    nodes = _caption_nodes_from_items(
+        [{"text": "caption with invalid bbox", "bbox": [1, 2, 3, -1]}]
+    )
+    assert len(nodes) == 1
+    assert nodes[0].bbox is None
+
+
+def test_caption_nodes_from_items_missing_cov_2():
+    nodes = _caption_nodes_from_items([{"text": "caption"}])
+    assert len(nodes) == 1
+
+
+def test_caption_nodes_from_items_missing_cov_3():
+    nodes = _caption_nodes_from_items(["text1", "text2"])
+    assert len(nodes) == 2
+
+
+def test_coerce_page_number_missing_cov():
+    assert _coerce_page_number(0) is None
+    assert _coerce_page_number(MAX_PAGE_NUMBER + 1) is None
+
+
+def test_coerce_page_number_missing_cov_2():
+    assert _coerce_page_number("0") is None
+    assert _coerce_page_number(str(MAX_PAGE_NUMBER + 1)) is None
