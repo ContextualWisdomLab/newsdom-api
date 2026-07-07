@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import tempfile
-from pathlib import Path
+from io import BytesIO
 from typing import Annotated, Callable
 
 from fastapi import FastAPI, File, HTTPException, Request, Response, UploadFile
@@ -15,7 +14,7 @@ from pypdf.errors import PdfReadError
 
 from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 from .schemas import HealthResponse, ParseResponse
-from .service import parse_pdf
+from .service import parse_pdf_bytes
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
@@ -105,17 +104,16 @@ def health() -> HealthResponse:
     return HealthResponse()
 
 
-def _validate_pdf_structure(file_path: Path) -> None:
+def _validate_pdf_structure(pdf_bytes: bytes) -> None:
     """Reject payloads that are not structurally parseable PDFs."""
-    with file_path.open("rb") as f:
-        magic = f.read(5)
-    if magic != b"%PDF-":
+
+    if not pdf_bytes.startswith(b"%PDF-"):
         raise HTTPException(
             status_code=415,
             detail=UNSUPPORTED_MEDIA_DETAIL,
         )
     try:
-        reader = PdfReader(file_path, strict=True)
+        reader = PdfReader(BytesIO(pdf_bytes), strict=True)
         if len(reader.pages) < 1:
             raise ValueError("PDF has no pages")
     except (PdfReadError, RecursionError, ValueError, OverflowError):
@@ -162,30 +160,14 @@ async def parse(
                 status_code=415,
                 detail=UNSUPPORTED_MEDIA_DETAIL,
             )
-
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp_path = Path(tmp.name)
-            tmp.write(header)
-
-            bytes_read = len(header)
-            while chunk := await file.read(8192):
-                bytes_read += len(chunk)
-                if bytes_read > MAX_PARSE_UPLOAD_BYTES:
-                    tmp_path.unlink()
-                    raise HTTPException(
-                        status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL
-                    )
-                tmp.write(chunk)
-
-        try:
-            _validate_pdf_structure(tmp_path)
-            return await asyncio.to_thread(
-                parse_pdf, tmp_path, filename=file.filename or "upload.pdf"
-            )
-        finally:
-            if tmp_path.exists():
-                tmp_path.unlink()
-
+        body = await file.read(MAX_PARSE_UPLOAD_BYTES - len(header) + 1)
+        if len(header) + len(body) > MAX_PARSE_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL)
+        pdf_bytes = header + body
+        _validate_pdf_structure(pdf_bytes)
+        return await asyncio.to_thread(
+            parse_pdf_bytes, pdf_bytes, filename=file.filename or "upload.pdf"
+        )
     except MineruRuntimeUnavailableError:
         raise HTTPException(status_code=503, detail="Service Unavailable") from None
     except MineruIncompleteOutputError:
