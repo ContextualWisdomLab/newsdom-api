@@ -10,16 +10,16 @@ from pydantic import BaseModel, Field
 class BoundingBox(BaseModel):
     """Axis-aligned bounding box expressed in page coordinates."""
 
-    x0: float = Field(description="Leftmost X coordinate of the bounding box.")
-    y0: float = Field(description="Topmost Y coordinate of the bounding box.")
-    x1: float = Field(description="Rightmost X coordinate of the bounding box.")
-    y1: float = Field(description="Bottommost Y coordinate of the bounding box.")
+    x0: float = Field(..., description="Leftmost X coordinate of the bounding box.")
+    y0: float = Field(..., description="Topmost Y coordinate of the bounding box.")
+    x1: float = Field(..., description="Rightmost X coordinate of the bounding box.")
+    y1: float = Field(..., description="Bottommost Y coordinate of the bounding box.")
 
 
 class CaptionNode(BaseModel):
     """Caption text associated with an image or figure."""
 
-    text: str = Field(description="Text content of the caption.")
+    text: str = Field(..., description="Text content of the caption.")
     bbox: Optional[BoundingBox] = Field(
         default=None,
         description="Bounding box of the caption when parser coordinates are available.",
@@ -29,7 +29,7 @@ class CaptionNode(BaseModel):
 class ImageNode(BaseModel):
     """Image metadata preserved in the canonical page structure."""
 
-    path: str = Field(description="Relative path to the extracted image asset.")
+    path: str = Field(..., description="Relative path to the extracted image asset.")
     media_type: str = Field(
         default="image",
         description="Media type label for the extracted image node.",
@@ -52,9 +52,9 @@ class ArticleNode(BaseModel):
     """Article-level grouping of headline, body blocks, and related media."""
 
     article_id: str = Field(
-        description="Stable identifier for the article within the parsed document."
+        ..., description="Stable identifier for the article within the parsed document."
     )
-    headline: str = Field(description="Primary headline text for the article.")
+    headline: str = Field(..., description="Primary headline text for the article.")
     bbox: Optional[BoundingBox] = Field(
         default=None,
         description="Bounding box enclosing the article when parser coordinates are available.",
@@ -80,7 +80,9 @@ class ArticleNode(BaseModel):
 class PageNode(BaseModel):
     """Single parsed page including article, ad, and header groupings."""
 
-    page_number: int = Field(description="One-based page number from the parsed PDF.")
+    page_number: int = Field(
+        ..., description="One-based page number from the parsed PDF."
+    )
     width: Optional[float] = Field(
         default=None,
         description="Page width reported by the parser, if available.",
@@ -129,7 +131,9 @@ class ParseQuality(BaseModel):
 class ParseResponse(BaseModel):
     """Top-level API response for a parsed document."""
 
-    document_id: str = Field(description="Unique identifier for the parsed document.")
+    document_id: str = Field(
+        ..., description="Unique identifier for the parsed document."
+    )
     pages: List[PageNode] = Field(
         default_factory=list,
         description="Sequential list of structured pages extracted from the PDF.",

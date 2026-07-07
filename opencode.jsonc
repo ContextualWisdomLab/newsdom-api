@@ -55,7 +55,7 @@
       "description": "Compact read-only CI pull request reviewer",
       "mode": "primary",
       "prompt": "{file:./ci-review-prompt.md}",
-      "steps": 100,
+      "steps": 4,
       "permission": {
         "edit": "deny",
         "bash": "allow",
@@ -74,7 +74,7 @@
       "description": "Expanded read-only CI pull request reviewer fallback",
       "mode": "primary",
       "prompt": "{file:./ci-review-prompt.md}",
-      "steps": 150,
+      "steps": 12,
       "permission": {
         "edit": "deny",
         "bash": "allow",
