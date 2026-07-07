@@ -55,3 +55,50 @@ Read these first when making repository changes:
   newspaper material.
 - Prefer durable evidence in tracked docs, tests, workflow runs,
   PR comments, and release assets over scratch notes.
+
+<!-- BEGIN cwl-agent-guidance -->
+## Agent guidance (CWL governance)
+
+This section distills ContextualWisdomLab org governance. Any agent
+(Claude, Codex, Cursor, opencode, Jules, …) working in this repo must
+follow it.
+
+### Security & review gate
+
+- Every PR runs a central **Security Scan** required gate:
+  `osv-scan` + `dependency-review` (diff-scoped) and `trivy-fs`
+  (repo-wide, CRITICAL/HIGH, fixable only). It runs against every PR
+  base, **including stacked PRs**.
+- A failing **`trivy-fs` is a REAL finding, not a flake.** Read the job
+  log (it prints each finding's rule id / severity / file) or the run's
+  SARIF results, then **remediate**: bump the offending dependency
+  (this repo pins via `pyproject.toml` + `uv.lock` — run
+  `uv lock --upgrade-package <name>`), fix the Dockerfile misconfig, or
+  add a narrow, documented `.trivyignore.yaml` entry for a genuine
+  false positive. **Never weaken or disable the gate.**
+- A local scan with a stale DB misses findings. Run
+  `trivy --download-db-only` first, then scan the **merge ref**, not
+  just the PR head.
+- **Worked example (currently blocking this repo's PRs):** DS-0002
+  (Dockerfile missing a non-root `USER`) and DS-0026 (no `HEALTHCHECK`)
+  in `Dockerfile.test` and `.clusterfuzzlite/Dockerfile`. The runtime
+  `Dockerfile` already sets `USER newsdom`; mirror that pattern (add a
+  non-root `USER` and a `HEALTHCHECK`) where it is safe, or record a
+  scoped `.trivyignore.yaml` note for the build-only images that
+  legitimately need root. There are no k8s manifests here — trivy
+  findings are Dockerfile- or dependency-scoped.
+- The org `code_scanning` ruleset is intentionally **CodeQL-only**
+  (multiple code-scanning tools cannot converge on one PR ref). Gating
+  is by the Security Scan **job result**, not the `code_scanning` rule
+  — do **not** add tools to that rule.
+
+### Code exploration
+
+- There is no `.codegraph/` index in this repo, so use normal search
+  (grep/find, ripgrep) to locate and understand code. If a `.codegraph/`
+  index is later added at the repo root, prefer CodeGraph
+  (`codegraph explore "<query>"`, or the code-review-graph MCP tools)
+  BEFORE grep/find — it surfaces callers/callees/impact that text
+  search misses.
+<!-- END cwl-agent-guidance -->
+
