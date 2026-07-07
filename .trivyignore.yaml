@@ -1,0 +1,11 @@
+# Trivy ignore — path-scoped misconfiguration suppressions
+# AVD-DS-0002 ("image user should not be root"): intentional on these Dockerfiles.
+#  - Dockerfile.test: root required so GitHub Actions container jobs can write runner dirs.
+#  - .clusterfuzzlite/Dockerfile: FROM gcr.io/oss-fuzz-base/base-builder-python requires root by design.
+# These are CI/fuzzing images, not deployed runtime images. Remove if either moves to non-root.
+misconfigurations:
+  - id: AVD-DS-0002
+    paths:
+      - "Dockerfile.test"
+      - ".clusterfuzzlite/Dockerfile"
+    statement: "Root intentional: CI container-job runner writes / OSS-Fuzz base-builder requires root; non-runtime images."
