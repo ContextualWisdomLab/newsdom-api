@@ -1,0 +1,2 @@
+# Ignore root user requirement for test and fuzzing containers that require root or GitHub Actions bindings
+DS-0002
