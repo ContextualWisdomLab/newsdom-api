@@ -78,10 +78,14 @@ def _resolve_mineru_bin() -> str:
 def _find_output_dir(base_output_dir: Path) -> Path:
     """Locate the OCR output directory created by MinerU."""
 
-    candidates = list(base_output_dir.glob("*/ocr"))
-    if not candidates:
-        raise FileNotFoundError("MinerU OCR output directory was not produced")
-    return candidates[0]
+    # ⚡ Bolt: Use next() with StopIteration to avoid eagerly evaluating
+    # the entire generator into a list, reducing unnecessary directory traversals.
+    try:
+        return next(base_output_dir.glob("*/ocr"))
+    except StopIteration:
+        raise FileNotFoundError(
+            "MinerU OCR output directory was not produced"
+        ) from None
 
 
 def _execute_mineru(cmd: list[str]) -> subprocess.CompletedProcess[str]:
