@@ -1,0 +1,4 @@
+# Accept root user in test containers (GitHub Actions workspace mounting requires root)
+DS-0002
+# Accept missing healthcheck in test containers
+DS-0026
