@@ -86,17 +86,16 @@ def test_parse_endpoint_rejects_invalid_pdf_magic_bytes():
     assert response.json()["detail"] == "Unsupported Media Type"
 
 
-def test_validate_pdf_structure_rejects_invalid_magic_bytes(tmp_path):
+def test_validate_pdf_structure_rejects_invalid_magic_bytes():
     with pytest.raises(HTTPException) as exc_info:
-        (tmp_path / "test.pdf").write_bytes(b"not a pdf")
-        _validate_pdf_structure(tmp_path / "test.pdf")
+        _validate_pdf_structure(b"not a pdf")
 
     assert exc_info.value.status_code == 415
     assert exc_info.value.detail == "Unsupported Media Type"
     assert exc_info.value.__cause__ is None
 
 
-def test_validate_pdf_structure_rejects_pypdf_read_errors(monkeypatch, tmp_path):
+def test_validate_pdf_structure_rejects_pypdf_read_errors(monkeypatch):
     def reject_pdf(_stream, *, strict):
         assert strict is True
         raise PdfReadError("invalid xref table")
@@ -104,8 +103,7 @@ def test_validate_pdf_structure_rejects_pypdf_read_errors(monkeypatch, tmp_path)
     monkeypatch.setattr("newsdom_api.main.PdfReader", reject_pdf)
 
     with pytest.raises(HTTPException) as exc_info:
-        (tmp_path / "test.pdf").write_bytes(b"%PDF-1.4\n%%EOF")
-        _validate_pdf_structure(tmp_path / "test.pdf")
+        _validate_pdf_structure(b"%PDF-1.4\n%%EOF")
 
     assert exc_info.value.status_code == 415
     assert exc_info.value.detail == "Unsupported Media Type"
@@ -148,15 +146,15 @@ def test_parse_endpoint_accepts_structurally_valid_pdf(monkeypatch):
     class OnePagePdfReader:
         pages = [object()]
 
-    def fake_parse_pdf_bytes(file_path, filename):
-        assert file_path.read_bytes() == b"%PDF-1.4\n%%EOF"
+    def fake_parse_pdf_bytes(pdf_bytes, filename):
+        assert pdf_bytes == b"%PDF-1.4\n%%EOF"
         assert filename == "fixture.pdf"
         return {"document_id": "fixture", "pages": []}
 
     monkeypatch.setattr(
         "newsdom_api.main.PdfReader", lambda *_args, **_kwargs: OnePagePdfReader()
     )
-    monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
+    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
 
     client = TestClient(app)
     response = client.post(
@@ -167,13 +165,13 @@ def test_parse_endpoint_accepts_structurally_valid_pdf(monkeypatch):
 
 
 def test_parse_endpoint_accepts_pdf_content_type_parameters(monkeypatch):
-    def fake_parse_pdf_bytes(file_path, filename):
-        assert file_path.read_bytes() == b"%PDF-1.4\n%synthetic\n"
+    def fake_parse_pdf_bytes(pdf_bytes, filename):
+        assert pdf_bytes == b"%PDF-1.4\n%synthetic\n"
         assert filename == "fixture.pdf"
         return {"document_id": "fixture", "pages": []}
 
     monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
-    monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
+    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
 
     client = TestClient(app)
     response = client.post(
@@ -262,10 +260,10 @@ def test_parse_endpoint_returns_502_for_incomplete_mineru_output(
 def test_parse_endpoint_catches_incomplete_output_error(monkeypatch):
     from newsdom_api.errors import MineruIncompleteOutputError
 
-    def fake_parse_pdf_bytes(file_path, filename):
+    def fake_parse_pdf_bytes(pdf_bytes, filename):
         raise MineruIncompleteOutputError()
 
-    monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
+    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
     monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
 
     client = TestClient(app, raise_server_exceptions=False)
@@ -281,10 +279,10 @@ def test_parse_endpoint_catches_incomplete_output_error(monkeypatch):
 def test_parse_endpoint_catches_runtime_unavailable_error(monkeypatch):
     from newsdom_api.errors import MineruRuntimeUnavailableError
 
-    def fake_parse_pdf_bytes(file_path, filename):
+    def fake_parse_pdf_bytes(pdf_bytes, filename):
         raise MineruRuntimeUnavailableError()
 
-    monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
+    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
     monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
 
     client = TestClient(app, raise_server_exceptions=False)
@@ -302,10 +300,10 @@ def test_parse_endpoint_catches_runtime_unavailable_error(monkeypatch):
 async def test_parse_endpoint_suppresses_service_exception_chain(monkeypatch):
     from newsdom_api.errors import MineruRuntimeUnavailableError
 
-    def fake_parse_pdf_bytes(file_path, filename):
+    def fake_parse_pdf_bytes(pdf_bytes, filename):
         raise MineruRuntimeUnavailableError()
 
-    monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
+    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
     monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
 
     with pytest.raises(HTTPException) as exc_info:
@@ -317,10 +315,10 @@ async def test_parse_endpoint_suppresses_service_exception_chain(monkeypatch):
 
 
 def test_parse_endpoint_rejects_large_files(monkeypatch):
-    def fake_parse_pdf_bytes(file_path, filename):
+    def fake_parse_pdf_bytes(pdf_bytes, filename):
         return {"document_id": "fixture", "pages": []}
 
-    monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
+    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
 
     client = TestClient(app)
 
@@ -344,7 +342,7 @@ async def test_parse_endpoint_rejects_large_file_without_size_metadata():
 
     assert exc_info.value.status_code == 413
     assert exc_info.value.detail == "Payload Too Large"
-    assert sum(upload.read_sizes) > MAX_PARSE_UPLOAD_BYTES
+    assert upload.read_sizes == [5, MAX_PARSE_UPLOAD_BYTES - 5 + 1]
 
 
 def test_parse_endpoint_rejects_missing_magic_bytes():
@@ -372,10 +370,10 @@ async def test_parse_endpoint_rejects_magic_bytes_before_full_read():
 
 
 def test_unhandled_exception_includes_security_headers(monkeypatch):
-    def fake_parse_pdf_bytes(file_path, filename):
+    def fake_parse_pdf_bytes(pdf_bytes, filename):
         raise RuntimeError("unexpected internal explosion")
 
-    monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
+    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
     monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
 
     client = TestClient(app, raise_server_exceptions=False)
@@ -398,10 +396,10 @@ def test_unhandled_exception_includes_security_headers(monkeypatch):
 
 
 def test_unhandled_exception_includes_hsts_for_forwarded_https(monkeypatch):
-    def fake_parse_pdf_bytes(file_path, filename):
+    def fake_parse_pdf_bytes(pdf_bytes, filename):
         raise RuntimeError("unexpected internal explosion")
 
-    monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
+    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
     monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
 
     client = TestClient(app, raise_server_exceptions=False)
