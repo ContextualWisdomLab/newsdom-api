@@ -14,10 +14,10 @@ dependencies = [
   "fastapi>=0.115,<1.0",
   "uvicorn>=0.30,<1.0",
   "pydantic>=2.9,<3.0",
-  "python-multipart>=0.0.31,<1.0",
-  "reportlab>=4.2,<6.0",
+  "python-multipart>=0.0.9,<1.0",
+  "reportlab>=4.2,<5.0",
   "Pillow>=11.0,<13.0",
-  "pypdf>=6.13.3,<7.0",
+  "pypdf>=6.10.2,<7.0",
 ]
 
 [project.optional-dependencies]
@@ -27,7 +27,10 @@ dev = [
   "pytest-asyncio>=0.21",
   "httpx>=0.28,<1.0",
   "pyyaml>=6.0,<7.0",
-  "httpx2>=2.4.0",
+]
+mineru = [
+  "mineru[pipeline]==3.0.9",
+  "transformers>=4.48.0",
 ]
 docs = [
     "mkdocs>=1.6,<2.0",
@@ -35,8 +38,11 @@ docs = [
 ]
 fuzz = [
   "atheris==3.0.0 ; platform_system == 'Linux' and python_version >= '3.11'",
-  "pyinstaller==6.21.0",
+  "pyinstaller==6.16.0",
 ]
+
+[project.scripts]
+mineru = "mineru.cli.app:app"
 
 [tool.setuptools]
 package-dir = { "" = "src", "tools" = "tools"}
@@ -48,6 +54,9 @@ include = ["newsdom_api*", "tools*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [
+    "ignore:the load_module\\(\\) method is deprecated:DeprecationWarning"
+]
 markers = [
   "integration: requires MinerU CLI and model cache"
 ]

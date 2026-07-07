@@ -68,12 +68,12 @@ else:
 
 #### 실패 응답 계약
 
-- `503 Service Unavailable`
-  - backend parser 실행 파일을 찾을 수 없거나 실행 자체가 실패했을 때 반환됩니다.
-- `502 Bad Gateway`
-  - backend parser 프로세스는 종료되었지만 필수 JSON 산출물이 없거나 불완전할 때 반환됩니다.
+- `503 Service Unavailable`: `MinerU runtime unavailable`
+  - `mineru` 실행 파일을 찾을 수 없거나 실행 자체가 실패했을 때 반환됩니다.
+- `502 Bad Gateway`: `MinerU output was incomplete`
+  - MinerU 프로세스는 종료되었지만 필수 JSON 산출물이 없거나 불완전할 때 반환됩니다.
 
-서버는 내부 `stdout`/`stderr`, backend service name, temporary path를 그대로 노출하지 않고 generic client-facing error details로만 `/parse` 실패를 응답합니다.
+서버는 내부 `stdout`/`stderr`를 그대로 노출하지 않고 위의 고정된 상세 메시지로만 `/parse` 실패를 응답합니다.
 
 ---
 

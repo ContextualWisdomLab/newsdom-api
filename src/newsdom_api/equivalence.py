@@ -24,92 +24,63 @@ def _article_has_headline(article: dict[str, Any]) -> bool:
     return isinstance(headline, str) and bool(headline.strip())
 
 
-def _process_articles(metrics: dict[str, Any], articles: list[Any]) -> None:
-    """Process articles and update metrics."""
-    metrics["article_count"] = len(articles)
-    headline_blocks = 0
-    vertical_count = 0
-    article_page_numbers: set[int] = set()
-    headline_page_numbers: set[int] = set()
-
-    for article in articles:
-        if not isinstance(article, dict):
-            continue
-
-        has_headline = _article_has_headline(article)
-        if has_headline:
-            headline_blocks += 1
-
-        if bool(article.get("vertical")):
-            vertical_count += 1
-
-        page_number = article.get("page_number")
-        if isinstance(page_number, int):
-            article_page_numbers.add(page_number)
-            if has_headline:
-                headline_page_numbers.add(page_number)
-
-    metrics["headline_blocks"] = headline_blocks
-    if articles:
-        metrics["vertical_article_ratio"] = vertical_count / len(articles)
-
-    if article_page_numbers:
-        metrics["page_count"] = len(article_page_numbers)
-        metrics["headline_page_coverage"] = len(headline_page_numbers) / len(
-            article_page_numbers
-        )
-
-
-def _process_images(metrics: dict[str, Any], images: list[Any]) -> None:
-    """Process images and update metrics."""
-    metrics["image_count"] = len(images)
-
-
-def _process_ads(metrics: dict[str, Any], ads: list[Any]) -> None:
-    """Process ads and update metrics."""
-    metrics["ad_count"] = len(ads)
-
-
-def _process_pages(metrics: dict[str, Any], pages: list[Any]) -> None:
-    """Process pages and update metrics."""
-    metrics["page_count"] = len(pages)
-    if pages:
-        max_col = metrics.get("column_count", 0)
-        found_column_count = False
-        for page in pages:
-            if not isinstance(page, dict):
-                continue
-            column_count = page.get("column_count")
-            if not isinstance(column_count, int):
-                continue
-            if not found_column_count or column_count > max_col:
-                max_col = column_count
-                found_column_count = True
-        metrics["column_count"] = max_col
-
-
 def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     """Normalize structural metrics, preferring derivation from structural data when present."""
 
     metrics = dict(payload)
-    articles = (
-        payload.get("articles") if isinstance(payload.get("articles"), list) else None
-    )
+    articles = payload.get("articles") if isinstance(payload.get("articles"), list) else None
     images = payload.get("images") if isinstance(payload.get("images"), list) else None
     ads = payload.get("ads") if isinstance(payload.get("ads"), list) else None
     pages = payload.get("pages") if isinstance(payload.get("pages"), list) else None
 
     if articles is not None:
-        _process_articles(metrics, articles)
+        metrics["article_count"] = len(articles)
+        metrics["headline_blocks"] = sum(
+            1 for article in articles if isinstance(article, dict) and _article_has_headline(article)
+        )
+        if articles:
+            vertical_count = sum(
+                1 for article in articles if isinstance(article, dict) and bool(article.get("vertical"))
+            )
+            metrics["vertical_article_ratio"] = vertical_count / len(articles)
+
+        article_page_numbers = {
+            article.get("page_number")
+            for article in articles
+            if isinstance(article, dict) and isinstance(article.get("page_number"), int)
+        }
+        if article_page_numbers:
+            metrics["page_count"] = len(article_page_numbers)
+            metrics["headline_page_coverage"] = (
+                len(
+                    {
+                        article.get("page_number")
+                        for article in articles
+                        if isinstance(article, dict)
+                        and isinstance(article.get("page_number"), int)
+                        and _article_has_headline(article)
+                    }
+                )
+                / len(article_page_numbers)
+            )
 
     if images is not None:
-        _process_images(metrics, images)
+        metrics["image_count"] = len(images)
 
     if ads is not None:
-        _process_ads(metrics, ads)
+        metrics["ad_count"] = len(ads)
 
     if pages is not None:
-        _process_pages(metrics, pages)
+        metrics["page_count"] = len(pages)
+        if pages:
+            metrics["column_count"] = max(
+                (
+                    page.get("column_count", 0)
+                    for page in pages
+                    if isinstance(page, dict) and isinstance(page.get("column_count"), int)
+                ),
+                default=metrics.get("column_count", 0),
+            )
 
     return metrics
 
@@ -124,15 +95,11 @@ def compare_fixture_to_baseline(
     failures: list[str] = []
 
     checks = {
-        "column_count": abs(truth["column_count"] - baseline_metrics["column_count"])
-        <= 1,
-        "article_count": abs(truth["article_count"] - baseline_metrics["article_count"])
-        <= 1,
+        "column_count": abs(truth["column_count"] - baseline_metrics["column_count"]) <= 1,
+        "article_count": abs(truth["article_count"] - baseline_metrics["article_count"]) <= 1,
         "image_count": abs(truth["image_count"] - baseline_metrics["image_count"]) <= 1,
         "ad_count": abs(truth["ad_count"] - baseline_metrics["ad_count"]) <= 1,
-        "headline_blocks": abs(
-            truth["headline_blocks"] - baseline_metrics["headline_blocks"]
-        )
+        "headline_blocks": abs(truth["headline_blocks"] - baseline_metrics["headline_blocks"])
         <= 2,
         "vertical_article_ratio": abs(
             truth["vertical_article_ratio"] - baseline_metrics["vertical_article_ratio"]
