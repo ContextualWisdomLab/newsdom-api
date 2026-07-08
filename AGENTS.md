@@ -123,5 +123,40 @@ follow it.
   service gains a real secret, credential, DB URL, or external endpoint,
   route it through the KV pattern above rather than adding more
   `os.getenv` reads.
+
+### This repo's role in the ecosystem
+
+- **This repo (`newsdom-api`):** a PDF -> DOM structure recognition
+  sidecar (MinerU-based), generalized beyond Japanese newspapers to
+  arbitrary PDFs; consumed by **naruon**.
+- **The ecosystem:** CWL is an ecosystem built around **naruon** — the
+  hub: an email/PIM system that DOM-decomposes emails and files into a
+  persisted knowledge graph. Each component is a standalone program that
+  must ALSO work as a git submodule, grown separately and together:
+  - `waf-ids-ai-soc` — WAF / IDS / AI SOC / load balancer / API management.
+  - `clearfolio` — document viewer.
+  - `pg-erd-cloud` — ERD tool.
+  - `contextual-orchestrator` — LLM cost/perf/upstream-LB gateway
+    (beyond LiteLLM).
+  - `codec-carver` — STT / omni-modal speech-video codec.
+  - `fast-mlsirm` — LLM-as-a-Judge calibration + evaluation-item quality
+    (uses aFIPC FIPC + kaefa item-fit).
+  - `feelanet-adfs` — passwordless SSO (OIDC/SCIM/ADFS/LDAP/FIDO2/
+    OAuth2.1; eliminate passwords).
+  - `newsdom-api` — PDF -> DOM sidecar (this repo).
+  - `semantic-data-portal` — upper-ontology / catalog / governance plane
+    with its own graph engine.
+
+### Research grounding (attach paper PDFs)
+
+- Org rule: substantive feature or process PRs should find the relevant
+  academic papers and **commit their PDFs into the PR** (e.g. a
+  `docs/papers/` or `references/` directory) with full citations,
+  respecting copyright — attach the PDF only when redistribution is
+  permissible; otherwise cite + link + summarize.
+- Domain example for this repo: attach the document layout-analysis /
+  DOM structure-recognition papers underpinning a MinerU/PDF change
+  (e.g. layout detection, reading-order recovery, table structure
+  recognition).
 <!-- END cwl-agent-guidance -->
 
