@@ -89,7 +89,15 @@ uv run pytest
 
 ```bash
 uv run python fuzzers/dom_builder_fuzzer.py --smoke tests/fixtures/mineru_sample.json
+uv run python fuzzers/schema_response_fuzzer.py --smoke fuzzers/corpus/schema_response_fuzzer/valid_parse_response.json
+uv run python fuzzers/equivalence_metrics_fuzzer.py --smoke fuzzers/corpus/equivalence_metrics_fuzzer/structural_metrics.json
 ```
+
+Every `fuzzers/*_fuzzer.py` target is coverage-guided under Atheris and is
+picked up automatically by the ClusterFuzzLite workflow, which runs a bounded
+budget on each pull request. Targets cover the untrusted-input boundaries: the
+MinerU DOM normalizer (`build_dom`), the `ParseResponse` schema validator, and
+the equivalence metrics normalizer. See `docs/papers/` for background.
 
 The repository also enforces a `quality-gate` workflow with 100% source
 coverage and docstring audit coverage.
