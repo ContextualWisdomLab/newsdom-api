@@ -11,6 +11,8 @@ on:
       - 'Dockerfile.test'
       - '.github/workflows/build-ci-image.yml'
 
+# Least-privilege default: read-only GITHUB_TOKEN at the top level.
+# packages:write is granted only to the job that pushes to GHCR (Scorecard TokenPermissions, alert #39).
 permissions:
   contents: read
 
