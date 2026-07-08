@@ -100,5 +100,28 @@ follow it.
   (`codegraph explore "<query>"`, or the code-review-graph MCP tools)
   BEFORE grep/find — it surfaces callers/callees/impact that text
   search misses.
+
+### Config & secrets (KV, not env)
+
+- Org rule: do **not** read config/secrets via `os.getenv()` / raw
+  environment variables at runtime. Read them from a KV / credential
+  registry. Org Actions secrets (e.g. `OPENAI_API_KEY`) flow **into**
+  the KV via a bootstrap/CI step; runtime reads from the KV — env is
+  only transport into the KV, never the runtime source. Reference
+  implementation: xtrmLLMBatchPython's pgcrypto-encrypted Postgres
+  credential registry (`get_credential(name)`); reuse that pattern (a
+  DB-backed KV is fine) unless a dedicated KV is adopted.
+- **This repo today:** no runtime secrets or credentials — it holds no
+  API keys, no DB creds, and makes no authenticated external calls (it
+  shells out to a local MinerU binary). CI secrets are only the
+  standard `GITHUB_TOKEN` / `SCORECARD_TOKEN`, which are build-time,
+  not runtime app secrets.
+- **Known deviation to migrate:** `mineru_runner._resolve_mineru_bin`
+  reads `os.environ.get("NEWSDOM_MINERU_BIN")` (a local executable-path
+  override) at runtime. This is a deployment knob, not a secret, so it
+  is low-risk — but it is the one raw-env read here. The moment this
+  service gains a real secret, credential, DB URL, or external endpoint,
+  route it through the KV pattern above rather than adding more
+  `os.getenv` reads.
 <!-- END cwl-agent-guidance -->
 
