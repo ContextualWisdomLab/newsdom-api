@@ -40,3 +40,6 @@
 ## 2026-06-30 - Regex over Generator `any` string loops
 **Learning:** Using `any(...)` with a generator comprehension in string evaluation paths allocates a new generator and adds Python-level loop overhead for every character.
 **Action:** Replace `any()` generators with a pre-compiled regex (`re.compile().search()`) to evaluate string patterns in C, achieving a ~7x speedup for text-heavy operations.
+## 2025-07-08 - ⚡ Bolt: _find_output_dir 최적화
+**Learning:** `pathlib.Path.glob()` 결과를 `list()`로 감싸면 불필요하게 모든 디렉토리를 탐색하고 메모리를 할당하는 오버헤드가 발생한다. 하나의 결과만 필요할 경우 `next()`와 `StopIteration` 예외 처리를 사용하는 것이 성능에 유리하다.
+**Action:** 단일 파일을 탐색할 때에는 `list()` 대신 `next()`를 사용한다.
