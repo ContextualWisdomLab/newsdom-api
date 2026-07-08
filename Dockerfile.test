@@ -3,10 +3,6 @@ FROM python:3.10-slim
 ENV UV_VERSION=0.11.3
 
 # Install system dependencies
-# Note: We do NOT switch to a non-root user (like `USER ciuser`) here.
-# GitHub Actions runs `container` jobs by bind-mounting workspace and runner temp directories.
-# If the container runs as a non-root user by default, it will not have permission to write
-# to the GitHub Actions runner directories (like /__w/_temp/_runner_file_commands/), causing EACCES errors.
 # @coderabbitai ignore
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -32,5 +28,19 @@ COPY src/newsdom_api/__init__.py ./src/newsdom_api/__init__.py
 RUN uv pip install --system -e ".[dev]"
 
 ENV PYTHONPATH=/app/src
+
+# Run as an unprivileged user (Trivy DS-0002 hardening). Dependencies are
+# installed into system Python above (as root), so no privileged access is
+# needed at runtime: the mounted source is read-only and pytest writes its
+# cache/coverage under /app, which this user owns.
+#
+# This image is built and published as `ci-env` but is not consumed by any
+# GitHub Actions `container:` job, so there is no runner bind-mount that would
+# require root. If it is ever wired into a `container:` job, override the user
+# there with `container: { options: --user root }` rather than reverting this.
+RUN groupadd --system ciuser \
+    && useradd --system --create-home --home-dir /home/ciuser --gid ciuser --shell /usr/sbin/nologin ciuser \
+    && chown -R ciuser:ciuser /app
+USER ciuser
 
 CMD ["pytest"]
