@@ -163,27 +163,27 @@ async def parse(
                 detail=UNSUPPORTED_MEDIA_DETAIL,
             )
 
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp_path = Path(tmp.name)
-            tmp.write(header)
-
-            bytes_read = len(header)
-            while chunk := await file.read(8192):
-                bytes_read += len(chunk)
-                if bytes_read > MAX_PARSE_UPLOAD_BYTES:
-                    tmp_path.unlink()
-                    raise HTTPException(
-                        status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL
-                    )
-                tmp.write(chunk)
-
+        tmp_path = None
         try:
+            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                tmp_path = Path(tmp.name)
+                tmp.write(header)
+
+                bytes_read = len(header)
+                while chunk := await file.read(8192):
+                    bytes_read += len(chunk)
+                    if bytes_read > MAX_PARSE_UPLOAD_BYTES:
+                        raise HTTPException(
+                            status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL
+                        )
+                    tmp.write(chunk)
+
             _validate_pdf_structure(tmp_path)
             return await asyncio.to_thread(
                 parse_pdf, tmp_path, filename=file.filename or "upload.pdf"
             )
         finally:
-            if tmp_path.exists():
+            if tmp_path and tmp_path.exists():
                 tmp_path.unlink()
 
     except MineruRuntimeUnavailableError:

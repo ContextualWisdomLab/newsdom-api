@@ -41,3 +41,7 @@
 **Vulnerability:** FastAPIs `UploadFile.read()` was called on the remainder of large files and accumulated entirely into an in-memory `bytes` object (or `bytearray` inside the event loop). Although it respected `file.size`, processing a maximum allowed payload size into memory before writing to disk could still cause memory exhaustion when under heavy load.
 **Learning:** For large file uploads, loading the entire payload into a single Python object (even just to process or save it) creates a bottleneck where large chunks of contiguous memory are required simultaneously. The Strix security scanner will flag this as a Resource Exhaustion Vulnerability ("security theater") if you attempt to just bound a single `file.read()`.
 **Prevention:** Stream the chunks (e.g. 8192 bytes) directly to a `NamedTemporaryFile` on disk while verifying the accumulation does not exceed the maximum allowed payload size. Ensure the temporary file is securely unlinked in a `finally` block or when an upload limit exception is raised.
+## 2024-05-18 - 파일 업로드 시 디스크 고갈 취약점(DoS) 수정
+**Vulnerability:** 파일 업로드 중 클라이언트가 연결을 끊으면, 임시 파일(NamedTemporaryFile)이 삭제되지 않고 디스크에 남는 디스크 고갈(DoS) 취약점이 존재했습니다.
+**Learning:** `NamedTemporaryFile(delete=False)`를 생성하고 데이터를 비동기적으로 읽는 과정(`await file.read()`)이 하나의 통합된 `try...finally` 블록 안에 캡슐화되어야만 오류나 연결 중단 시에도 확실하게 리소스를 정리할 수 있습니다.
+**Prevention:** 향후 FastAPI에서 비동기 파일 업로드 및 임시 파일을 다룰 때는, 임시 파일 경로를 지정하고 파일을 닫는 전체 과정(`tempfile.NamedTemporaryFile`, 파일 쓰기)을 반드시 안전하게 디스크에서 삭제할 수 있도록 전역 `try...finally` 블록으로 관리해야 합니다.
