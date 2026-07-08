@@ -105,7 +105,7 @@ def test_parse_pdf_main_block(monkeypatch, capsys):
         runpy.run_path(str(script_path), run_name="__main__")
 
     assert exc_info.value.code == 0
-    assert "Parse a Japanese newspaper PDF" in capsys.readouterr().out
+    assert "Parse a PDF" in capsys.readouterr().out
 
 
 def test_parse_pdf_sys_path_insertion():

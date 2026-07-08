@@ -3,23 +3,43 @@
 from __future__ import annotations
 
 import asyncio
+import hmac
 import logging
 import tempfile
 from pathlib import Path
 from typing import Annotated, Callable
 
-from fastapi import FastAPI, File, HTTPException, Request, Response, UploadFile
+from fastapi import (
+    Depends,
+    FastAPI,
+    File,
+    Form,
+    Header,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+)
 from fastapi.responses import JSONResponse
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
+from .config import get_api_token
 from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
+from .mineru_runner import (
+    DEFAULT_LANGUAGE,
+    DEFAULT_MODE,
+    normalize_language,
+    normalize_mode,
+)
 from .schemas import HealthResponse, ParseResponse
 from .service import parse_pdf
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
 PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
+INVALID_PARSE_PARAMS_DETAIL = "Invalid parse parameters"
+UNAUTHORIZED_DETAIL = "Unauthorized"
 LOGGER = logging.getLogger("newsdom_api")
 
 tags_metadata = [
@@ -35,7 +55,11 @@ tags_metadata = [
 
 app = FastAPI(
     title="NewsDOM API",
-    description="DOM-style parser API for scanned Japanese newspaper PDFs.",
+    description=(
+        "Language-agnostic PDF-to-DOM parser API. Converts a PDF into a "
+        "canonical JSON document tree (pages, sections, headings, body blocks, "
+        "images, and bounding boxes) using MinerU."
+    ),
     version="0.2.0",
     contact={
         "name": "Seongho Bae",
@@ -92,6 +116,31 @@ async def global_exception_handler(request: Request, exc: Exception) -> Response
     return _apply_security_headers(response, request)
 
 
+def require_authorization(
+    authorization: Annotated[str | None, Header()] = None,
+) -> None:
+    """Enforce optional bearer authentication on protected endpoints.
+
+    When the sidecar has a shared secret configured (via
+    :func:`newsdom_api.config.get_api_token`), callers must present a matching
+    ``Authorization: Bearer <token>`` header; otherwise a ``401`` is raised. If
+    no secret is configured the service stays open, which keeps the standalone
+    development experience friction-free. The comparison is constant-time.
+    """
+
+    token = get_api_token()
+    if token is None:
+        return
+    expected = f"Bearer {token}"
+    provided = authorization or ""
+    if not hmac.compare_digest(provided, expected):
+        raise HTTPException(
+            status_code=401,
+            detail=UNAUTHORIZED_DETAIL,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
 @app.get(
     "/health",
     response_model=HealthResponse,
@@ -128,29 +177,59 @@ def _validate_pdf_structure(file_path: Path) -> None:
 @app.post(
     "/parse",
     response_model=ParseResponse,
-    summary="Parse Newspaper PDF",
+    summary="Parse PDF into a DOM tree",
     description=(
-        "Converts a scanned Japanese newspaper PDF into a canonical JSON DOM "
-        "document using MinerU."
+        "Converts a PDF into a canonical JSON DOM document using MinerU. The "
+        "optional `language` and `mode` form fields select the MinerU language "
+        "code (default `auto` detection) and parsing mode (`auto`/`ocr`/`txt`, "
+        "default `auto`). When a shared secret is configured, an "
+        "`Authorization: Bearer <token>` header is required."
     ),
+    dependencies=[Depends(require_authorization)],
     responses={
+        401: {"description": "Unauthorized"},
         413: {"description": "Payload Too Large"},
         415: {"description": "Unsupported Media Type"},
+        422: {"description": "Invalid parse parameters"},
         502: {"description": "Bad Gateway"},
         503: {"description": "Service Unavailable"},
     },
     tags=["Parser"],
 )
 async def parse(
-    file: Annotated[
-        UploadFile, File(..., description="The newspaper PDF file to parse.")
-    ],
+    file: Annotated[UploadFile, File(..., description="The PDF file to parse.")],
+    language: Annotated[
+        str,
+        Form(
+            description=(
+                "MinerU language code (e.g. `auto`, `en`, `japan`, `korean`). "
+                "`auto` detects the document language automatically."
+            )
+        ),
+    ] = DEFAULT_LANGUAGE,
+    mode: Annotated[
+        str,
+        Form(
+            description=(
+                "MinerU parsing mode: `auto` (born-digital text PDFs skip forced "
+                "OCR), `ocr` (force OCR), or `txt` (embedded text layer only)."
+            )
+        ),
+    ] = DEFAULT_MODE,
 ) -> ParseResponse:
     """Parse an uploaded PDF into the canonical DOM response model."""
 
     media_type = (file.content_type or "").split(";", 1)[0].strip().lower()
     if media_type != "application/pdf":
         raise HTTPException(status_code=415, detail=UNSUPPORTED_MEDIA_DETAIL)
+
+    try:
+        resolved_language = normalize_language(language)
+        resolved_mode = normalize_mode(mode)
+    except ValueError:
+        raise HTTPException(
+            status_code=422, detail=INVALID_PARSE_PARAMS_DETAIL
+        ) from None
 
     if file.size is not None and file.size > MAX_PARSE_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL)
@@ -180,7 +259,11 @@ async def parse(
         try:
             _validate_pdf_structure(tmp_path)
             return await asyncio.to_thread(
-                parse_pdf, tmp_path, filename=file.filename or "upload.pdf"
+                parse_pdf,
+                tmp_path,
+                filename=file.filename or "upload.pdf",
+                language=resolved_language,
+                mode=resolved_mode,
             )
         finally:
             if tmp_path.exists():

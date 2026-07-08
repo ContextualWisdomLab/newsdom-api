@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `/parse`를 언어 비종속(language-agnostic) 파서로 일반화: MinerU `-l japan`/`-m ocr` 하드코딩을 제거하고 optional form 필드 `language`(기본 `auto` 자동 감지)와 `mode`(`auto`/`ocr`/`txt`, 기본 `auto`)로 파라미터화. `mode=auto`는 born-digital PDF가 강제 OCR을 건너뛰도록 함. 기존 동작은 `language=japan&mode=ocr`로 그대로 사용 가능.
+- OpenAPI 제목/설명, README, `ArticleNode.headline` 문서를 일반 문서용 (section heading) 표현으로 재구성하여 특정 언어/신문 가정을 소비자에게 노출하지 않도록 함. 응답 스키마 필드는 하위 호환을 위해 변경하지 않음.
+
+### Added
+- `/parse`에 대한 optional bearer 인증 게이트: 리프 서비스 자체 설정 `NEWSDOM_API_TOKEN`이 설정되면 `Authorization: Bearer <token>`을 요구(상수 시간 비교), 미설정 시 개방(개발용). `/health`는 항상 미인증 유지.
+- 서브모듈/사이드카 배포용 `docker-compose.yml`: healthcheck가 `/health`를 대상으로 하며 MinerU 번들 이미지/`NEWSDOM_MINERU_BIN` 및 readiness 주의사항을 README에 문서화.
+
 ### Security
 - 전역 500 에러 응답에도 표준 보안 헤더를 적용하여 예외 경로에서 header 누락을 방지
 - MinerU subprocess argv 생성 시 `-`로 시작하는 option-like 인자를 거부하여 argument injection 위험을 낮춤

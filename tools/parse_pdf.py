@@ -27,7 +27,7 @@ def _resolve_pdf_input(input_path: Path) -> Path:
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
-        description="Parse a Japanese newspaper PDF and output the resulting DOM as JSON."
+        description="Parse a PDF and output the resulting DOM as JSON."
     )
     parser.add_argument(
         "input",

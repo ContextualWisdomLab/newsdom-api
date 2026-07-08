@@ -148,7 +148,7 @@ def test_parse_endpoint_accepts_structurally_valid_pdf(monkeypatch):
     class OnePagePdfReader:
         pages = [object()]
 
-    def fake_parse_pdf_bytes(file_path, filename):
+    def fake_parse_pdf_bytes(file_path, filename, **kwargs):
         assert file_path.read_bytes() == b"%PDF-1.4\n%%EOF"
         assert filename == "fixture.pdf"
         return {"document_id": "fixture", "pages": []}
@@ -167,7 +167,7 @@ def test_parse_endpoint_accepts_structurally_valid_pdf(monkeypatch):
 
 
 def test_parse_endpoint_accepts_pdf_content_type_parameters(monkeypatch):
-    def fake_parse_pdf_bytes(file_path, filename):
+    def fake_parse_pdf_bytes(file_path, filename, **kwargs):
         assert file_path.read_bytes() == b"%PDF-1.4\n%synthetic\n"
         assert filename == "fixture.pdf"
         return {"document_id": "fixture", "pages": []}
@@ -262,7 +262,7 @@ def test_parse_endpoint_returns_502_for_incomplete_mineru_output(
 def test_parse_endpoint_catches_incomplete_output_error(monkeypatch):
     from newsdom_api.errors import MineruIncompleteOutputError
 
-    def fake_parse_pdf_bytes(file_path, filename):
+    def fake_parse_pdf_bytes(file_path, filename, **kwargs):
         raise MineruIncompleteOutputError()
 
     monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
@@ -281,7 +281,7 @@ def test_parse_endpoint_catches_incomplete_output_error(monkeypatch):
 def test_parse_endpoint_catches_runtime_unavailable_error(monkeypatch):
     from newsdom_api.errors import MineruRuntimeUnavailableError
 
-    def fake_parse_pdf_bytes(file_path, filename):
+    def fake_parse_pdf_bytes(file_path, filename, **kwargs):
         raise MineruRuntimeUnavailableError()
 
     monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
@@ -302,7 +302,7 @@ def test_parse_endpoint_catches_runtime_unavailable_error(monkeypatch):
 async def test_parse_endpoint_suppresses_service_exception_chain(monkeypatch):
     from newsdom_api.errors import MineruRuntimeUnavailableError
 
-    def fake_parse_pdf_bytes(file_path, filename):
+    def fake_parse_pdf_bytes(file_path, filename, **kwargs):
         raise MineruRuntimeUnavailableError()
 
     monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
@@ -317,7 +317,7 @@ async def test_parse_endpoint_suppresses_service_exception_chain(monkeypatch):
 
 
 def test_parse_endpoint_rejects_large_files(monkeypatch):
-    def fake_parse_pdf_bytes(file_path, filename):
+    def fake_parse_pdf_bytes(file_path, filename, **kwargs):
         return {"document_id": "fixture", "pages": []}
 
     monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
@@ -372,7 +372,7 @@ async def test_parse_endpoint_rejects_magic_bytes_before_full_read():
 
 
 def test_unhandled_exception_includes_security_headers(monkeypatch):
-    def fake_parse_pdf_bytes(file_path, filename):
+    def fake_parse_pdf_bytes(file_path, filename, **kwargs):
         raise RuntimeError("unexpected internal explosion")
 
     monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
@@ -398,7 +398,7 @@ def test_unhandled_exception_includes_security_headers(monkeypatch):
 
 
 def test_unhandled_exception_includes_hsts_for_forwarded_https(monkeypatch):
-    def fake_parse_pdf_bytes(file_path, filename):
+    def fake_parse_pdf_bytes(file_path, filename, **kwargs):
         raise RuntimeError("unexpected internal explosion")
 
     monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
@@ -416,3 +416,81 @@ def test_unhandled_exception_includes_hsts_for_forwarded_https(monkeypatch):
         response.headers.get("Strict-Transport-Security")
         == "max-age=31536000; includeSubDomains"
     )
+
+
+def test_parse_endpoint_defaults_language_and_mode_to_auto(monkeypatch):
+    captured = {}
+
+    def fake_parse_pdf(file_path, filename, **kwargs):
+        captured.update(kwargs)
+        return {"document_id": "fixture", "pages": []}
+
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf)
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+    )
+
+    assert response.status_code == 200
+    assert captured == {"language": "auto", "mode": "auto"}
+
+
+def test_parse_endpoint_forwards_language_and_mode_to_parser(monkeypatch):
+    captured = {}
+
+    def fake_parse_pdf(file_path, filename, **kwargs):
+        captured.update(kwargs)
+        return {"document_id": "fixture", "pages": []}
+
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf)
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+        data={"language": "Japan", "mode": "OCR"},
+    )
+
+    assert response.status_code == 200
+    # Values are normalized (lower-cased) before reaching the parser.
+    assert captured == {"language": "japan", "mode": "ocr"}
+
+
+def test_parse_endpoint_rejects_invalid_mode_with_422(monkeypatch):
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr(
+        "newsdom_api.main.parse_pdf",
+        lambda *a, **k: {"document_id": "x", "pages": []},
+    )
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+        data={"mode": "not-a-mode"},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Invalid parse parameters"
+
+
+def test_parse_endpoint_rejects_invalid_language_with_422(monkeypatch):
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr(
+        "newsdom_api.main.parse_pdf",
+        lambda *a, **k: {"document_id": "x", "pages": []},
+    )
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+        data={"language": "en; rm -rf"},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Invalid parse parameters"

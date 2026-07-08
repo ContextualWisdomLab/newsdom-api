@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "newsdom-api"
 version = "0.2.0"
-description = "DOM-style parser API for scanned Japanese newspaper PDFs"
+description = "Language-agnostic PDF-to-DOM parser API built on MinerU"
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
 license = "MIT"

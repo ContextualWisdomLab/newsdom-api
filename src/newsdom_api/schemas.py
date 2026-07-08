@@ -49,12 +49,23 @@ class ImageNode(BaseModel):
 
 
 class ArticleNode(BaseModel):
-    """Article-level grouping of headline, body blocks, and related media."""
+    """Section-level grouping of a heading, body blocks, and related media.
+
+    Despite the ``article`` naming (retained for schema stability), this node is
+    language- and domain-agnostic: it models any logically grouped region of a
+    document, such as a report section, chapter, or column.
+    """
 
     article_id: str = Field(
-        ..., description="Stable identifier for the article within the parsed document."
+        ..., description="Stable identifier for the section within the parsed document."
     )
-    headline: str = Field(..., description="Primary headline text for the article.")
+    headline: str = Field(
+        ...,
+        description=(
+            "Primary section heading text. This is a generic section heading, "
+            "not tied to any newspaper or language-specific concept."
+        ),
+    )
     bbox: Optional[BoundingBox] = Field(
         default=None,
         description="Bounding box enclosing the article when parser coordinates are available.",
