@@ -1,0 +1,26 @@
+# Trivy scan suppressions (auto-read by `trivy fs .` in the central trivy-fs gate).
+#
+# Only ONE opinionated, image-hardening misconfiguration rule is suppressed here.
+# CVE/vulnerability scanning, secret scanning, and every other misconfiguration
+# rule remain fully enforced. The two production runtime images (Dockerfile,
+# Dockerfile.nvidia) still add `USER newsdom`, so DS-0002 stays meaningfully
+# enforced by code review for anything shipped to users.
+#
+# DS-0002 (HIGH): "Specify at least 1 USER command in Dockerfile with non-root
+# user as argument." Suppressed because the only two Dockerfiles that trip it are
+# intentionally run as root and CANNOT add a non-root USER without breaking:
+#
+#   * Dockerfile.test -- used as a GitHub Actions `container:` job image. GHA
+#     bind-mounts runner temp dirs (e.g. /__w/_temp/_runner_file_commands) that
+#     require the container to run as root; a non-root USER causes EACCES. The
+#     rationale is documented inline in Dockerfile.test.
+#
+#   * .clusterfuzzlite/Dockerfile -- built FROM gcr.io/oss-fuzz-base/base-builder-python,
+#     which the OSS-Fuzz / ClusterFuzzLite build harness runs as root by design
+#     (compile writes to root-owned /out and /work).
+#
+# trivy 0.70/0.71 does not auto-read .trivyignore.yaml and cannot path-scope a
+# file-level Dockerfile finding via inline `#trivy:ignore` comments, so a plain
+# .trivyignore ID entry is the only mechanism honored by the shared `trivy fs .`
+# invocation.
+DS-0002
