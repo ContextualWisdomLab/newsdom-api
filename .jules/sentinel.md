@@ -37,11 +37,6 @@
 **Learning:** Error response paths need explicit coverage because exception handlers can bypass or duplicate header logic differently from successful request paths.
 **Prevention:** Route both middleware responses and global 500 exception responses through a shared security-header helper.
 
-## 2025-03-01 - Prevent Memory Exhaustion via Unbounded Stream Reading
-**Vulnerability:** FastAPIs `UploadFile.read()` was called on the remainder of large files and accumulated entirely into an in-memory `bytes` object (or `bytearray` inside the event loop). Although it respected `file.size`, processing a maximum allowed payload size into memory before writing to disk could still cause memory exhaustion when under heavy load.
-**Learning:** For large file uploads, loading the entire payload into a single Python object (even just to process or save it) creates a bottleneck where large chunks of contiguous memory are required simultaneously. The Strix security scanner will flag this as a Resource Exhaustion Vulnerability ("security theater") if you attempt to just bound a single `file.read()`.
-**Prevention:** Stream the chunks (e.g. 8192 bytes) directly to a `NamedTemporaryFile` on disk while verifying the accumulation does not exceed the maximum allowed payload size. Ensure the temporary file is securely unlinked in a `finally` block or when an upload limit exception is raised.
-
 ## 2025-02-14 - Prevent Command Injection via Regex Validation
 **Vulnerability:** The `_UNSAFE_CHARS_PATTERN` used a blocklist regex with `re.search` to filter out specific shell control characters in MinerU command arguments, but missed newline (`\n`) and carriage return (`\r`) characters.
 **Learning:** Even when `shell=False` is used, failing to filter newline characters from executable arguments can allow attackers to inject line breaks into logs or disrupt command parsing in some downstream tools. A strict allowlist is preferred, but when Unicode/internationalized characters must be supported across diverse file paths, a comprehensive blocklist covering all command delimiters (including newlines) is a necessary compromise to maintain functionality.
