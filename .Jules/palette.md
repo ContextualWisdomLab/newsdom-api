@@ -25,3 +25,6 @@
 ## 2024-05-18 - Improve Swagger UI DX with swagger_ui_parameters
 **Learning:** The default Swagger UI configuration for FastAPI applications often lacks helpful features like request duration display or dark-themed syntax highlighting, and requires users to manually click "Try it out" for every endpoint.
 **Action:** Always configure `swagger_ui_parameters` in the `FastAPI()` instantiation with options like `{"displayRequestDuration": True, "syntaxHighlight.theme": "monokai", "tryItOutEnabled": True}` to significantly improve the Developer Experience (DX) when interacting with the API documentation.
+## 2026-06-28 - Temporary File Cleanup Before Review
+**Learning:** Leaving temporary files like `patch.py` or `test_schema.py` in the workspace after code changes pollutes the repository and leads to failing code reviews.
+**Action:** When using temporary scratchpad scripts or files for code exploration, generation, or patching, always remember to delete them from the repository (e.g., via `rm` in a bash session) before requesting code reviews or proceeding to pre-commit steps.

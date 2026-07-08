@@ -10,16 +10,36 @@ from pydantic import BaseModel, Field
 class BoundingBox(BaseModel):
     """Axis-aligned bounding box expressed in page coordinates."""
 
-    x0: float = Field(..., description="Leftmost X coordinate of the bounding box.")
-    y0: float = Field(..., description="Topmost Y coordinate of the bounding box.")
-    x1: float = Field(..., description="Rightmost X coordinate of the bounding box.")
-    y1: float = Field(..., description="Bottommost Y coordinate of the bounding box.")
+    x0: float = Field(
+        ...,
+        description="Leftmost X coordinate of the bounding box.",
+        json_schema_extra={"example": 10.5},
+    )
+    y0: float = Field(
+        ...,
+        description="Topmost Y coordinate of the bounding box.",
+        json_schema_extra={"example": 10.5},
+    )
+    x1: float = Field(
+        ...,
+        description="Rightmost X coordinate of the bounding box.",
+        json_schema_extra={"example": 100.5},
+    )
+    y1: float = Field(
+        ...,
+        description="Bottommost Y coordinate of the bounding box.",
+        json_schema_extra={"example": 200.5},
+    )
 
 
 class CaptionNode(BaseModel):
     """Caption text associated with an image or figure."""
 
-    text: str = Field(..., description="Text content of the caption.")
+    text: str = Field(
+        ...,
+        description="Text content of the caption.",
+        json_schema_extra={"example": "A caption text."},
+    )
     bbox: Optional[BoundingBox] = Field(
         default=None,
         description="Bounding box of the caption when parser coordinates are available.",
@@ -29,7 +49,11 @@ class CaptionNode(BaseModel):
 class ImageNode(BaseModel):
     """Image metadata preserved in the canonical page structure."""
 
-    path: str = Field(..., description="Relative path to the extracted image asset.")
+    path: str = Field(
+        ...,
+        description="Relative path to the extracted image asset.",
+        json_schema_extra={"example": "images/fig1.jpg"},
+    )
     media_type: str = Field(
         default="image",
         description="Media type label for the extracted image node.",
@@ -52,9 +76,15 @@ class ArticleNode(BaseModel):
     """Article-level grouping of headline, body blocks, and related media."""
 
     article_id: str = Field(
-        ..., description="Stable identifier for the article within the parsed document."
+        ...,
+        description="Stable identifier for the article within the parsed document.",
+        json_schema_extra={"example": "a1"},
     )
-    headline: str = Field(..., description="Primary headline text for the article.")
+    headline: str = Field(
+        ...,
+        description="Primary headline text for the article.",
+        json_schema_extra={"example": "Breaking News"},
+    )
     bbox: Optional[BoundingBox] = Field(
         default=None,
         description="Bounding box enclosing the article when parser coordinates are available.",
@@ -81,7 +111,9 @@ class PageNode(BaseModel):
     """Single parsed page including article, ad, and header groupings."""
 
     page_number: int = Field(
-        ..., description="One-based page number from the parsed PDF."
+        ...,
+        description="One-based page number from the parsed PDF.",
+        json_schema_extra={"example": 1},
     )
     width: Optional[float] = Field(
         default=None,
@@ -117,10 +149,14 @@ class ParseQuality(BaseModel):
     """Quality metadata describing parser provenance and warnings."""
 
     status: str = Field(
-        default="success", description="Parsing operation status indicator."
+        default="success",
+        description="Parsing operation status indicator.",
+        json_schema_extra={"example": "success"},
     )
     parser: str = Field(
-        default="mineru", description="The underlying engine used to parse the PDF."
+        default="mineru",
+        description="The underlying engine used to parse the PDF.",
+        json_schema_extra={"example": "mineru"},
     )
     warnings: List[str] = Field(
         default_factory=list,
@@ -132,7 +168,9 @@ class ParseResponse(BaseModel):
     """Top-level API response for a parsed document."""
 
     document_id: str = Field(
-        ..., description="Unique identifier for the parsed document."
+        ...,
+        description="Unique identifier for the parsed document.",
+        json_schema_extra={"example": "doc_12345"},
     )
     pages: List[PageNode] = Field(
         default_factory=list,
@@ -150,4 +188,5 @@ class HealthResponse(BaseModel):
     status: str = Field(
         default="ok",
         description="Current operational status of the service.",
+        json_schema_extra={"example": "ok"},
     )
