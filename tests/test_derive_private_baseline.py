@@ -124,9 +124,7 @@ def test_derive_baseline_no_pdfs(tmp_path: Path) -> None:
 
 
 @patch("tools.derive_private_baseline.parse_pdf_bytes")
-def test_derive_baseline_http_exception(
-    mock_parse_pdf_bytes, tmp_path: Path
-) -> None:
+def test_derive_baseline_http_exception(mock_parse_pdf_bytes, tmp_path: Path) -> None:
     """HTTPException from parse_pdf_bytes should be wrapped in RuntimeError."""
     fixtures_dir = tmp_path / "fixtures"
     fixtures_dir.mkdir()
@@ -153,9 +151,7 @@ def test_main_success(mock_derive_baseline, tmp_path: Path) -> None:
         ["--private-fixtures-dir", str(fixtures_dir), str(output_path)]
     )
 
-    mock_derive_baseline.assert_called_once_with(
-        fixtures_dir, output_path, False, True
-    )
+    mock_derive_baseline.assert_called_once_with(fixtures_dir, output_path, False, True)
 
 
 @patch("tools.derive_private_baseline.derive_baseline")
@@ -173,9 +169,7 @@ def test_main_success_with_options(mock_derive_baseline, tmp_path: Path) -> None
         ]
     )
 
-    mock_derive_baseline.assert_called_once_with(
-        fixtures_dir, output_path, True, False
-    )
+    mock_derive_baseline.assert_called_once_with(fixtures_dir, output_path, True, False)
 
 
 @patch("tools.derive_private_baseline.derive_baseline")
@@ -199,9 +193,7 @@ def test_main_runtime_error(mock_derive_baseline, tmp_path: Path, capsys) -> Non
 
 
 @patch("tools.derive_private_baseline.derive_baseline")
-def test_main_unexpected_error(
-    mock_derive_baseline, tmp_path: Path, capsys
-) -> None:
+def test_main_unexpected_error(mock_derive_baseline, tmp_path: Path, capsys) -> None:
     """main() should exit(1) and print an unexpected error."""
     fixtures_dir = tmp_path / "fixtures"
     output_path = tmp_path / "baseline.json"

@@ -40,6 +40,3 @@
 ## 2026-06-30 - Regex over Generator `any` string loops
 **Learning:** Using `any(...)` with a generator comprehension in string evaluation paths allocates a new generator and adds Python-level loop overhead for every character.
 **Action:** Replace `any()` generators with a pre-compiled regex (`re.compile().search()`) to evaluate string patterns in C, achieving a ~7x speedup for text-heavy operations.
-## 2025-03-01 - Remove Redundant Regex Check for html.escape
-**Learning:** C-extension standard library functions (like html.escape) are often faster than Python-level regex pre-checks.
-**Action:** Unconditionally call the optimized C function instead of guarding it with a regex search.

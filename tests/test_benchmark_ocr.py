@@ -73,9 +73,7 @@ def test_benchmark_ocr_harness_json(mock_pdf_dir: Path, tmp_path: Path) -> None:
     assert results["summary"]["total_runs"] == 6
 
 
-def test_benchmark_ocr_recursive_and_csv(
-    mock_pdf_dir: Path, tmp_path: Path
-) -> None:
+def test_benchmark_ocr_recursive_and_csv(mock_pdf_dir: Path, tmp_path: Path) -> None:
     output_path = tmp_path / "results.csv"
 
     mock_engine = MagicMock(return_value={"status": "success", "page_count": 2})
@@ -118,9 +116,7 @@ def test_benchmark_ocr_no_pdfs(tmp_path: Path) -> None:
         )
 
 
-def test_benchmark_ocr_unknown_engine(
-    mock_pdf_dir: Path, tmp_path: Path
-) -> None:
+def test_benchmark_ocr_unknown_engine(mock_pdf_dir: Path, tmp_path: Path) -> None:
     """If an unknown engine is specified, ValueError is raised."""
     with pytest.raises(ValueError, match="Unknown engine: fake_engine"):
         benchmark_ocr.main(
