@@ -51,10 +51,13 @@ def test_pull_request_template_exists():
     assert Path(".github/pull_request_template.md").exists()
 
 
-def test_security_workflows_exist():
-    assert Path(".github/workflows/scorecards.yml").exists()
-    assert Path(".github/workflows/codeql.yml").exists()
-    assert Path(".github/workflows/dependency-review.yml").exists()
+def test_security_workflows_are_centralized_and_not_duplicated_locally():
+    # Governance/security scanning (scorecards, CodeQL, dependency-review) is
+    # provided by the org-wide CENTRAL required workflows in
+    # ContextualWisdomLab/.github and must not be duplicated as local copies.
+    assert not Path(".github/workflows/scorecards.yml").exists()
+    assert not Path(".github/workflows/codeql.yml").exists()
+    assert not Path(".github/workflows/dependency-review.yml").exists()
 
 
 def test_quality_gate_workflow_exists():

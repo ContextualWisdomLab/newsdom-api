@@ -28,25 +28,6 @@ def test_workflows_do_not_use_top_level_env_blocks():
         assert "\nenv:\n" not in text.split("jobs:", 1)[0], workflow_path
 
 
-def test_scorecards_workflow_keeps_node24_force_out_of_job_env():
-    data = yaml.safe_load(
-        Path(".github/workflows/scorecards.yml").read_text(encoding="utf-8")
-    )
-    scorecard_job = data["jobs"]["scorecard"]
-    steps_by_name = {step["name"]: step for step in scorecard_job["steps"]}
-
-    assert "env" not in scorecard_job
-    assert (
-        steps_by_name["Checkout"]["env"]["FORCE_JAVASCRIPT_ACTIONS_TO_NODE24"] is True
-    )
-    assert (
-        steps_by_name["Upload SARIF results"]["env"][
-            "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24"
-        ]
-        is True
-    )
-
-
 def test_gh_pages_workflow_keeps_node24_force_off_upload_pages_artifact_step():
     data = yaml.safe_load(
         Path(".github/workflows/gh-pages.yml").read_text(encoding="utf-8")
@@ -98,3 +79,18 @@ def test_central_review_workflows_are_not_copied_into_this_repository():
 
     for central_only_path in central_only_paths:
         assert not central_only_path.exists(), central_only_path
+
+
+def test_central_governance_workflows_are_not_copied_into_this_repository():
+    # Security/governance scanning (OpenSSF Scorecard, CodeQL, dependency
+    # review) is provided by the org-wide CENTRAL required workflows in
+    # ContextualWisdomLab/.github. Local duplicates cause double runs and
+    # duplicate SARIF uploads, so they must not exist in this repository.
+    central_governance_paths = [
+        Path(".github/workflows/scorecards.yml"),
+        Path(".github/workflows/codeql.yml"),
+        Path(".github/workflows/dependency-review.yml"),
+    ]
+
+    for central_governance_path in central_governance_paths:
+        assert not central_governance_path.exists(), central_governance_path

@@ -98,14 +98,6 @@ def test_docs_workflow_uses_least_privilege_pages_permissions():
     assert "id-token: write" in text
 
 
-def test_codeql_workflow_scopes_security_events_write_to_job_level():
-    text = Path(".github/workflows/codeql.yml").read_text(encoding="utf-8")
-    assert "actions: read" in text.split("jobs:", 1)[0]
-    assert "contents: read" in text.split("jobs:", 1)[0]
-    assert "security-events: write" not in text.split("jobs:", 1)[0]
-    assert "security-events: write" in text.split("jobs:", 1)[1]
-
-
 def test_docs_workflow_installs_docs_tooling_from_locked_uv_dependencies():
     text = Path(".github/workflows/gh-pages.yml").read_text(encoding="utf-8")
     assert not re.search(r"\b(?:python\s+-m\s+)?pip3?\s+install\b", text)
