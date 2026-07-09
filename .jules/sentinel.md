@@ -41,3 +41,7 @@
 **Vulnerability:** FastAPIs `UploadFile.read()` was called on the remainder of large files and accumulated entirely into an in-memory `bytes` object (or `bytearray` inside the event loop). Although it respected `file.size`, processing a maximum allowed payload size into memory before writing to disk could still cause memory exhaustion when under heavy load.
 **Learning:** For large file uploads, loading the entire payload into a single Python object (even just to process or save it) creates a bottleneck where large chunks of contiguous memory are required simultaneously. The Strix security scanner will flag this as a Resource Exhaustion Vulnerability ("security theater") if you attempt to just bound a single `file.read()`.
 **Prevention:** Stream the chunks (e.g. 8192 bytes) directly to a `NamedTemporaryFile` on disk while verifying the accumulation does not exceed the maximum allowed payload size. Ensure the temporary file is securely unlinked in a `finally` block or when an upload limit exception is raised.
+## 2024-07-09 - [HIGH] Fix DoS vulnerability in temporary file cleanup
+**Vulnerability:** Incomplete exception handling during asynchronous file uploads can lead to abandoned temporary files and disk exhaustion.
+**Learning:** `try...finally` block must encompass the instantiation of the temporary file and the read loop.
+**Prevention:** Initialize `tmp_path = None` and wrap the `with tempfile.NamedTemporaryFile(delete=False) as tmp:` block within a single `try` block, and verify `if tmp_path and tmp_path.exists():` in the `finally` block.
