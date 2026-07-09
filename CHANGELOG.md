@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Developer Experience (DX)
+- Pydantic V2 스키마에 `json_schema_extra={"example": <value>}`를 적용하여 Swagger UI에 명시적인 예시 값을 노출, API 탐색 편의성(Discoverability)을 향상
+
 ### Security
 - 전역 500 에러 응답에도 표준 보안 헤더를 적용하여 예외 경로에서 header 누락을 방지
 - MinerU subprocess argv 생성 시 `-`로 시작하는 option-like 인자를 거부하여 argument injection 위험을 낮춤
