@@ -21,9 +21,7 @@ def _resolve_pdf_input(input_path: Path) -> Path:
     if input_path.suffix.lower() != ".pdf":
         raise ValueError("The input file must use a .pdf extension.")
     if not input_path.is_file():
-        raise ValueError(
-            f"The input file {input_path} does not exist or is not a file."
-        )
+        raise ValueError(f"The input file {input_path} does not exist or is not a file.")
     return input_path.resolve(strict=True)
 
 
