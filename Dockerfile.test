@@ -30,9 +30,13 @@ RUN uv pip install --system -e ".[dev]"
 
 ENV PYTHONPATH=/app/src
 
+# Run the test suite as an unprivileged user (Trivy DS-0002: image user should
+# not be root). Create 'ciuser' and hand it ownership of the workdir so pytest
+# can write its cache and coverage artifacts. This image is executed via
+# `docker run` (CMD pytest); it is not consumed as a GitHub Actions `container:`
+# job, so there are no bind-mounted runner directories that would require root.
 RUN useradd --create-home --home-dir /home/ciuser --shell /usr/sbin/nologin ciuser \
     && chown -R ciuser:ciuser /app
-
 USER ciuser
 
 CMD ["pytest"]
