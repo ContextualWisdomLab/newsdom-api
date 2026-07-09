@@ -1,0 +1,3 @@
+# .clusterfuzzlite/Dockerfile needs root to compile/run fuzzing tracers via google/oss-fuzz
+# Dockerfile.test runs in GitHub Actions container jobs, where non-root USER causes permission denied on runner volumes
+DS-0002
