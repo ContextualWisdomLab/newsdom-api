@@ -33,9 +33,7 @@ def test_batch_parse_success(mock_parse, mock_pdf_dir, tmp_path, capsys):
 
 
 @patch("tools.batch_parse_pdf.parse_pdf_bytes")
-def test_batch_parse_recursive_preserves_relative_paths(
-    mock_parse, mock_pdf_dir, tmp_path
-):
+def test_batch_parse_recursive_preserves_relative_paths(mock_parse, mock_pdf_dir, tmp_path):
     nested_dir = mock_pdf_dir / "section"
     nested_dir.mkdir()
     (nested_dir / "doc3.pdf").write_bytes(b"content3")

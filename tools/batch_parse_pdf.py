@@ -22,9 +22,7 @@ def batch_parse(
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    pdf_files = sorted(
-        input_dir.rglob("*.pdf") if recursive else input_dir.glob("*.pdf")
-    )
+    pdf_files = sorted(input_dir.rglob("*.pdf") if recursive else input_dir.glob("*.pdf"))
     if not pdf_files:
         print(f"No PDF files found in {input_dir}")
         return
@@ -41,9 +39,7 @@ def batch_parse(
             json_output = json.dumps(output_dict, ensure_ascii=False, indent=indent)
 
             if recursive:
-                out_path = output_dir / pdf_path.relative_to(input_dir).with_suffix(
-                    ".json"
-                )
+                out_path = output_dir / pdf_path.relative_to(input_dir).with_suffix(".json")
                 out_path.parent.mkdir(parents=True, exist_ok=True)
             else:
                 out_path = output_dir / f"{pdf_path.stem}.json"
