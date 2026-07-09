@@ -21,5 +21,8 @@ def test_page_node_openapi_schema_descriptions():
     schema = PageNode.model_json_schema()
     properties = schema["properties"]
 
-    assert properties["page_number"]["description"] == "One-based page number from the parsed PDF."
+    assert (
+        properties["page_number"]["description"]
+        == "One-based page number from the parsed PDF."
+    )
     assert properties["articles"]["description"] == "Articles extracted from this page."
