@@ -40,3 +40,6 @@
 ## 2026-06-30 - Regex over Generator `any` string loops
 **Learning:** Using `any(...)` with a generator comprehension in string evaluation paths allocates a new generator and adds Python-level loop overhead for every character.
 **Action:** Replace `any()` generators with a pre-compiled regex (`re.compile().search()`) to evaluate string patterns in C, achieving a ~7x speedup for text-heavy operations.
+## 2026-07-09 - Unconditionally call C-implemented standard library functions
+**Learning:** Unconditionally calling C-implemented standard library functions like html.escape is faster than adding a Python-level regex pre-check.
+**Action:** For standard library functions implemented in C, unconditionally calling the function is often faster than adding a Python-level pre-check (such as a regex search()) to conditionally skip the call, as the C implementation typically contains its own highly optimized fast-paths.
