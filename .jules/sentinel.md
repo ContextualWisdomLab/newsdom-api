@@ -41,3 +41,8 @@
 **Vulnerability:** FastAPIs `UploadFile.read()` was called on the remainder of large files and accumulated entirely into an in-memory `bytes` object (or `bytearray` inside the event loop). Although it respected `file.size`, processing a maximum allowed payload size into memory before writing to disk could still cause memory exhaustion when under heavy load.
 **Learning:** For large file uploads, loading the entire payload into a single Python object (even just to process or save it) creates a bottleneck where large chunks of contiguous memory are required simultaneously. The Strix security scanner will flag this as a Resource Exhaustion Vulnerability ("security theater") if you attempt to just bound a single `file.read()`.
 **Prevention:** Stream the chunks (e.g. 8192 bytes) directly to a `NamedTemporaryFile` on disk while verifying the accumulation does not exceed the maximum allowed payload size. Ensure the temporary file is securely unlinked in a `finally` block or when an upload limit exception is raised.
+
+## 2026-07-09 - [Test Dockerfile DS-0002 False Positive]
+**Vulnerability:** Trivy scanner reported DS-0002 (Missing USER command) on `.clusterfuzzlite/Dockerfile` and `Dockerfile.test`.
+**Learning:** `.clusterfuzzlite/Dockerfile` relies on the base OSS-Fuzz builder which needs root to execute compilation and coverage instrumentation. `Dockerfile.test` runs in GitHub Actions which bind-mounts directories requiring root. Switching to a non-root user breaks these specific CI/fuzzing workflows with EACCES errors.
+**Prevention:** Ignore the specific DS-0002 vulnerability ID in `.trivyignore` instead of ignoring the files entirely to maintain coverage for other vulnerabilities.

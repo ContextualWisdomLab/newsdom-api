@@ -1,0 +1,7 @@
+# Trivy Ignore File
+
+# .clusterfuzzlite/Dockerfile relies on the base OSS-Fuzz builder which needs root
+# to execute compilation and coverage instrumentation without complex capability manipulation.
+# Dockerfile.test runs in GitHub actions which bind-mounts directories requiring root.
+# Therefore, we accept the DS-0002 misconfiguration (Missing USER command) for these files.
+DS-0002
