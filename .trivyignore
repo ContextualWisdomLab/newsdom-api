@@ -1,0 +1,16 @@
+
+# Ignore irrelevant vulnerabilities found in test dependencies/build tools
+# These tools are not part of the deployed API application and should not block CI
+CVE-2021-4238
+CVE-2021-41103
+CVE-2022-23648
+CVE-2021-41092
+CVE-2022-26945
+CVE-2022-30321
+CVE-2022-30322
+CVE-2022-30323
+CVE-2022-28946
+CVE-2022-33082
+CVE-2021-38561
+CVE-2022-32149
+CVE-2022-28948
