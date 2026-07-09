@@ -416,3 +416,39 @@ def test_unhandled_exception_includes_hsts_for_forwarded_https(monkeypatch):
         response.headers.get("Strict-Transport-Security")
         == "max-age=31536000; includeSubDomains"
     )
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
+    class ClientDisconnectError(Exception):
+        pass
+
+    class FailingUploadFile(_ReadTrackingUpload):
+        async def read(self, size: int = -1):
+            if not hasattr(self, "_failed"):
+                # Return valid magic bytes first to bypass structure check
+                self._failed = True
+                return b"%PDF-"
+            raise ClientDisconnectError("Client disconnected during streaming")
+
+    upload = FailingUploadFile(b"%PDF-1.4\n%synthetic\n")
+    upload.size = 1000
+
+    # We need to spy on Path.unlink to verify it's called
+    # But since it fails *during* the file read loop, the file is created on disk
+    # Let's mock Path.unlink and track if it gets called on a temporary file
+
+    unlinked_paths = []
+    original_unlink = Path.unlink
+
+    def spy_unlink(self, missing_ok=False):
+        unlinked_paths.append(str(self))
+        return original_unlink(self, missing_ok)
+
+    monkeypatch.setattr(Path, "unlink", spy_unlink)
+
+    with pytest.raises(ClientDisconnectError):
+        await parse(upload)
+
+    # We should have unlinked exactly one file, which should be in the temp directory
+    assert len(unlinked_paths) == 1
+    assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
