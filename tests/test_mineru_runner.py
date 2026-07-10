@@ -15,14 +15,6 @@ def test_build_mineru_command_uses_pipeline_backend(tmp_path: Path):
     assert "japan" in cmd
 
 
-def test_build_mineru_command_rejects_newlines_in_args(tmp_path: Path):
-    with pytest.raises(ValueError, match="Unsafe input PDF path for MinerU command"):
-        build_mineru_command(Path("input\n.pdf"), tmp_path)
-
-    with pytest.raises(ValueError, match="Unsafe MinerU executable for MinerU command"):
-        build_mineru_command(Path("input.pdf"), tmp_path, mineru_bin="mineru\r")
-
-
 def test_run_mineru_handles_timeout(tmp_path: Path):
     """
     Given a PDF that causes the mineru subprocess to time out,
@@ -65,3 +57,11 @@ def test_run_mineru_handles_called_process_error(tmp_path: Path):
 
         assert exc_info.value.returncode == 1
         assert "Something went wrong" in str(exc_info.value.stderr)
+
+
+def test_build_mineru_command_rejects_newlines_in_args(tmp_path: Path):
+    with pytest.raises(ValueError, match="Unsafe input PDF path for MinerU command"):
+        build_mineru_command(Path("input\n.pdf"), tmp_path)
+
+    with pytest.raises(ValueError, match="Unsafe MinerU executable for MinerU command"):
+        build_mineru_command(Path("input.pdf"), tmp_path, mineru_bin="mineru\r")

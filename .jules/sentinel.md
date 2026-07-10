@@ -42,7 +42,7 @@
 **Learning:** For large file uploads, loading the entire payload into a single Python object (even just to process or save it) creates a bottleneck where large chunks of contiguous memory are required simultaneously. The Strix security scanner will flag this as a Resource Exhaustion Vulnerability ("security theater") if you attempt to just bound a single `file.read()`.
 **Prevention:** Stream the chunks (e.g. 8192 bytes) directly to a `NamedTemporaryFile` on disk while verifying the accumulation does not exceed the maximum allowed payload size. Ensure the temporary file is securely unlinked in a `finally` block or when an upload limit exception is raised.
 
-## 2025-02-14 - Block Newlines and Carriage Returns in CLI Arguments
-**Vulnerability:** Shell metacharacter blocklists often miss newline (`\n`) and carriage return (`\r`) characters. Even when `shell=False` is used for subprocess execution, these characters can allow command/log injection by prematurely terminating lines or exploiting downstream tool parsing behavior.
-**Learning:** `\s` in regex patterns or simple string matches might not catch all injection vectors; newlines and carriage returns must be explicitly evaluated and blocked at the filesystem and CLI integration boundaries.
-**Prevention:** Explicitly include `\n` and `\r` in regex allowlists or blocklists for any user-supplied filenames or arguments used in subprocess CLI execution.
+## 2025-03-09 - Prevent Command/Log Injection via Newlines in Filenames
+**Vulnerability:** The blocklist regex `_UNSAFE_CHARS_PATTERN` for CLI arguments did not explicitly filter newline (\n) or carriage return (\r) characters. This can allow command or log injection even when `shell=False` is used, by passing arguments containing newlines.
+**Learning:** Shell metacharacter blocklists must include whitespace metacharacters like newlines and carriage returns, as these can bypass checks and manipulate logs or downstream argument parsing.
+**Prevention:** Explicitly add \n and \r to the `_UNSAFE_CHARS_PATTERN` blocklist for CLI arguments.
