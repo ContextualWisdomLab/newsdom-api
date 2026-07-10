@@ -22,7 +22,7 @@ def test_parse_endpoint_returns_dom(monkeypatch):
         )
 
     monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
-    monkeypatch.setattr("newsdom_api.main.parse_pdf_bytes", fake_parse_pdf_bytes)
+    monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
 
     client = TestClient(app)
     response = client.post(

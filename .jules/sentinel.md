@@ -41,3 +41,8 @@
 **Vulnerability:** The CLI arguments passed to MinerU subprocess lacked validation for newline (`\n`) and carriage return (`\r`) characters, which can lead to command or log injection vulnerabilities even when `shell=False` is used.
 **Learning:** Shell metacharacter blocklists must include `\n` and `\r` to comprehensively prevent injection and downstream truncation issues in subprocess arguments.
 **Prevention:** Extend regex-based unsafe character patterns to explicitly reject `\n` and `\r` when constructing subprocess argv.
+
+## 2025-03-01 - Prevent Memory Exhaustion via Unbounded Stream Reading
+**Vulnerability:** FastAPIs `UploadFile.read()` was called on the remainder of large files and accumulated entirely into an in-memory `bytes` object (or `bytearray` inside the event loop). Although it respected `file.size`, processing a maximum allowed payload size into memory before writing to disk could still cause memory exhaustion when under heavy load.
+**Learning:** For large file uploads, loading the entire payload into a single Python object (even just to process or save it) creates a bottleneck where large chunks of contiguous memory are required simultaneously. The Strix security scanner will flag this as a Resource Exhaustion Vulnerability ("security theater") if you attempt to just bound a single `file.read()`.
+**Prevention:** Stream the chunks (e.g. 8192 bytes) directly to a `NamedTemporaryFile` on disk while verifying the accumulation does not exceed the maximum allowed payload size. Ensure the temporary file is securely unlinked in a `finally` block or when an upload limit exception is raised.
