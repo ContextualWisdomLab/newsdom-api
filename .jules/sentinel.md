@@ -41,6 +41,12 @@
 **Vulnerability:** FastAPIs `UploadFile.read()` was called on the remainder of large files and accumulated entirely into an in-memory `bytes` object (or `bytearray` inside the event loop). Although it respected `file.size`, processing a maximum allowed payload size into memory before writing to disk could still cause memory exhaustion when under heavy load.
 **Learning:** For large file uploads, loading the entire payload into a single Python object (even just to process or save it) creates a bottleneck where large chunks of contiguous memory are required simultaneously. The Strix security scanner will flag this as a Resource Exhaustion Vulnerability ("security theater") if you attempt to just bound a single `file.read()`.
 **Prevention:** Stream the chunks (e.g. 8192 bytes) directly to a `NamedTemporaryFile` on disk while verifying the accumulation does not exceed the maximum allowed payload size. Ensure the temporary file is securely unlinked in a `finally` block or when an upload limit exception is raised.
+
+## 2025-03-01 - Prevent Disk Exhaustion DoS via Orphaned Temp Files
+**Vulnerability:** The `/parse` API streamed large uploaded files into a `NamedTemporaryFile(delete=False)`. If a read error or client disconnect occurred (e.g. an exception during `await file.read(8192)`), the execution flow would jump past the explicit `try...finally` cleanup block that was located *after* the read loop. This resulted in orphaned temporary files left on disk, creating a Disk Exhaustion DoS vulnerability when under attack.
+**Learning:** File processing loops, especially those consuming asynchronous `UploadFile` streams, are vulnerable to unhandled exceptions like `ClientDisconnect`. Cleanup logic must guarantee removal regardless of *where* the failure occurs. The `NamedTemporaryFile(delete=False)` itself only guarantees a filename, not cleanup upon early exit.
+**Prevention:** Wrap both the initialization of the `NamedTemporaryFile` and the *entire* file reading loop inside a single `try...finally` block that unlinks the temporary file path, ensuring safe cleanup even if network errors or client disconnects interrupt the read process.
+
 ## 2025-05-18 - [HIGH] Fix temporary file leak during PDF upload
 **Vulnerability:** 파일 업로드 시 `await file.read(8192)`에서 클라이언트 연결 끊김이나 예외가 발생하면 `try...finally` 블록 바깥에 있어 임시 파일이 삭제되지 않고 디스크에 남음 (디스크 고갈 / DoS 위험).
 **Learning:** FastAPI의 `UploadFile.read()`는 예외를 발생시킬 수 있으므로, 임시 파일을 생성하고 쓰는 로직은 생성 즉시 `try...finally` 블록 안에 위치시켜야 함.
