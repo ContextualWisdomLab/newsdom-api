@@ -41,6 +41,7 @@ def _move_bundle(bundle_path: Path, output_path: Path) -> None:
         try:
             bundle_path.unlink()
         except OSError:
+            # Windows ADS-like bundle paths may be readable even when unlink is unsupported.
             pass
 
 
