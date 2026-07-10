@@ -43,3 +43,6 @@
 ## 2024-07-09 - Avoid eager list allocation on glob generators
 **Learning:** In file discovery routines, eagerly resolving a glob generator into a list (e.g., `list(path.glob(...))`) causes unnecessary directory traversals and memory allocation when only a single match is needed.
 **Action:** Use `next(path.glob(...))` with a `try/except StopIteration` block to efficiently avoid this performance overhead.
+## $(date +%Y-%m-%d) - [Optimize html.escape fast-path]
+**Learning:** Python's standard library `html.escape` function is implemented in C and is highly optimized using its own fast-paths (like C-level `str.replace`). Adding a Python-level regex pre-check (e.g., `re.search()`) to skip escaping when no special characters are found actually introduces overhead and slows down processing.
+**Action:** Always prefer unconditionally calling C-optimized standard library functions over adding custom Python-level pre-checks, as the C implementations are generally faster at detecting when no work needs to be done.
