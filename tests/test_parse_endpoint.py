@@ -417,6 +417,7 @@ def test_unhandled_exception_includes_hsts_for_forwarded_https(monkeypatch):
         == "max-age=31536000; includeSubDomains"
     )
 
+
 @pytest.mark.asyncio
 async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     class ClientDisconnectError(Exception):
