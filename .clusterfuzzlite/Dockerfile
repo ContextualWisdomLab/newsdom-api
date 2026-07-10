@@ -8,13 +8,3 @@ WORKDIR /src/newsdom-api
 COPY --from=uv-bin /uv /uvx /usr/local/bin/
 COPY . .
 COPY .clusterfuzzlite/build.sh /src/build.sh
-
-RUN groupadd --system --gid 10001 fuzz \
-    && useradd --system --uid 10001 --gid 10001 --home-dir /home/fuzz --create-home --shell /usr/sbin/nologin fuzz \
-    && mkdir -p /github/workspace/build-out \
-    && touch /usr/lib/libFuzzingEngine.a \
-    && chown fuzz:fuzz /usr/lib/libFuzzingEngine.a \
-    && chown -R fuzz:fuzz /github/workspace \
-    && chown -R fuzz:fuzz /src/newsdom-api /src/build.sh /home/fuzz
-
-USER 10001:10001
