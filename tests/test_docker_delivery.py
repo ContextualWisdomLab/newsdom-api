@@ -194,9 +194,10 @@ def test_healthcheck_path_matcher_ignores_later_unrelated_health_strings():
 def test_container_image_workflow_sets_up_qemu_for_multi_arch_builds():
     data = _load_container_image_workflow()
     image_steps = data["jobs"]["image"]["steps"]
+    qemu_action_prefix = "docker/setup-qemu-action@"
     assert any(
-        step.get("uses")
-        == "docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3"
+        (uses := step.get("uses", "")).startswith(qemu_action_prefix)
+        and re.fullmatch(r"[0-9a-f]{40}", uses.removeprefix(qemu_action_prefix))
         for step in image_steps
     )
 
