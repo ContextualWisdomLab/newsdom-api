@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- 파싱된 NewsDOM JSON 파일이 응답 스키마(`ParseResponse`)를 올바르게 준수하는지 검증하는 `tools/validate_dom.py` 도구를 추가했습니다.
+- 파싱된 NewsDOM JSON 파일 내의 모든 텍스트 요소를 평문(Plain text)으로 쉽게 추출할 수 있도록 `tools/extract_text.py` 도구를 추가했습니다.
+
 ### Security
 - 전역 500 에러 응답에도 표준 보안 헤더를 적용하여 예외 경로에서 header 누락을 방지
 - MinerU subprocess argv 생성 시 `-`로 시작하는 option-like 인자를 거부하여 argument injection 위험을 낮춤
