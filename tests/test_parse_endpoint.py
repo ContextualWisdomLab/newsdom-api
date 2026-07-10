@@ -393,7 +393,7 @@ def test_unhandled_exception_includes_security_headers(monkeypatch):
         == "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
     )
     assert response.headers.get("Referrer-Policy") == "no-referrer"
-    assert response.headers.get("Cache-Control") == "no-store, max-age=0"
+    assert response.headers.get("Cache-Control") == "no-store, no-cache, max-age=0"
     assert "Strict-Transport-Security" not in response.headers
 
 
@@ -416,6 +416,7 @@ def test_unhandled_exception_includes_hsts_for_forwarded_https(monkeypatch):
         response.headers.get("Strict-Transport-Security")
         == "max-age=31536000; includeSubDomains"
     )
+
 
 @pytest.mark.asyncio
 async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):

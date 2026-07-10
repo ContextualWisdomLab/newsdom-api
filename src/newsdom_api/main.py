@@ -63,7 +63,7 @@ def _apply_security_headers(response: Response, request: Request) -> Response:
         "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
     )
     response.headers["Referrer-Policy"] = "no-referrer"
-    response.headers["Cache-Control"] = "no-store, max-age=0"
+    response.headers["Cache-Control"] = "no-store, no-cache, max-age=0"
     forwarded_proto = request.headers.get("x-forwarded-proto", "")
     is_https = request.url.scheme == "https" or forwarded_proto.lower() == "https"
     if is_https:
