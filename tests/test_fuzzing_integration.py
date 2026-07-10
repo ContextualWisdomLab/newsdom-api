@@ -68,6 +68,8 @@ def test_clusterfuzzlite_dockerfile_runs_as_non_root_user():
     text = _repo_path(".clusterfuzzlite", "Dockerfile").read_text(encoding="utf-8")
 
     assert "useradd --system --uid 10001" in text
+    assert "touch /usr/lib/libFuzzingEngine.a" in text
+    assert "chown fuzz:fuzz /usr/lib/libFuzzingEngine.a" in text
     assert "USER 10001:10001" in text
 
 
