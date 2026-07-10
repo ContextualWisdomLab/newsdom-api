@@ -1,0 +1,5 @@
+# The test and fuzzing Dockerfiles deliberately run as root
+# because they interact with runner-mounted directories or
+# specialized fuzzing environments that require root.
+# We suppress the specific false positive ID DS-0002.
+DS-0002
