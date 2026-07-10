@@ -31,6 +31,19 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _move_bundle(bundle_path: Path, output_path: Path) -> None:
+    """Move a downloaded attestation bundle, including Windows ADS-like names."""
+
+    try:
+        shutil.move(str(bundle_path), output_path)
+    except OSError:
+        output_path.write_bytes(bundle_path.read_bytes())
+        try:
+            bundle_path.unlink()
+        except OSError:
+            pass
+
+
 def export_attestations(
     dist_dir: Path, repo: str, *, working_dir: Path | None = None
 ) -> list[Path]:
@@ -81,7 +94,7 @@ def export_attestations(
         output_path = dist_dir / f"{artifact.name}.intoto.jsonl"
         if output_path.exists():
             output_path.unlink()
-        shutil.move(str(bundle_path), output_path)
+        _move_bundle(bundle_path, output_path)
         exported.append(output_path)
 
     return exported

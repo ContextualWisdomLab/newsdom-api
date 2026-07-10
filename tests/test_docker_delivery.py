@@ -54,6 +54,10 @@ def _contains_pinned_python_base_image(text: str) -> bool:
     return bool(re.search(r"python:3\.12-slim@sha256:[0-9a-f]{64}", text))
 
 
+def _contains_pinned_python_test_base_image(text: str) -> bool:
+    return bool(re.search(r"python:3\.10-slim@sha256:[0-9a-f]{64}", text))
+
+
 def _contains_pinned_uv_image(text: str) -> bool:
     return bool(re.search(r"ghcr\.io/astral-sh/uv@sha256:[0-9a-f]{64}", text))
 
@@ -90,6 +94,12 @@ def test_dockerfile_uses_project_metadata_and_src_layout():
     assert "src/" in text
     assert _contains_pinned_python_base_image(text)
     assert _contains_pinned_uv_image(text)
+
+
+def test_test_dockerfile_pins_python_base_image():
+    text = Path("Dockerfile.test").read_text(encoding="utf-8")
+
+    assert _contains_pinned_python_test_base_image(text)
 
 
 def test_dockerfile_runs_uvicorn_without_bundled_mineru_runtime():
