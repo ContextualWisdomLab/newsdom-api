@@ -183,8 +183,8 @@ async def parse(
                 parse_pdf, tmp_path, filename=file.filename or "upload.pdf"
             )
         finally:
-            if tmp_path is not None and tmp_path.exists():
-                tmp_path.unlink()
+            if tmp_path is not None:
+                tmp_path.unlink(missing_ok=True)
 
     except MineruRuntimeUnavailableError:
         raise HTTPException(status_code=503, detail="Service Unavailable") from None

@@ -64,6 +64,13 @@ def test_clusterfuzzlite_dockerfile_places_build_script_at_src_root():
     assert "COPY .clusterfuzzlite/build.sh /src/build.sh" in text
 
 
+def test_clusterfuzzlite_dockerfile_runs_as_non_root_user():
+    text = _repo_path(".clusterfuzzlite", "Dockerfile").read_text(encoding="utf-8")
+
+    assert "useradd --system --uid 10001" in text
+    assert "USER 10001:10001" in text
+
+
 def test_clusterfuzzlite_build_script_uses_locked_uv_fuzz_extra():
     text = _repo_path(".clusterfuzzlite", "build.sh").read_text(encoding="utf-8")
     assert "uv sync --frozen --extra fuzz" in text
