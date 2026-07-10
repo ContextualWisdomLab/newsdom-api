@@ -1,5 +1,7 @@
 name: OpenCode Review
 
+permissions: read-all
+
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
@@ -36,7 +38,8 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     permissions:
       id-token: write
-      contents: write
+      contents: read
+      actions: read
       pull-requests: write
       issues: write
     steps:
