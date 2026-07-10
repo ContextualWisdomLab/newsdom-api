@@ -163,30 +163,28 @@ async def parse(
                 detail=UNSUPPORTED_MEDIA_DETAIL,
             )
 
-        payload_too_large = False
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp_path = Path(tmp.name)
-            tmp.write(header)
-
-            bytes_read = len(header)
-            while chunk := await file.read(8192):
-                bytes_read += len(chunk)
-                if bytes_read > MAX_PARSE_UPLOAD_BYTES:
-                    payload_too_large = True
-                    break
-                tmp.write(chunk)
-
-        if payload_too_large:
-            tmp_path.unlink(missing_ok=True)
-            raise HTTPException(status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL)
-
+        tmp_path = None
         try:
+            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                tmp_path = Path(tmp.name)
+                tmp.write(header)
+
+                bytes_read = len(header)
+                while chunk := await file.read(8192):
+                    bytes_read += len(chunk)
+                    if bytes_read > MAX_PARSE_UPLOAD_BYTES:
+                        raise HTTPException(
+                            status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL
+                        )
+                    tmp.write(chunk)
+
             _validate_pdf_structure(tmp_path)
             return await asyncio.to_thread(
                 parse_pdf, tmp_path, filename=file.filename or "upload.pdf"
             )
         finally:
-            tmp_path.unlink(missing_ok=True)
+            if tmp_path is not None:
+                tmp_path.unlink(missing_ok=True)
 
     except MineruRuntimeUnavailableError:
         raise HTTPException(status_code=503, detail="Service Unavailable") from None

@@ -102,6 +102,13 @@ def test_test_dockerfile_pins_python_base_image():
     assert _contains_pinned_python_test_base_image(text)
 
 
+def test_test_dockerfile_runs_as_non_root_user():
+    text = Path("Dockerfile.test").read_text(encoding="utf-8")
+
+    assert "USER ciuser" in text
+    assert "useradd --create-home" in text
+
+
 def test_dockerfile_runs_uvicorn_without_bundled_mineru_runtime():
     text = Path("Dockerfile").read_text(encoding="utf-8")
     assert "uvicorn" in text

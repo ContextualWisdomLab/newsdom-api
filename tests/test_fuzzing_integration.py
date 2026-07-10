@@ -64,6 +64,16 @@ def test_clusterfuzzlite_dockerfile_places_build_script_at_src_root():
     assert "COPY .clusterfuzzlite/build.sh /src/build.sh" in text
 
 
+def test_clusterfuzzlite_root_builder_exception_is_documented():
+    text = _repo_path(".clusterfuzzlite", "Dockerfile").read_text(encoding="utf-8")
+
+    assert "USER 10001:10001" not in text
+    ignore_text = _repo_path(".trivyignore").read_text(encoding="utf-8")
+    assert "ClusterFuzzLite mounts /github/workspace/build-out" in ignore_text
+    assert "2026-10-31" in ignore_text
+    assert "DS-0002" in ignore_text
+
+
 def test_clusterfuzzlite_build_script_uses_locked_uv_fuzz_extra():
     text = _repo_path(".clusterfuzzlite", "build.sh").read_text(encoding="utf-8")
     assert "uv sync --frozen --extra fuzz" in text

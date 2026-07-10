@@ -2,12 +2,6 @@ FROM python:3.10-slim@sha256:5f9928ea39771e8ddf4fb9a96ab24f65f087793635614405a1d
 
 ENV UV_VERSION=0.11.3
 
-# Install system dependencies
-# Note: We do NOT switch to a non-root user (like `USER ciuser`) here.
-# GitHub Actions runs `container` jobs by bind-mounting workspace and runner temp directories.
-# If the container runs as a non-root user by default, it will not have permission to write
-# to the GitHub Actions runner directories (like /__w/_temp/_runner_file_commands/), causing EACCES errors.
-# @coderabbitai ignore
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libgl1 \
@@ -32,5 +26,10 @@ COPY src/newsdom_api/__init__.py ./src/newsdom_api/__init__.py
 RUN uv pip install --system -e ".[dev]"
 
 ENV PYTHONPATH=/app/src
+
+RUN useradd --create-home --home-dir /home/ciuser --shell /usr/sbin/nologin ciuser \
+    && chown -R ciuser:ciuser /app
+
+USER ciuser
 
 CMD ["pytest"]
