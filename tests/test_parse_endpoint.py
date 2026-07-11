@@ -393,7 +393,7 @@ def test_unhandled_exception_includes_security_headers(monkeypatch):
         == "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
     )
     assert response.headers.get("Referrer-Policy") == "no-referrer"
-    assert response.headers.get("Cache-Control") == "no-store, max-age=0"
+    assert response.headers.get("Cache-Control") == "no-store, no-cache, max-age=0"
     assert "Strict-Transport-Security" not in response.headers
 
 
