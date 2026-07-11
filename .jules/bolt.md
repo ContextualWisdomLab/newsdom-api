@@ -43,3 +43,6 @@
 ## 2024-07-09 - Avoid eager list allocation on glob generators
 **Learning:** In file discovery routines, eagerly resolving a glob generator into a list (e.g., `list(path.glob(...))`) causes unnecessary directory traversals and memory allocation when only a single match is needed.
 **Action:** Use `next(path.glob(...))` with a `try/except StopIteration` block to efficiently avoid this performance overhead.
+## 2024-07-11 - Avoid chained replace calls for character filtering
+**Learning:** Using chained `.replace(char, "")` calls to check if a string is composed entirely of a subset of characters (e.g. `text.replace("_", "").replace(".", "")`) creates intermediate string allocations. Our benchmarks showed this adds significant, avoidable overhead compared to using `.strip()`.
+**Action:** Use `.strip(chars)` instead of chained `.replace()` calls to prevent intermediate string allocations and improve performance when filtering strings.
