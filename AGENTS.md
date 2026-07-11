@@ -47,6 +47,31 @@ Read these first when making repository changes:
 - When PRs are blocked externally, continue local adjacent tasks
   instead of stopping.
 
+## Security gates and `.trivyignore`
+
+- The blocking `trivy-fs` PR check is not defined in this repository. It is
+  part of the central "Security Scan" required workflow
+  (`ContextualWisdomLab/.github`, `.github/workflows/security-scan.yml`),
+  which runs `trivy fs .` repo-wide and fails on fixable
+  CRITICAL/HIGH/MEDIUM findings. Do not reintroduce a repo-local copy.
+- When `trivy-fs` fails, read the "Print Trivy findings that failed the
+  gate" step in the job log (it lists severity, rule id, file, and message)
+  or the `trivy-fs` SARIF in code scanning. Never guess at what Trivy found.
+- The gate scans the PR head repo-wide, so stale branches inherit findings
+  that are already fixed on `develop`. Rebase or merge `develop` first;
+  only treat a finding as real if it reproduces on top of current `develop`.
+- Remediation order: bump the vulnerable dependency
+  (`uv lock --upgrade-package <name>` plus lockfile commit) or fix the
+  misconfiguration. `.trivyignore` is the last resort, only for findings the
+  repository genuinely cannot fix, and every entry must follow the documented
+  format (id, affected artifact, why unfixable here, revisit condition —
+  enforced by `tests/test_fuzzing_integration.py`). Trivy reads the plain
+  `.trivyignore` at the repo root automatically; no workflow wiring needed.
+- Anti-pattern (2026-07-09, PR #315): automation added Go-ecosystem
+  CVE-2021-4238/CVE-2022-26945 to `.trivyignore` in this Go-free Python
+  repository while the real blocker was DS-0002 on a stale PR base. Ignore
+  entries that do not correspond to a reproduced finding are forbidden.
+
 ## Safety rules
 
 - Keep synthetic fixtures public and private reference inputs
