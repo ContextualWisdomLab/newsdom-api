@@ -1,0 +1,4 @@
+
+## 2024-05-15 - Enhance DX for BoundingBox
+**Learning:** In Pydantic V2 and modern FastAPI, fields without a default value are automatically required in the OpenAPI schema; adding an explicit ellipsis `...` is unnecessary and provides no DX improvement. Furthermore, to significantly improve Developer Experience (DX) in FastAPI applications while ensuring OpenAPI 3.0.x/Swagger tooling compatibility, avoid using the plural `examples` parameter in Pydantic V2 `Field` declarations. Instead, use the singular `example` key via `json_schema_extra={"example": <value>}` to properly populate concrete, representative values in the generated Swagger UI.
+**Action:** Removed redundant `...` and added `json_schema_extra={"example": 0.0}` in `BoundingBox` fields to provide a concrete example in the Swagger UI.

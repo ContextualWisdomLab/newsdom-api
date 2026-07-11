@@ -10,10 +10,22 @@ from pydantic import BaseModel, Field
 class BoundingBox(BaseModel):
     """Axis-aligned bounding box expressed in page coordinates."""
 
-    x0: float = Field(..., description="Leftmost X coordinate of the bounding box.")
-    y0: float = Field(..., description="Topmost Y coordinate of the bounding box.")
-    x1: float = Field(..., description="Rightmost X coordinate of the bounding box.")
-    y1: float = Field(..., description="Bottommost Y coordinate of the bounding box.")
+    x0: float = Field(
+        description="Leftmost X coordinate of the bounding box.",
+        json_schema_extra={"example": 0.0},
+    )
+    y0: float = Field(
+        description="Topmost Y coordinate of the bounding box.",
+        json_schema_extra={"example": 0.0},
+    )
+    x1: float = Field(
+        description="Rightmost X coordinate of the bounding box.",
+        json_schema_extra={"example": 0.0},
+    )
+    y1: float = Field(
+        description="Bottommost Y coordinate of the bounding box.",
+        json_schema_extra={"example": 0.0},
+    )
 
 
 class CaptionNode(BaseModel):
