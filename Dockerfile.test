@@ -30,6 +30,9 @@ RUN uv pip install --system -e ".[dev]"
 
 ENV PYTHONPATH=/app/src
 
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD python -c "import importlib; importlib.import_module('newsdom_api')" || exit 1
+
 # Run the test suite as an unprivileged user (Trivy DS-0002: image user should
 # not be root). Create 'ciuser' and hand it ownership of the workdir so pytest
 # can write its cache and coverage artifacts. This image is executed via
