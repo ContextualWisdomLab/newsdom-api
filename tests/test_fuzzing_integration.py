@@ -74,6 +74,83 @@ def test_clusterfuzzlite_root_builder_exception_is_documented():
     assert "DS-0002" in ignore_text
 
 
+def _parse_trivyignore_entries() -> list[tuple[str, str]]:
+    """Return (entry id, preceding comment block) pairs from .trivyignore.
+
+    A blank line ends a comment block, so only the comment lines directly
+    above an entry count as that entry's documentation.
+    """
+    entries: list[tuple[str, str]] = []
+    comment_lines: list[str] = []
+    for line in _repo_path(".trivyignore").read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped:
+            comment_lines = []
+            continue
+        if stripped.startswith("#"):
+            comment_lines.append(stripped.lstrip("#").strip())
+            continue
+        entries.append((stripped.split()[0], " ".join(comment_lines)))
+    return entries
+
+
+def test_trivyignore_entries_each_carry_reason_and_revisit_condition():
+    # The central trivy-fs gate (security-scan.yml in ContextualWisdomLab/
+    # .github) honours this file via trivy's default --ignorefile, so every
+    # suppression silently weakens a required merge gate. Each entry must be
+    # documented inline: the id itself, the affected artifact / why it is
+    # unfixable here, and a revisit condition.
+    entries = _parse_trivyignore_entries()
+
+    assert entries, ".trivyignore lost its documented entries unexpectedly"
+    for entry, documentation in entries:
+        assert documentation, (
+            f".trivyignore entry {entry} has no comment block above it; "
+            "document the finding, why it is unfixable here, and a revisit "
+            "condition before suppressing it"
+        )
+        assert entry in documentation, (
+            f".trivyignore entry {entry} must be named in the comment block "
+            "directly above it"
+        )
+        assert "revisit" in documentation.lower(), (
+            f".trivyignore entry {entry} needs an explicit revisit condition "
+            "(e.g. 'Revisit by <date> or when <upstream fix> lands')"
+        )
+
+
+def test_trivyignore_does_not_suppress_go_ecosystem_cves():
+    # Regression guard for PR #315: automation once added CVE-2021-4238
+    # (github.com/Masterminds/goutils) and CVE-2022-26945
+    # (github.com/hashicorp/go-getter) to .trivyignore while the actual
+    # trivy-fs blocker was DS-0002 on a stale PR base. Those are Go-module
+    # vulnerabilities and this repository ships no Go code, so `trivy fs .`
+    # can never legitimately report them here. Suppressions that do not map
+    # to a reproduced finding must stay out.
+    entry_ids = {entry for entry, _ in _parse_trivyignore_entries()}
+
+    assert "CVE-2021-4238" not in entry_ids
+    assert "CVE-2022-26945" not in entry_ids
+
+    tracked = subprocess.run(
+        ["git", "ls-files"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.splitlines()
+    go_artifacts = [
+        path
+        for path in tracked
+        if Path(path).name in {"go.mod", "go.sum"} or path.endswith(".go")
+    ]
+    assert not go_artifacts, (
+        "Go artifacts appeared in the repository; re-evaluate whether "
+        "Go-ecosystem CVE suppressions in .trivyignore are now legitimate: "
+        f"{go_artifacts}"
+    )
+
+
 def test_clusterfuzzlite_build_script_uses_locked_uv_fuzz_extra():
     text = _repo_path(".clusterfuzzlite", "build.sh").read_text(encoding="utf-8")
     assert "uv sync --frozen --extra fuzz" in text
