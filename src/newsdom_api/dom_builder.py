@@ -23,7 +23,6 @@ MAX_BBOX_COORDINATE = 1_000_000.0
 MAX_CONTENT_BLOCKS = 5_000
 MAX_MEDIA_PATH_LENGTH = 512
 MAX_PAGE_NUMBER = 100_000
-HTML_ESCAPE_PATTERN = re.compile(r"[&<>\"']")
 UNSAFE_MEDIA_PATH_PATTERN = re.compile(r"[\x00-\x1f\"'<>` \t\r\n]")
 
 
@@ -83,10 +82,7 @@ def _html_safe_text(value: Any) -> str:
         return ""
     # ⚡ Bolt: Fast path for str to avoid expensive str() cast
     text = value if type(value) is str else str(value)
-    text = text.strip()
-    if not HTML_ESCAPE_PATTERN.search(text):
-        return text
-    return html_escape(text)
+    return html_escape(text.strip())
 
 
 def _safe_media_path(value: Any, fallback: str) -> str:

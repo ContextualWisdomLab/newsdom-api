@@ -43,3 +43,7 @@
 ## 2024-07-09 - Avoid eager list allocation on glob generators
 **Learning:** In file discovery routines, eagerly resolving a glob generator into a list (e.g., `list(path.glob(...))`) causes unnecessary directory traversals and memory allocation when only a single match is needed.
 **Action:** Use `next(path.glob(...))` with a `try/except StopIteration` block to efficiently avoid this performance overhead.
+
+## 2024-07-15 - Unconditional C-function execution
+**Learning:** For Python standard library functions implemented in C (like `html.escape`), adding a Python-level pre-check (such as a regex `search()`) to conditionally skip the call adds more overhead than unconditionally calling the C function, as the C implementation has its own highly optimized fast-paths.
+**Action:** Remove Python-level conditional pre-checks before calling highly optimized C-implemented standard library functions like `html.escape` in hot paths.
