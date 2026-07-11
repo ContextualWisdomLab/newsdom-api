@@ -29,7 +29,7 @@ jobs:
           python-version: '3.10'
 
       - name: Setup uv
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990
         with:
           version: '0.11.3'
           enable-cache: false
@@ -43,7 +43,7 @@ jobs:
           python scripts/release/build_release_manifest.py dist dist/release-manifest.json
 
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373
         with:
           subject-path: 'dist/*'
 
