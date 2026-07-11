@@ -84,7 +84,14 @@ def _html_safe_text(value: Any) -> str:
     # ⚡ Bolt: Fast path for str to avoid expensive str() cast
     text = value if type(value) is str else str(value)
     text = text.strip()
-    if not HTML_ESCAPE_PATTERN.search(text):
+    # ⚡ Bolt: Explicit 'in' checks are faster than regex allocation and overhead
+    if (
+        "&" not in text
+        and "<" not in text
+        and ">" not in text
+        and '"' not in text
+        and "'" not in text
+    ):
         return text
     return html_escape(text)
 
@@ -124,24 +131,18 @@ def _safe_media_path(value: Any, fallback: str) -> str:
 def _coerce_page_number(value: Any) -> int | None:
     """Convert supported page-number values into integers."""
 
-    if value is None:
-        return None
+    v_type = type(value)
+    if v_type is int:
+        return value if 1 <= value <= MAX_PAGE_NUMBER else None
 
-    if isinstance(value, bool):
+    if value is None or v_type is bool:
         return None
 
     try:
         page_number = int(value)
+        return page_number if 1 <= page_number <= MAX_PAGE_NUMBER else None
     except (TypeError, ValueError, OverflowError):
         return None
-
-    if page_number < 1:
-        return None
-
-    if page_number > MAX_PAGE_NUMBER:
-        return None
-
-    return page_number
 
 
 def _block_text(block: dict[str, Any]) -> str:
@@ -325,19 +326,13 @@ def _page_number_from_info(page_info: dict[str, Any], fallback: int) -> int:
     """Resolve page numbering from MinerU page metadata."""
 
     page_number = page_info.get("page_number")
-    if isinstance(page_number, bool):
-        page_number = None
-
-    if isinstance(page_number, int):
+    if type(page_number) is int:
         normalized_page_number = _coerce_page_number(page_number)
         if normalized_page_number is not None:
             return normalized_page_number
 
     page_no = page_info.get("page_no")
-    if isinstance(page_no, bool):
-        page_no = None
-
-    if isinstance(page_no, int):
+    if type(page_no) is int:
         normalized_page_no = _coerce_page_number(page_no + 1)
         if normalized_page_no is not None:
             return normalized_page_no
