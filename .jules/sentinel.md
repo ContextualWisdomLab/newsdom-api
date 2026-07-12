@@ -42,6 +42,11 @@
 **Learning:** For large file uploads, loading the entire payload into a single Python object (even just to process or save it) creates a bottleneck where large chunks of contiguous memory are required simultaneously. The Strix security scanner will flag this as a Resource Exhaustion Vulnerability ("security theater") if you attempt to just bound a single `file.read()`.
 **Prevention:** Stream the chunks (e.g. 8192 bytes) directly to a `NamedTemporaryFile` on disk while verifying the accumulation does not exceed the maximum allowed payload size. Ensure the temporary file is securely unlinked in a `finally` block or when an upload limit exception is raised.
 
+## 2025-02-28 - [Subprocess argument injection via newlines]
+ **Vulnerability:** Unsanitized user inputs containing newline (`\n`) and carriage return (`\r`) characters passed as arguments to subprocesses can lead to command and log injection vulnerabilities, even when `shell=False` is used, depending on how downstream CLI tools process the inputs.
+ **Learning:** Standard shell metacharacter filters (like `[\0&;|`$<>]`) are insufficient to prevent injection if they omit whitespace control characters. Attackers can inject newlines to manipulate tool behavior or spoof log entries if the downstream executable processes inputs line-by-line or uses them in script evaluation.
+ **Prevention:** Explicitly include newline (`\n`) and carriage return (`\r`) characters in blocklists for subprocess arguments, ensuring inputs are restricted strictly to safe paths and alphanumeric characters.
+
 ## 2025-03-02 - Prevent Disk Exhaustion via Interrupted Uploads
 **Vulnerability:** FastAPIs `UploadFile` payloads were streamed to a `NamedTemporaryFile` within a `with` block that did not cover the file initialization or have a global `finally` block for that path. If a network disconnect or client abort exception interrupted `await file.read()` inside this block, the temporary file path on disk was not properly unlinked, leading to disk space exhaustion over time.
 **Learning:** Context managers alone are insufficient when dealing with manual temporary file persistence (`delete=False`) in async HTTP streams because exceptions inside the stream reading loop can bypass cleanup blocks that are positioned further down the control flow.
