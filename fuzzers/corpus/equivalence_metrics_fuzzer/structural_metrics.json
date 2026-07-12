@@ -1,0 +1,34 @@
+{
+  "articles": [
+    {
+      "headline": "A",
+      "vertical": true,
+      "page_number": 1
+    },
+    {
+      "headline_present": false,
+      "vertical": false,
+      "page_number": 1
+    },
+    {
+      "headline": "  ",
+      "page_number": 2
+    }
+  ],
+  "images": [
+    {
+      "path": "x"
+    }
+  ],
+  "ads": [
+    "promo"
+  ],
+  "pages": [
+    {
+      "column_count": 3
+    },
+    {
+      "column_count": 5
+    }
+  ]
+}
