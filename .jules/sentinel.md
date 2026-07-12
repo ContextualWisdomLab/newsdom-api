@@ -42,6 +42,16 @@
 **Learning:** For large file uploads, loading the entire payload into a single Python object (even just to process or save it) creates a bottleneck where large chunks of contiguous memory are required simultaneously. The Strix security scanner will flag this as a Resource Exhaustion Vulnerability ("security theater") if you attempt to just bound a single `file.read()`.
 **Prevention:** Stream the chunks (e.g. 8192 bytes) directly to a `NamedTemporaryFile` on disk while verifying the accumulation does not exceed the maximum allowed payload size. Ensure the temporary file is securely unlinked in a `finally` block or when an upload limit exception is raised.
 
+## 2025-03-02 - Prevent Disk Exhaustion via Interrupted Uploads
+**Vulnerability:** FastAPIs `UploadFile` payloads were streamed to a `NamedTemporaryFile` within a `with` block that did not cover the file initialization or have a global `finally` block for that path. If a network disconnect or client abort exception interrupted `await file.read()` inside this block, the temporary file path on disk was not properly unlinked, leading to disk space exhaustion over time.
+**Learning:** Context managers alone are insufficient when dealing with manual temporary file persistence (`delete=False`) in async HTTP streams because exceptions inside the stream reading loop can bypass cleanup blocks that are positioned further down the control flow.
+**Prevention:** Wrap the temporary file creation, stream reading, and processing stages in a single overarching `try...finally` block that guarantees explicit cleanup of the temporary file path regardless of when a network or application exception occurs.
+
+## 2024-10-24 - Fix DoS vulnerability in file uploads
+**Vulnerability:** Asynchronous file uploads created temporary files before entering a try/finally block. If the client disconnects or an error occurs during `await file.read()`, the temporary file is left orphaned on the filesystem, leading to disk exhaustion (DoS).
+**Learning:** File instantiation and the subsequent read loop must be entirely enclosed within a unified `try...finally` block.
+**Prevention:** Always initialize `tmp_path = None` before a `try` block, instantiate the file and perform network reads inside the `try` block, and handle cleanup in `finally` by checking `if tmp_path and tmp_path.exists()`.
+
 ## 2025-03-01 - Prevent Disk Exhaustion DoS via Orphaned Temp Files
 **Vulnerability:** The `/parse` API streamed large uploaded files into a `NamedTemporaryFile(delete=False)`. If a read error or client disconnect occurred (e.g. an exception during `await file.read(8192)`), the execution flow would jump past the explicit `try...finally` cleanup block that was located *after* the read loop. This resulted in orphaned temporary files left on disk, creating a Disk Exhaustion DoS vulnerability when under attack.
 **Learning:** File processing loops, especially those consuming asynchronous `UploadFile` streams, are vulnerable to unhandled exceptions like `ClientDisconnect`. Cleanup logic must guarantee removal regardless of *where* the failure occurs. The `NamedTemporaryFile(delete=False)` itself only guarantees a filename, not cleanup upon early exit.
