@@ -63,7 +63,7 @@ def _apply_security_headers(response: Response, request: Request) -> Response:
         "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
     )
     response.headers["Referrer-Policy"] = "no-referrer"
-    response.headers["Cache-Control"] = "no-store, max-age=0"
+    response.headers["Cache-Control"] = "no-store, no-cache, max-age=0"
     forwarded_proto = request.headers.get("x-forwarded-proto", "")
     is_https = request.url.scheme == "https" or forwarded_proto.lower() == "https"
     if is_https:
@@ -152,9 +152,11 @@ async def parse(
     if media_type != "application/pdf":
         raise HTTPException(status_code=415, detail=UNSUPPORTED_MEDIA_DETAIL)
 
-    if file.size is not None and file.size > MAX_PARSE_UPLOAD_BYTES:
+    file_size = getattr(file, "size", None)
+    if file_size is not None and file_size > MAX_PARSE_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL)
 
+    tmp_path = None
     try:
         header = await file.read(5)
         if header != b"%PDF-":
@@ -171,22 +173,20 @@ async def parse(
             while chunk := await file.read(8192):
                 bytes_read += len(chunk)
                 if bytes_read > MAX_PARSE_UPLOAD_BYTES:
-                    tmp_path.unlink()
                     raise HTTPException(
                         status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL
                     )
                 tmp.write(chunk)
 
-        try:
-            _validate_pdf_structure(tmp_path)
-            return await asyncio.to_thread(
-                parse_pdf, tmp_path, filename=file.filename or "upload.pdf"
-            )
-        finally:
-            if tmp_path.exists():
-                tmp_path.unlink()
+        _validate_pdf_structure(tmp_path)
+        return await asyncio.to_thread(
+            parse_pdf, tmp_path, filename=file.filename or "upload.pdf"
+        )
 
     except MineruRuntimeUnavailableError:
         raise HTTPException(status_code=503, detail="Service Unavailable") from None
     except MineruIncompleteOutputError:
         raise HTTPException(status_code=502, detail="Bad Gateway") from None
+    finally:
+        if tmp_path and tmp_path.exists():
+            tmp_path.unlink(missing_ok=True)
