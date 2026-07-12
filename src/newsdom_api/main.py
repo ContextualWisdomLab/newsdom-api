@@ -152,7 +152,8 @@ async def parse(
     if media_type != "application/pdf":
         raise HTTPException(status_code=415, detail=UNSUPPORTED_MEDIA_DETAIL)
 
-    if file.size is not None and file.size > MAX_PARSE_UPLOAD_BYTES:
+    file_size = getattr(file, "size", None)
+    if file_size is not None and file_size > MAX_PARSE_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL)
 
     tmp_path = None
