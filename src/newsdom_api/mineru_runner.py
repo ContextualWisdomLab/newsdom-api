@@ -16,7 +16,7 @@ from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 
 # ⚡ Bolt: Use a pre-compiled regex to push pattern matching to C,
 # avoiding the Python-level overhead of `any()` and generator comprehensions
-_UNSAFE_CHARS_PATTERN = re.compile(r"[\0&;|`$<>]")
+_UNSAFE_CHARS_PATTERN = re.compile(r"[\0&;|`$<>\n\r]")
 
 
 def _mineru_command_arg(value: str | Path, *, label: str) -> str:
@@ -68,9 +68,11 @@ def _resolve_mineru_bin() -> str:
         return configured
     found = _cached_which("mineru")
     if not found:
-        raise FileNotFoundError(
-            "Could not find 'mineru' executable. "
-            "Ensure it is installed and on the PATH, or set NEWSDOM_MINERU_BIN."
+        raise MineruRuntimeUnavailableError(
+            stderr=(
+                "Could not find 'mineru' executable. "
+                "Ensure it is installed and on the PATH, or set NEWSDOM_MINERU_BIN."
+            )
         )
     return found
 
@@ -78,10 +80,11 @@ def _resolve_mineru_bin() -> str:
 def _find_output_dir(base_output_dir: Path) -> Path:
     """Locate the OCR output directory created by MinerU."""
 
-    candidates = list(base_output_dir.glob("*/ocr"))
-    if not candidates:
+    try:
+        # ⚡ Bolt: Use next() to avoid resolving the entire glob generator into a list
+        return next(base_output_dir.glob("*/ocr"))
+    except StopIteration:
         raise FileNotFoundError("MinerU OCR output directory was not produced")
-    return candidates[0]
 
 
 def _execute_mineru(cmd: list[str]) -> subprocess.CompletedProcess[str]:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import tempfile
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -45,9 +46,7 @@ def _safe_draw_text(
         draw.text(xy, text, fill=fill, font=font)
     except UnicodeEncodeError:
         # Fallback for ImageFont.load_default() which only supports latin-1
-        fallback_text = "".join(
-            c if ord(c) < 256 else "?" for c in text
-        )
+        fallback_text = "".join(c if ord(c) < 256 else "?" for c in text)
         draw.text(xy, fallback_text, fill=fill, font=font)
 
 
@@ -167,7 +166,9 @@ def generate_fixture(output_dir: Path, seed: int = 7) -> tuple[Path, Path]:
     try:
         resolved_dir.relative_to(Path.cwd().resolve())
     except ValueError as exc:
-        if not output_dir.is_absolute():
+        if not output_dir.is_absolute() or not resolved_dir.is_relative_to(
+            Path(tempfile.gettempdir()).resolve()
+        ):
             raise ValueError("Path traversal detected") from exc
     resolved_dir.mkdir(parents=True, exist_ok=True)
     image_path = resolved_dir / f"synthetic_newspaper_{seed}.png"
