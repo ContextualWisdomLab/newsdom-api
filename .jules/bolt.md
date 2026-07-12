@@ -51,3 +51,7 @@
 ## 2024-05-24 - 불필요한 is/is not type check 피하기
 **Learning:** `type()`은 정확한 클래스를 반환하기 때문에, 서로 다른 클래스(예: `bool`과 `int`)에 대해서 `type(var) is int`는 이미 `bool`을 걸러냅니다. 따라서 `type(var) is int and type(var) is not bool`과 같은 조건식은 불필요한 중복 평가입니다.
 **Action:** 타입 체킹시 명시적인 `is` 체크를 사용할 때는 언어의 타입 스펙을 이해하고 중복된 조건식을 피합니다.
+
+## 2024-07-12 - Optimize checking if string is composed of specific characters
+**Learning:** Checking if a string contains only specific characters using chained `.replace()` calls (e.g. `not name.replace("_", "").replace(".", "")`) incurs multiple string allocations and iterations over the string. This is unnecessary overhead and can be optimized.
+**Action:** When validating if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to avoid multiple intermediate string allocations and improve performance.
