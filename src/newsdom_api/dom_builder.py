@@ -364,7 +364,7 @@ def _group_blocks_by_page_idx(
 
     for block in content_list:
         raw_page_idx = block.get("page_idx")
-        if isinstance(raw_page_idx, int):
+        if type(raw_page_idx) is int:
             has_page_idx = True
             normalized_page_idx = raw_page_idx
         else:
