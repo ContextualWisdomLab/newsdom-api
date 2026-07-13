@@ -184,4 +184,3 @@ follow it.
   (e.g. layout detection, reading-order recovery, table structure
   recognition).
 <!-- END cwl-agent-guidance -->
-
