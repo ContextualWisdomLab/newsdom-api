@@ -33,4 +33,6 @@ RUN uv pip install --system -e ".[dev]"
 
 ENV PYTHONPATH=/app/src
 
+RUN useradd -m jules && chown -R jules:jules /app
+USER jules
 CMD ["pytest"]
