@@ -1,3 +1,4 @@
+from pathlib import Path
 import json
 import sys
 
@@ -113,7 +114,8 @@ def test_main_error(tmp_path, monkeypatch, capsys):
 
 
 def test_sys_path_injection_anon(tmp_path, monkeypatch):
-    monkeypatch.setattr(sys, "path", [])
+    src_path = str(Path(__file__).resolve().parents[1] / "src")
+    monkeypatch.setattr(sys, "path", [path for path in sys.path if path != src_path])
     import runpy
 
     runpy.run_path("tools/anonymize_dom.py")
