@@ -51,7 +51,7 @@ def test_parse_pdf_bytes_writes_temp_file_and_builds_dom(monkeypatch):
     ]
     assert observed["model"] == model
     assert result.document_id == "fixture"
-    assert observed["language"] == "auto"
+    assert observed["language"] == "ch"
     assert observed["mode"] == "auto"
 
 
@@ -146,6 +146,10 @@ def test_parse_pdf_bytes_truncates_long_sanitized_filename(monkeypatch):
 
 def test_safe_upload_filename_truncates_long_name_without_extension():
     assert _safe_upload_filename("b" * 300) == "b" * 240
+
+
+def test_safe_upload_filename_protects_against_dos():
+    assert _safe_upload_filename("c" * 1000) == "c" * 240
 
 
 def test_parse_pdf_bytes_sanitizes_windows_client_filename(monkeypatch):

@@ -18,6 +18,8 @@ MAX_UPLOAD_FILENAME_LENGTH = 240
 def _safe_upload_filename(filename: str) -> str:
     """Return a basename for client-supplied upload filenames."""
 
+    # Bound the input to prevent performance degradation/DoS on path parsing and regex
+    filename = filename[-512:]
     normalized = filename.replace("\0", "").replace("\\", "/")
     name = PurePosixPath(normalized).name
     name = re.sub(r"[^a-zA-Z0-9_.-]", "_", name)

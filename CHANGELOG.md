@@ -8,12 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- `/parse`를 언어 비종속(language-agnostic) 파서로 일반화: MinerU `-l japan`/`-m ocr` 하드코딩을 제거하고 optional form 필드 `language`(기본 `auto` 자동 감지)와 `mode`(`auto`/`ocr`/`txt`, 기본 `auto`)로 파라미터화. `mode=auto`는 born-digital PDF가 강제 OCR을 건너뛰도록 함. 기존 동작은 `language=japan&mode=ocr`로 그대로 사용 가능.
+- `/parse`를 언어 선택형 파서로 일반화: MinerU `-l japan`/`-m ocr` 하드코딩을 제거하고 optional form 필드 `language`(MinerU 3.4.4 공식 기본 `ch`, 공개 언어군/alias 검증)와 `mode`(`auto`/`ocr`/`txt`, 기본 `auto`)로 파라미터화. `mode=auto`는 born-digital PDF가 강제 OCR을 건너뛰도록 함. 기존 입력 `language=japan&mode=ocr`는 공식 규약대로 `ch`/`ocr`로 정규화됨.
 - OpenAPI 제목/설명, README, `ArticleNode.headline` 문서를 일반 문서용 (section heading) 표현으로 재구성하여 특정 언어/신문 가정을 소비자에게 노출하지 않도록 함. 응답 스키마 필드는 하위 호환을 위해 변경하지 않음.
 
 ### Added
 - `/parse`에 대한 optional bearer 인증 게이트: 리프 서비스 자체 설정 `NEWSDOM_API_TOKEN`이 설정되면 `Authorization: Bearer <token>`을 요구(상수 시간 비교), 미설정 시 개방(개발용). `/health`는 항상 미인증 유지.
 - 서브모듈/사이드카 배포용 `docker-compose.yml`: healthcheck가 `/health`를 대상으로 하며 MinerU 번들 이미지/`NEWSDOM_MINERU_BIN` 및 readiness 주의사항을 README에 문서화.
+- [CLI] 파싱된 NewsDOM JSON에서 순수 텍스트 데이터를 추출하여 텍스트 파일 또는 stdout으로 출력하는 `tools/extract_text.py` 도구를 추가했습니다.
 
 ### Security
 - 전역 500 에러 응답에도 표준 보안 헤더를 적용하여 예외 경로에서 header 누락을 방지
@@ -25,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `newsdom_api.dom_builder._html_safe_text` 함수에 early return과 타입 체크를 도입하여 불필요한 `str()` 캐스팅을 제거함으로써 처리 속도를 개선했습니다.
 
 ### Added
+- [CLI] 여러 개의 분할된 NewsDOM JSON 파일을 하나의 문서로 병합하는 `tools/merge_dom.py` 도구를 추가했습니다.
+- [CLI] 파싱된 NewsDOM JSON 데이터를 CSV 형식으로 추출하는 `tools/export_csv.py` 도구를 추가했습니다.
+- [CLI] 파싱된 NewsDOM JSON을 HTML 포맷으로 변환하여 웹 브라우저에서 보기 쉽게 만들어주는 `tools/export_html.py` 도구를 추가했습니다.
+- [CLI] 파싱된 NewsDOM JSON이 Pydantic 스키마(`ParseResponse`)와 일치하는지 엄격하게 검증하는 `tools/validate_dom.py` 도구 추가
+- [CLI] 파싱된 NewsDOM JSON의 기사 제목(headline)과 본문(body_blocks)에서 텍스트를 검색하여 위치를 반환하는 `tools/search_dom.py` 도구 추가
 - [CLI] 파싱된 NewsDOM JSON을 Markdown 포맷으로 변환하는 `tools/export_markdown.py` 도구를 추가했습니다.
 - [CLI] `tools/batch_parse_pdf.py`에 하위 디렉터리의 PDF를 일괄 처리하고 상대 경로로 JSON을 저장하는 `--recursive` 옵션을 추가했습니다.
 - OpenAPI 문서에 contact 및 MIT license metadata를 추가하여 API 소비자가 maintainer와 라이선스 정보를 더 쉽게 확인할 수 있도록 개선

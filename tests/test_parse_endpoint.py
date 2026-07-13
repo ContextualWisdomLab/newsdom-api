@@ -190,6 +190,30 @@ def test_parse_endpoint_accepts_pdf_content_type_parameters(monkeypatch):
     assert response.status_code == 200
 
 
+def test_parse_endpoint_logs_tempfile_cleanup_failure(monkeypatch, caplog):
+    def fake_parse_pdf_bytes(file_path, filename, **kwargs):
+        return {"document_id": "fixture", "pages": []}
+
+    def failing_unlink(self, missing_ok=False):
+        raise OSError("locked temp file")
+
+    caplog.set_level("ERROR", logger="newsdom_api")
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
+    monkeypatch.setattr(Path, "unlink", failing_unlink)
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["document_id"] == "fixture"
+    assert response.json()["pages"] == []
+    assert "Failed to remove temporary upload file" in caplog.text
+
+
 def test_parse_endpoint_returns_503_for_mineru_runtime_failure(monkeypatch):
     def fake_run(cmd, check, capture_output, text, timeout=None, shell=False):
         assert check is True
@@ -393,7 +417,7 @@ def test_unhandled_exception_includes_security_headers(monkeypatch):
         == "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
     )
     assert response.headers.get("Referrer-Policy") == "no-referrer"
-    assert response.headers.get("Cache-Control") == "no-store, max-age=0"
+    assert response.headers.get("Cache-Control") == "no-store, no-cache, max-age=0"
     assert "Strict-Transport-Security" not in response.headers
 
 
@@ -418,7 +442,7 @@ def test_unhandled_exception_includes_hsts_for_forwarded_https(monkeypatch):
     )
 
 
-def test_parse_endpoint_defaults_language_and_mode_to_auto(monkeypatch):
+def test_parse_endpoint_uses_supported_language_and_auto_mode_defaults(monkeypatch):
     captured = {}
 
     def fake_parse_pdf(file_path, filename, **kwargs):
@@ -435,7 +459,7 @@ def test_parse_endpoint_defaults_language_and_mode_to_auto(monkeypatch):
     )
 
     assert response.status_code == 200
-    assert captured == {"language": "auto", "mode": "auto"}
+    assert captured == {"language": "ch", "mode": "auto"}
 
 
 def test_parse_endpoint_forwards_language_and_mode_to_parser(monkeypatch):
@@ -457,7 +481,7 @@ def test_parse_endpoint_forwards_language_and_mode_to_parser(monkeypatch):
 
     assert response.status_code == 200
     # Values are normalized (lower-cased) before reaching the parser.
-    assert captured == {"language": "japan", "mode": "ocr"}
+    assert captured == {"language": "ch", "mode": "ocr"}
 
 
 def test_parse_endpoint_rejects_invalid_mode_with_422(monkeypatch):
@@ -494,3 +518,40 @@ def test_parse_endpoint_rejects_invalid_language_with_422(monkeypatch):
 
     assert response.status_code == 422
     assert response.json()["detail"] == "Invalid parse parameters"
+
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
+    class ClientDisconnectError(Exception):
+        pass
+
+    class FailingUploadFile(_ReadTrackingUpload):
+        async def read(self, size: int = -1):
+            if not hasattr(self, "_failed"):
+                # Return valid magic bytes first to bypass structure check
+                self._failed = True
+                return b"%PDF-"
+            raise ClientDisconnectError("Client disconnected during streaming")
+
+    upload = FailingUploadFile(b"%PDF-1.4\n%synthetic\n")
+    upload.size = 1000
+
+    # We need to spy on Path.unlink to verify it's called
+    # But since it fails *during* the file read loop, the file is created on disk
+    # Let's mock Path.unlink and track if it gets called on a temporary file
+
+    unlinked_paths = []
+    original_unlink = Path.unlink
+
+    def spy_unlink(self, missing_ok=False):
+        unlinked_paths.append(str(self))
+        return original_unlink(self, missing_ok)
+
+    monkeypatch.setattr(Path, "unlink", spy_unlink)
+
+    with pytest.raises(ClientDisconnectError):
+        await parse(upload)
+
+    # We should have unlinked exactly one file, which should be in the temp directory
+    assert len(unlinked_paths) == 1
+    assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()

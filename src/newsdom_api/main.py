@@ -87,7 +87,7 @@ def _apply_security_headers(response: Response, request: Request) -> Response:
         "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
     )
     response.headers["Referrer-Policy"] = "no-referrer"
-    response.headers["Cache-Control"] = "no-store, max-age=0"
+    response.headers["Cache-Control"] = "no-store, no-cache, max-age=0"
     forwarded_proto = request.headers.get("x-forwarded-proto", "")
     is_https = request.url.scheme == "https" or forwarded_proto.lower() == "https"
     if is_https:
@@ -181,7 +181,7 @@ def _validate_pdf_structure(file_path: Path) -> None:
     description=(
         "Converts a PDF into a canonical JSON DOM document using MinerU. The "
         "optional `language` and `mode` form fields select the MinerU language "
-        "code (default `auto` detection) and parsing mode (`auto`/`ocr`/`txt`, "
+        "family (default `ch`) and parsing mode (`auto`/`ocr`/`txt`, "
         "default `auto`). When a shared secret is configured, an "
         "`Authorization: Bearer <token>` header is required."
     ),
@@ -202,8 +202,8 @@ async def parse(
         str,
         Form(
             description=(
-                "MinerU language code (e.g. `auto`, `en`, `japan`, `korean`). "
-                "`auto` detects the document language automatically."
+                "MinerU language family or compatibility alias (e.g. `ch`, "
+                "`en`, `japan`, `korean`, `arabic`, `devanagari`)."
             )
         ),
     ] = DEFAULT_LANGUAGE,
@@ -231,9 +231,11 @@ async def parse(
             status_code=422, detail=INVALID_PARSE_PARAMS_DETAIL
         ) from None
 
-    if file.size is not None and file.size > MAX_PARSE_UPLOAD_BYTES:
+    file_size = getattr(file, "size", None)
+    if file_size is not None and file_size > MAX_PARSE_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL)
 
+    tmp_path: Path | None = None
     try:
         header = await file.read(5)
         if header != b"%PDF-":
@@ -244,32 +246,38 @@ async def parse(
 
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
             tmp_path = Path(tmp.name)
+            LOGGER.debug("Created temporary upload file %s", tmp_path)
             tmp.write(header)
 
             bytes_read = len(header)
             while chunk := await file.read(8192):
                 bytes_read += len(chunk)
                 if bytes_read > MAX_PARSE_UPLOAD_BYTES:
-                    tmp_path.unlink()
+                    LOGGER.warning(
+                        "Rejecting upload over limit: %s bytes read", bytes_read
+                    )
                     raise HTTPException(
                         status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL
                     )
                 tmp.write(chunk)
 
-        try:
-            _validate_pdf_structure(tmp_path)
-            return await asyncio.to_thread(
-                parse_pdf,
-                tmp_path,
-                filename=file.filename or "upload.pdf",
-                language=resolved_language,
-                mode=resolved_mode,
-            )
-        finally:
-            if tmp_path.exists():
-                tmp_path.unlink()
+        LOGGER.debug("Wrote %s upload bytes to %s", bytes_read, tmp_path)
+        _validate_pdf_structure(tmp_path)
+        return await asyncio.to_thread(
+            parse_pdf,
+            tmp_path,
+            filename=file.filename or "upload.pdf",
+            language=resolved_language,
+            mode=resolved_mode,
+        )
 
     except MineruRuntimeUnavailableError:
         raise HTTPException(status_code=503, detail="Service Unavailable") from None
     except MineruIncompleteOutputError:
         raise HTTPException(status_code=502, detail="Bad Gateway") from None
+    finally:
+        if tmp_path is not None:
+            try:
+                tmp_path.unlink(missing_ok=True)
+            except OSError:
+                LOGGER.exception("Failed to remove temporary upload file %s", tmp_path)

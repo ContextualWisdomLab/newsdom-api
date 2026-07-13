@@ -14,8 +14,9 @@ submodule / sidecar in a larger system.
 - Service wrapper: FastAPI
 - Output: canonical JSON with pages, sections, section headings, body
   blocks, images, captions, bounding boxes, and quality metadata
-- Language-agnostic: `language` defaults to `auto` detection (any MinerU
-  language code is accepted; `japan` remains available)
+- Language-selectable: `language` defaults to MinerU's multilingual `ch` model;
+  official language families and compatibility aliases such as `japan` remain
+  available
 - Parsing `mode` defaults to `auto` so born-digital text PDFs skip forced OCR
 - Optional bearer auth on `/parse`; unauthenticated `/health` liveness probe
 
@@ -34,7 +35,7 @@ To enable real parsing with MinerU, install the MinerU CLI separately in the
 same `.venv` that `uv sync` created:
 
 ```bash
-uv pip install --python .venv/bin/python "mineru[pipeline]==3.4.0"
+uv pip install --python .venv/bin/python "mineru[pipeline]==3.4.4"
 ```
 
 On Windows, replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
@@ -87,7 +88,7 @@ install MinerU into the same virtualenv, for example:
 ```dockerfile
 FROM newsdom-api:latest
 USER root
-RUN uv pip install --python /app/.venv/bin/python "mineru[pipeline]==3.4.0"
+RUN uv pip install --python /app/.venv/bin/python "mineru[pipeline]==3.4.4"
 USER newsdom
 ```
 
@@ -121,7 +122,7 @@ curl -F "file=@sample.pdf" http://127.0.0.1:8000/parse
 
 | Field | Default | Values | Maps to |
 | ----- | ------- | ------ | ------- |
-| `language` | `auto` | any MinerU language code (`auto`, `en`, `japan`, `korean`, `ch_server`, …) | MinerU `-l` |
+| `language` | `ch` | MinerU 3.4.4 public family or alias (`ch`, `en`, `japan`, `korean`, `arabic`, `east_slavic`, `cyrillic`, `devanagari`, …) | MinerU `-l` |
 | `mode` | `auto` | `auto`, `ocr`, `txt` | MinerU `-m` |
 
 `mode=auto` lets born-digital (text-layer) PDFs skip forced OCR; `ocr` forces
@@ -133,6 +134,11 @@ explicitly:
 curl -F "file=@sample.pdf" -F "language=japan" -F "mode=ocr" \
   http://127.0.0.1:8000/parse
 ```
+
+The accepted language contract follows the official
+[MinerU 3.4.4 CLI implementation](https://github.com/opendatalab/MinerU/blob/mineru-3.4.4-released/mineru/utils/ocr_language.py).
+MinerU canonicalizes `en`, `japan`, `chinese_cht`, and `latin` to `ch`; this
+sidecar performs the same normalization before launching the subprocess.
 
 #### Authentication
 
@@ -166,7 +172,15 @@ uv run pytest
 
 ```bash
 uv run python fuzzers/dom_builder_fuzzer.py --smoke tests/fixtures/mineru_sample.json
+uv run python fuzzers/schema_response_fuzzer.py --smoke fuzzers/corpus/schema_response_fuzzer/valid_parse_response.json
+uv run python fuzzers/equivalence_metrics_fuzzer.py --smoke fuzzers/corpus/equivalence_metrics_fuzzer/structural_metrics.json
 ```
+
+Every `fuzzers/*_fuzzer.py` target is coverage-guided under Atheris and is
+picked up automatically by the ClusterFuzzLite workflow, which runs a bounded
+budget on each pull request. Targets cover the untrusted-input boundaries: the
+MinerU DOM normalizer (`build_dom`), the `ParseResponse` schema validator, and
+the equivalence metrics normalizer. See `docs/papers/` for background.
 
 The repository also enforces a `quality-gate` workflow with 100% source
 coverage and docstring audit coverage.

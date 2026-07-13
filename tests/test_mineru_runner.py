@@ -14,13 +14,13 @@ from newsdom_api.mineru_runner import (
 )
 
 
-def test_build_mineru_command_defaults_to_language_agnostic_auto(tmp_path: Path):
-    """Defaults must be language-agnostic: pipeline backend, mode auto, lang auto."""
+def test_build_mineru_command_uses_mineru_344_defaults(tmp_path: Path):
+    """Defaults must match the supported MinerU 3.4.4 CLI contract."""
     cmd = build_mineru_command(Path("input.pdf"), tmp_path)
     assert "pipeline" in cmd
-    # -m/-l flags carry the auto defaults, not the legacy japan/ocr coupling.
+    # Mode remains automatic; language uses MinerU's multilingual ch model.
     assert cmd[cmd.index("-m") + 1] == "auto"
-    assert cmd[cmd.index("-l") + 1] == "auto"
+    assert cmd[cmd.index("-l") + 1] == "ch"
     assert "japan" not in cmd
 
 
@@ -30,13 +30,13 @@ def test_build_mineru_command_honors_explicit_language_and_mode(tmp_path: Path):
         Path("input.pdf"), tmp_path, language="japan", mode="ocr"
     )
     assert cmd[cmd.index("-m") + 1] == "ocr"
-    assert cmd[cmd.index("-l") + 1] == "japan"
+    assert cmd[cmd.index("-l") + 1] == "ch"
 
 
 def test_build_mineru_command_lowercases_language_and_mode(tmp_path: Path):
     cmd = build_mineru_command(Path("input.pdf"), tmp_path, language="EN", mode="TXT")
     assert cmd[cmd.index("-m") + 1] == "txt"
-    assert cmd[cmd.index("-l") + 1] == "en"
+    assert cmd[cmd.index("-l") + 1] == "ch"
 
 
 @pytest.mark.parametrize("bad_mode", ["", "pdf", "ocr;rm", "auto ocr"])
@@ -45,7 +45,9 @@ def test_build_mineru_command_rejects_invalid_mode(tmp_path: Path, bad_mode: str
         build_mineru_command(Path("input.pdf"), tmp_path, mode=bad_mode)
 
 
-@pytest.mark.parametrize("bad_language", ["", "en; rm -rf", "-l", "12", "ja zh"])
+@pytest.mark.parametrize(
+    "bad_language", ["", "auto", "en; rm -rf", "-l", "12", "ja zh", "unknown"]
+)
 def test_build_mineru_command_rejects_invalid_language(
     tmp_path: Path, bad_language: str
 ):
@@ -55,8 +57,12 @@ def test_build_mineru_command_rejects_invalid_language(
 
 def test_normalize_mode_and_language_pass_through_valid_values():
     assert normalize_mode(" Auto ") == "auto"
-    assert normalize_language(" Japan ") == "japan"
+    assert normalize_language(" Japan ") == "ch"
     assert normalize_language("ch_server") == "ch_server"
+    assert normalize_language("UR") == "arabic"
+    assert normalize_language("uk") == "east_slavic"
+    assert normalize_language("hi") == "devanagari"
+    assert normalize_language("kk") == "cyrillic"
 
 
 def test_find_output_dir_prefers_requested_method(tmp_path: Path):

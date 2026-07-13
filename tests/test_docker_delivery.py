@@ -54,6 +54,10 @@ def _contains_pinned_python_base_image(text: str) -> bool:
     return bool(re.search(r"python:3\.12-slim@sha256:[0-9a-f]{64}", text))
 
 
+def _contains_pinned_python_test_base_image(text: str) -> bool:
+    return bool(re.search(r"python:3\.10-slim@sha256:[0-9a-f]{64}", text))
+
+
 def _contains_pinned_uv_image(text: str) -> bool:
     return bool(re.search(r"ghcr\.io/astral-sh/uv@sha256:[0-9a-f]{64}", text))
 
@@ -92,6 +96,26 @@ def test_dockerfile_uses_project_metadata_and_src_layout():
     assert _contains_pinned_uv_image(text)
 
 
+def test_test_dockerfile_pins_python_base_image():
+    text = Path("Dockerfile.test").read_text(encoding="utf-8")
+
+    assert _contains_pinned_python_test_base_image(text)
+
+
+def test_test_dockerfile_runs_as_non_root_user():
+    text = Path("Dockerfile.test").read_text(encoding="utf-8")
+
+    assert "USER ciuser" in text
+    assert "useradd --create-home" in text
+
+
+def test_test_dockerfile_defines_healthcheck():
+    text = Path("Dockerfile.test").read_text(encoding="utf-8")
+
+    assert "HEALTHCHECK" in text
+    assert "importlib.import_module('newsdom_api')" in text
+
+
 def test_dockerfile_runs_uvicorn_without_bundled_mineru_runtime():
     text = Path("Dockerfile").read_text(encoding="utf-8")
     assert "uvicorn" in text
@@ -108,7 +132,7 @@ def test_nvidia_dockerfile_installs_mineru_pipeline_stack():
     text = Path("Dockerfile.nvidia").read_text(encoding="utf-8")
     assert "nvidia/cuda:12.6.3-cudnn-runtime-ubuntu22.04@sha256:" in text
     assert "ghcr.io/astral-sh/uv@sha256:" in text
-    assert 'uv pip install --python .venv/bin/python "mineru[pipeline]==3.0.9"' in text
+    assert 'uv pip install --python .venv/bin/python "mineru[pipeline]==3.4.4"' in text
     assert "NEWSDOM_MINERU_BIN" in text
 
 
@@ -184,9 +208,10 @@ def test_healthcheck_path_matcher_ignores_later_unrelated_health_strings():
 def test_container_image_workflow_sets_up_qemu_for_multi_arch_builds():
     data = _load_container_image_workflow()
     image_steps = data["jobs"]["image"]["steps"]
+    qemu_action_prefix = "docker/setup-qemu-action@"
     assert any(
-        step.get("uses")
-        == "docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3"
+        (uses := step.get("uses", "")).startswith(qemu_action_prefix)
+        and re.fullmatch(r"[0-9a-f]{40}", uses.removeprefix(qemu_action_prefix))
         for step in image_steps
     )
 
