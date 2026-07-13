@@ -68,9 +68,11 @@ def _resolve_mineru_bin() -> str:
         return configured
     found = _cached_which("mineru")
     if not found:
-        raise FileNotFoundError(
-            "Could not find 'mineru' executable. "
-            "Ensure it is installed and on the PATH, or set NEWSDOM_MINERU_BIN."
+        raise MineruRuntimeUnavailableError(
+            stderr=(
+                "Could not find 'mineru' executable. "
+                "Ensure it is installed and on the PATH, or set NEWSDOM_MINERU_BIN."
+            )
         )
     return found
 
