@@ -59,7 +59,13 @@ def main(argv: list[str] | None = None) -> None:
     """Run extract_text main entry point."""
     parser = argparse.ArgumentParser(description="Extract text from NewsDOM JSON.")
     parser.add_argument("input", type=Path, help="Path to the JSON DOM file.")
-    parser.add_argument("-o", "--output", type=Path, help="Path to save the extracted text.", default=None)
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        help="Path to save the extracted text.",
+        default=None,
+    )
 
     args = parser.parse_args(argv)
 

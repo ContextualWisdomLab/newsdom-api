@@ -53,6 +53,25 @@ def test_parse_rejects_invalid_bearer_when_secret_set(monkeypatch, stub_parser):
     assert response.json()["detail"] == "Unauthorized"
 
 
+def test_parse_rejects_non_ascii_bearer_with_401(monkeypatch, stub_parser):
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+    client = TestClient(app)
+    # The ASGI transport expects a string header that encodes purely to latin1,
+    # but httpx handles str header values by calling .encode("ascii"). A unicode
+    # string causes a 500 error due to unhandled exceptions when passing it to
+    # the server middleware unless properly handled by encode('utf-8').
+    # To simulate exactly what caused the 500 in ASGI (non-ascii characters),
+    # we can send them as bytes so httpx passes them directly without attempting
+    # to encode with ascii.
+    response = client.post(
+        "/parse",
+        files=_PDF_FILES,
+        headers={b"Authorization": "Bearer 안녕하세요".encode("utf-8")},
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Unauthorized"
+
+
 def test_parse_accepts_valid_bearer_when_secret_set(monkeypatch, stub_parser):
     monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
     client = TestClient(app)
