@@ -99,7 +99,8 @@ def _html_safe_text(value: Any) -> str:
 def _safe_media_path(value: Any, fallback: str) -> str:
     """Return a bounded relative media path or a deterministic fallback."""
 
-    if not isinstance(value, str):
+    # ⚡ Bolt: Early truthiness return to avoid calling .strip() on empty strings
+    if not isinstance(value, str) or not value:
         return fallback
 
     raw_path = value.strip()

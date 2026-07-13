@@ -21,7 +21,8 @@ def _article_has_headline(article: dict[str, Any]) -> bool:
         return headline_present
 
     headline = article.get("headline")
-    return isinstance(headline, str) and bool(headline.strip())
+    # ⚡ Bolt: Early truthiness return to avoid allocating a stripped string when it is empty
+    return isinstance(headline, str) and bool(headline) and bool(headline.strip())
 
 
 def _process_articles(metrics: dict[str, Any], articles: list[Any]) -> None:

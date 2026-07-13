@@ -44,6 +44,10 @@
 **Learning:** In file discovery routines, eagerly resolving a glob generator into a list (e.g., `list(path.glob(...))`) causes unnecessary directory traversals and memory allocation when only a single match is needed.
 **Action:** Use `next(path.glob(...))` with a `try/except StopIteration` block to efficiently avoid this performance overhead.
 
+## 2024-07-28 - Early truthiness checks before string allocations
+**Learning:** Calling `.strip()` unconditionally on values that can be empty strings allocates and adds overhead. Adding an early `bool()` check on a string before calling `.strip()` speeds up the empty string case.
+**Action:** Include an early truthiness check (e.g. `if not value:`) before performing string allocations like `.strip()` on potentially empty strings.
+
 ## 2024-05-24 - Avoid regex for simple HTML string checks
 **Learning:** Using `re.compile().search()` for simple, fixed character sets (like `&`, `<`, `>`, `"`, `'`) in extremely hot string evaluation paths (like `_html_safe_text`) adds measurable overhead due to regex setup and execution compared to plain Python `in` substring checks.
 **Action:** Replace `HTML_ESCAPE_PATTERN.search(text)` with explicit boolean `in` checks for fixed target characters in high-frequency parsing paths to avoid regex engine overhead.
