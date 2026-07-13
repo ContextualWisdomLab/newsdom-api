@@ -42,6 +42,11 @@
 **Learning:** For large file uploads, loading the entire payload into a single Python object (even just to process or save it) creates a bottleneck where large chunks of contiguous memory are required simultaneously. The Strix security scanner will flag this as a Resource Exhaustion Vulnerability ("security theater") if you attempt to just bound a single `file.read()`.
 **Prevention:** Stream the chunks (e.g. 8192 bytes) directly to a `NamedTemporaryFile` on disk while verifying the accumulation does not exceed the maximum allowed payload size. Ensure the temporary file is securely unlinked in a `finally` block or when an upload limit exception is raised.
 
+## 2026-07-09 - Keep upload cleanup non-fatal and observable
+**Vulnerability:** Temporary-file cleanup can fail after a successful parse because of filesystem races, antivirus locks, or platform-specific deletion semantics. If cleanup exceptions are allowed to propagate, a successful parse can become a 500 while still leaving unclear forensic evidence.
+**Learning:** Cleanup must be guaranteed on all upload paths, but cleanup failure handling should be isolated from the user-facing parse result and logged with enough context for operators to see why disk hygiene failed.
+**Prevention:** Run upload temporary-file unlinking in the endpoint `finally` block, catch `OSError`, and log the temporary path at exception level without exposing it in public API responses.
+
 ## 2025-02-28 - [Subprocess argument injection via newlines]
  **Vulnerability:** Unsanitized user inputs containing newline (`\n`) and carriage return (`\r`) characters passed as arguments to subprocesses can lead to command and log injection vulnerabilities, even when `shell=False` is used, depending on how downstream CLI tools process the inputs.
  **Learning:** Standard shell metacharacter filters (like `[\0&;|`$<>]`) are insufficient to prevent injection if they omit whitespace control characters. Attackers can inject newlines to manipulate tool behavior or spoof log entries if the downstream executable processes inputs line-by-line or uses them in script evaluation.
