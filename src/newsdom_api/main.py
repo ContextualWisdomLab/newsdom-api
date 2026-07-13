@@ -156,7 +156,7 @@ async def parse(
     if file_size is not None and file_size > MAX_PARSE_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL)
 
-    tmp_path = None
+    tmp_path: Path | None = None
     try:
         header = await file.read(5)
         if header != b"%PDF-":
@@ -167,17 +167,22 @@ async def parse(
 
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
             tmp_path = Path(tmp.name)
+            LOGGER.debug("Created temporary upload file %s", tmp_path)
             tmp.write(header)
 
             bytes_read = len(header)
             while chunk := await file.read(8192):
                 bytes_read += len(chunk)
                 if bytes_read > MAX_PARSE_UPLOAD_BYTES:
+                    LOGGER.warning(
+                        "Rejecting upload over limit: %s bytes read", bytes_read
+                    )
                     raise HTTPException(
                         status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL
                     )
                 tmp.write(chunk)
 
+        LOGGER.debug("Wrote %s upload bytes to %s", bytes_read, tmp_path)
         _validate_pdf_structure(tmp_path)
         return await asyncio.to_thread(
             parse_pdf, tmp_path, filename=file.filename or "upload.pdf"
@@ -188,5 +193,8 @@ async def parse(
     except MineruIncompleteOutputError:
         raise HTTPException(status_code=502, detail="Bad Gateway") from None
     finally:
-        if tmp_path and tmp_path.exists():
-            tmp_path.unlink(missing_ok=True)
+        if tmp_path is not None:
+            try:
+                tmp_path.unlink(missing_ok=True)
+            except OSError:
+                LOGGER.exception("Failed to remove temporary upload file %s", tmp_path)
