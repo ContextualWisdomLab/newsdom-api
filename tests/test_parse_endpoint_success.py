@@ -6,7 +6,7 @@ from newsdom_api.schemas import PageNode, ParseQuality, ParseResponse
 
 def test_parse_endpoint_returns_dom(monkeypatch):
     def fake_parse_pdf_bytes(
-        data: bytes, filename: str = "upload.pdf"
+        data: bytes, filename: str = "upload.pdf", **kwargs
     ) -> ParseResponse:
         return ParseResponse(
             document_id=filename,

@@ -57,7 +57,7 @@ def test_installation_doc_uses_quoted_extras_and_clear_python_wording():
         assert token in text
     assert "python3.10 -m venv .venv" in text
     assert 'pip install -e ".[dev]"' in text
-    assert 'pip install "mineru[pipeline]==3.4.0"' in text
+    assert 'pip install "mineru[pipeline]==3.4.4"' in text
 
 
 def test_installation_doc_includes_manual_api_healthcheck_commands():

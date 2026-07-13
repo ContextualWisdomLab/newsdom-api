@@ -29,7 +29,7 @@ metadata).
 uv sync --frozen --all-extras
 
 # Optional: real MinerU parsing in the same .venv
-uv pip install --python .venv/bin/python "mineru[pipeline]==3.4.0"
+uv pip install --python .venv/bin/python "mineru[pipeline]==3.4.4"
 
 # Run the API locally
 uv run uvicorn --app-dir src newsdom_api.main:app --reload

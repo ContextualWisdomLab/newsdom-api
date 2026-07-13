@@ -11,9 +11,11 @@ def test_parse_pdf_bytes_writes_temp_file_and_builds_dom(monkeypatch):
         Path("tests/fixtures/mineru_multi_page_model.json").read_text(encoding="utf-8")
     )
 
-    def fake_run_mineru(path: Path):
+    def fake_run_mineru(path: Path, **kwargs):
         observed["path_name"] = path.name
         observed["bytes"] = path.read_bytes()
+        observed["language"] = kwargs.get("language")
+        observed["mode"] = kwargs.get("mode")
         return {
             "content_list": [
                 {
@@ -49,12 +51,14 @@ def test_parse_pdf_bytes_writes_temp_file_and_builds_dom(monkeypatch):
     ]
     assert observed["model"] == model
     assert result.document_id == "fixture"
+    assert observed["language"] == "ch"
+    assert observed["mode"] == "auto"
 
 
 def test_parse_pdf_bytes_sanitizes_client_filename(monkeypatch):
     observed = {}
 
-    def fake_run_mineru(path: Path):
+    def fake_run_mineru(path: Path, **kwargs):
         observed["path_name"] = path.name
         return {
             "content_list": [
@@ -76,7 +80,7 @@ def test_parse_pdf_bytes_sanitizes_client_filename(monkeypatch):
 def test_parse_pdf_bytes_sanitizes_null_bytes(monkeypatch):
     observed = {}
 
-    def fake_run_mineru(path: Path):
+    def fake_run_mineru(path: Path, **kwargs):
         observed["path_name"] = path.name
         return {
             "content_list": [
@@ -98,7 +102,7 @@ def test_parse_pdf_bytes_sanitizes_null_bytes(monkeypatch):
 def test_parse_pdf_bytes_sanitizes_shell_chars(monkeypatch):
     observed = {}
 
-    def fake_run_mineru(path: Path):
+    def fake_run_mineru(path: Path, **kwargs):
         observed["path_name"] = path.name
         return {
             "content_list": [
@@ -120,7 +124,7 @@ def test_parse_pdf_bytes_sanitizes_shell_chars(monkeypatch):
 def test_parse_pdf_bytes_truncates_long_sanitized_filename(monkeypatch):
     observed = {}
 
-    def fake_run_mineru(path: Path):
+    def fake_run_mineru(path: Path, **kwargs):
         observed["path_name"] = path.name
         return {
             "content_list": [
@@ -151,7 +155,7 @@ def test_safe_upload_filename_protects_against_dos():
 def test_parse_pdf_bytes_sanitizes_windows_client_filename(monkeypatch):
     observed = {}
 
-    def fake_run_mineru(path: Path):
+    def fake_run_mineru(path: Path, **kwargs):
         observed["path_name"] = path.name
         return {
             "content_list": [
@@ -173,7 +177,7 @@ def test_parse_pdf_bytes_sanitizes_windows_client_filename(monkeypatch):
 def test_parse_pdf_bytes_uses_default_for_parent_only_filename(monkeypatch):
     observed = {}
 
-    def fake_run_mineru(path: Path):
+    def fake_run_mineru(path: Path, **kwargs):
         observed["path_name"] = path.name
         return {
             "content_list": [
@@ -190,3 +194,29 @@ def test_parse_pdf_bytes_uses_default_for_parent_only_filename(monkeypatch):
     result = parse_pdf_bytes(b"pdf-bytes", filename="../..")
     assert observed["path_name"] == "upload.pdf"
     assert result.document_id == "upload"
+
+
+def test_parse_pdf_bytes_forwards_language_and_mode(monkeypatch):
+    observed = {}
+
+    def fake_run_mineru(path: Path, **kwargs):
+        observed["language"] = kwargs.get("language")
+        observed["mode"] = kwargs.get("mode")
+        return {
+            "content_list": [
+                {
+                    "type": "text",
+                    "text": "heading",
+                    "text_level": 1,
+                    "bbox": [0, 0, 1, 1],
+                }
+            ]
+        }
+
+    monkeypatch.setattr("newsdom_api.service.run_mineru", fake_run_mineru)
+    result = parse_pdf_bytes(
+        b"pdf-bytes", filename="fixture.pdf", language="japan", mode="ocr"
+    )
+    assert observed["language"] == "japan"
+    assert observed["mode"] == "ocr"
+    assert result.document_id == "fixture"

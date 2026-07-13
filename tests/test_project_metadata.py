@@ -154,7 +154,7 @@ def test_project_keeps_mineru_pipeline_stack_out_of_pyproject_metadata():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
     dependencies_section = _dependencies_section(text)
 
-    assert '"mineru[pipeline]==3.4.0"' not in dependencies_section
+    assert '"mineru[pipeline]==3.4.4"' not in dependencies_section
     assert "\nmineru = [" not in text
     assert 'mineru = "mineru.cli.app:app"' not in text
 

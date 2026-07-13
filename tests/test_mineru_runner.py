@@ -5,14 +5,116 @@ from unittest.mock import patch
 import pytest
 
 from newsdom_api.errors import MineruRuntimeUnavailableError
-from newsdom_api.mineru_runner import build_mineru_command, run_mineru
+from newsdom_api.mineru_runner import (
+    _find_output_dir,
+    build_mineru_command,
+    normalize_language,
+    normalize_mode,
+    run_mineru,
+)
 
 
-def test_build_mineru_command_uses_pipeline_backend(tmp_path: Path):
+def test_build_mineru_command_uses_mineru_344_defaults(tmp_path: Path):
+    """Defaults must match the supported MinerU 3.4.4 CLI contract."""
     cmd = build_mineru_command(Path("input.pdf"), tmp_path)
     assert "pipeline" in cmd
-    assert "ocr" in cmd
-    assert "japan" in cmd
+    # Mode remains automatic; language uses MinerU's multilingual ch model.
+    assert cmd[cmd.index("-m") + 1] == "auto"
+    assert cmd[cmd.index("-l") + 1] == "ch"
+    assert "japan" not in cmd
+
+
+def test_build_mineru_command_honors_explicit_language_and_mode(tmp_path: Path):
+    """Explicit language/mode (e.g. legacy japan/ocr) are threaded to the CLI."""
+    cmd = build_mineru_command(
+        Path("input.pdf"), tmp_path, language="japan", mode="ocr"
+    )
+    assert cmd[cmd.index("-m") + 1] == "ocr"
+    assert cmd[cmd.index("-l") + 1] == "ch"
+
+
+def test_build_mineru_command_lowercases_language_and_mode(tmp_path: Path):
+    cmd = build_mineru_command(Path("input.pdf"), tmp_path, language="EN", mode="TXT")
+    assert cmd[cmd.index("-m") + 1] == "txt"
+    assert cmd[cmd.index("-l") + 1] == "ch"
+
+
+@pytest.mark.parametrize("bad_mode", ["", "pdf", "ocr;rm", "auto ocr"])
+def test_build_mineru_command_rejects_invalid_mode(tmp_path: Path, bad_mode: str):
+    with pytest.raises(ValueError, match="Unsupported MinerU mode"):
+        build_mineru_command(Path("input.pdf"), tmp_path, mode=bad_mode)
+
+
+@pytest.mark.parametrize(
+    "bad_language", ["", "auto", "en; rm -rf", "-l", "12", "ja zh", "unknown"]
+)
+def test_build_mineru_command_rejects_invalid_language(
+    tmp_path: Path, bad_language: str
+):
+    with pytest.raises(ValueError, match="Unsupported MinerU language"):
+        build_mineru_command(Path("input.pdf"), tmp_path, language=bad_language)
+
+
+def test_normalize_mode_and_language_pass_through_valid_values():
+    assert normalize_mode(" Auto ") == "auto"
+    assert normalize_language(" Japan ") == "ch"
+    assert normalize_language("ch_server") == "ch_server"
+    assert normalize_language("UR") == "arabic"
+    assert normalize_language("uk") == "east_slavic"
+    assert normalize_language("hi") == "devanagari"
+    assert normalize_language("kk") == "cyrillic"
+
+
+def test_find_output_dir_prefers_requested_method(tmp_path: Path):
+    (tmp_path / "doc" / "ocr").mkdir(parents=True)
+    (tmp_path / "doc" / "txt").mkdir(parents=True)
+    assert _find_output_dir(tmp_path, "txt").name == "txt"
+
+
+def test_find_output_dir_falls_back_across_known_methods(tmp_path: Path):
+    # Requested "auto" is absent; discovery falls back to the produced ocr dir.
+    (tmp_path / "doc" / "ocr").mkdir(parents=True)
+    assert _find_output_dir(tmp_path, "auto").name == "ocr"
+
+
+def test_find_output_dir_raises_when_no_method_dir_exists(tmp_path: Path):
+    with pytest.raises(FileNotFoundError):
+        _find_output_dir(tmp_path, "auto")
+
+
+def test_run_mineru_forwards_language_and_mode(tmp_path: Path):
+    """run_mineru must pass the requested language/mode down to the CLI builder."""
+    input_pdf = tmp_path / "dummy.pdf"
+    input_pdf.write_text("dummy content")
+    captured = {}
+
+    def fake_build(input_pdf, output_dir, *, mineru_bin, language, mode):
+        captured["language"] = language
+        captured["mode"] = mode
+        return ["mineru"]
+
+    def fake_execute(cmd):
+        class Result:
+            stdout = "out"
+            stderr = "err"
+
+        return Result()
+
+    def fake_parse(output_dir, pdf, method):
+        captured["method"] = method
+        return [], []
+
+    with (
+        patch("newsdom_api.mineru_runner._resolve_mineru_bin", return_value="mineru"),
+        patch("newsdom_api.mineru_runner.build_mineru_command", fake_build),
+        patch("newsdom_api.mineru_runner._execute_mineru", fake_execute),
+        patch("newsdom_api.mineru_runner._parse_mineru_output", fake_parse),
+    ):
+        run_mineru(input_pdf, language="korean", mode="txt")
+
+    assert captured["language"] == "korean"
+    assert captured["mode"] == "txt"
+    assert captured["method"] == "txt"
 
 
 def test_run_mineru_handles_timeout(tmp_path: Path):

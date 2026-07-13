@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path, PurePosixPath
 
 from .dom_builder import build_dom
-from .mineru_runner import run_mineru
+from .mineru_runner import DEFAULT_LANGUAGE, DEFAULT_MODE, run_mineru
 from .schemas import ParseResponse
 
 
@@ -35,14 +35,25 @@ def _safe_upload_filename(filename: str) -> str:
     return name
 
 
-def parse_pdf(file_path: Path, filename: str = "upload.pdf") -> ParseResponse:
-    """Parse a local PDF file and return the normalized parse result."""
+def parse_pdf(
+    file_path: Path,
+    filename: str = "upload.pdf",
+    *,
+    language: str = DEFAULT_LANGUAGE,
+    mode: str = DEFAULT_MODE,
+) -> ParseResponse:
+    """Parse a local PDF file and return the normalized parse result.
+
+    ``language`` and ``mode`` are forwarded to MinerU (see
+    :func:`newsdom_api.mineru_runner.run_mineru`) and default to language-agnostic
+    automatic detection.
+    """
 
     with tempfile.TemporaryDirectory(prefix="newsdom-upload-") as tempdir:
         safe_name = _safe_upload_filename(filename)
         pdf_path = Path(tempdir) / safe_name
         shutil.copy2(file_path, pdf_path)
-        mineru_output = run_mineru(pdf_path)
+        mineru_output = run_mineru(pdf_path, language=language, mode=mode)
         response = build_dom(
             mineru_output["content_list"],
             document_id=pdf_path.stem,
@@ -51,10 +62,19 @@ def parse_pdf(file_path: Path, filename: str = "upload.pdf") -> ParseResponse:
         return response
 
 
-def parse_pdf_bytes(data: bytes, filename: str = "upload.pdf") -> ParseResponse:
-    """Persist uploaded PDF bytes temporarily and return the normalized parse result."""
+def parse_pdf_bytes(
+    data: bytes,
+    filename: str = "upload.pdf",
+    *,
+    language: str = DEFAULT_LANGUAGE,
+    mode: str = DEFAULT_MODE,
+) -> ParseResponse:
+    """Persist uploaded PDF bytes temporarily and return the normalized parse result.
+
+    ``language`` and ``mode`` are forwarded to :func:`parse_pdf`.
+    """
 
     with tempfile.TemporaryDirectory(prefix="newsdom-upload-") as tempdir:
         pdf_path = Path(tempdir) / "upload.pdf"
         pdf_path.write_bytes(data)
-        return parse_pdf(pdf_path, filename)
+        return parse_pdf(pdf_path, filename, language=language, mode=mode)

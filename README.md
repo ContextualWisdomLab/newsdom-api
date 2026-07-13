@@ -2,14 +2,23 @@
 
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/Seongho-Bae/newsdom-api/badge)](https://securityscorecards.dev/viewer/?uri=github.com/Seongho-Bae/newsdom-api)
 
-NewsDOM API parses scanned Japanese newspaper PDFs into DOM-like article trees.
+NewsDOM API is a language-agnostic PDF-to-DOM sidecar. It converts any PDF
+into a canonical JSON document tree — pages, sections, headings, body
+blocks, images, captions, and bounding boxes — using MinerU. It runs as a
+standalone FastAPI service and is designed to be embedded as a git
+submodule / sidecar in a larger system.
 
 ## Features
 
 - Primary engine: `MinerU` pipeline backend
 - Service wrapper: FastAPI
-- Output: canonical JSON with pages, articles, headlines, body
-  blocks, images, captions, and quality metadata
+- Output: canonical JSON with pages, sections, section headings, body
+  blocks, images, captions, bounding boxes, and quality metadata
+- Language-selectable: `language` defaults to MinerU's multilingual `ch` model;
+  official language families and compatibility aliases such as `japan` remain
+  available
+- Parsing `mode` defaults to `auto` so born-digital text PDFs skip forced OCR
+- Optional bearer auth on `/parse`; unauthenticated `/health` liveness probe
 
 ## Quickstart
 
@@ -26,7 +35,7 @@ To enable real parsing with MinerU, install the MinerU CLI separately in the
 same `.venv` that `uv sync` created:
 
 ```bash
-uv pip install --python .venv/bin/python "mineru[pipeline]==3.4.0"
+uv pip install --python .venv/bin/python "mineru[pipeline]==3.4.4"
 ```
 
 On Windows, replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
@@ -51,6 +60,41 @@ Silicon hosts running the API service inside Docker.
 The default image ships the API service only and does not bundle the MinerU runtime.
 `/parse` requires a compatible MinerU runtime to be available inside the container image or exposed through `NEWSDOM_MINERU_BIN`.
 
+> Readiness caveat: `/health` reports process liveness only. Because the
+> default image does not bundle MinerU, a container can report a green
+> `/health` while `/parse` still returns `503` until a MinerU runtime is
+> reachable. Treat MinerU availability as a separate readiness concern when
+> wiring this sidecar into a larger system.
+
+#### docker compose
+
+A `docker-compose.yml` is provided for standalone/sidecar use. Its healthcheck
+targets the unauthenticated `/health` endpoint:
+
+```bash
+docker compose up --build
+```
+
+Uncomment `NEWSDOM_MINERU_BIN` (path to a MinerU executable) and/or
+`NEWSDOM_API_TOKEN` (bearer secret) in the compose `environment:` block to make
+`/parse` functional and/or protected.
+
+#### Building a MinerU-bundled image
+
+To ship an image where `/parse` works behind a green `/health`, bundle a MinerU
+runtime. Either build the NVIDIA variant below, or extend the default image and
+install MinerU into the same virtualenv, for example:
+
+```dockerfile
+FROM newsdom-api:latest
+USER root
+RUN uv pip install --python /app/.venv/bin/python "mineru[pipeline]==3.4.4"
+USER newsdom
+```
+
+Alternatively mount a MinerU executable and point `NEWSDOM_MINERU_BIN` at it, so
+`/parse` no longer returns `503` behind a healthy `/health`.
+
 For heavier parsing deployments, build the optional NVIDIA-oriented variant:
 
 ```bash
@@ -72,6 +116,45 @@ provide the CUDA user-space/runtime stack required by MinerU.
 ```bash
 curl -F "file=@sample.pdf" http://127.0.0.1:8000/parse
 ```
+
+`/parse` accepts `multipart/form-data` with a required `file` part
+(`application/pdf`) and two optional form fields:
+
+| Field | Default | Values | Maps to |
+| ----- | ------- | ------ | ------- |
+| `language` | `ch` | MinerU 3.4.4 public family or alias (`ch`, `en`, `japan`, `korean`, `arabic`, `east_slavic`, `cyrillic`, `devanagari`, …) | MinerU `-l` |
+| `mode` | `auto` | `auto`, `ocr`, `txt` | MinerU `-m` |
+
+`mode=auto` lets born-digital (text-layer) PDFs skip forced OCR; `ocr` forces
+optical recognition and `txt` extracts only the embedded text layer. Invalid
+values return `422`. The previous Japanese-newspaper behavior is still available
+explicitly:
+
+```bash
+curl -F "file=@sample.pdf" -F "language=japan" -F "mode=ocr" \
+  http://127.0.0.1:8000/parse
+```
+
+The accepted language contract follows the official
+[MinerU 3.4.4 CLI implementation](https://github.com/opendatalab/MinerU/blob/mineru-3.4.4-released/mineru/utils/ocr_language.py).
+MinerU canonicalizes `en`, `japan`, `chinese_cht`, and `latin` to `ch`; this
+sidecar performs the same normalization before launching the subprocess.
+
+#### Authentication
+
+`/parse` is unauthenticated by default (development). Set the sidecar's own
+`NEWSDOM_API_TOKEN` environment variable to require a bearer token:
+
+```bash
+NEWSDOM_API_TOKEN=$(openssl rand -hex 32) \
+  uv run uvicorn --app-dir src newsdom_api.main:app
+curl -F "file=@sample.pdf" -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
+  http://127.0.0.1:8000/parse
+```
+
+Requests without a matching `Authorization: Bearer <token>` header receive
+`401`. `/health` stays unauthenticated so orchestrators can always probe it.
+Supply the token from your deployment's secret store rather than committing it.
 
 Each request is written to a request-scoped temporary directory before MinerU
 runs, and those temporary files are removed after the response completes.

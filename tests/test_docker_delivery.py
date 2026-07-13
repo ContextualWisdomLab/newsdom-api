@@ -132,7 +132,7 @@ def test_nvidia_dockerfile_installs_mineru_pipeline_stack():
     text = Path("Dockerfile.nvidia").read_text(encoding="utf-8")
     assert "nvidia/cuda:12.6.3-cudnn-runtime-ubuntu22.04@sha256:" in text
     assert "ghcr.io/astral-sh/uv@sha256:" in text
-    assert 'uv pip install --python .venv/bin/python "mineru[pipeline]==3.0.9"' in text
+    assert 'uv pip install --python .venv/bin/python "mineru[pipeline]==3.4.4"' in text
     assert "NEWSDOM_MINERU_BIN" in text
 
 
