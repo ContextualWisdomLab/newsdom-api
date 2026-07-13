@@ -23,9 +23,9 @@ def mock_json_file(tmp_path: Path) -> Path:
                         "images": [
                             {
                                 "captions": [{"text": "Img Caption"}],
-                                "footnotes": [{"text": "Img Footnote"}]
+                                "footnotes": [{"text": "Img Footnote"}],
                             }
-                        ]
+                        ],
                     },
                     {
                         "headline": "",
@@ -35,13 +35,13 @@ def mock_json_file(tmp_path: Path) -> Path:
                         "images": [
                             {
                                 "captions": ["Not a dict", {"other_key": "val"}],
-                                "footnotes": ["Not a dict", {"other_key": "val"}]
+                                "footnotes": ["Not a dict", {"other_key": "val"}],
                             }
-                        ]
-                    }
+                        ],
+                    },
                 ],
                 "ads": ["Ad Text"],
-                "footers": ["Footer Text"]
+                "footers": ["Footer Text"],
             }
         ]
     }
