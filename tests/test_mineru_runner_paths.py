@@ -61,8 +61,12 @@ def test_resolve_mineru_bin_rechecks_env_after_cached_lookup(monkeypatch):
 def test_resolve_mineru_bin_raises_when_not_found(monkeypatch):
     monkeypatch.delenv("NEWSDOM_MINERU_BIN", raising=False)
     monkeypatch.setattr(mineru_runner.shutil, "which", lambda name: None)
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(MineruRuntimeUnavailableError) as exc_info:
         mineru_runner._resolve_mineru_bin()
+
+    assert exc_info.value.returncode is None
+    assert "Could not find 'mineru' executable" in (exc_info.value.stderr or "")
+    _assert_no_private_path_material(str(exc_info.value))
 
 
 def test_find_output_dir_raises_when_missing(tmp_path: Path):
@@ -85,8 +89,10 @@ def test_build_mineru_command_preserves_safe_spaces(tmp_path: Path):
         (Path("upload.pdf;touch-pwned"), "Unsafe input PDF path"),
         (Path("upload`id`.pdf"), "Unsafe input PDF path"),
         (Path("upload.pdf"), "Unsafe MinerU executable"),
+        (Path("upload.pdf\n"), "Unsafe input PDF path"),
+        (Path("upload.pdf\r"), "Unsafe input PDF path"),
     ],
-    ids=["semicolon", "backtick", "executable"],
+    ids=["semicolon", "backtick", "executable", "newline", "carriagereturn"],
 )
 def test_build_mineru_command_rejects_shell_control_chars(
     tmp_path: Path, input_pdf: Path, match: str

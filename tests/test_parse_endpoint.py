@@ -190,6 +190,30 @@ def test_parse_endpoint_accepts_pdf_content_type_parameters(monkeypatch):
     assert response.status_code == 200
 
 
+def test_parse_endpoint_logs_tempfile_cleanup_failure(monkeypatch, caplog):
+    def fake_parse_pdf_bytes(file_path, filename):
+        return {"document_id": "fixture", "pages": []}
+
+    def failing_unlink(self, missing_ok=False):
+        raise OSError("locked temp file")
+
+    caplog.set_level("ERROR", logger="newsdom_api")
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
+    monkeypatch.setattr(Path, "unlink", failing_unlink)
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["document_id"] == "fixture"
+    assert response.json()["pages"] == []
+    assert "Failed to remove temporary upload file" in caplog.text
+
+
 def test_parse_endpoint_returns_503_for_mineru_runtime_failure(monkeypatch):
     def fake_run(cmd, check, capture_output, text, timeout=None, shell=False):
         assert check is True
@@ -393,7 +417,7 @@ def test_unhandled_exception_includes_security_headers(monkeypatch):
         == "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
     )
     assert response.headers.get("Referrer-Policy") == "no-referrer"
-    assert response.headers.get("Cache-Control") == "no-store, max-age=0"
+    assert response.headers.get("Cache-Control") == "no-store, no-cache, max-age=0"
     assert "Strict-Transport-Security" not in response.headers
 
 
@@ -416,6 +440,7 @@ def test_unhandled_exception_includes_hsts_for_forwarded_https(monkeypatch):
         response.headers.get("Strict-Transport-Security")
         == "max-age=31536000; includeSubDomains"
     )
+
 
 @pytest.mark.asyncio
 async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):

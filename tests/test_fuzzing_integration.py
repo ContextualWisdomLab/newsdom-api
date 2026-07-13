@@ -26,6 +26,20 @@ def _load_dom_builder_fuzzer_module():
     return module
 
 
+# (fuzzer script, corpus seed) pairs whose smoke mode must stay runnable in CI.
+# build.sh auto-discovers every ``*_fuzzer.py`` under fuzzers/, so each entry
+# here is also a live ClusterFuzzLite target.
+FUZZ_SMOKE_TARGETS = [
+    ("dom_builder_fuzzer", "dom_builder_fuzzer", "mineru_sample.json"),
+    ("schema_response_fuzzer", "schema_response_fuzzer", "valid_parse_response.json"),
+    (
+        "equivalence_metrics_fuzzer",
+        "equivalence_metrics_fuzzer",
+        "structural_metrics.json",
+    ),
+]
+
+
 def test_clusterfuzzlite_integration_files_exist(monkeypatch, tmp_path: Path):
     monkeypatch.chdir(tmp_path)
 
@@ -37,6 +51,12 @@ def test_clusterfuzzlite_integration_files_exist(monkeypatch, tmp_path: Path):
     assert _repo_path(
         "fuzzers", "corpus", "dom_builder_fuzzer", "mineru_sample.json"
     ).exists()
+
+
+@pytest.mark.parametrize("fuzzer,corpus_dir,seed", FUZZ_SMOKE_TARGETS)
+def test_fuzz_target_and_seed_corpus_exist(fuzzer: str, corpus_dir: str, seed: str):
+    assert _repo_path("fuzzers", f"{fuzzer}.py").exists()
+    assert _repo_path("fuzzers", "corpus", corpus_dir, seed).exists()
 
 
 def test_clusterfuzzlite_workflow_runs_pinned_python_code_change_fuzzing():
@@ -72,6 +92,83 @@ def test_clusterfuzzlite_root_builder_exception_is_documented():
     assert "ClusterFuzzLite mounts /github/workspace/build-out" in ignore_text
     assert "2026-10-31" in ignore_text
     assert "DS-0002" in ignore_text
+
+
+def _parse_trivyignore_entries() -> list[tuple[str, str]]:
+    """Return (entry id, preceding comment block) pairs from .trivyignore.
+
+    A blank line ends a comment block, so only the comment lines directly
+    above an entry count as that entry's documentation.
+    """
+    entries: list[tuple[str, str]] = []
+    comment_lines: list[str] = []
+    for line in _repo_path(".trivyignore").read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped:
+            comment_lines = []
+            continue
+        if stripped.startswith("#"):
+            comment_lines.append(stripped.lstrip("#").strip())
+            continue
+        entries.append((stripped.split()[0], " ".join(comment_lines)))
+    return entries
+
+
+def test_trivyignore_entries_each_carry_reason_and_revisit_condition():
+    # The central trivy-fs gate (security-scan.yml in ContextualWisdomLab/
+    # .github) honours this file via trivy's default --ignorefile, so every
+    # suppression silently weakens a required merge gate. Each entry must be
+    # documented inline: the id itself, the affected artifact / why it is
+    # unfixable here, and a revisit condition.
+    entries = _parse_trivyignore_entries()
+
+    assert entries, ".trivyignore lost its documented entries unexpectedly"
+    for entry, documentation in entries:
+        assert documentation, (
+            f".trivyignore entry {entry} has no comment block above it; "
+            "document the finding, why it is unfixable here, and a revisit "
+            "condition before suppressing it"
+        )
+        assert entry in documentation, (
+            f".trivyignore entry {entry} must be named in the comment block "
+            "directly above it"
+        )
+        assert "revisit" in documentation.lower(), (
+            f".trivyignore entry {entry} needs an explicit revisit condition "
+            "(e.g. 'Revisit by <date> or when <upstream fix> lands')"
+        )
+
+
+def test_trivyignore_does_not_suppress_go_ecosystem_cves():
+    # Regression guard for PR #315: automation once added CVE-2021-4238
+    # (github.com/Masterminds/goutils) and CVE-2022-26945
+    # (github.com/hashicorp/go-getter) to .trivyignore while the actual
+    # trivy-fs blocker was DS-0002 on a stale PR base. Those are Go-module
+    # vulnerabilities and this repository ships no Go code, so `trivy fs .`
+    # can never legitimately report them here. Suppressions that do not map
+    # to a reproduced finding must stay out.
+    entry_ids = {entry for entry, _ in _parse_trivyignore_entries()}
+
+    assert "CVE-2021-4238" not in entry_ids
+    assert "CVE-2022-26945" not in entry_ids
+
+    tracked = subprocess.run(
+        ["git", "ls-files"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.splitlines()
+    go_artifacts = [
+        path
+        for path in tracked
+        if Path(path).name in {"go.mod", "go.sum"} or path.endswith(".go")
+    ]
+    assert not go_artifacts, (
+        "Go artifacts appeared in the repository; re-evaluate whether "
+        "Go-ecosystem CVE suppressions in .trivyignore are now legitimate: "
+        f"{go_artifacts}"
+    )
 
 
 def test_clusterfuzzlite_build_script_uses_locked_uv_fuzz_extra():
@@ -177,6 +274,38 @@ def test_dom_builder_fuzzer_smoke_mode_runs_without_cluster(
         )
     except subprocess.TimeoutExpired as exc:
         raise AssertionError("smoke-mode fuzzer subprocess timed out") from exc
+
+    assert completed.returncode == 0, completed.stderr
+    assert "Traceback" not in completed.stderr
+
+
+@pytest.mark.parametrize("fuzzer,corpus_dir,seed", FUZZ_SMOKE_TARGETS)
+def test_fuzzer_smoke_mode_runs_without_cluster(
+    monkeypatch, tmp_path: Path, fuzzer: str, corpus_dir: str, seed: str
+):
+    monkeypatch.chdir(tmp_path)
+
+    env = dict(os.environ)
+    env["PYTHONPATH"] = str(_repo_path("src"))
+
+    try:
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(_repo_path("fuzzers", f"{fuzzer}.py")),
+                "--smoke",
+                str(_repo_path("fuzzers", "corpus", corpus_dir, seed)),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=30,
+            env=env,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise AssertionError(
+            f"smoke-mode fuzzer {fuzzer} subprocess timed out"
+        ) from exc
 
     assert completed.returncode == 0, completed.stderr
     assert "Traceback" not in completed.stderr
