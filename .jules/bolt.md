@@ -44,6 +44,6 @@
 **Learning:** In file discovery routines, eagerly resolving a glob generator into a list (e.g., `list(path.glob(...))`) causes unnecessary directory traversals and memory allocation when only a single match is needed.
 **Action:** Use `next(path.glob(...))` with a `try/except StopIteration` block to efficiently avoid this performance overhead.
 
-## 2024-07-15 - Unconditional C-function execution
-**Learning:** For Python standard library functions implemented in C (like `html.escape`), adding a Python-level pre-check (such as a regex `search()`) to conditionally skip the call adds more overhead than unconditionally calling the C function, as the C implementation has its own highly optimized fast-paths.
-**Action:** Remove Python-level conditional pre-checks before calling highly optimized C-implemented standard library functions like `html.escape` in hot paths.
+## 2024-07-15 - HTML Escape Implementation Insight
+**Learning:** Contrary to assumptions, `html.escape` in Python is a pure Python implementation (using `str.replace` chaining), not a C function. Therefore, using string membership checks (`in`) as a fast-path pre-check is actually more performant than unconditionally calling `html.escape` when most strings do not contain special characters.
+**Action:** Verify the underlying implementation (C vs Python) of standard library functions before making assumptions about their execution speed. For `html.escape`, prefer a fast-path check like `if '&' in text or '<' in text...` before calling the function.
