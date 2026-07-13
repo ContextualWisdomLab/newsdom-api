@@ -30,7 +30,7 @@ UNSAFE_MEDIA_PATH_PATTERN = re.compile(r"[\x00-\x1f\"'<>` \t\r\n]")
 def _coerce_bbox_coordinate(value: Any) -> float | None:
     """Convert a bounded, finite bounding-box coordinate into a float."""
 
-    if isinstance(value, bool):
+    if type(value) is bool:
         return None
 
     try:
@@ -99,7 +99,7 @@ def _html_safe_text(value: Any) -> str:
 def _safe_media_path(value: Any, fallback: str) -> str:
     """Return a bounded relative media path or a deterministic fallback."""
 
-    if not isinstance(value, str):
+    if type(value) is not str:
         return fallback
 
     raw_path = value.strip()
@@ -155,11 +155,11 @@ def _caption_nodes_from_items(items: Any) -> list[CaptionNode]:
     """Normalize caption-like payloads into caption nodes."""
 
     nodes: list[CaptionNode] = []
-    if not isinstance(items, list):
+    if type(items) is not list:
         return nodes
 
     for item in items:
-        if isinstance(item, dict):
+        if type(item) is dict:
             text = _html_safe_text(item.get("text") or item.get("contents"))
             if text:
                 # ⚡ Bolt: Defer expensive bbox parsing/float casting until we actually need it
@@ -241,8 +241,7 @@ def _handle_text_block(
     page: PageNode,
 ) -> ArticleNode:
     """Extract and process text and headline blocks into an ArticleNode."""
-    text_level = block.get("text_level")
-    is_headline = (text_level == 1) or (role == "section_headings")
+    is_headline = (block.get("text_level") == 1) or (role == "section_headings")
     clean_text = text.replace("\n", " ") if "\n" in text else text
     if is_headline:
         bbox = _bbox_from_values(block.get("bbox") or block.get("box"))
@@ -344,12 +343,12 @@ def _extract_page_info_by_idx(
     model: list[dict[str, Any]] | None,
 ) -> dict[int, dict[str, Any]]:
     """Extract page information from the model payload by index."""
-    page_info_by_idx: dict[int, dict[str, Any]] = {}
-    if model:
-        for index, page_model in enumerate(model):
-            page_info = page_model.get("page_info") or {}
-            page_info_by_idx[index] = page_info
-    return page_info_by_idx
+    if not model:
+        return {}
+    return {
+        index: (page_model.get("page_info") or {})
+        for index, page_model in enumerate(model)
+    }
 
 
 def _group_blocks_by_page_idx(
@@ -364,7 +363,7 @@ def _group_blocks_by_page_idx(
 
     for block in content_list:
         raw_page_idx = block.get("page_idx")
-        if isinstance(raw_page_idx, int):
+        if type(raw_page_idx) is int:
             has_page_idx = True
             normalized_page_idx = raw_page_idx
         else:
@@ -447,7 +446,7 @@ def build_dom(
 ) -> ParseResponse:
     """Normalize MinerU-style content blocks into the canonical NewsDOM schema."""
 
-    if not isinstance(content_list, list):
+    if type(content_list) is not list:
         raise ValueError("content_list must be a list of MinerU content blocks")
 
     if len(content_list) > MAX_CONTENT_BLOCKS:
