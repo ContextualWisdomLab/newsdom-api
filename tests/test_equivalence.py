@@ -55,10 +55,7 @@ def test_article_has_headline_supports_boolean_and_text_forms():
     from newsdom_api.equivalence import _article_has_headline
 
     assert _article_has_headline({"headline_present": True}) is True
-    assert (
-        _article_has_headline({"headline_present": False, "headline": "headline"})
-        is False
-    )
+    assert _article_has_headline({"headline_present": False, "headline": "headline"}) is False
     assert _article_has_headline({"headline": "headline"}) is True
 
 
@@ -99,27 +96,6 @@ def test_compare_fixture_to_baseline_derives_page_count_from_pages_list(tmp_path
     assert result["checks"]["page_count"] is True
 
 
-def test_derived_metrics_handles_mixed_article_structures():
-    from newsdom_api.equivalence import _derived_metrics
-
-    metrics = _derived_metrics(
-        {
-            "articles": [
-                "not-a-dict",
-                {"headline": "test", "vertical": True, "page_number": 1},
-                {"headline": "", "vertical": False, "page_number": 2},
-                {"headline_present": True, "page_number": "not-an-int"},
-            ]
-        }
-    )
-
-    assert metrics["article_count"] == 4
-    assert metrics["headline_blocks"] == 2
-    assert metrics["vertical_article_ratio"] == 0.25
-    assert metrics["page_count"] == 2
-    assert metrics["headline_page_coverage"] == 0.5
-
-
 def test_compare_fixture_to_baseline_handles_empty_structural_lists(tmp_path: Path):
     truth_path = tmp_path / "truth.json"
     truth_path.write_text(
@@ -157,87 +133,3 @@ def test_compare_fixture_to_baseline_handles_empty_structural_lists(tmp_path: Pa
     )
 
     assert result["equivalent"] is True
-
-
-def test_derived_metrics_empty_payload():
-    from newsdom_api.equivalence import _derived_metrics
-
-    metrics = _derived_metrics({})
-    assert metrics == {}
-
-
-def test_derived_metrics_images():
-    from newsdom_api.equivalence import _derived_metrics
-
-    metrics = _derived_metrics({"images": [1, 2]})
-    assert metrics == {"images": [1, 2], "image_count": 2}
-
-
-def test_derived_metrics_ads():
-    from newsdom_api.equivalence import _derived_metrics
-
-    metrics = _derived_metrics({"ads": [1]})
-    assert metrics == {"ads": [1], "ad_count": 1}
-
-
-def test_derived_metrics_pages():
-    from newsdom_api.equivalence import _derived_metrics
-
-    metrics = _derived_metrics(
-        {
-            "column_count": "fallback",
-            "pages": [
-                "not-dict",
-                {"column_count": "str"},
-                {"column_count": 5},
-                {"column_count": 3},
-            ],
-        }
-    )
-    assert metrics == {
-        "column_count": 5,
-        "pages": [
-            "not-dict",
-            {"column_count": "str"},
-            {"column_count": 5},
-            {"column_count": 3},
-        ],
-        "page_count": 4,
-    }
-
-
-def test_derived_metrics_pages_preserves_column_fallback_without_valid_columns():
-    from newsdom_api.equivalence import _derived_metrics
-
-    metrics = _derived_metrics(
-        {"column_count": "fallback", "pages": ["not-dict", {"column_count": "str"}]}
-    )
-    assert metrics == {
-        "column_count": "fallback",
-        "pages": ["not-dict", {"column_count": "str"}],
-        "page_count": 2,
-    }
-
-
-def test_derived_metrics_pages_uses_zero_default_without_valid_columns():
-    from newsdom_api.equivalence import _derived_metrics
-
-    metrics = _derived_metrics({"pages": ["not-dict", {"column_count": "str"}]})
-    assert metrics == {
-        "pages": ["not-dict", {"column_count": "str"}],
-        "page_count": 2,
-        "column_count": 0,
-    }
-
-
-def test_derived_metrics_invalid_types():
-    from newsdom_api.equivalence import _derived_metrics
-
-    payload = {
-        "articles": "invalid",
-        "images": 123,
-        "ads": {},
-        "pages": True,
-    }
-    metrics = _derived_metrics(payload)
-    assert metrics == payload

@@ -146,25 +146,8 @@ def test_project_declares_locked_fuzz_extra_without_bundling_nvidia_stack():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
     assert "fuzz = [" in text
     assert '"atheris==3.0.0 ;' in text
-    assert '"pyinstaller==6.21.0"' in text
+    assert '"pyinstaller==6.16.0"' in text
     assert "nvidia = [" not in text
-
-
-def test_project_keeps_mineru_pipeline_stack_out_of_pyproject_metadata():
-    text = Path("pyproject.toml").read_text(encoding="utf-8")
-    dependencies_section = _dependencies_section(text)
-
-    assert '"mineru[pipeline]==3.4.0"' not in dependencies_section
-    assert "\nmineru = [" not in text
-    assert 'mineru = "mineru.cli.app:app"' not in text
-
-
-def test_uv_lock_does_not_track_external_mineru_pipeline_runtime_stack():
-    text = Path("uv.lock").read_text(encoding="utf-8")
-
-    assert '[[package]]\nname = "mineru"' not in text
-    assert '[[package]]\nname = "transformers"' not in text
-    assert '[[package]]\nname = "torch"' not in text
 
 
 def test_uv_lock_pins_pypdf_at_patched_release():

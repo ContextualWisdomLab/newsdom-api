@@ -12,7 +12,7 @@ uv sync --frozen --all-extras
 Install the parser stack only when you need live MinerU execution:
 
 ```bash
-uv pip install --python .venv/bin/python "mineru[pipeline]==3.4.0"
+uv pip install --python .venv/bin/python "mineru[pipeline]==3.0.9"
 ```
 
 On Windows, replace `.venv/bin/python` with `.venv\Scripts\python.exe`.

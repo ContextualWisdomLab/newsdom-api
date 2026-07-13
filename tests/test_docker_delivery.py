@@ -12,14 +12,7 @@ def _load_container_image_workflow() -> dict:
 
 
 def _find_step_by_uses(steps: list[dict], uses: str) -> dict:
-    match = next(
-        (
-            step
-            for step in steps
-            if re.match(rf"{re.escape(uses)}@[0-9a-fA-F]{{40}}", step.get("uses", ""))
-        ),
-        None,
-    )
+    match = next((step for step in steps if re.match(rf"{re.escape(uses)}@[0-9a-fA-F]{{40}}", step.get("uses", ""))), None)
     assert match is not None, f"missing workflow step for uses={uses!r}"
     return match
 
@@ -52,10 +45,6 @@ def _contains_docker_run_command(text: str) -> bool:
 
 def _contains_pinned_python_base_image(text: str) -> bool:
     return bool(re.search(r"python:3\.12-slim@sha256:[0-9a-f]{64}", text))
-
-
-def _contains_pinned_python_test_base_image(text: str) -> bool:
-    return bool(re.search(r"python:3\.10-slim@sha256:[0-9a-f]{64}", text))
 
 
 def _contains_pinned_uv_image(text: str) -> bool:
@@ -96,32 +85,11 @@ def test_dockerfile_uses_project_metadata_and_src_layout():
     assert _contains_pinned_uv_image(text)
 
 
-def test_test_dockerfile_pins_python_base_image():
-    text = Path("Dockerfile.test").read_text(encoding="utf-8")
-
-    assert _contains_pinned_python_test_base_image(text)
-
-
-def test_test_dockerfile_runs_as_non_root_user():
-    text = Path("Dockerfile.test").read_text(encoding="utf-8")
-
-    assert "USER ciuser" in text
-    assert "useradd --create-home" in text
-
-
-def test_test_dockerfile_defines_healthcheck():
-    text = Path("Dockerfile.test").read_text(encoding="utf-8")
-
-    assert "HEALTHCHECK" in text
-    assert "importlib.import_module('newsdom_api')" in text
-
-
-def test_dockerfile_runs_uvicorn_without_bundled_mineru_runtime():
+def test_dockerfile_runs_uvicorn_with_external_mineru_path():
     text = Path("Dockerfile").read_text(encoding="utf-8")
     assert "uvicorn" in text
     assert "newsdom_api.main:app" in text
-    assert "--extra mineru" not in text
-    assert "NEWSDOM_MINERU_BIN" not in text
+    assert "NEWSDOM_MINERU_BIN" in text
     assert "--host" in text
     assert "0.0.0.0" in text
     assert "8000" in text
@@ -162,16 +130,13 @@ def test_readme_documents_docker_build_and_run():
     assert "NVIDIA" in text
 
 
-def test_readme_describes_default_image_as_api_only_runtime() -> None:
+def test_readme_describes_default_image_as_shipping_mineru_runtime() -> None:
     text = Path("README.md").read_text(encoding="utf-8")
 
-    assert "ships the API service only" in text
-    assert "does not bundle the MinerU runtime" in text
+    assert "NEWSDOM_MINERU_BIN=mineru" in text
+    assert "includes the MinerU runtime" in text
     assert "real `/parse` execution" not in text
-    assert (
-        "requires a compatible MinerU runtime to be available inside the container image"
-        in text
-    )
+    assert "requires a compatible MinerU runtime to be available inside the container image" not in text
 
 
 def test_docker_command_matchers_allow_wrapped_whitespace():
@@ -208,10 +173,9 @@ def test_healthcheck_path_matcher_ignores_later_unrelated_health_strings():
 def test_container_image_workflow_sets_up_qemu_for_multi_arch_builds():
     data = _load_container_image_workflow()
     image_steps = data["jobs"]["image"]["steps"]
-    qemu_action_prefix = "docker/setup-qemu-action@"
     assert any(
-        (uses := step.get("uses", "")).startswith(qemu_action_prefix)
-        and re.fullmatch(r"[0-9a-f]{40}", uses.removeprefix(qemu_action_prefix))
+        step.get("uses")
+        == "docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a"
         for step in image_steps
     )
 

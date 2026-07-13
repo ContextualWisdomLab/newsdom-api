@@ -26,7 +26,7 @@ To enable real parsing with MinerU, install the MinerU CLI separately in the
 same `.venv` that `uv sync` created:
 
 ```bash
-uv pip install --python .venv/bin/python "mineru[pipeline]==3.4.0"
+uv pip install --python .venv/bin/python "mineru[pipeline]==3.0.9"
 ```
 
 On Windows, replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
@@ -48,8 +48,9 @@ The default image exposes the REST API on port `8000` as a multi-arch service
 image. It is suitable for `linux/amd64` and `linux/arm64`, including Apple
 Silicon hosts running the API service inside Docker.
 
-The default image ships the API service only and does not bundle the MinerU runtime.
-`/parse` requires a compatible MinerU runtime to be available inside the container image or exposed through `NEWSDOM_MINERU_BIN`.
+The default image already includes the MinerU runtime and sets
+`NEWSDOM_MINERU_BIN=mineru`, so `/parse` is available without layering an extra
+OCR package into the container at runtime.
 
 For heavier parsing deployments, build the optional NVIDIA-oriented variant:
 
@@ -89,15 +90,7 @@ uv run pytest
 
 ```bash
 uv run python fuzzers/dom_builder_fuzzer.py --smoke tests/fixtures/mineru_sample.json
-uv run python fuzzers/schema_response_fuzzer.py --smoke fuzzers/corpus/schema_response_fuzzer/valid_parse_response.json
-uv run python fuzzers/equivalence_metrics_fuzzer.py --smoke fuzzers/corpus/equivalence_metrics_fuzzer/structural_metrics.json
 ```
-
-Every `fuzzers/*_fuzzer.py` target is coverage-guided under Atheris and is
-picked up automatically by the ClusterFuzzLite workflow, which runs a bounded
-budget on each pull request. Targets cover the untrusted-input boundaries: the
-MinerU DOM normalizer (`build_dom`), the `ParseResponse` schema validator, and
-the equivalence metrics normalizer. See `docs/papers/` for background.
 
 The repository also enforces a `quality-gate` workflow with 100% source
 coverage and docstring audit coverage.
@@ -112,12 +105,6 @@ baselines. For fixture provenance and regeneration notes, see
 
 Development setup, fixture handling rules, and local-only baseline
 maintenance are documented in `CONTRIBUTING.md`.
-
-Mechanical branch updates and merges are attributed to `github-actions[bot]`.
-Scratch PoC files are not committed. Failed GitHub Checks are not reviewed as URL lists.
-OpenCode Review, Strix Security Scan, and PR Review Merge Scheduler are
-provided by the organization-level required workflows in
-`ContextualWisdomLab/.github`, not copied into this repository.
 
 Security reporting guidance is documented in `SECURITY.md`.
 Version tags trigger a GitHub-native release workflow that builds

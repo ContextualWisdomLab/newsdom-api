@@ -15,10 +15,10 @@ def test_codeowners_exists_and_covers_repository() -> None:
         pattern, *owners = line.split()
         rules[pattern] = set(owners)
 
-    assert "@seonghobae" in rules["*"]
-    assert "@seonghobae" in rules[".github/"]
-    assert "@seonghobae" in rules["docs/"]
-    assert "@seonghobae" in rules["manual/"]
+    assert "@Seongho-Bae" in rules["*"]
+    assert "@Seongho-Bae" in rules[".github/"]
+    assert "@Seongho-Bae" in rules["docs/"]
+    assert "@Seongho-Bae" in rules["manual/"]
 
 
 def test_codeql_scans_python_and_actions_with_required_check_name() -> None:
