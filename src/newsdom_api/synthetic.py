@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import tempfile
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -166,9 +165,7 @@ def generate_fixture(output_dir: Path, seed: int = 7) -> tuple[Path, Path]:
     try:
         resolved_dir.relative_to(Path.cwd().resolve())
     except ValueError as exc:
-        if not output_dir.is_absolute() or not resolved_dir.is_relative_to(
-            Path(tempfile.gettempdir()).resolve()
-        ):
+        if not output_dir.is_absolute():
             raise ValueError("Path traversal detected") from exc
     resolved_dir.mkdir(parents=True, exist_ok=True)
     image_path = resolved_dir / f"synthetic_newspaper_{seed}.png"

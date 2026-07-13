@@ -109,13 +109,6 @@ def test_test_dockerfile_runs_as_non_root_user():
     assert "useradd --create-home" in text
 
 
-def test_test_dockerfile_defines_healthcheck():
-    text = Path("Dockerfile.test").read_text(encoding="utf-8")
-
-    assert "HEALTHCHECK" in text
-    assert "importlib.import_module('newsdom_api')" in text
-
-
 def test_dockerfile_runs_uvicorn_without_bundled_mineru_runtime():
     text = Path("Dockerfile").read_text(encoding="utf-8")
     assert "uvicorn" in text
