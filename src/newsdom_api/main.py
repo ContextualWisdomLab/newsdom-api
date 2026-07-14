@@ -36,6 +36,7 @@ from .schemas import HealthResponse, ParseResponse
 from .service import parse_pdf
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
+MAX_VALIDATION_PAGES = 1000
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
 PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
 INVALID_PARSE_PARAMS_DETAIL = "Invalid parse parameters"
@@ -167,6 +168,11 @@ def _validate_pdf_structure(file_path: Path) -> None:
         reader = PdfReader(file_path, strict=True)
         if len(reader.pages) < 1:
             raise ValueError("PDF has no pages")
+        if len(reader.pages) > MAX_VALIDATION_PAGES:
+            raise HTTPException(
+                status_code=413,
+                detail=PAYLOAD_TOO_LARGE_DETAIL,
+            )
     except (PdfReadError, RecursionError, ValueError, OverflowError):
         raise HTTPException(
             status_code=415,
@@ -262,7 +268,7 @@ async def parse(
                 tmp.write(chunk)
 
         LOGGER.debug("Wrote %s upload bytes to %s", bytes_read, tmp_path)
-        _validate_pdf_structure(tmp_path)
+        await asyncio.to_thread(_validate_pdf_structure, tmp_path)
         return await asyncio.to_thread(
             parse_pdf,
             tmp_path,

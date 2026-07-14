@@ -76,6 +76,26 @@ def test_parse_endpoint_rejects_non_pdf_content_type():
     assert response.json()["detail"] == "Unsupported Media Type"
 
 
+def test_parse_endpoint_rejects_pdf_max_pages_exceeded(monkeypatch):
+    """Ensure the endpoint rejects PDFs that exceed the maximum allowed page count."""
+
+    from newsdom_api import main
+
+    class MockPdfReader:
+        def __init__(self, *args, **kwargs):
+            self.pages = [None] * 1001
+
+    monkeypatch.setattr(main, "PdfReader", MockPdfReader)
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+    )
+    assert response.status_code == 413
+    assert response.json()["detail"] == "Payload Too Large"
+
+
 def test_parse_endpoint_rejects_invalid_pdf_magic_bytes():
     client = TestClient(app)
     response = client.post(
