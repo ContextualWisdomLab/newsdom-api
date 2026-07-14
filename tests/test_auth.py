@@ -53,6 +53,21 @@ def test_parse_rejects_invalid_bearer_when_secret_set(monkeypatch, stub_parser):
     assert response.json()["detail"] == "Unauthorized"
 
 
+def test_parse_rejects_non_ascii_bearer_without_500(monkeypatch, stub_parser):
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+    client = TestClient(app, raise_server_exceptions=False)
+    response = client.post(
+        "/parse",
+        files=_PDF_FILES,
+        # FastAPI allows non-ASCII characters in headers and parses them via Latin-1 or UTF-8.
+        # This string will crash `hmac.compare_digest` if not properly encoded to bytes.
+        # TestClient (httpx) explicitly requires bytes for non-ascii headers.
+        headers={"Authorization": "Bearer tøken".encode("utf-8")},
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Unauthorized"
+
+
 def test_parse_accepts_valid_bearer_when_secret_set(monkeypatch, stub_parser):
     monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
     client = TestClient(app)
