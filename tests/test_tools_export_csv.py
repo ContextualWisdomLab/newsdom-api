@@ -35,7 +35,7 @@ VALID_JSON_DATA = {
                     "article_id": "art_3",
                     "headline": "Test Headline 3",
                     "body_blocks": ["Block 3"],
-                }
+                },
             ],
         },
     ],
