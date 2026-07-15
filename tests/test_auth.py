@@ -89,3 +89,20 @@ def test_get_api_token_strips_surrounding_whitespace(monkeypatch):
 
 def test_config_module_exposes_env_var_name():
     assert config.API_TOKEN_ENV_VAR == "NEWSDOM_API_TOKEN"
+
+
+def test_parse_rejects_excessively_long_token_preventing_dos(monkeypatch, stub_parser):
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files=_PDF_FILES,
+        headers={"Authorization": "Bearer " + "a" * 1000},
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Unauthorized"
+
+
+def test_get_api_token_truncates_excessively_long_secret(monkeypatch):
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "a" * 1000)
+    assert len(get_api_token()) == 256

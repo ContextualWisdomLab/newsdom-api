@@ -27,5 +27,5 @@ def get_api_token() -> str | None:
     raw = os.environ.get(API_TOKEN_ENV_VAR)
     if raw is None:
         return None
-    token = raw.strip()
+    token = raw.strip()[:256]
     return token or None
