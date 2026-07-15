@@ -54,6 +54,8 @@ def test_main_filter_error(capsys):
         main(["not_found.json", "key"])
     captured = capsys.readouterr()
     assert "Error:" in captured.err
+
+
 def test_filter_dom_match_body(tmp_path: Path):
     input_json = tmp_path / "test.json"
     data = {
@@ -61,12 +63,10 @@ def test_filter_dom_match_body(tmp_path: Path):
             {
                 "articles": [
                     {"headline": "test", "body_blocks": ["find this keyword"]},
-                    {"headline": "test2", "body_blocks": []}
+                    {"headline": "test2", "body_blocks": []},
                 ]
             },
-            {
-                "articles": []
-            }
+            {"articles": []},
         ]
     }
     input_json.write_text(json.dumps(data))
