@@ -421,27 +421,6 @@ def test_unhandled_exception_includes_security_headers(monkeypatch):
     assert "Strict-Transport-Security" not in response.headers
 
 
-def test_unhandled_exception_includes_hsts_for_forwarded_https(monkeypatch):
-    def fake_parse_pdf_bytes(file_path, filename, **kwargs):
-        raise RuntimeError("unexpected internal explosion")
-
-    monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
-    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
-
-    client = TestClient(app, raise_server_exceptions=False)
-    response = client.post(
-        "/parse",
-        headers={"X-Forwarded-Proto": "https"},
-        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
-    )
-
-    assert response.status_code == 500
-    assert (
-        response.headers.get("Strict-Transport-Security")
-        == "max-age=31536000; includeSubDomains"
-    )
-
-
 def test_parse_endpoint_uses_supported_language_and_auto_mode_defaults(monkeypatch):
     captured = {}
 

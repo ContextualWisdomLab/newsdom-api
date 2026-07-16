@@ -94,3 +94,8 @@
 **Vulnerability:** Unhandled TypeError when hmac.compare_digest processes non-ASCII strings, leading to 500 Internal Server Error.
 **Learning:** Python hmac.compare_digest does not support comparing strings with non-ASCII characters, which can cause DoS if client inputs are not properly encoded.
 **Prevention:** Always encode strings to bytes (e.g. .encode("utf-8")) before passing them to Python hmac.compare_digest.
+
+## 2026-07-16 - HSTS Security Header Manipulation
+**Vulnerability:** Trusting `X-Forwarded-Proto` for HSTS emitting is insecure as an untrusted request header can influence a security policy.
+**Learning:** Trusting a client-controlled `X-Forwarded-Proto` header when deciding whether to emit HSTS can lead to spoofing.
+**Prevention:** Only use the ASGI request scheme (`request.url.scheme`) for HSTS decisions, ensuring it is not affected by spoofed headers.

@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CLI] 파싱된 NewsDOM JSON에서 순수 텍스트 데이터를 추출하여 텍스트 파일 또는 stdout으로 출력하는 `tools/extract_text.py` 도구를 추가했습니다.
 
 ### Security
+- 클라이언트가 변조 가능한 `X-Forwarded-Proto` 헤더에 의존하여 HSTS 보안 헤더를 설정하던 취약점을 수정하여 오직 ASGI scheme에만 기반하도록 변경
 - 파이썬 `hmac.compare_digest`에 비-ASCII 문자가 포함된 Authorization 헤더가 전달될 경우 발생하는 `TypeError`로 인한 DoS 취약점을 방지하기 위해 입력을 바이트로 인코딩하도록 수정
 - 전역 500 에러 응답에도 표준 보안 헤더를 적용하여 예외 경로에서 header 누락을 방지
 - MinerU subprocess argv 생성 시 `-`로 시작하는 option-like 인자를 거부하여 argument injection 위험을 낮춤
