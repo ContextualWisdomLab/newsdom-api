@@ -19,7 +19,13 @@ def filter_dom(
     if json_path.suffix.lower() != ".json":
         raise ValueError("File must be a .json file.")
 
-    data = json.loads(json_path.read_text(encoding="utf-8"))
+    try:
+        data = json.loads(json_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid JSON file ({json_path}): {exc}") from exc
+
+    # Validate using the canonical schema without modifying global sys.path.
+    _validate_schema_locally(data, json_path)
 
     for page in data.get("pages", []):
         if remove_ads and "ads" in page:
@@ -35,6 +41,31 @@ def filter_dom(
                     article["images"] = []
 
     return data
+
+
+def _validate_schema_locally(data: dict, json_path: Path) -> None:
+    """Validate data against ParseResponse schema locally."""
+    # Ensure sys.path modification is scoped and does not leak globally.
+    _REPO_ROOT = Path(__file__).resolve().parents[1]
+    _SRC_ROOT = str(_REPO_ROOT / "src")
+
+    path_injected = False
+    if _SRC_ROOT not in sys.path:
+        sys.path.insert(0, _SRC_ROOT)
+        path_injected = True
+
+    try:
+        from pydantic import ValidationError
+        from newsdom_api.schemas import ParseResponse
+
+        ParseResponse.model_validate(data)
+    except ValidationError as exc:
+        raise ValueError(
+            f"File {json_path} does not match ParseResponse schema: {exc}"
+        ) from exc
+    finally:
+        if path_injected:
+            sys.path.remove(_SRC_ROOT)
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -69,7 +100,10 @@ def main(argv: list[str] | None = None) -> None:
             args.output.write_text(output_json, encoding="utf-8")
         else:
             print(output_json)
-    except Exception as e:
+    except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
