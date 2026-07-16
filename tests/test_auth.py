@@ -89,3 +89,18 @@ def test_get_api_token_strips_surrounding_whitespace(monkeypatch):
 
 def test_config_module_exposes_env_var_name():
     assert config.API_TOKEN_ENV_VAR == "NEWSDOM_API_TOKEN"
+
+
+def test_parse_rejects_non_ascii_bearer_gracefully(monkeypatch, stub_parser):
+    """Ensure hmac.compare_digest does not raise a 500 TypeError on non-ASCII headers."""
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+    client = TestClient(app)
+    # Use explicit raw byte headers to bypass httpx framework-level string encoding
+    # before it hits FastAPI
+    response = client.post(
+        "/parse",
+        files=_PDF_FILES,
+        headers=[(b"Authorization", b"Bearer \xe3\x81\x82")],
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Unauthorized"
