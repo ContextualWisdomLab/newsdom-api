@@ -89,3 +89,30 @@ def test_get_api_token_strips_surrounding_whitespace(monkeypatch):
 
 def test_config_module_exposes_env_var_name():
     assert config.API_TOKEN_ENV_VAR == "NEWSDOM_API_TOKEN"
+
+
+def test_parse_rejects_overlong_bearer_token_without_calling_compare_digest(
+    monkeypatch, stub_parser
+):
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+
+    called = False
+    import hmac
+
+    original_compare = hmac.compare_digest
+
+    def mock_compare_digest(a, b):
+        nonlocal called
+        called = True
+        return original_compare(a, b)
+
+    monkeypatch.setattr("hmac.compare_digest", mock_compare_digest)
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files=_PDF_FILES,
+        headers={"Authorization": "Bearer " + "a" * 600},
+    )
+    assert response.status_code == 401
+    assert not called, "hmac.compare_digest should not be called for overlong strings"
