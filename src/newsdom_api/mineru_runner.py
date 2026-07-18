@@ -262,7 +262,8 @@ def _execute_mineru(cmd: list[str]) -> subprocess.CompletedProcess[str]:
 def _read_mineru_json(path: Path, *, artifact: str) -> Any:
     """Read a MinerU JSON artifact with safe, differentiated failure messages."""
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        # ⚡ Bolt: Read bytes directly to bypass intermediate string allocation and decoding overhead
+        return json.loads(path.read_bytes())
     except json.JSONDecodeError as exc:
         raise MineruIncompleteOutputError(f"{artifact} JSON was malformed") from exc
     except (OSError, UnicodeDecodeError) as exc:
