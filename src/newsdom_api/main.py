@@ -133,6 +133,16 @@ def require_authorization(
         return
     expected = f"Bearer {token}"
     provided = authorization or ""
+
+    # 🛡️ Sentinel: Bound length of incoming authentication headers
+    # to prevent resource exhaustion/DoS via hmac.compare_digest
+    if len(provided) > 512:
+        raise HTTPException(
+            status_code=401,
+            detail=UNAUTHORIZED_DETAIL,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     if not hmac.compare_digest(provided, expected):
         raise HTTPException(
             status_code=401,
