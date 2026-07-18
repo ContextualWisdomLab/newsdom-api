@@ -1,6 +1,6 @@
 import json
 import pytest
-from pathlib import Path
+from pathlib import Path  # noqa: E402
 from tools.minify_dom import minify_dom, main
 
 
@@ -68,10 +68,10 @@ def test_main_error(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
     assert "Error minifying JSON file" in capsys.readouterr().err
 
 
-import sys
-import importlib
-import runpy
-from pathlib import Path
+import sys  # noqa: E402
+import importlib  # noqa: E402
+import runpy  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 
 def test_minify_dom_import_path(monkeypatch):
@@ -86,7 +86,11 @@ def test_minify_dom_import_path(monkeypatch):
 
 def test_minify_dom_main_module():
     """Test if __name__ == '__main__' block coverage via run_module."""
-    try:
-        runpy.run_module("tools.minify_dom", run_name="__main__")
-    except SystemExit:
-        pass
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+        try:
+            runpy.run_module("tools.minify_dom", run_name="__main__")
+        except SystemExit:
+            pass

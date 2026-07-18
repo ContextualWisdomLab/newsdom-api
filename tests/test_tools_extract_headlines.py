@@ -71,9 +71,9 @@ def test_main_error(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
     assert "Error extracting headlines" in capsys.readouterr().err
 
 
-import sys
-import importlib
-import runpy
+import sys  # noqa: E402
+import importlib  # noqa: E402
+import runpy  # noqa: E402
 
 
 def test_extract_headlines_import_path(monkeypatch):
@@ -90,10 +90,14 @@ def test_extract_headlines_import_path(monkeypatch):
 
 def test_extract_headlines_main_module():
     """Test if __name__ == '__main__' block coverage via run_module."""
-    try:
-        runpy.run_module("tools.extract_headlines", run_name="__main__")
-    except SystemExit:
-        pass
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+        try:
+            runpy.run_module("tools.extract_headlines", run_name="__main__")
+        except SystemExit:
+            pass
 
 
 def test_extract_headlines_empty_headline(tmp_path: Path):
