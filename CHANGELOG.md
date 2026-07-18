@@ -100,3 +100,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
+
+## [0.2.1] - 2026-07-18
+### 보안 수정 (Security)
+- `Authorization` 헤더 파싱 시 비-ASCII 문자가 포함될 경우 `hmac.compare_digest`에서 발생하는 언핸들드 `TypeError` (서비스 거부(DoS) 취약점 유발)를 방지하기 위해 입력 및 기대 문자열을 바이트로 강제 인코딩하도록 수정했습니다.
