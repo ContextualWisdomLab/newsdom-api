@@ -89,3 +89,17 @@ def test_get_api_token_strips_surrounding_whitespace(monkeypatch):
 
 def test_config_module_exposes_env_var_name():
     assert config.API_TOKEN_ENV_VAR == "NEWSDOM_API_TOKEN"
+
+def test_require_authorization_rejects_oversized_header(monkeypatch, stub_parser):
+    """Reject headers over 512 characters before hmac comparison to prevent DoS."""
+    monkeypatch.setenv("NEWSDOM_API_TOKEN", "test-secret")
+    client = TestClient(app)
+    large_header = "Bearer " + "A" * 1000
+    response = client.post(
+        "/parse",
+        headers={"Authorization": large_header},
+        data={"language": "ch", "mode": "auto"},
+        files={"file": ("test.pdf", b"%PDF-", "application/pdf")},
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Unauthorized"
