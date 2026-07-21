@@ -130,10 +130,16 @@ def require_authorization(
 
     token = get_api_token()
     if token is None:
-        return
+        raise HTTPException(
+            status_code=401,
+            detail=UNAUTHORIZED_DETAIL,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     expected = f"Bearer {token}"
     provided = authorization or ""
-    if not hmac.compare_digest(provided, expected):
+    if not hmac.compare_digest(
+        provided.encode("utf-8", "replace"), expected.encode("utf-8")
+    ):
         raise HTTPException(
             status_code=401,
             detail=UNAUTHORIZED_DETAIL,
@@ -165,8 +171,11 @@ def _validate_pdf_structure(file_path: Path) -> None:
         )
     try:
         reader = PdfReader(file_path, strict=True)
-        if len(reader.pages) < 1:
+        pages = len(reader.pages)
+        if pages < 1:
             raise ValueError("PDF has no pages")
+        if pages > 5000:
+            raise ValueError("PDF has too many pages")
     except (PdfReadError, RecursionError, ValueError, OverflowError):
         raise HTTPException(
             status_code=415,
@@ -262,7 +271,7 @@ async def parse(
                 tmp.write(chunk)
 
         LOGGER.debug("Wrote %s upload bytes to %s", bytes_read, tmp_path)
-        _validate_pdf_structure(tmp_path)
+        await asyncio.to_thread(_validate_pdf_structure, tmp_path)
         return await asyncio.to_thread(
             parse_pdf,
             tmp_path,

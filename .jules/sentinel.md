@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2024-07-25 - Fail-Open Authentication and Unbounded Sync Validation
+**Vulnerability:** The `require_authorization` dependency failed open when the token was not configured, making it public. Furthermore, PDF validation constructed a strict `PdfReader` and enumerated its page tree synchronously on the event-loop, allowing crafted PDFs to cause a Denial of Service (DoS) by blocking the event loop and consuming excessive memory.
+**Learning:** Security dependencies must default to failing closed. Any synchronous validation of user-provided structural data (like PDFs) must be offloaded to worker threads and bounded by maximum size constraints to prevent resource exhaustion.
+**Prevention:** Ensure auth dependencies raise `HTTPException(401)` when secrets are missing. Wrap synchronous parsing libraries in `await asyncio.to_thread()` and explicitly enforce limits on pages/objects before deep evaluation.

@@ -555,3 +555,29 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
+
+
+import pytest  # noqa: E402
+from newsdom_api.main import require_authorization  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def bypass_auth():
+    app.dependency_overrides[require_authorization] = lambda: None
+    yield
+    app.dependency_overrides.clear()
+
+
+def test_parse_endpoint_rejects_pdf_with_too_many_pages(monkeypatch):
+    class FakeReader:
+        def __init__(self, *args, **kwargs):
+            self.pages = [1] * 5001
+
+    monkeypatch.setattr("newsdom_api.main.PdfReader", FakeReader)
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+    )
+    assert response.status_code == 415
+    assert response.json()["detail"] == "Unsupported Media Type"

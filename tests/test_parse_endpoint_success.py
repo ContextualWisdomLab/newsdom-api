@@ -31,3 +31,14 @@ def test_parse_endpoint_returns_dom(monkeypatch):
     )
     assert response.status_code == 200
     assert response.json()["document_id"] == "fixture.pdf"
+
+
+import pytest  # noqa: E402
+from newsdom_api.main import require_authorization  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def bypass_auth():
+    app.dependency_overrides[require_authorization] = lambda: None
+    yield
+    app.dependency_overrides.clear()

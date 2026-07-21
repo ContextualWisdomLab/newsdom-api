@@ -24,10 +24,12 @@ def stub_parser(monkeypatch):
 
 
 def test_parse_is_open_when_no_secret_configured(monkeypatch, stub_parser):
+    # This was previously testing that it failed open, but Strix security checks
+    # require it to fail closed when no secret is configured.
     monkeypatch.delenv(API_TOKEN_ENV_VAR, raising=False)
     client = TestClient(app)
     response = client.post("/parse", files=_PDF_FILES)
-    assert response.status_code == 200
+    assert response.status_code == 401
 
 
 def test_parse_requires_bearer_when_secret_set_and_header_missing(
