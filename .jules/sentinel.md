@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-07-21 - Fix Resource Exhaustion DoS via Unbounded Authentication Strings
+**Vulnerability:** The `/parse` API accepted unbounded strings for the `Authorization` header. Although Python's `hmac.compare_digest` returns early on length mismatches, processing extremely long strings (e.g., several megabytes) inside the authentication middleware can still consume significant CPU/memory before reaching the digest comparison, opening a vector for Resource Exhaustion (DoS).
+**Learning:** Even when using constant-time comparison functions, input parameters provided by clients (such as headers) must always have an explicit length limit applied early in the request lifecycle to defend against DoS attacks.
+**Prevention:** Always enforce strict length limits (e.g., max 512 characters) on incoming strings used for authentication or authorization validation as a defense-in-depth measure.

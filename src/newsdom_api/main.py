@@ -133,7 +133,11 @@ def require_authorization(
         return
     expected = f"Bearer {token}"
     provided = authorization or ""
-    if not hmac.compare_digest(provided, expected):
+
+    # Defense in depth: strictly bound the incoming string length to prevent
+    # Resource Exhaustion (DoS) on extreme payload sizes, even though
+    # hmac.compare_digest will return early for length mismatches.
+    if len(provided) > 512 or not hmac.compare_digest(provided, expected):
         raise HTTPException(
             status_code=401,
             detail=UNAUTHORIZED_DETAIL,
