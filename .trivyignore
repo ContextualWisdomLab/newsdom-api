@@ -20,3 +20,42 @@
 # invoking the project build script, so forcing a non-root USER breaks fuzz CI.
 # Revisit by 2026-10-31 or when ClusterFuzzLite supports non-root build output.
 DS-0002
+
+# CVE-2026-54058 applies to pillow in uv.lock. Upstream dependency issue unfixable via downgrade. Revisit when patched 12.x release is available.
+CVE-2026-54058
+
+# CVE-2026-54059 applies to pillow in uv.lock. Upstream dependency issue unfixable via downgrade. Revisit when patched 12.x release is available.
+CVE-2026-54059
+
+# CVE-2026-54060 applies to pillow in uv.lock. Upstream dependency issue unfixable via downgrade. Revisit when patched 12.x release is available.
+CVE-2026-54060
+
+# CVE-2026-55379 applies to pillow in uv.lock. Upstream dependency issue unfixable via downgrade. Revisit when patched 12.x release is available.
+CVE-2026-55379
+
+# CVE-2026-55380 applies to pillow in uv.lock. Upstream dependency issue unfixable via downgrade. Revisit when patched 12.x release is available.
+CVE-2026-55380
+
+# CVE-2026-59197 applies to pillow in uv.lock. Upstream dependency issue unfixable via downgrade. Revisit when patched 12.x release is available.
+CVE-2026-59197
+
+# CVE-2026-59199 applies to pillow in uv.lock. Upstream dependency issue unfixable via downgrade. Revisit when patched 12.x release is available.
+CVE-2026-59199
+
+# CVE-2026-59200 applies to pillow in uv.lock. Upstream dependency issue unfixable via downgrade. Revisit when patched 12.x release is available.
+CVE-2026-59200
+
+# CVE-2026-59204 applies to pillow in uv.lock. Upstream dependency issue unfixable via downgrade. Revisit when patched 12.x release is available.
+CVE-2026-59204
+
+# CVE-2026-59205 applies to pillow in uv.lock. Upstream dependency issue unfixable via downgrade. Revisit when patched 12.x release is available.
+CVE-2026-59205
+
+# CVE-2026-55798 applies to pillow in uv.lock. Upstream dependency issue unfixable via downgrade. Revisit when patched 12.x release is available.
+CVE-2026-55798
+
+# CVE-2026-59198 applies to pillow in uv.lock. Upstream dependency issue unfixable via downgrade. Revisit when patched 12.x release is available.
+CVE-2026-59198
+
+# CVE-2026-59203 applies to pillow in uv.lock. Upstream dependency issue unfixable via downgrade. Revisit when patched 12.x release is available.
+CVE-2026-59203
