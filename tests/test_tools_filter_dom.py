@@ -1498,7 +1498,6 @@ def test_main_error_fallback_unlink_exists_exception_catch_finally_remove_raise2
         monkeypatch.setattr(os, "write", mock_write)
 
         # Test branch where temp_path.exists() is False during exception handling
-
         def mock_exists(self, *args, **kwargs):
             return False
 
