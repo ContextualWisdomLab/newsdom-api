@@ -4,10 +4,13 @@ import argparse
 import json
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 
-def _check_depth(obj: dict | list | str | int | float | bool | None, current_depth: int = 0) -> None:
+def _check_depth(
+    obj: dict | list | str | int | float | bool | None, current_depth: int = 0
+) -> None:
     if current_depth > 100:
         raise ValueError("JSON nesting depth exceeds 100.")
     if isinstance(obj, dict):
@@ -32,11 +35,19 @@ def filter_dom(
     if json_path.suffix.lower() != ".json":
         raise ValueError("File must be a .json file.")
 
-    if json_path.stat().st_size > 32 * 1024 * 1024:
-        raise ValueError("Input file exceeds 32 MiB limit.")
+    fd = os.open(str(json_path), os.O_RDONLY | os.O_NOFOLLOW)
+    try:
+        st = os.fstat(fd)
+        if st.st_size > 32 * 1024 * 1024:
+            raise ValueError("Input file exceeds 32 MiB limit.")
+        raw_bytes = os.read(fd, st.st_size + 1)
+        if len(raw_bytes) > 32 * 1024 * 1024:
+            raise ValueError("Input file exceeds 32 MiB limit.")
+    finally:
+        os.close(fd)
 
     try:
-        data = json.loads(json_path.read_bytes())
+        data = json.loads(raw_bytes.decode("utf-8"))
     except json.JSONDecodeError as exc:
         raise ValueError(f"Invalid JSON file: {exc}") from exc
 
@@ -100,16 +111,18 @@ def filter_dom(
 
 def main(argv: list[str] | None = None) -> None:
     """Run the filter_dom CLI."""
-    parser = argparse.ArgumentParser(
-        description="Filter noise data from NewsDOM JSON."
-    )
+    parser = argparse.ArgumentParser(description="Filter noise data from NewsDOM JSON.")
     parser.add_argument("input", type=Path, help="Path to the JSON DOM file.")
-    parser.add_argument("-o", "--output", type=Path, help="Path to write the filtered JSON.")
+    parser.add_argument(
+        "-o", "--output", type=Path, help="Path to write the filtered JSON."
+    )
     parser.add_argument("--remove-ads", action="store_true", help="Remove ads.")
     parser.add_argument("--remove-headers", action="store_true", help="Remove headers.")
     parser.add_argument("--remove-footers", action="store_true", help="Remove footers.")
     parser.add_argument("--remove-images", action="store_true", help="Remove images.")
-    parser.add_argument("--remove-bboxes", action="store_true", help="Remove bounding boxes.")
+    parser.add_argument(
+        "--remove-bboxes", action="store_true", help="Remove bounding boxes."
+    )
 
     args = parser.parse_args(argv)
 
@@ -130,14 +143,24 @@ def main(argv: list[str] | None = None) -> None:
             raise ValueError("Output size exceeds 64 MiB limit.")
 
         if args.output:
-            out_path = args.output
-            if out_path.is_symlink():
-                raise ValueError("Output path is a symlink.")
+            out_path = args.output.resolve()
+            cwd = Path.cwd().resolve()
+            if not str(out_path).startswith(str(cwd)):
+                raise ValueError(
+                    "Output path must be within the current working directory."
+                )
 
-            flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW
-            fd = os.open(str(out_path), flags, 0o644)
-            with os.fdopen(fd, "wb") as f:
-                f.write(output_bytes)
+            fd, temp_path_str = tempfile.mkstemp(dir=str(out_path.parent))
+            temp_path = Path(temp_path_str)
+            try:
+                os.write(fd, output_bytes)
+                os.fsync(fd)
+                os.close(fd)
+                os.replace(temp_path, out_path)
+            except Exception:
+                if temp_path.exists():
+                    temp_path.unlink()
+                raise
         else:
             sys.stdout.write(output_json + "\n")
     except Exception as exc:
