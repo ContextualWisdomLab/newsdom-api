@@ -22,7 +22,8 @@ def _article_has_headline(article: dict[str, Any]) -> bool:
 
     headline = article.get("headline")
     # ⚡ Bolt: Early truthiness return to avoid allocating a stripped string when it is empty
-    return isinstance(headline, str) and bool(headline) and bool(headline.strip())
+    # ⚡ Bolt: Use .isspace() instead of .strip() to avoid unnecessary string allocations when checking for visible text
+    return isinstance(headline, str) and bool(headline) and not headline.isspace()
 
 
 def _process_articles(metrics: dict[str, Any], articles: list[Any]) -> None:
