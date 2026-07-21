@@ -1298,8 +1298,6 @@ def test_main_error_fallback_unlink_exists_exception_catch_finally_remove_raise1
     monkeypatch.setattr(tempfile, "mkstemp", mock_mkstemp)
     monkeypatch.setattr(os, "write", mock_write)
 
-    orig_unlink = Path.unlink
-
     def mock_unlink(*args, **kwargs):
         raise OSError("mocked unlink error")
 
@@ -1336,8 +1334,6 @@ def test_main_error_fallback_unlink_exists_exception_catch_finally_remove_raise1
 
     monkeypatch.setattr(tempfile, "mkstemp", mock_mkstemp)
     monkeypatch.setattr(os, "write", mock_write)
-
-    orig_exists = Path.exists
 
     def mock_exists(self, *args, **kwargs):
         return True
@@ -1378,8 +1374,6 @@ def test_main_error_fallback_unlink_exists_exception_catch_finally_remove_raise1
 
         monkeypatch.setattr(tempfile, "mkstemp", mock_mkstemp)
         monkeypatch.setattr(os, "replace", mock_replace)
-
-        orig_unlink = Path.unlink
 
         def mock_unlink(self, *args, **kwargs):
             raise Exception("Mocked unlink exception")
@@ -1462,7 +1456,6 @@ def test_main_error_fallback_unlink_exists_exception_catch_finally_remove_raise2
         monkeypatch.setattr(os, "write", mock_write)
 
         # Test line 163 specifically (which is likely `temp_path.unlink()`)
-        orig_exists = Path.exists
 
         def mock_exists(self, *args, **kwargs):
             return True
@@ -1505,7 +1498,6 @@ def test_main_error_fallback_unlink_exists_exception_catch_finally_remove_raise2
         monkeypatch.setattr(os, "write", mock_write)
 
         # Test branch where temp_path.exists() is False during exception handling
-        orig_exists = Path.exists
 
         def mock_exists(self, *args, **kwargs):
             return False
