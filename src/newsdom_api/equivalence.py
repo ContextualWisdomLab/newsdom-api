@@ -22,7 +22,7 @@ def _article_has_headline(article: dict[str, Any]) -> bool:
 
     headline = article.get("headline")
     # ⚡ Bolt: Early truthiness return to avoid allocating a stripped string when it is empty
-    return isinstance(headline, str) and bool(headline) and bool(headline.strip())
+    return bool(isinstance(headline, str) and headline and headline.strip())
 
 
 def _process_articles(metrics: dict[str, Any], articles: list[Any]) -> None:
@@ -41,7 +41,7 @@ def _process_articles(metrics: dict[str, Any], articles: list[Any]) -> None:
         if has_headline:
             headline_blocks += 1
 
-        if bool(article.get("vertical")):
+        if article.get("vertical"):
             vertical_count += 1
 
         page_number = article.get("page_number")
