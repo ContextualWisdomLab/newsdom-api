@@ -67,3 +67,7 @@
 ## 2024-05-24 - Optimize Async File Upload Chunk Size
 **Learning:** For asynchronous file uploads in FastAPI/Starlette, avoiding small chunk sizes (e.g., 8192 bytes) with `await file.read()` prevents massive threadpool and context-switching overhead.
 **Action:** Default to larger chunk sizes (e.g., 1MB / `1024 * 1024`) for significantly better performance.
+
+## 2026-07-22 - Upgrade pillow dependency and suppress setuptools CVE to pass Trivy CI
+**Learning:** Outdated dependencies in `uv.lock` can cause the `trivy-fs` CI check to fail due to known vulnerabilities. Downgrading or suppressing fixable vulnerabilities is an anti-pattern.
+**Action:** Upgraded `pillow` directly to `>=12.3.0,<13.0` using `uv add` to pull in the security fix. For the unfixable `setuptools` vulnerability (CVE-2026-59890), added a properly formatted suppression entry to `.trivyignore`.
