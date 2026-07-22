@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `tools/filter_dom.py`: JSON DOM 파일에서 특정 페이지(예: 1,3,5)만 남기거나, 이미지(`images`) 블록을 일괄 제거하여 경량화하는 필터링 도구 추가 (#345).
+- `tools/extract_toc.py`: JSON DOM 파일 내의 아티클 제목(headline)을 기반으로 목차(Table of Contents)를 텍스트 또는 JSON 형태로 추출하는 도구 추가 (#345).
+- `tools/shift_pages.py`: JSON DOM 파일 내 모든 페이지 번호(`page_number`)에 특정 오프셋(예: -2, +1)을 일괄 적용하는 도구 추가 (#345).
+
 ### Changed
 - `/parse`를 언어 선택형 파서로 일반화: MinerU `-l japan`/`-m ocr` 하드코딩을 제거하고 optional form 필드 `language`(MinerU 3.4.4 공식 기본 `ch`, 공개 언어군/alias 검증)와 `mode`(`auto`/`ocr`/`txt`, 기본 `auto`)로 파라미터화. `mode=auto`는 born-digital PDF가 강제 OCR을 건너뛰도록 함. 기존 입력 `language=japan&mode=ocr`는 공식 규약대로 `ch`/`ocr`로 정규화됨.
 - OpenAPI 제목/설명, README, `ArticleNode.headline` 문서를 일반 문서용 (section heading) 표현으로 재구성하여 특정 언어/신문 가정을 소비자에게 노출하지 않도록 함. 응답 스키마 필드는 하위 호환을 위해 변경하지 않음.
