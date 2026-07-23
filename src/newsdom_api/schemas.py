@@ -79,7 +79,6 @@ class ArticleNode(BaseModel):
         json_schema_extra={"example": "section-20231015-001"},
     )
     headline: str = Field(
-        ...,
         description=(
             "Primary section heading text. This is a generic section heading, "
             "not tied to any newspaper or language-specific concept."
@@ -149,14 +148,19 @@ class ParseQuality(BaseModel):
     """Quality metadata describing parser provenance and warnings."""
 
     status: str = Field(
-        default="success", description="Parsing operation status indicator."
+        default="success",
+        description="Parsing operation status indicator.",
+        json_schema_extra={"example": "success"},
     )
     parser: str = Field(
-        default="mineru", description="The underlying engine used to parse the PDF."
+        default="mineru",
+        description="The underlying engine used to parse the PDF.",
+        json_schema_extra={"example": "mineru"},
     )
     warnings: List[str] = Field(
         default_factory=list,
         description="Non-fatal warnings encountered during the parsing process.",
+        json_schema_extra={"example": ["Page 2: low resolution image"]},
     )
 
 
@@ -183,4 +187,5 @@ class HealthResponse(BaseModel):
     status: str = Field(
         default="ok",
         description="Current operational status of the service.",
+        json_schema_extra={"example": "ok"},
     )
