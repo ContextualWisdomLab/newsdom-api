@@ -93,12 +93,19 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     """Normalize structural metrics, preferring derivation from structural data when present."""
 
     metrics = dict(payload)
-    articles = (
-        payload.get("articles") if isinstance(payload.get("articles"), list) else None
-    )
-    images = payload.get("images") if isinstance(payload.get("images"), list) else None
-    ads = payload.get("ads") if isinstance(payload.get("ads"), list) else None
-    pages = payload.get("pages") if isinstance(payload.get("pages"), list) else None
+
+    # ⚡ Bolt: Assign .get() to local variables to avoid redundant dictionary lookups
+    articles_val = payload.get("articles")
+    articles = articles_val if isinstance(articles_val, list) else None
+
+    images_val = payload.get("images")
+    images = images_val if isinstance(images_val, list) else None
+
+    ads_val = payload.get("ads")
+    ads = ads_val if isinstance(ads_val, list) else None
+
+    pages_val = payload.get("pages")
+    pages = pages_val if isinstance(pages_val, list) else None
 
     if articles is not None:
         _process_articles(metrics, articles)
