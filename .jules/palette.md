@@ -1,3 +1,3 @@
-## $(date +%Y-%m-%d) - Enhance Developer UX with OpenAPI Schema Examples
-**Learning:** In a backend-only FastAPI project without frontend files, "UX" improvements naturally translate to Developer Experience (DX). Enhancing Pydantic schemas with `json_schema_extra={"example": ...}` rather than just using the `description` field or deprecated plural `examples` provides concrete, immediate value in the generated Swagger UI. Additionally, explicitly defining the ellipsis `...` for required fields is redundant and noisy in modern Pydantic V2 when no default is provided.
-**Action:** When working on API schemas, proactively provide representative `json_schema_extra` examples to improve the consumer documentation experience, and omit the `...` default marker to keep schema declarations clean and idiomatic.
+## 2024-05-24 - OpenAPI 스키마 예제를 통한 개발자 UX 향상
+**Learning:** 프론트엔드 파일이 없는 백엔드 전용 FastAPI 프로젝트에서 "UX" 개선은 자연스럽게 개발자 경험(DX)으로 이어집니다. Pydantic 스키마에 `json_schema_extra={"example": ...}`를 추가하면 생성된 Swagger UI에서 즉각적이고 구체적인 가치를 제공합니다. 또한 현대적인 Pydantic V2에서는 기본값이 제공되지 않을 때 필수 필드에 생략 기호 `...`를 명시적으로 정의하는 것은 불필요하고 번거롭습니다.
+**Action:** API 스키마 작업 시 API 소비자의 문서 경험을 개선하기 위해 대표적인 `json_schema_extra` 예제를 적극적으로 제공하고, 스키마 선언을 깔끔하고 관용적으로 유지하기 위해 불필요한 `...` 기본값 마커를 생략해야 합니다.
