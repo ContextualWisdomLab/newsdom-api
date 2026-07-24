@@ -90,3 +90,7 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+## 2024-05-24 - Resolve CI Trivy Vulnerability Scan Failures
+**Vulnerability:** Trivy filesystem scans in CI reported vulnerabilities in upstream dependencies (pillow, pypdf, pymdown-extensions, setuptools).
+**Learning:** For vulnerabilities in older packages where the project cannot simply upgrade the package (e.g. pinned by another library like mkdocs-material), modifying the `.trivyignore` file is necessary. For vulnerabilities that CAN be fixed (e.g., pillow), upgrade them using the `uv` package manager (`uv add "pillow>=12.3.0,<13.0"`).
+**Prevention:** Regularly scan dependencies and proactively update them. When upstream packages prevent updates, use `.trivyignore` with documented reasons and revisit dates to ensure they aren't ignored forever.

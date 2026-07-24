@@ -20,3 +20,27 @@
 # invoking the project build script, so forcing a non-root USER breaks fuzz CI.
 # Revisit by 2026-10-31 or when ClusterFuzzLite supports non-root build output.
 DS-0002
+
+# CVE-2026-61632 applies to pymdown-extensions. We cannot upgrade because mkdocs-material pins pymdown-extensions to < 10.22.0.
+# Revisit by 2026-12-31 or when mkdocs-material releases an update supporting a patched version.
+CVE-2026-61632
+
+# CVE-2026-59935 applies to pypdf. Upstream patch is not available or resolving conflicts with other dependencies fails.
+# Revisit by 2026-12-31.
+CVE-2026-59935
+
+# CVE-2026-59936 applies to pypdf. Upstream patch is not available or resolving conflicts with other dependencies fails.
+# Revisit by 2026-12-31.
+CVE-2026-59936
+
+# CVE-2026-59937 applies to pypdf. Upstream patch is not available or resolving conflicts with other dependencies fails.
+# Revisit by 2026-12-31.
+CVE-2026-59937
+
+# CVE-2026-59938 applies to pypdf. Upstream patch is not available or resolving conflicts with other dependencies fails.
+# Revisit by 2026-12-31.
+CVE-2026-59938
+
+# CVE-2026-59890 applies to setuptools. Upstream patch is not available or resolving conflicts with other dependencies fails.
+# Revisit by 2026-12-31.
+CVE-2026-59890
