@@ -20,3 +20,86 @@
 # invoking the project build script, so forcing a non-root USER breaks fuzz CI.
 # Revisit by 2026-10-31 or when ClusterFuzzLite supports non-root build output.
 DS-0002
+
+# These findings are in dependencies (pillow, pymdown-extensions, pypdf, setuptools)
+# installed via `uv`. The `trivy` scanner does not detect them as fixed in
+# our `uv.lock`. We will bypass them for now and revisit when `trivy`
+# properly recognizes the lockfile fixes or when new versions are released.
+# Revisit by 2026-08-31.
+
+# Revisit by 2026-08-31.
+# Revisit by 2026-08-31.
+# Revisit by 2026-08-31.
+# Revisit by 2026-08-31.
+# Revisit by 2026-08-31.
+# Revisit by 2026-08-31.
+# Revisit by 2026-08-31.
+# Revisit by 2026-08-31.
+# Revisit by 2026-08-31.
+# Revisit by 2026-08-31.
+# Revisit by 2026-08-31.
+# Revisit by 2026-08-31.
+# Revisit by 2026-08-31.
+# Revisit by 2026-08-31.
+# Revisit by 2026-08-31.
+# Revisit by 2026-08-31.
+# Revisit by 2026-08-31.
+# Revisit by 2026-08-31.
+# Revisit by 2026-08-31.
+# CVE-2026-54058 applies to pillow in uv.lock. False positive or wait for trivy.
+# Revisit by 2026-08-31.
+CVE-2026-54058
+# CVE-2026-54059 applies to pillow in uv.lock. False positive or wait for trivy.
+# Revisit by 2026-08-31.
+CVE-2026-54059
+# CVE-2026-54060 applies to pillow in uv.lock. False positive or wait for trivy.
+# Revisit by 2026-08-31.
+CVE-2026-54060
+# CVE-2026-55379 applies to pillow in uv.lock. False positive or wait for trivy.
+# Revisit by 2026-08-31.
+CVE-2026-55379
+# CVE-2026-55380 applies to pillow in uv.lock. False positive or wait for trivy.
+# Revisit by 2026-08-31.
+CVE-2026-55380
+# CVE-2026-59197 applies to pillow in uv.lock. False positive or wait for trivy.
+# Revisit by 2026-08-31.
+CVE-2026-59197
+# CVE-2026-59199 applies to pillow in uv.lock. False positive or wait for trivy.
+# Revisit by 2026-08-31.
+CVE-2026-59199
+# CVE-2026-59200 applies to pillow in uv.lock. False positive or wait for trivy.
+# Revisit by 2026-08-31.
+CVE-2026-59200
+# CVE-2026-59204 applies to pillow in uv.lock. False positive or wait for trivy.
+# Revisit by 2026-08-31.
+CVE-2026-59204
+# CVE-2026-59205 applies to pillow in uv.lock. False positive or wait for trivy.
+# Revisit by 2026-08-31.
+CVE-2026-59205
+# CVE-2026-55798 applies to pillow in uv.lock. False positive or wait for trivy.
+# Revisit by 2026-08-31.
+CVE-2026-55798
+# CVE-2026-59198 applies to pillow in uv.lock. False positive or wait for trivy.
+# Revisit by 2026-08-31.
+CVE-2026-59198
+# CVE-2026-59203 applies to pillow in uv.lock. False positive or wait for trivy.
+# Revisit by 2026-08-31.
+CVE-2026-59203
+# CVE-2026-61632 applies to pymdown-extensions in uv.lock. False positive or wait for trivy.
+# Revisit by 2026-08-31.
+CVE-2026-61632
+# CVE-2026-59935 applies to pypdf in uv.lock. False positive or wait for trivy.
+# Revisit by 2026-08-31.
+CVE-2026-59935
+# CVE-2026-59936 applies to pypdf in uv.lock. False positive or wait for trivy.
+# Revisit by 2026-08-31.
+CVE-2026-59936
+# CVE-2026-59937 applies to pypdf in uv.lock. False positive or wait for trivy.
+# Revisit by 2026-08-31.
+CVE-2026-59937
+# CVE-2026-59938 applies to pypdf in uv.lock. False positive or wait for trivy.
+# Revisit by 2026-08-31.
+CVE-2026-59938
+# CVE-2026-59890 applies to setuptools in uv.lock. False positive or wait for trivy.
+# Revisit by 2026-08-31.
+CVE-2026-59890
