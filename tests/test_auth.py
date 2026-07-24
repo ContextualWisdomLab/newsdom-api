@@ -53,6 +53,19 @@ def test_parse_rejects_invalid_bearer_when_secret_set(monkeypatch, stub_parser):
     assert response.json()["detail"] == "Unauthorized"
 
 
+def test_parse_rejects_excessively_long_bearer_token(monkeypatch, stub_parser):
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+    client = TestClient(app)
+    long_token = "Bearer " + "A" * 600
+    response = client.post(
+        "/parse",
+        files=_PDF_FILES,
+        headers={"Authorization": long_token},
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Unauthorized"
+
+
 def test_parse_accepts_valid_bearer_when_secret_set(monkeypatch, stub_parser):
     monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
     client = TestClient(app)

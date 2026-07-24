@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-07-24 - Prevent Resource Exhaustion via Long Auth Headers
+**Vulnerability:** The API validated `Authorization` headers using `hmac.compare_digest` without first checking the length of the provided header. Although `compare_digest` returns early on length mismatches, extremely long inputs can still cause excessive memory allocation, leading to Resource Exhaustion (DoS).
+**Learning:** For unbounded external inputs, even those passed to native C functions like `compare_digest`, strict length limits must be enforced as a defense-in-depth measure to prevent memory exhaustion and DoS attacks.
+**Prevention:** Enforce strict length limits (e.g., maximum 512 characters) on incoming strings used for authentication validation before performing cryptographic comparisons.
