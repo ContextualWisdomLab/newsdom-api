@@ -94,3 +94,7 @@
 **Vulnerability:** 클라이언트가 `Authorization` 헤더에 Non-ASCII 문자를 포함시켜 전송할 경우, FastAPI 애플리케이션의 인증 처리 로직에 사용된 `hmac.compare_digest` 함수에서 `TypeError` 예외가 발생하며, 처리되지 않은 예외로 인해 500 에러 응답을 반환하게 됨(DoS 위험 존재).
 **Learning:** Python의 `hmac.compare_digest` 함수는 Non-ASCII 문자가 포함된 문자열 비교를 지원하지 않아 예외를 발생시킨다. API 헤더로 들어오는 사용자 입력을 검증 없이 해당 함수에 직접 전달하면 잠재적인 공격 벡터가 될 수 있다.
 **Prevention:** `hmac.compare_digest`를 사용하기 전, 비교할 두 문자열을 `utf-8` 등의 안전한 인코딩 방식으로 변환(바이트 시퀀스로 변환)하여 안전하게 비교를 수행하도록 한다.
+## 2024-07-24 - CI 취약점 스캐너 실패(Trivy-fs) 해결
+**Vulnerability:** CI 파이프라인에서 실행된 `trivy-fs` 검사 결과 `uv.lock` 파일에 명시된 종속성 패키지들(`pillow`, `pymdown-extensions`, `pypdf`, `setuptools`)에 여러 개의 CRITICAL/HIGH/MEDIUM 취약점이 발견되어 워크플로우가 실패함.
+**Learning:** `.trivyignore`를 이용한 무시 처리는 상위 패키지에 패치가 없을 때 사용해야 하며, 패치가 이미 존재한다면 직접 패키지 관리자를 통해 버전 업그레이드를 하는 것이 올바른 대응이다. 또한 CI 환경(예: Strix)에서 `ERROR: STRIX_EXECUTABLE_PATH must not be group/world writable`와 같은 권한 문제 실패를 방지하기 위해서는 모든 수정 이후 커밋 전에 `chmod -R go-w .`를 실행하여 파일 권한을 안전하게 유지해야 한다.
+**Prevention:** `uv add "<package>"` 형식의 명령을 사용하여 취약점이 리포트된 패키지 버전을 직접 업그레이드하고, 마지막에 항상 `chmod -R go-w .`를 통해 그룹 쓰기 권한을 제거한다.
