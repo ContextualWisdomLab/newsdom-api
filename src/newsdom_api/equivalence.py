@@ -10,7 +10,8 @@ from typing import Any
 def load_metrics(path: Path) -> dict[str, Any]:
     """Load a JSON metrics file from disk using UTF-8 encoding."""
 
-    return json.loads(path.read_text(encoding="utf-8"))
+    # ⚡ Bolt: Fast path for json load to avoid intermediate string allocation
+    return json.loads(path.read_bytes())
 
 
 def _article_has_headline(article: dict[str, Any]) -> bool:
