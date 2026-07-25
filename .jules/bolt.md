@@ -63,3 +63,7 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2024-11-20 - Avoid unnecessary string allocation from strip when checking empty strings
+**Learning:** Checking for whitespace strings with `bool(text.strip())` forces the allocation of a new, potentially empty string on every call, which adds memory overhead in parsing hot paths.
+**Action:** When validating that an already type-checked string contains visible characters (after a fast-path truthiness check), use `not text.isspace()` to evaluate the characters in C without creating a new string object.
