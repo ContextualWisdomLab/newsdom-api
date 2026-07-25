@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-07-25 - Prevent Resource Exhaustion via Input Length Limits on Headers
+**Vulnerability:** The Authorization header validation did not enforce an explicit length limit before processing. While hmac.compare_digest operates in constant time and returns early on length mismatches, processing arbitrarily long input strings still consumes memory and can be a DoS vector at the application layer.
+**Learning:** Relying solely on downstream cryptography functions or web server defaults (like Uvicorn header limits) for DoS protection misses the opportunity for application-level defense-in-depth.
+**Prevention:** Explicitly bound the length of input strings (e.g., max 512 characters) at the application layer before feeding them to validation or cryptographic functions.

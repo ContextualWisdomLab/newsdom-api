@@ -133,6 +133,15 @@ def require_authorization(
         return
     expected = f"Bearer {token}"
     provided = authorization or ""
+
+    # Sentinel: Bound the input to prevent Resource Exhaustion (DoS) attacks on header validation
+    if len(provided) > 512:
+        raise HTTPException(
+            status_code=401,
+            detail=UNAUTHORIZED_DETAIL,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     if not hmac.compare_digest(provided, expected):
         raise HTTPException(
             status_code=401,
