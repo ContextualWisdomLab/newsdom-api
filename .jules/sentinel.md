@@ -94,3 +94,8 @@
 **Vulnerability:** Unhandled TypeError when processing non-ASCII input (like Unicode in HTTP headers) through `hmac.compare_digest()`, resulting in 500 errors and potential DoS.
 **Learning:** Python's `hmac.compare_digest()` raises a `TypeError` if provided with strings containing non-ASCII characters. Because FastAPI exception handling for 500s can bypass standard HTTP middleware, this also leads to complex application errors.
 **Prevention:** Always encode strings to bytes (e.g., using `.encode('utf-8')`) before comparing them with `hmac.compare_digest()`.
+
+## 2026-07-26 - Resolve CI Trivy Vulnerabilities
+**Vulnerability:** Trivy CI check failed due to outdated dependencies (`pillow`, `pypdf`, `setuptools`) and an upstream CVE in `pymdown-extensions`.
+**Learning:** To resolve Trivy CI vulnerabilities reported for outdated Python packages in `uv.lock`, upgrade the target dependencies directly via the package manager (`uv add <package> --upgrade`) rather than suppressing them in `.trivyignore`. For unfixable upstream CVEs (like in mkdocs dependencies), properly suppress them in `.trivyignore` following the strict repository formatting guidelines (e.g., `# Revisit by [Date]`).
+**Prevention:** Regularly upgrade dependencies via `uv` and ensure `.trivyignore` entries strictly follow the formatting expected by `tests/test_fuzzing_integration.py`.
