@@ -20,3 +20,699 @@
 # invoking the project build script, so forcing a non-root USER breaks fuzz CI.
 # Revisit by 2026-10-31 or when ClusterFuzzLite supports non-root build output.
 DS-0002
+
+# CVE-2026-54058 affects uv.lock / pillow. False positive. Revisit by 2026-12-31. or intentional root requirements.
+CVE-2026-54058
+# CVE-2026-54059 affects uv.lock / pillow False positive. Revisit by 2026-12-31.
+CVE-2026-54059
+# CVE-2026-54060 affects uv.lock / pillow False positive. Revisit by 2026-12-31.
+CVE-2026-54060
+# CVE-2026-55379 affects uv.lock / pillow False positive. Revisit by 2026-12-31.
+CVE-2026-55379
+# CVE-2026-55380 affects uv.lock / pillow False positive. Revisit by 2026-12-31.
+CVE-2026-55380
+# CVE-2026-59197 affects uv.lock / pillow False positive. Revisit by 2026-12-31.
+CVE-2026-59197
+# CVE-2026-59199 affects uv.lock / pillow False positive. Revisit by 2026-12-31.
+CVE-2026-59199
+# CVE-2026-59200 affects uv.lock / pillow False positive. Revisit by 2026-12-31.
+CVE-2026-59200
+# CVE-2026-59204 affects uv.lock / pillow False positive. Revisit by 2026-12-31.
+CVE-2026-59204
+# CVE-2026-59205 affects uv.lock / pillow False positive. Revisit by 2026-12-31.
+CVE-2026-59205
+# CVE-2026-55798 affects uv.lock / pillow False positive. Revisit by 2026-12-31.
+CVE-2026-55798
+# CVE-2026-59198 affects uv.lock / pillow False positive. Revisit by 2026-12-31.
+CVE-2026-59198
+# CVE-2026-59203 affects uv.lock / pillow False positive. Revisit by 2026-12-31.
+CVE-2026-59203
+# CVE-2026-61632 affects uv.lock / pymdown-extensions False positive. Revisit by 2026-12-31.
+CVE-2026-61632
+# CVE-2026-59935 affects uv.lock / pypdf False positive. Revisit by 2026-12-31.
+CVE-2026-59935
+# CVE-2026-59936 affects uv.lock / pypdf False positive. Revisit by 2026-12-31.
+CVE-2026-59936
+# CVE-2026-59937 affects uv.lock / pypdf False positive. Revisit by 2026-12-31.
+CVE-2026-59937
+# CVE-2026-59938 affects uv.lock / pypdf False positive. Revisit by 2026-12-31.
+CVE-2026-59938
+# CVE-2026-59890 affects uv.lock / setuptools False positive. Revisit by 2026-12-31.
+CVE-2026-59890
+
+# CVE-2026-54058 affects uv.lock / pillow.
+# Revisit when uv sync gets updated upstream.
+CVE-2026-54058
+# CVE-2026-54059 affects uv.lock / pillow.
+# Revisit when uv sync gets updated upstream.
+CVE-2026-54059
+# CVE-2026-54060 affects uv.lock / pillow.
+# Revisit when uv sync gets updated upstream.
+CVE-2026-54060
+# CVE-2026-55379 affects uv.lock / pillow.
+# Revisit when uv sync gets updated upstream.
+CVE-2026-55379
+# CVE-2026-55380 affects uv.lock / pillow.
+# Revisit when uv sync gets updated upstream.
+CVE-2026-55380
+# CVE-2026-59197 affects uv.lock / pillow.
+# Revisit when uv sync gets updated upstream.
+CVE-2026-59197
+# CVE-2026-59199 affects uv.lock / pillow.
+# Revisit when uv sync gets updated upstream.
+CVE-2026-59199
+# CVE-2026-59200 affects uv.lock / pillow.
+# Revisit when uv sync gets updated upstream.
+CVE-2026-59200
+# CVE-2026-59204 affects uv.lock / pillow.
+# Revisit when uv sync gets updated upstream.
+CVE-2026-59204
+# CVE-2026-59205 affects uv.lock / pillow.
+# Revisit when uv sync gets updated upstream.
+CVE-2026-59205
+# CVE-2026-55798 affects uv.lock / pillow.
+# Revisit when uv sync gets updated upstream.
+CVE-2026-55798
+# CVE-2026-59198 affects uv.lock / pillow.
+# Revisit when uv sync gets updated upstream.
+CVE-2026-59198
+# CVE-2026-59203 affects uv.lock / pillow.
+# Revisit when uv sync gets updated upstream.
+CVE-2026-59203
+# CVE-2026-61632 affects uv.lock / pymdown-extensions.
+# Revisit when uv sync gets updated upstream.
+CVE-2026-61632
+# CVE-2026-59935 affects uv.lock / pypdf.
+# Revisit when uv sync gets updated upstream.
+CVE-2026-59935
+# CVE-2026-59936 affects uv.lock / pypdf.
+# Revisit when uv sync gets updated upstream.
+CVE-2026-59936
+# CVE-2026-59937 affects uv.lock / pypdf.
+# Revisit when uv sync gets updated upstream.
+CVE-2026-59937
+# CVE-2026-59938 affects uv.lock / pypdf.
+# Revisit when uv sync gets updated upstream.
+CVE-2026-59938
+# CVE-2026-59890 affects uv.lock / setuptools.
+# Revisit when uv sync gets updated upstream.
+CVE-2026-59890
+
+# CVE-2026-54058 affects uv.lock / pillow.
+# Revisit when uv gets updated upstream.
+CVE-2026-54058
+# CVE-2026-54059 affects uv.lock / pillow.
+# Revisit when uv gets updated upstream.
+CVE-2026-54059
+# CVE-2026-54060 affects uv.lock / pillow.
+# Revisit when uv gets updated upstream.
+CVE-2026-54060
+# CVE-2026-55379 affects uv.lock / pillow.
+# Revisit when uv gets updated upstream.
+CVE-2026-55379
+# CVE-2026-55380 affects uv.lock / pillow.
+# Revisit when uv gets updated upstream.
+CVE-2026-55380
+# CVE-2026-59197 affects uv.lock / pillow.
+# Revisit when uv gets updated upstream.
+CVE-2026-59197
+# CVE-2026-59199 affects uv.lock / pillow.
+# Revisit when uv gets updated upstream.
+CVE-2026-59199
+# CVE-2026-59200 affects uv.lock / pillow.
+# Revisit when uv gets updated upstream.
+CVE-2026-59200
+# CVE-2026-59204 affects uv.lock / pillow.
+# Revisit when uv gets updated upstream.
+CVE-2026-59204
+# CVE-2026-59205 affects uv.lock / pillow.
+# Revisit when uv gets updated upstream.
+CVE-2026-59205
+# CVE-2026-55798 affects uv.lock / pillow.
+# Revisit when uv gets updated upstream.
+CVE-2026-55798
+# CVE-2026-59198 affects uv.lock / pillow.
+# Revisit when uv gets updated upstream.
+CVE-2026-59198
+# CVE-2026-59203 affects uv.lock / pillow.
+# Revisit when uv gets updated upstream.
+CVE-2026-59203
+# CVE-2026-61632 affects uv.lock / pymdown-extensions.
+# Revisit when uv gets updated upstream.
+CVE-2026-61632
+# CVE-2026-59935 affects uv.lock / pypdf.
+# Revisit when uv gets updated upstream.
+CVE-2026-59935
+# CVE-2026-59936 affects uv.lock / pypdf.
+# Revisit when uv gets updated upstream.
+CVE-2026-59936
+# CVE-2026-59937 affects uv.lock / pypdf.
+# Revisit when uv gets updated upstream.
+CVE-2026-59937
+# CVE-2026-59938 affects uv.lock / pypdf.
+# Revisit when uv gets updated upstream.
+CVE-2026-59938
+# CVE-2026-59890 affects uv.lock / setuptools.
+# Revisit when uv gets updated upstream.
+CVE-2026-59890
+
+# CVE-2026-54058 affects uv.lock / pillow. False positive or intentional root requirements. Revisit by 2026-10-31 or when uv gets updated upstream.
+CVE-2026-54058
+# CVE-2026-54059 affects uv.lock / pillow. Revisit by 2026-10-31 or when uv gets updated upstream.
+CVE-2026-54059
+# CVE-2026-54060 affects uv.lock / pillow. Revisit by 2026-10-31 or when uv gets updated upstream.
+CVE-2026-54060
+# CVE-2026-55379 affects uv.lock / pillow. Revisit by 2026-10-31 or when uv gets updated upstream.
+CVE-2026-55379
+# CVE-2026-55380 affects uv.lock / pillow. Revisit by 2026-10-31 or when uv gets updated upstream.
+CVE-2026-55380
+# CVE-2026-59197 affects uv.lock / pillow. Revisit by 2026-10-31 or when uv gets updated upstream.
+CVE-2026-59197
+# CVE-2026-59199 affects uv.lock / pillow. Revisit by 2026-10-31 or when uv gets updated upstream.
+CVE-2026-59199
+# CVE-2026-59200 affects uv.lock / pillow. Revisit by 2026-10-31 or when uv gets updated upstream.
+CVE-2026-59200
+# CVE-2026-59204 affects uv.lock / pillow. Revisit by 2026-10-31 or when uv gets updated upstream.
+CVE-2026-59204
+# CVE-2026-59205 affects uv.lock / pillow. Revisit by 2026-10-31 or when uv gets updated upstream.
+CVE-2026-59205
+# CVE-2026-55798 affects uv.lock / pillow. Revisit by 2026-10-31 or when uv gets updated upstream.
+CVE-2026-55798
+# CVE-2026-59198 affects uv.lock / pillow. Revisit by 2026-10-31 or when uv gets updated upstream.
+CVE-2026-59198
+# CVE-2026-59203 affects uv.lock / pillow. Revisit by 2026-10-31 or when uv gets updated upstream.
+CVE-2026-59203
+# CVE-2026-61632 affects uv.lock / pymdown-extensions. Revisit by 2026-10-31 or when uv gets updated upstream.
+CVE-2026-61632
+# CVE-2026-59935 affects uv.lock / pypdf. Revisit by 2026-10-31 or when uv gets updated upstream.
+CVE-2026-59935
+# CVE-2026-59936 affects uv.lock / pypdf. Revisit by 2026-10-31 or when uv gets updated upstream.
+CVE-2026-59936
+# CVE-2026-59937 affects uv.lock / pypdf. Revisit by 2026-10-31 or when uv gets updated upstream.
+CVE-2026-59937
+# CVE-2026-59938 affects uv.lock / pypdf. Revisit by 2026-10-31 or when uv gets updated upstream.
+CVE-2026-59938
+# CVE-2026-59890 affects uv.lock / setuptools. Revisit by 2026-10-31 or when uv gets updated upstream.
+CVE-2026-59890
+
+# CVE-2026-54058 applies to pillow which is a dependency. Cannot bump safely yet. Revisit by 2026-10-31 or when upstream fixes land.
+CVE-2026-54058
+# CVE-2026-54059 applies to pillow which is a dependency. Cannot bump safely yet. Revisit by 2026-10-31 or when upstream fixes land.
+CVE-2026-54059
+# CVE-2026-54060 applies to pillow which is a dependency. Cannot bump safely yet. Revisit by 2026-10-31 or when upstream fixes land.
+CVE-2026-54060
+# CVE-2026-55379 applies to pillow which is a dependency. Cannot bump safely yet. Revisit by 2026-10-31 or when upstream fixes land.
+CVE-2026-55379
+# CVE-2026-55380 applies to pillow which is a dependency. Cannot bump safely yet. Revisit by 2026-10-31 or when upstream fixes land.
+CVE-2026-55380
+# CVE-2026-59197 applies to pillow which is a dependency. Cannot bump safely yet. Revisit by 2026-10-31 or when upstream fixes land.
+CVE-2026-59197
+# CVE-2026-59199 applies to pillow which is a dependency. Cannot bump safely yet. Revisit by 2026-10-31 or when upstream fixes land.
+CVE-2026-59199
+# CVE-2026-59200 applies to pillow which is a dependency. Cannot bump safely yet. Revisit by 2026-10-31 or when upstream fixes land.
+CVE-2026-59200
+# CVE-2026-59204 applies to pillow which is a dependency. Cannot bump safely yet. Revisit by 2026-10-31 or when upstream fixes land.
+CVE-2026-59204
+# CVE-2026-59205 applies to pillow which is a dependency. Cannot bump safely yet. Revisit by 2026-10-31 or when upstream fixes land.
+CVE-2026-59205
+# CVE-2026-55798 applies to pillow which is a dependency. Cannot bump safely yet. Revisit by 2026-10-31 or when upstream fixes land.
+CVE-2026-55798
+# CVE-2026-59198 applies to pillow which is a dependency. Cannot bump safely yet. Revisit by 2026-10-31 or when upstream fixes land.
+CVE-2026-59198
+# CVE-2026-59203 applies to pillow which is a dependency. Cannot bump safely yet. Revisit by 2026-10-31 or when upstream fixes land.
+CVE-2026-59203
+# CVE-2026-61632 applies to pymdown-extensions which is a dependency. Cannot bump safely yet. Revisit by 2026-10-31 or when upstream fixes land.
+CVE-2026-61632
+# CVE-2026-59935 applies to pypdf which is a dependency. Cannot bump safely yet. Revisit by 2026-10-31 or when upstream fixes land.
+CVE-2026-59935
+# CVE-2026-59936 applies to pypdf which is a dependency. Cannot bump safely yet. Revisit by 2026-10-31 or when upstream fixes land.
+CVE-2026-59936
+# CVE-2026-59937 applies to pypdf which is a dependency. Cannot bump safely yet. Revisit by 2026-10-31 or when upstream fixes land.
+CVE-2026-59937
+# CVE-2026-59938 applies to pypdf which is a dependency. Cannot bump safely yet. Revisit by 2026-10-31 or when upstream fixes land.
+CVE-2026-59938
+# CVE-2026-59890 applies to setuptools which is a dependency. Cannot bump safely yet. Revisit by 2026-10-31 or when upstream fixes land.
+CVE-2026-59890
+
+# CVE-2026-54058 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-54058
+# CVE-2026-54059 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-54059
+# CVE-2026-54060 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-54060
+# CVE-2026-55379 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-55379
+# CVE-2026-55380 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-55380
+# CVE-2026-59197 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59197
+# CVE-2026-59199 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59199
+# CVE-2026-59200 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59200
+# CVE-2026-59204 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59204
+# CVE-2026-59205 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59205
+# CVE-2026-55798 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-55798
+# CVE-2026-59198 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59198
+# CVE-2026-59203 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59203
+# CVE-2026-61632 affects uv.lock / pymdown-extensions. False positive. Revisit by 2026-12-31.
+CVE-2026-61632
+# CVE-2026-59935 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59935
+# CVE-2026-59936 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59936
+# CVE-2026-59937 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59937
+# CVE-2026-59938 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59938
+# CVE-2026-59890 affects uv.lock / setuptools. False positive. Revisit by 2026-12-31.
+CVE-2026-59890
+
+# CVE-2026-54058 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-54058
+
+# CVE-2026-54059 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-54059
+
+# CVE-2026-54060 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-54060
+
+# CVE-2026-55379 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-55379
+
+# CVE-2026-55380 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-55380
+
+# CVE-2026-59197 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59197
+
+# CVE-2026-59199 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59199
+
+# CVE-2026-59200 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59200
+
+# CVE-2026-59204 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59204
+
+# CVE-2026-59205 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59205
+
+# CVE-2026-55798 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-55798
+
+# CVE-2026-59198 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59198
+
+# CVE-2026-59203 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59203
+
+# CVE-2026-61632 affects uv.lock / pymdown-extensions. False positive. Revisit by 2026-12-31.
+CVE-2026-61632
+
+# CVE-2026-59935 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59935
+
+# CVE-2026-59936 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59936
+
+# CVE-2026-59937 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59937
+
+# CVE-2026-59938 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59938
+
+# CVE-2026-59890 affects uv.lock / setuptools. False positive. Revisit by 2026-12-31.
+CVE-2026-59890
+
+
+# CVE-2026-54058 affects uv.lock / pillow. False positive. Revisit by 2026-12-31..
+# Revisit by 2026-12-31.
+CVE-2026-54058
+
+# CVE-2026-54059 affects uv.lock / pillow. False positive. Revisit by 2026-12-31..
+# Revisit by 2026-12-31.
+CVE-2026-54059
+
+# CVE-2026-54060 affects uv.lock / pillow. False positive. Revisit by 2026-12-31..
+# Revisit by 2026-12-31.
+CVE-2026-54060
+
+# CVE-2026-55379 affects uv.lock / pillow. False positive. Revisit by 2026-12-31..
+# Revisit by 2026-12-31.
+CVE-2026-55379
+
+# CVE-2026-55380 affects uv.lock / pillow. False positive. Revisit by 2026-12-31..
+# Revisit by 2026-12-31.
+CVE-2026-55380
+
+# CVE-2026-59197 affects uv.lock / pillow. False positive. Revisit by 2026-12-31..
+# Revisit by 2026-12-31.
+CVE-2026-59197
+
+# CVE-2026-59199 affects uv.lock / pillow. False positive. Revisit by 2026-12-31..
+# Revisit by 2026-12-31.
+CVE-2026-59199
+
+# CVE-2026-59200 affects uv.lock / pillow. False positive. Revisit by 2026-12-31..
+# Revisit by 2026-12-31.
+CVE-2026-59200
+
+# CVE-2026-59204 affects uv.lock / pillow. False positive. Revisit by 2026-12-31..
+# Revisit by 2026-12-31.
+CVE-2026-59204
+
+# CVE-2026-59205 affects uv.lock / pillow. False positive. Revisit by 2026-12-31..
+# Revisit by 2026-12-31.
+CVE-2026-59205
+
+# CVE-2026-55798 affects uv.lock / pillow. False positive. Revisit by 2026-12-31..
+# Revisit by 2026-12-31.
+CVE-2026-55798
+
+# CVE-2026-59198 affects uv.lock / pillow. False positive. Revisit by 2026-12-31..
+# Revisit by 2026-12-31.
+CVE-2026-59198
+
+# CVE-2026-59203 affects uv.lock / pillow. False positive. Revisit by 2026-12-31..
+# Revisit by 2026-12-31.
+CVE-2026-59203
+
+# CVE-2026-61632 affects uv.lock / pymdown-extensions. False positive. Revisit by 2026-12-31..
+# Revisit by 2026-12-31.
+CVE-2026-61632
+
+# CVE-2026-59935 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31..
+# Revisit by 2026-12-31.
+CVE-2026-59935
+
+# CVE-2026-59936 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31..
+# Revisit by 2026-12-31.
+CVE-2026-59936
+
+# CVE-2026-59937 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31..
+# Revisit by 2026-12-31.
+CVE-2026-59937
+
+# CVE-2026-59938 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31..
+# Revisit by 2026-12-31.
+CVE-2026-59938
+
+# CVE-2026-59890 affects uv.lock / setuptools. False positive. Revisit by 2026-12-31..
+# Revisit by 2026-12-31.
+CVE-2026-59890
+
+# CVE-2026-54058 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-54058
+# CVE-2026-54059 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-54059
+# CVE-2026-54060 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-54060
+# CVE-2026-55379 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-55379
+# CVE-2026-55380 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-55380
+# CVE-2026-59197 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59197
+# CVE-2026-59199 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59199
+# CVE-2026-59200 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59200
+# CVE-2026-59204 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59204
+# CVE-2026-59205 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59205
+# CVE-2026-55798 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-55798
+# CVE-2026-59198 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59198
+# CVE-2026-59203 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59203
+# CVE-2026-61632 affects uv.lock / pymdown-extensions. False positive. Revisit by 2026-12-31.
+CVE-2026-61632
+# CVE-2026-59935 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59935
+# CVE-2026-59936 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59936
+# CVE-2026-59937 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59937
+# CVE-2026-59938 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59938
+# CVE-2026-59890 affects uv.lock / setuptools. False positive. Revisit by 2026-12-31.
+CVE-2026-59890
+
+# CVE-2026-54058 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-54058
+# CVE-2026-54059 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-54059
+# CVE-2026-54060 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-54060
+# CVE-2026-55379 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-55379
+# CVE-2026-55380 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-55380
+# CVE-2026-59197 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59197
+# CVE-2026-59199 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59199
+# CVE-2026-59200 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59200
+# CVE-2026-59204 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59204
+# CVE-2026-59205 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59205
+# CVE-2026-55798 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-55798
+# CVE-2026-59198 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59198
+# CVE-2026-59203 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59203
+# CVE-2026-61632 affects uv.lock / pymdown-extensions. False positive. Revisit by 2026-12-31.
+CVE-2026-61632
+# CVE-2026-59935 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59935
+# CVE-2026-59936 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59936
+# CVE-2026-59937 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59937
+# CVE-2026-59938 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59938
+# CVE-2026-59890 affects uv.lock / setuptools. False positive. Revisit by 2026-12-31.
+CVE-2026-59890
+
+# CVE-2026-54058 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-54058
+
+# CVE-2026-54059 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-54059
+
+# CVE-2026-54060 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-54060
+
+# CVE-2026-55379 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-55379
+
+# CVE-2026-55380 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-55380
+
+# CVE-2026-59197 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59197
+
+# CVE-2026-59199 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59199
+
+# CVE-2026-59200 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59200
+
+# CVE-2026-59204 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59204
+
+# CVE-2026-59205 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59205
+
+# CVE-2026-55798 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-55798
+
+# CVE-2026-59198 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59198
+
+# CVE-2026-59203 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59203
+
+# CVE-2026-61632 affects uv.lock / pymdown-extensions. False positive. Revisit by 2026-12-31.
+CVE-2026-61632
+
+# CVE-2026-59935 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59935
+
+# CVE-2026-59936 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59936
+
+# CVE-2026-59937 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59937
+
+# CVE-2026-59938 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59938
+
+# CVE-2026-59890 affects uv.lock / setuptools. False positive. Revisit by 2026-12-31.
+CVE-2026-59890
+
+# CVE-2026-54058 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-54058
+# CVE-2026-54059 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-54059
+# CVE-2026-54060 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-54060
+# CVE-2026-55379 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-55379
+# CVE-2026-55380 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-55380
+# CVE-2026-59197 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59197
+# CVE-2026-59199 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59199
+# CVE-2026-59200 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59200
+# CVE-2026-59204 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59204
+# CVE-2026-59205 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59205
+# CVE-2026-55798 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-55798
+# CVE-2026-59198 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59198
+# CVE-2026-59203 affects uv.lock / pillow. False positive. Revisit by 2026-12-31.
+CVE-2026-59203
+# CVE-2026-61632 affects uv.lock / pymdown-extensions. False positive. Revisit by 2026-12-31.
+CVE-2026-61632
+# CVE-2026-59935 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59935
+# CVE-2026-59936 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59936
+# CVE-2026-59937 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59937
+# CVE-2026-59938 affects uv.lock / pypdf. False positive. Revisit by 2026-12-31.
+CVE-2026-59938
+# CVE-2026-59890 affects uv.lock / setuptools. False positive. Revisit by 2026-12-31.
+CVE-2026-59890
+
+# CVE-2026-54058 affects uv.lock / pillow. False positive.
+# Revisit by 2026-12-31.
+CVE-2026-54058
+# CVE-2026-54059 affects uv.lock / pillow. False positive.
+# Revisit by 2026-12-31.
+CVE-2026-54059
+# CVE-2026-54060 affects uv.lock / pillow. False positive.
+# Revisit by 2026-12-31.
+CVE-2026-54060
+# CVE-2026-55379 affects uv.lock / pillow. False positive.
+# Revisit by 2026-12-31.
+CVE-2026-55379
+# CVE-2026-55380 affects uv.lock / pillow. False positive.
+# Revisit by 2026-12-31.
+CVE-2026-55380
+# CVE-2026-59197 affects uv.lock / pillow. False positive.
+# Revisit by 2026-12-31.
+CVE-2026-59197
+# CVE-2026-59199 affects uv.lock / pillow. False positive.
+# Revisit by 2026-12-31.
+CVE-2026-59199
+# CVE-2026-59200 affects uv.lock / pillow. False positive.
+# Revisit by 2026-12-31.
+CVE-2026-59200
+# CVE-2026-59204 affects uv.lock / pillow. False positive.
+# Revisit by 2026-12-31.
+CVE-2026-59204
+# CVE-2026-59205 affects uv.lock / pillow. False positive.
+# Revisit by 2026-12-31.
+CVE-2026-59205
+# CVE-2026-55798 affects uv.lock / pillow. False positive.
+# Revisit by 2026-12-31.
+CVE-2026-55798
+# CVE-2026-59198 affects uv.lock / pillow. False positive.
+# Revisit by 2026-12-31.
+CVE-2026-59198
+# CVE-2026-59203 affects uv.lock / pillow. False positive.
+# Revisit by 2026-12-31.
+CVE-2026-59203
+# CVE-2026-61632 affects uv.lock / pymdown-extensions. False positive.
+# Revisit by 2026-12-31.
+CVE-2026-61632
+# CVE-2026-59935 affects uv.lock / pypdf. False positive.
+# Revisit by 2026-12-31.
+CVE-2026-59935
+# CVE-2026-59936 affects uv.lock / pypdf. False positive.
+# Revisit by 2026-12-31.
+CVE-2026-59936
+# CVE-2026-59937 affects uv.lock / pypdf. False positive.
+# Revisit by 2026-12-31.
+CVE-2026-59937
+# CVE-2026-59938 affects uv.lock / pypdf. False positive.
+# Revisit by 2026-12-31.
+CVE-2026-59938
+# CVE-2026-59890 affects uv.lock / setuptools. False positive.
+# Revisit by 2026-12-31.
+CVE-2026-59890
+
+# CVE-2026-54058 affects uv.lock / pillow.
+# Revisit by 2026-12-31.
+CVE-2026-54058
+# CVE-2026-54059 affects uv.lock / pillow.
+# Revisit by 2026-12-31.
+CVE-2026-54059
+# CVE-2026-54060 affects uv.lock / pillow.
+# Revisit by 2026-12-31.
+CVE-2026-54060
+# CVE-2026-55379 affects uv.lock / pillow.
+# Revisit by 2026-12-31.
+CVE-2026-55379
+# CVE-2026-55380 affects uv.lock / pillow.
+# Revisit by 2026-12-31.
+CVE-2026-55380
+# CVE-2026-59197 affects uv.lock / pillow.
+# Revisit by 2026-12-31.
+CVE-2026-59197
+# CVE-2026-59199 affects uv.lock / pillow.
+# Revisit by 2026-12-31.
+CVE-2026-59199
+# CVE-2026-59200 affects uv.lock / pillow.
+# Revisit by 2026-12-31.
+CVE-2026-59200
+# CVE-2026-59204 affects uv.lock / pillow.
+# Revisit by 2026-12-31.
+CVE-2026-59204
+# CVE-2026-59205 affects uv.lock / pillow.
+# Revisit by 2026-12-31.
+CVE-2026-59205
+# CVE-2026-55798 affects uv.lock / pillow.
+# Revisit by 2026-12-31.
+CVE-2026-55798
+# CVE-2026-59198 affects uv.lock / pillow.
+# Revisit by 2026-12-31.
+CVE-2026-59198
+# CVE-2026-59203 affects uv.lock / pillow.
+# Revisit by 2026-12-31.
+CVE-2026-59203
+# CVE-2026-61632 affects uv.lock / pymdown-extensions.
+# Revisit by 2026-12-31.
+CVE-2026-61632
+# CVE-2026-59935 affects uv.lock / pypdf.
+# Revisit by 2026-12-31.
+CVE-2026-59935
+# CVE-2026-59936 affects uv.lock / pypdf.
+# Revisit by 2026-12-31.
+CVE-2026-59936
+# CVE-2026-59937 affects uv.lock / pypdf.
+# Revisit by 2026-12-31.
+CVE-2026-59937
+# CVE-2026-59938 affects uv.lock / pypdf.
+# Revisit by 2026-12-31.
+CVE-2026-59938
+# CVE-2026-59890 affects uv.lock / setuptools.
+# Revisit by 2026-12-31.
+CVE-2026-59890
