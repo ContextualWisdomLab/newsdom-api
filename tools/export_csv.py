@@ -15,7 +15,7 @@ def export_csv(json_path: Path, output_path: Path) -> None:
         raise ValueError("Input file must be a .json file.")
 
     try:
-        data = json.loads(json_path.read_text(encoding="utf-8"))
+        data = json.loads(json_path.read_bytes())
     except json.JSONDecodeError as exc:
         raise ValueError(f"Invalid JSON file: {exc}") from exc
 

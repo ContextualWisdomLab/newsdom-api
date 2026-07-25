@@ -22,7 +22,7 @@ def validate_dom(json_path: Path) -> None:
         raise ValueError("File must be a .json file.")
 
     try:
-        data = json.loads(json_path.read_text(encoding="utf-8"))
+        data = json.loads(json_path.read_bytes())
     except json.JSONDecodeError as exc:
         raise ValueError(f"Invalid JSON file: {exc}") from exc
 

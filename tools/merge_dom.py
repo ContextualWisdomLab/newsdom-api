@@ -32,7 +32,7 @@ def merge_dom(json_paths: list[Path], output_path: Path) -> None:
             raise ValueError(f"Input file must be a .json file: {path}")
 
         try:
-            data = json.loads(path.read_text(encoding="utf-8"))
+            data = json.loads(path.read_bytes())
         except json.JSONDecodeError as exc:
             raise ValueError(f"Invalid JSON file ({path}): {exc}") from exc
 

@@ -13,7 +13,7 @@ def analyze_dom(json_path: Path) -> dict[str, int]:
     if json_path.suffix.lower() != ".json":
         raise ValueError("File must be a .json file.")
 
-    data = json.loads(json_path.read_text(encoding="utf-8"))
+    data = json.loads(json_path.read_bytes())
 
     pages = data.get("pages", [])
     num_pages = len(pages)

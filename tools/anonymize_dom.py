@@ -27,7 +27,7 @@ def anonymize_dom(json_path: Path, output_path: Path) -> None:
         raise ValueError(f"Input file must be a .json file: {json_path}")
 
     try:
-        data = json.loads(json_path.read_text(encoding="utf-8"))
+        data = json.loads(json_path.read_bytes())
     except json.JSONDecodeError as exc:
         raise ValueError(f"Invalid JSON file ({json_path}): {exc}") from exc
 

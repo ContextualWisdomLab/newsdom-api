@@ -103,7 +103,7 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     try:
-        input_data = json.loads(args.input.read_text(encoding="utf-8"))
+        input_data = json.loads(args.input.read_bytes())
         markdown_content = generate_markdown(input_data)
         if args.output is None:
             print(markdown_content, end="")

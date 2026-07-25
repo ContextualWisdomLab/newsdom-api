@@ -149,7 +149,7 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     try:
-        input_data = json.loads(args.input.read_text(encoding="utf-8"))
+        input_data = json.loads(args.input.read_bytes())
         html_content = generate_html(input_data)
         if args.output is None:
             print(html_content, end="")

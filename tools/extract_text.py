@@ -13,7 +13,7 @@ def extract_text(json_path: Path) -> str:
     if json_path.suffix.lower() != ".json":
         raise ValueError("File must be a .json file.")
 
-    data = json.loads(json_path.read_text(encoding="utf-8"))
+    data = json.loads(json_path.read_bytes())
     pages = data.get("pages", [])
 
     extracted_texts = []
