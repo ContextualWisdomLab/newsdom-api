@@ -89,3 +89,12 @@ def test_get_api_token_strips_surrounding_whitespace(monkeypatch):
 
 def test_config_module_exposes_env_var_name():
     assert config.API_TOKEN_ENV_VAR == "NEWSDOM_API_TOKEN"
+
+def test_authorization_non_ascii_header(stub_parser, monkeypatch):
+    from newsdom_api.config import API_TOKEN_ENV_VAR
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "secret")
+    client = TestClient(app)
+    headers = [(b"Authorization", "Bearer héllo".encode("utf-8"))]
+    response = client.post("/parse", headers=headers, files=_PDF_FILES)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Unauthorized"
