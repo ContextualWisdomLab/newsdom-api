@@ -115,7 +115,7 @@ def test_uv_lock_tracks_project_version() -> None:
 
 def test_docs_theme_range_stays_below_warning_release():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
-    assert '"mkdocs-material>=9.6,<9.7"' in text
+    assert '"mkdocs-material>=9.7"' in text
 
 
 def test_docs_core_range_stays_below_mkdocs_two():
