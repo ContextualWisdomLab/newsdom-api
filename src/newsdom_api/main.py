@@ -250,7 +250,9 @@ async def parse(
             tmp.write(header)
 
             bytes_read = len(header)
-            while chunk := await file.read(8192):
+            # ⚡ Bolt: Use 1MB chunks instead of 8KB to significantly reduce asyncio
+            # context-switching and threadpool overhead during large file uploads
+            while chunk := await file.read(1024 * 1024):
                 bytes_read += len(chunk)
                 if bytes_read > MAX_PARSE_UPLOAD_BYTES:
                     LOGGER.warning(
