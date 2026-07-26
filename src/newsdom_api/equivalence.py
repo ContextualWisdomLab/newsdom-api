@@ -41,7 +41,7 @@ def _process_articles(metrics: dict[str, Any], articles: list[Any]) -> None:
         if has_headline:
             headline_blocks += 1
 
-        if bool(article.get("vertical")):
+        if article.get("vertical"):
             vertical_count += 1
 
         page_number = article.get("page_number")
