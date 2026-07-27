@@ -100,3 +100,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
+
+## [0.2.1] - 2026-07-28
+### Security
+- hmac.compare_digest에서 발생할 수 있는 TypeError를 방지하기 위해 인증 헤더 문자열을 바이트로 인코딩하도록 변경하여 서비스 거부(DoS) 취약점을 수정했습니다.

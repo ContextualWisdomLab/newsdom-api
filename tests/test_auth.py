@@ -64,6 +64,19 @@ def test_parse_accepts_valid_bearer_when_secret_set(monkeypatch, stub_parser):
     assert response.status_code == 200
 
 
+def test_parse_rejects_non_ascii_bearer_safely(monkeypatch, stub_parser):
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+    client = TestClient(app)
+    # The header parsing in TestClient requires bytes for non-ascii
+    response = client.post(
+        "/parse",
+        files=_PDF_FILES,
+        headers={"Authorization": "Bearer ñón-áscii".encode("utf-8")},
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Unauthorized"
+
+
 def test_health_is_unauthenticated_even_when_secret_set(monkeypatch):
     monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
     client = TestClient(app)
