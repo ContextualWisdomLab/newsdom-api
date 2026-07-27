@@ -89,3 +89,16 @@ def test_get_api_token_strips_surrounding_whitespace(monkeypatch):
 
 def test_config_module_exposes_env_var_name():
     assert config.API_TOKEN_ENV_VAR == "NEWSDOM_API_TOKEN"
+
+def test_authorization_non_ascii_header(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Ensure non-ASCII characters in Authorization header do not cause a 500 error (DoS)."""
+    monkeypatch.setenv("NEWSDOM_API_TOKEN", "secret-token")
+    # Sending non-ASCII requires explicitly encoding to bytes in TestClient headers
+    # otherwise httpx raises a UnicodeEncodeError internally during test setup.
+    header_val = "Bearer 안녕하세요".encode("utf-8")
+
+    client = TestClient(app)
+    response = client.post("/parse", files={"file": ("test.pdf", b"%PDF-")}, headers={"Authorization": header_val})
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Unauthorized"}
