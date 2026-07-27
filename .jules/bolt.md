@@ -67,3 +67,7 @@
 ## 2024-07-28 - FastAPI/Starlette Asynchronous File Upload Chunk Size Optimization
 **Learning:** For asynchronous file uploads in FastAPI/Starlette, using small chunk sizes (e.g., 8192 bytes) with `await file.read()` creates massive threadpool and context-switching overhead.
 **Action:** Default to larger chunk sizes (e.g., 1MB / `1024 * 1024`) for significantly better performance during file uploads.
+
+## 2026-07-27 - Dependency Upgrades over Add
+**Learning:** To resolve Trivy CI vulnerabilities reported for outdated Python packages in `uv.lock`, upgrade the target dependency directly using `uv lock --upgrade-package <package_name>` rather than using `uv add`. The `uv add` command modifies `pyproject.toml` and can fail due to upstream dependency constraint conflicts.
+**Action:** When updating packages to fix vulnerabilities, use `uv lock --upgrade-package <package_name>` to update `uv.lock` without modifying `pyproject.toml`.
