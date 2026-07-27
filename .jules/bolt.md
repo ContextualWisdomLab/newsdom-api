@@ -63,3 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2024-07-31 - Use path.read_bytes() over path.read_text() for json.loads()
+**Learning:** Calling `json.loads(path.read_text(encoding="utf-8"))` requires Python to allocate a decoded string in memory before parsing. Passing bytes directly to `json.loads(path.read_bytes())` allows the JSON parser to decode it directly, which is more memory efficient and faster.
+**Action:** Use `path.read_bytes()` when passing file contents to `json.loads()`.
