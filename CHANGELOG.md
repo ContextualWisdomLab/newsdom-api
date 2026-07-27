@@ -100,3 +100,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
+
+## [0.2.1] - 2024-07-28
+### 성능 개선 (Performance)
+- FastAPI 파일 업로드 처리 시 Starlette의 비동기 읽기 청크 크기를 기본 8KB에서 1MB(`1024 * 1024`)로 변경하여 스레드풀 및 컨텍스트 스위칭 오버헤드를 대폭 줄이고 업로드 속도를 개선했습니다.
