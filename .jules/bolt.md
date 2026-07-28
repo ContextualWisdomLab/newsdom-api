@@ -63,7 +63,3 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
-
-## 2024-10-24 - Replace string strip with isspace
-**Learning:** Calling `bool(headline.strip())` to check if a string contains visible text allocates a new string unnecessarily.
-**Action:** Use `not string.isspace()` along with an early truthiness check `bool(string)` to avoid string allocations.
