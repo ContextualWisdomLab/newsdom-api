@@ -250,7 +250,7 @@ async def parse(
             tmp.write(header)
 
             bytes_read = len(header)
-            while chunk := await file.read(8192):
+            while chunk := await file.read(1024 * 1024):
                 bytes_read += len(chunk)
                 if bytes_read > MAX_PARSE_UPLOAD_BYTES:
                     LOGGER.warning(
