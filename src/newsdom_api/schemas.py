@@ -149,14 +149,19 @@ class ParseQuality(BaseModel):
     """Quality metadata describing parser provenance and warnings."""
 
     status: str = Field(
-        default="success", description="Parsing operation status indicator."
+        default="success",
+        description="Parsing operation status indicator.",
+        json_schema_extra={"example": "success"},
     )
     parser: str = Field(
-        default="mineru", description="The underlying engine used to parse the PDF."
+        default="mineru",
+        description="The underlying engine used to parse the PDF.",
+        json_schema_extra={"example": "mineru"},
     )
     warnings: List[str] = Field(
         default_factory=list,
         description="Non-fatal warnings encountered during the parsing process.",
+        json_schema_extra={"example": ["Low OCR confidence on page 2"]},
     )
 
 
