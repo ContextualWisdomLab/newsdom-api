@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2025-04-12 - Prevent 500 DoS via non-ASCII authorization headers
+**Vulnerability:** The API used `hmac.compare_digest` directly on string inputs from the `Authorization` header. If a client provided a non-ASCII string, it would raise a `TypeError`, leading to a 500 Internal Server Error, which can be exploited for a Denial of Service (DoS) attack.
+**Learning:** `hmac.compare_digest()` raises a `TypeError` if provided with strings containing non-ASCII characters. API inputs that are treated as strings by FastAPI/Starlette but can contain non-ASCII characters must be handled carefully when used in crypto functions.
+**Prevention:** Always encode strings to bytes (e.g., using `.encode('utf-8')`) before comparing them with `hmac.compare_digest`.
