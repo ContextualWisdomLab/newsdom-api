@@ -28,6 +28,6 @@ DS-0002
 # deliberately avoids: tests/test_project_metadata.py
 # ::test_docs_theme_range_stays_below_warning_release pins mkdocs-material < 9.7
 # because 9.7 ships the disruptive "mkdocs 2.0" deprecation banner. MEDIUM
-# (CVSS 5.3). Revisit when mkdocs-material 9.7+ is adopted or a fix backports to
-# a 9.6-compatible pymdown-extensions release.
+# (CVSS 5.3). Revisit by 2026-10-31, or earlier when mkdocs-material 9.7+ is
+# adopted or a fix backports to a 9.6-compatible pymdown-extensions release.
 CVE-2026-61632
