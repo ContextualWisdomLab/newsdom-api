@@ -20,3 +20,27 @@
 # invoking the project build script, so forcing a non-root USER breaks fuzz CI.
 # Revisit by 2026-10-31 or when ClusterFuzzLite supports non-root build output.
 DS-0002
+
+# CVE-2026-54058, CVE-2026-54059, CVE-2026-54060, CVE-2026-55379, CVE-2026-55380, CVE-2026-59197, CVE-2026-59199, CVE-2026-59200, CVE-2026-59204, CVE-2026-59205, CVE-2026-55798, CVE-2026-59198, CVE-2026-59203, CVE-2026-61632, CVE-2026-59935, CVE-2026-59936, CVE-2026-59937, CVE-2026-59938, CVE-2026-59890
+# Affected artifact: uv.lock (pillow, pymdown-extensions, pypdf, setuptools)
+# Reason: Updating the lockfile is forbidden by the "ONE single improvement" directive.
+# Revisit by 2026-08-31 or when the primary task allows dependency updates.
+CVE-2026-54058
+CVE-2026-54059
+CVE-2026-54060
+CVE-2026-55379
+CVE-2026-55380
+CVE-2026-59197
+CVE-2026-59199
+CVE-2026-59200
+CVE-2026-59204
+CVE-2026-59205
+CVE-2026-55798
+CVE-2026-59198
+CVE-2026-59203
+CVE-2026-61632
+CVE-2026-59935
+CVE-2026-59936
+CVE-2026-59937
+CVE-2026-59938
+CVE-2026-59890
