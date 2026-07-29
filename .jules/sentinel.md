@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2025-03-09 - Prevent DoS via TypeError in hmac.compare_digest
+**Vulnerability:** The `hmac.compare_digest` function was called directly with user-supplied header strings (`authorization`). If an attacker supplied non-ASCII characters (e.g., "Bearer 안녕"), `hmac.compare_digest` threw a `TypeError` leading to an unhandled 500 Internal Server Error, creating a potential DoS vector.
+**Learning:** Python's `hmac.compare_digest` requires bytes or ASCII-only strings. Failing to encode arbitrary HTTP header inputs to bytes before passing them to cryptographic functions can cause unexpected exceptions on edge-case inputs.
+**Prevention:** Always encode user-supplied strings to bytes (e.g., `.encode("utf-8")`) before passing them to `hmac.compare_digest` to ensure safe, constant-time comparison without unhandled exceptions.
