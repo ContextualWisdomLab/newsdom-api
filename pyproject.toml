@@ -16,8 +16,13 @@ dependencies = [
   "pydantic>=2.9,<3.0",
   "python-multipart>=0.0.31,<1.0",
   "reportlab>=4.2,<6.0",
-  "Pillow>=11.0,<13.0",
-  "pypdf>=6.13.3,<7.0",
+  # Pillow floor pinned to the release that clears the 2026 image-decoder
+  # CVE batch (CVE-2026-54058/54059/54060/55379/55380/55798/59197-59205)
+  # flagged by the org trivy-fs gate; Pillow decodes untrusted uploaded PDFs.
+  "Pillow>=12.3.0,<13.0",
+  # pypdf floor pinned to the release that clears the 2026 parser DoS CVE
+  # batch (CVE-2026-59935/59936/59937/59938); pypdf validates untrusted PDFs.
+  "pypdf>=6.14.2,<7.0",
 ]
 
 [project.optional-dependencies]
@@ -31,11 +36,27 @@ dev = [
 ]
 docs = [
     "mkdocs>=1.6,<2.0",
-    "mkdocs-material>=9.6,<9.7",
+    # Material 9.7 line: required so the transitive pymdown-extensions can
+    # resolve to >=11.0.0, the only release that fixes the b64-extension path
+    # traversal CVE-2026-61632 (Material 9.6.x caps pymdown-extensions at
+    # ~=10.2). Held at <9.8 to stay on a validated docs toolchain.
+    "mkdocs-material>=9.7,<9.8",
 ]
 fuzz = [
   "atheris==3.0.0 ; platform_system == 'Linux' and python_version >= '3.11'",
   "pyinstaller==6.21.0",
+]
+
+# Security constraints for transitive dependencies (never added as runtime
+# deps, only pinned in the resolution so the trivy-fs gate stays green):
+#   setuptools < 83.0.0        -> CVE-2026-59890 (MEDIUM)
+#   pymdown-extensions < 11.0  -> CVE-2026-61632 (MEDIUM, b64 path traversal)
+# pymdown-extensions is a docs-only (mkdocs-material) dependency; 11.0.1 also
+# picks up the later ReDoS fix (CVE-2026-67422).
+[tool.uv]
+constraint-dependencies = [
+    "setuptools>=83.0.0",
+    "pymdown-extensions>=11.0.1",
 ]
 
 [tool.setuptools]

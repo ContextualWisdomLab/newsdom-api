@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MinerU subprocess argv 생성 시 `-`로 시작하는 option-like 인자를 거부하여 argument injection 위험을 낮춤
 - API 에러 응답 생성 시 내부 예외 체인을 억제하여 의존성 오류나 내부 경로가 노출될 가능성을 줄임
 - API 응답 미들웨어에 `Cache-Control: no-store, max-age=0` 헤더를 추가하여 민감한 파싱 데이터의 브라우저 및 중간 캐싱을 방지
+- 중앙 `trivy-fs` 게이트가 보고한 19건의 실제 CVE를 base 브랜치(`uv.lock`)에서 제거: Pillow `>=12.3.0`(2026 이미지 디코더 CVE 배치), pypdf `>=6.14.2`(파서 DoS CVE-2026-59935/59936/59937/59938), setuptools `>=83.0.0`(CVE-2026-59890), pymdown-extensions `>=11.0.1`(b64 확장 path traversal CVE-2026-61632). pymdown 11 해석을 위해 문서 전용 `mkdocs-material`을 `>=9.7,<9.8`로 올렸고 `mkdocs build --strict`가 통과함을 확인.
 
 ### Performance
 - `newsdom_api.dom_builder._html_safe_text` 함수에 early return과 타입 체크를 도입하여 불필요한 `str()` 캐스팅을 제거함으로써 처리 속도를 개선했습니다.

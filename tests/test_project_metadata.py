@@ -113,9 +113,12 @@ def test_uv_lock_tracks_project_version() -> None:
     assert lock_version.group(1) == pyproject_version
 
 
-def test_docs_theme_range_stays_below_warning_release():
+def test_docs_theme_range_pinned_to_validated_line():
+    # Material 9.7 is required so pymdown-extensions can resolve to >=11.0.0,
+    # the only line that fixes CVE-2026-61632; `mkdocs build --strict` is
+    # validated green on this range. Held at <9.8 as the next validated step.
     text = Path("pyproject.toml").read_text(encoding="utf-8")
-    assert '"mkdocs-material>=9.6,<9.7"' in text
+    assert '"mkdocs-material>=9.7,<9.8"' in text
 
 
 def test_docs_core_range_stays_below_mkdocs_two():
@@ -128,7 +131,7 @@ def test_contributing_documents_docs_toolchain_hold():
     expected_phrases = [
         "MkDocs 1.x",
         "mkdocs<2.0",
-        "mkdocs-material<9.7",
+        "mkdocs-material<9.8",
         "uv.lock",
         "migration path",
     ]
