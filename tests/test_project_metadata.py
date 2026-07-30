@@ -113,9 +113,12 @@ def test_uv_lock_tracks_project_version() -> None:
     assert lock_version.group(1) == pyproject_version
 
 
-def test_docs_theme_range_stays_below_warning_release():
+def test_docs_theme_range_tracks_pymdownx_cve_fix():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
-    assert '"mkdocs-material>=9.6,<9.7"' in text
+    # 9.6.x capped pymdown-extensions~=10.2 (<11), blocking the CVE-2026-61632
+    # fix; the theme is held at the 9.7.x line so the docs build can pull
+    # pymdown-extensions>=11. The MkDocs core stays on the 1.x line.
+    assert '"mkdocs-material>=9.7,<9.8"' in text
 
 
 def test_docs_core_range_stays_below_mkdocs_two():
@@ -128,7 +131,8 @@ def test_contributing_documents_docs_toolchain_hold():
     expected_phrases = [
         "MkDocs 1.x",
         "mkdocs<2.0",
-        "mkdocs-material<9.7",
+        "mkdocs-material",
+        "CVE-2026-61632",
         "uv.lock",
         "migration path",
     ]
