@@ -41,6 +41,18 @@ def test_parse_requires_bearer_when_secret_set_and_header_missing(
     assert response.headers.get("WWW-Authenticate") == "Bearer"
 
 
+def test_parse_rejects_non_ascii_bearer_when_secret_set(monkeypatch, stub_parser):
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files=_PDF_FILES,
+        headers={"Authorization": "Bearer \u1234".encode("utf-8")},
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Unauthorized"
+
+
 def test_parse_rejects_invalid_bearer_when_secret_set(monkeypatch, stub_parser):
     monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
     client = TestClient(app)
