@@ -55,7 +55,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved OpenAPI metadata for the `/parse` endpoint by documenting 415, 502, and 503 error responses.
 
 ### Fixed
+
 - `dom_builder.build_dom`가 신뢰할 수 없는 MinerU `content_list`의 비-객체 요소(bare string/number/null/array)를 만나면 `block.get(...)`에서 미문서화 `AttributeError`를 던지던 문제를 수정. 이제 비-dict 블록을 건너뛰어(fuzzer의 `_coerce_content_list` 및 `_caption_nodes_from_items`와 동일한 관용적 처리) untrusted-input 표면 불변식(임의 입력에 대해 예기치 못한 예외 타입 금지)을 지킴.
+
+### Security
+
+- 공유 base 브랜치가 상속하도록 취약 의존성을 `uv.lock`에서 갱신: `pillow` 12.2.0 → 12.3.0 (CVE-2026-59204/59199/59200/59205 등), `pypdf` 6.13.3 → 6.14.2 (CVE-2026-59935/59936/59937/59938), `setuptools` 81.0.0 → 83.0.0 (CVE-2026-59890). trivy-fs HIGH 취약점을 제거하며 pyproject 버전 범위는 그대로 두고 lockfile만 이동.
 
 ## [0.2.0] - 2026-04-24
 
