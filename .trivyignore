@@ -20,3 +20,17 @@
 # invoking the project build script, so forcing a non-root USER breaks fuzz CI.
 # Revisit by 2026-10-31 or when ClusterFuzzLite supports non-root build output.
 DS-0002
+
+# CVE-2026-61632 (MEDIUM, security-severity 5.3) is a pymdown-extensions
+# path-traversal fixed in 11.0.0, reported by the central trivy-fs gate against
+# uv.lock (run 30518852808). pymdown-extensions is a docs-build-only dependency
+# (it renders the MkDocs manual under manual/) and is never imported by the
+# runtime FastAPI service under src/newsdom_api, so the finding is not reachable
+# in the shipped API. The fix (pymdown-extensions >= 11.0.0) is only pulled by
+# mkdocs-material >= 9.7, but that upper bound is intentionally pinned "<9.7" in
+# pyproject.toml and enforced by
+# tests/test_project_metadata.py::test_docs_theme_range_stays_below_warning_release
+# (mkdocs-material 9.7 emits the mkdocs-2.0 deprecation warning, which
+# `mkdocs build --strict` rejects). Revisit when the docs theme is intentionally
+# upgraded to a pymdown-11-compatible mkdocs-material release, or by 2026-10-31.
+CVE-2026-61632
