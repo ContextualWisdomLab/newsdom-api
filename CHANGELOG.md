@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MinerU subprocess argv 생성 시 `-`로 시작하는 option-like 인자를 거부하여 argument injection 위험을 낮춤
 - API 에러 응답 생성 시 내부 예외 체인을 억제하여 의존성 오류나 내부 경로가 노출될 가능성을 줄임
 - API 응답 미들웨어에 `Cache-Control: no-store, max-age=0` 헤더를 추가하여 민감한 파싱 데이터의 브라우저 및 중간 캐싱을 방지
+- `uv.lock`의 런타임 의존성을 재잠금하여 실제 `pip-audit` CVE를 제거: `pillow` 12.2.0→12.3.0 (PYSEC-2026-3451/3452/3453/3454/3493/3494/3495/3496, 이미지 파서 취약점 8건), `pypdf` 6.13.3→6.14.2 (CVE-2026-59935/59936/59937/59938, PDF 파싱 경로), `click` 8.3.2→8.4.2 (PYSEC-2026-2132). 모두 `pyproject.toml`의 기존 버전 범위 내 해석이며 스캔 PDF/이미지 파싱 런타임 경로에 직접 관련됨. 빌드 도구 `setuptools` 81.0.0→83.0.0 (CVE-2026-59890)도 함께 정리. 조치 후 런타임 잠금(`uv export --no-dev`) `pip-audit`: 취약점 0건. 문서 전용 `pymdown-extensions` CVE-2026-61632은 `mkdocs-material` 9.6.x가 `<11`로 상한을 고정해 in-place 수정 불가(런타임/API 표면 아님)하므로 문서 툴체인 조율 후속 작업으로 남김.
 
 ### Performance
 - `newsdom_api.dom_builder._html_safe_text` 함수에 early return과 타입 체크를 도입하여 불필요한 `str()` 캐스팅을 제거함으로써 처리 속도를 개선했습니다.
