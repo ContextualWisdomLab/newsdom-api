@@ -288,7 +288,11 @@ def _parse_mineru_output(
     except FileNotFoundError as exc:
         raise MineruIncompleteOutputError() from exc
     content_list = _read_mineru_json(content_path, artifact="content list")
+    if not isinstance(content_list, list):
+        raise MineruIncompleteOutputError("content list JSON was not a list")
     model = _read_mineru_json(model_path, artifact="model")
+    if not isinstance(model, list):
+        raise MineruIncompleteOutputError("model JSON was not a list")
 
     return content_list, model
 

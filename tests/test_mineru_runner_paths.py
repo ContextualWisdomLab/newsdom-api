@@ -255,6 +255,34 @@ def test_parse_mineru_output_distinguishes_malformed_json(
 
 
 @pytest.mark.parametrize(
+    ("file_name", "payload", "expected_detail"),
+    [
+        ("sample_content_list.json", "{}", "content list JSON was not a list"),
+        ("sample_model.json", '"unexpected"', "model JSON was not a list"),
+    ],
+    ids=["content-list-not-a-list", "model-not-a-list"],
+)
+def test_parse_mineru_output_rejects_non_list_json(
+    tmp_path: Path, file_name: str, payload: str, expected_detail: str
+):
+    """Valid JSON that is not a list maps to the documented 502 incomplete-output error."""
+    ocr_dir = tmp_path / "sample" / "ocr"
+    ocr_dir.mkdir(parents=True)
+    (ocr_dir / "sample_content_list.json").write_text(
+        json.dumps([{"type": "text", "text": "ok"}]), encoding="utf-8"
+    )
+    (ocr_dir / "sample_model.json").write_text(
+        json.dumps([{"layout_dets": []}]), encoding="utf-8"
+    )
+    (ocr_dir / file_name).write_text(payload, encoding="utf-8")
+
+    with pytest.raises(MineruIncompleteOutputError, match=expected_detail) as exc_info:
+        mineru_runner._parse_mineru_output(tmp_path, Path("sample.pdf"))
+
+    _assert_no_private_path_material(str(exc_info.value))
+
+
+@pytest.mark.parametrize(
     ("file_name", "read_error", "expected_detail"),
     [
         (
