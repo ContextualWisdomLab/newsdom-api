@@ -454,6 +454,14 @@ def build_dom(
             f"content_list contains more than {MAX_CONTENT_BLOCKS} content blocks"
         )
 
+    # dom_builder is an untrusted-input surface: MinerU may emit a content_list
+    # whose elements are not JSON objects (a bare string/number/null/array).
+    # Drop non-dict blocks so downstream ``block.get(...)`` access cannot raise
+    # an undocumented AttributeError on arbitrary output. This mirrors the
+    # fuzzer's _coerce_content_list and the non-dict handling already present in
+    # _caption_nodes_from_items.
+    content_list = [block for block in content_list if type(block) is dict]
+
     page_info_by_idx = _extract_page_info_by_idx(model)
     quality_warnings: list[str] = []
 

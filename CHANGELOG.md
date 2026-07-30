@@ -54,6 +54,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Improved OpenAPI metadata for the `/parse` endpoint by documenting 415, 502, and 503 error responses.
 
+### Fixed
+- `dom_builder.build_dom`가 신뢰할 수 없는 MinerU `content_list`의 비-객체 요소(bare string/number/null/array)를 만나면 `block.get(...)`에서 미문서화 `AttributeError`를 던지던 문제를 수정. 이제 비-dict 블록을 건너뛰어(fuzzer의 `_coerce_content_list` 및 `_caption_nodes_from_items`와 동일한 관용적 처리) untrusted-input 표면 불변식(임의 입력에 대해 예기치 못한 예외 타입 금지)을 지킴.
+
 ## [0.2.0] - 2026-04-24
 
 ### Added
