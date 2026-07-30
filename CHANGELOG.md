@@ -100,3 +100,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
+
+### Fixed
+
+- **보안**: `/parse` 엔드포인트의 `Authorization` 헤더에서 비-ASCII 문자가 포함될 경우 `hmac.compare_digest`에서 발생하는 `TypeError`로 인한 500 내부 서버 오류(DoS)를 수정했습니다.
