@@ -120,6 +120,7 @@ def test_main_error(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
     captured = capsys.readouterr()
     assert "Error:" in captured.err
 
+
 def test_filter_dom_empty_blocks(tmp_path: Path):
     input_file = tmp_path / "input.json"
     output_file = tmp_path / "output.json"
@@ -135,11 +136,7 @@ def test_filter_dom_empty_blocks(tmp_path: Path):
                     }
                 ]
             },
-            {
-                "articles": [
-                     {}
-                ]
-            }
+            {"articles": [{}]},
         ]
     }
     input_file.write_text(json.dumps(data), encoding="utf-8")
