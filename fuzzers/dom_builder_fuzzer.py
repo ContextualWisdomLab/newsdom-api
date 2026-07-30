@@ -11,12 +11,18 @@ from typing import Any
 from newsdom_api.dom_builder import build_dom
 
 
-def _coerce_content_list(candidate: Any) -> list[dict[str, Any]]:
-    """Return a MinerU-like content list or an empty list."""
+def _coerce_content_list(candidate: Any) -> list[Any]:
+    """Return the candidate unchanged when it is a list, else an empty list.
+
+    Non-dict members are deliberately preserved (not filtered out) so the fuzzer
+    actually exercises build_dom's content-block validation. Pre-stripping them
+    masked a real gap where a non-object block raised ``AttributeError`` instead
+    of build_dom's documented benign ``ValueError``.
+    """
 
     if not isinstance(candidate, list):
         return []
-    return [item for item in candidate if isinstance(item, dict)]
+    return candidate
 
 
 def exercise_dom_builder(raw_bytes: bytes) -> None:
@@ -27,7 +33,11 @@ def exercise_dom_builder(raw_bytes: bytes) -> None:
         candidate = json.loads(decoded)
     except json.JSONDecodeError:
         return
-    build_dom(_coerce_content_list(candidate), document_id="fuzz")
+    try:
+        build_dom(_coerce_content_list(candidate), document_id="fuzz")
+    except ValueError:
+        # build_dom's documented, benign rejection of a malformed content list.
+        return
 
 
 def _run_smoke(seed_path: Path) -> None:

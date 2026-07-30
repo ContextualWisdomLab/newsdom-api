@@ -59,6 +59,14 @@ def test_build_dom_rejects_non_list_content():
         build_dom(("not", "a", "list"), document_id="doc-not-list")
 
 
+def test_build_dom_rejects_non_dict_block():
+    with pytest.raises(ValueError, match="only content-block objects"):
+        build_dom(
+            [{"type": "text", "text": "ok"}, "not-a-block"],
+            document_id="doc-non-dict-block",
+        )
+
+
 def test_build_dom_handles_non_headline_paths():
     dom = build_dom(
         [

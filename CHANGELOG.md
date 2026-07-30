@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 서브모듈/사이드카 배포용 `docker-compose.yml`: healthcheck가 `/health`를 대상으로 하며 MinerU 번들 이미지/`NEWSDOM_MINERU_BIN` 및 readiness 주의사항을 README에 문서화.
 - [CLI] 파싱된 NewsDOM JSON에서 순수 텍스트 데이터를 추출하여 텍스트 파일 또는 stdout으로 출력하는 `tools/extract_text.py` 도구를 추가했습니다.
 
+### Fixed
+- MinerU가 리스트 안에 비-객체(dict가 아닌) 블록/페이지 항목을 방출하면 `content_list`/`model` 요소를 검증해 문서화된 502 incomplete-output 오류로 매핑(기존에는 `AttributeError`가 전파되어 500으로 처리됨). `build_dom`도 비-객체 블록을 benign한 `ValueError`로 거부하도록 방어하고, `dom_builder` 퍼저가 비-dict 요소를 사전 제거하던 마스킹을 제거하여 해당 경계를 실제로 퍼징하도록 함.
+
 ### Security
 - 전역 500 에러 응답에도 표준 보안 헤더를 적용하여 예외 경로에서 header 누락을 방지
 - MinerU subprocess argv 생성 시 `-`로 시작하는 option-like 인자를 거부하여 argument injection 위험을 낮춤

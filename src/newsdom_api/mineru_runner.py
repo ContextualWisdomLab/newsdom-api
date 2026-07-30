@@ -290,9 +290,13 @@ def _parse_mineru_output(
     content_list = _read_mineru_json(content_path, artifact="content list")
     if not isinstance(content_list, list):
         raise MineruIncompleteOutputError("content list JSON was not a list")
+    if not all(isinstance(block, dict) for block in content_list):
+        raise MineruIncompleteOutputError("content list contained a non-object block")
     model = _read_mineru_json(model_path, artifact="model")
     if not isinstance(model, list):
         raise MineruIncompleteOutputError("model JSON was not a list")
+    if not all(isinstance(page_model, dict) for page_model in model):
+        raise MineruIncompleteOutputError("model contained a non-object page entry")
 
     return content_list, model
 

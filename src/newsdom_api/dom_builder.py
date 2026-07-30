@@ -454,6 +454,9 @@ def build_dom(
             f"content_list contains more than {MAX_CONTENT_BLOCKS} content blocks"
         )
 
+    if not all(type(block) is dict for block in content_list):
+        raise ValueError("content_list must contain only content-block objects")
+
     page_info_by_idx = _extract_page_info_by_idx(model)
     quality_warnings: list[str] = []
 
