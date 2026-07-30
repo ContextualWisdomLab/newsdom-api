@@ -1,4 +1,4 @@
-from newsdom_api.schemas import ArticleNode, HealthResponse, PageNode, ParseResponse
+from newsdom_api.schemas import ArticleNode, HealthResponse, PageNode, ParseQuality, ParseResponse
 
 
 def test_parse_response_schema_round_trip():
@@ -15,6 +15,20 @@ def test_health_response_schema_round_trip():
     # Verify default behavior
     response_default = HealthResponse()
     assert response_default.status == "ok"
+
+
+def test_health_response_openapi_schema_example():
+    schema = HealthResponse.model_json_schema()
+    properties = schema["properties"]
+    assert properties["status"]["example"] == "ok"
+
+
+def test_parse_quality_openapi_schema_example():
+    schema = ParseQuality.model_json_schema()
+    properties = schema["properties"]
+    assert properties["status"]["example"] == "success"
+    assert properties["parser"]["example"] == "mineru"
+    assert properties["warnings"]["example"] == ["Page 3: Low confidence OCR"]
 
 
 def test_page_node_openapi_schema_descriptions():
