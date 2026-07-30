@@ -1,3 +1,4 @@
+
 ## 2024-05-24 - Eager BoundingBox Float Casting
 **Learning:** A performance anti-pattern in `newsdom-api` parsing loops is eager allocation and expensive type-conversions (e.g., float casting for `BoundingBox`) at the start of block iterations. We found ~45% overhead was caused by converting unused `bbox` values to floats in blocks that were early-returned (like headers/footers).
 **Action:** Defer expensive conversions and allocations into the specific conditional branches that actually consume them to reduce overhead on unused block types.
@@ -63,3 +64,7 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2024-08-01 - 텍스트 표시 여부 확인 시 문자열 할당 방지
+**Learning:** 문자열이 화면에 표시되는지 확인하기 위해 `bool(text.strip())`을 호출하면 매번 새로운 문자열 객체를 할당하는 오버헤드가 발생합니다. 특히 문자열 내에 텍스트가 있을 경우 더욱 그렇습니다.
+**Action:** 공백만 있는지 확인하려면 문자열 할당이 필요없는 `not text.isspace()`를 사용하고, 빈 문자열에 대한 검증을 위해 `bool(text)`로 초기 체크를 함께 진행합니다.
