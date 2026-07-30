@@ -20,3 +20,16 @@
 # invoking the project build script, so forcing a non-root USER breaks fuzz CI.
 # Revisit by 2026-10-31 or when ClusterFuzzLite supports non-root build output.
 DS-0002
+
+# CVE-2026-61632 affects pymdown-extensions, a docs-only dev dependency pulled in
+# transitively by mkdocs-material and never shipped in the runtime API image
+# (Dockerfile installs only the API deps). The fix lands in pymdown-extensions
+# 11.x, which requires mkdocs-material >= 9.7; this repository deliberately holds
+# mkdocs-material at < 9.7 (test_docs_theme_range_stays_below_warning_release and
+# the documented docs-toolchain hold in CONTRIBUTING.md) because 9.7 introduces
+# warnings that break `mkdocs build --strict`. mkdocs-material 9.6.x caps
+# pymdown-extensions at ~=10.2 (< 11), so the CVE cannot be remediated here
+# without lifting that documented hold, which is a separate migration decision.
+# Revisit when the docs-toolchain hold is lifted (mkdocs-material >= 9.7 adopted,
+# enabling pymdown-extensions 11) or by 2026-10-31.
+CVE-2026-61632
