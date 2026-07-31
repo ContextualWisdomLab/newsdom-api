@@ -90,6 +90,7 @@ def test_get_api_token_strips_surrounding_whitespace(monkeypatch):
 def test_config_module_exposes_env_var_name():
     assert config.API_TOKEN_ENV_VAR == "NEWSDOM_API_TOKEN"
 
+
 def test_require_authorization_handles_non_ascii_gracefully(monkeypatch):
     from newsdom_api.main import require_authorization
     from fastapi import HTTPException
