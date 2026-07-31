@@ -20,3 +20,9 @@
 # invoking the project build script, so forcing a non-root USER breaks fuzz CI.
 # Revisit by 2026-10-31 or when ClusterFuzzLite supports non-root build output.
 DS-0002
+
+# CVE-2026-61632 applies to pymdown-extensions. This vulnerability cannot be fixed
+# by upgrading via uv lock as no fixed version is currently resolvable. Suppressing
+# until an upstream patch becomes available.
+# Revisit by 2026-08-31
+CVE-2026-61632
