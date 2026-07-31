@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenAPI 제목/설명, README, `ArticleNode.headline` 문서를 일반 문서용 (section heading) 표현으로 재구성하여 특정 언어/신문 가정을 소비자에게 노출하지 않도록 함. 응답 스키마 필드는 하위 호환을 위해 변경하지 않음.
 
 ### Added
+- [CLI] NewsDOM JSON 파일의 요소들을 터미널에 트리 형태로 이쁘게 출력해주는 `tools/pretty_print_dom.py` 도구를 추가했습니다.
+- [CLI] NewsDOM JSON 내 모든 Bounding Box 좌표를 지정된 값만큼 이동시키는 `tools/shift_bboxes.py` 도구를 추가했습니다.
+- [CLI] NewsDOM JSON에서 광고(ads), 헤더(headers), 푸터(footers), 이미지(images) 등을 선택적으로 필터링하는 `tools/filter_dom.py` 도구를 추가했습니다.
 - [CLI] 단일 NewsDOM JSON 파일을 페이지 단위로 분리하는 `tools/split_dom.py` 도구를 추가했습니다.
 - [CLI] NewsDOM JSON 파일의 모든 텍스트 내용을 마스킹하여 익명화하는 `tools/anonymize_dom.py` 도구를 추가했습니다.
 - `/parse`에 대한 optional bearer 인증 게이트: 리프 서비스 자체 설정 `NEWSDOM_API_TOKEN`이 설정되면 `Authorization: Bearer <token>`을 요구(상수 시간 비교), 미설정 시 개방(개발용). `/health`는 항상 미인증 유지.
