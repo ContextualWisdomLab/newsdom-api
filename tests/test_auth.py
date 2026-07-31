@@ -89,3 +89,15 @@ def test_get_api_token_strips_surrounding_whitespace(monkeypatch):
 
 def test_config_module_exposes_env_var_name():
     assert config.API_TOKEN_ENV_VAR == "NEWSDOM_API_TOKEN"
+
+def test_require_authorization_handles_non_ascii_gracefully(monkeypatch):
+    from newsdom_api.main import require_authorization
+    from fastapi import HTTPException
+
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+
+    with pytest.raises(HTTPException) as exc_info:
+        require_authorization("Bearer \u00f1on-ascii-token")
+
+    assert exc_info.value.status_code == 401
+    assert exc_info.value.detail == "Unauthorized"
