@@ -20,4 +20,5 @@
 # invoking the project build script, so forcing a non-root USER breaks fuzz CI.
 # Revisit by 2026-10-31 or when ClusterFuzzLite supports non-root build output.
 DS-0002
+# CVE-2026-61632 is a medium vulnerability in pymdown-extensions. It affects mkdocs-material which is a docs-only dependency, not the main app runtime. Revisit when a fix is available in mkdocs-material.
 CVE-2026-61632
