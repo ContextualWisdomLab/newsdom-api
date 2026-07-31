@@ -63,3 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2024-08-01 - Avoid redundant bool() casts in truthiness conditionals
+**Learning:** Wrapping a value in `bool()` (e.g., `if bool(val):`) when the statement inherently evaluates truthiness adds unnecessary function call overhead without altering the conditional logic.
+**Action:** Remove explicit `bool()` casts in conditional statements like `if val:` and let Python natively evaluate truthiness to save execution time in hot paths.
