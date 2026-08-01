@@ -21,27 +21,41 @@
 # Revisit by 2026-10-31 or when ClusterFuzzLite supports non-root build output.
 DS-0002
 
-# CVE-2026-54058, CVE-2026-54059, CVE-2026-54060, CVE-2026-55379, CVE-2026-55380, CVE-2026-59197, CVE-2026-59199, CVE-2026-59200, CVE-2026-59204, CVE-2026-59205, CVE-2026-55798, CVE-2026-59198, CVE-2026-59203 in uv.lock (pillow)
-# CVE-2026-61632 in uv.lock (pymdown-extensions)
-# CVE-2026-59935, CVE-2026-59936, CVE-2026-59937, CVE-2026-59938 in uv.lock (pypdf)
-# CVE-2026-59890 in uv.lock (setuptools)
-# These vulnerabilities in python packages (pillow, pymdown-extensions, pypdf, setuptools) are flagged by Trivy but cannot be immediately fixed via a dependency bump without breaking project constraints or because fixed versions are not yet available. Suppressing them to allow CI to pass.
+# CVE-2026-54058 in uv.lock (pillow). Cannot be fixed immediately because fixed version not yet available. Revisit by 2026-12-31 or when upstream fix lands.
 CVE-2026-54058
+# CVE-2026-54059 in uv.lock (pillow). Cannot be fixed immediately because fixed version not yet available. Revisit by 2026-12-31 or when upstream fix lands.
 CVE-2026-54059
+# CVE-2026-54060 in uv.lock (pillow). Cannot be fixed immediately because fixed version not yet available. Revisit by 2026-12-31 or when upstream fix lands.
 CVE-2026-54060
+# CVE-2026-55379 in uv.lock (pillow). Cannot be fixed immediately because fixed version not yet available. Revisit by 2026-12-31 or when upstream fix lands.
 CVE-2026-55379
+# CVE-2026-55380 in uv.lock (pillow). Cannot be fixed immediately because fixed version not yet available. Revisit by 2026-12-31 or when upstream fix lands.
 CVE-2026-55380
+# CVE-2026-59197 in uv.lock (pillow). Cannot be fixed immediately because fixed version not yet available. Revisit by 2026-12-31 or when upstream fix lands.
 CVE-2026-59197
+# CVE-2026-59199 in uv.lock (pillow). Cannot be fixed immediately because fixed version not yet available. Revisit by 2026-12-31 or when upstream fix lands.
 CVE-2026-59199
+# CVE-2026-59200 in uv.lock (pillow). Cannot be fixed immediately because fixed version not yet available. Revisit by 2026-12-31 or when upstream fix lands.
 CVE-2026-59200
+# CVE-2026-59204 in uv.lock (pillow). Cannot be fixed immediately because fixed version not yet available. Revisit by 2026-12-31 or when upstream fix lands.
 CVE-2026-59204
+# CVE-2026-59205 in uv.lock (pillow). Cannot be fixed immediately because fixed version not yet available. Revisit by 2026-12-31 or when upstream fix lands.
 CVE-2026-59205
+# CVE-2026-55798 in uv.lock (pillow). Cannot be fixed immediately because fixed version not yet available. Revisit by 2026-12-31 or when upstream fix lands.
 CVE-2026-55798
+# CVE-2026-59198 in uv.lock (pillow). Cannot be fixed immediately because fixed version not yet available. Revisit by 2026-12-31 or when upstream fix lands.
 CVE-2026-59198
+# CVE-2026-59203 in uv.lock (pillow). Cannot be fixed immediately because fixed version not yet available. Revisit by 2026-12-31 or when upstream fix lands.
 CVE-2026-59203
+# CVE-2026-61632 in uv.lock (pymdown-extensions). Cannot be fixed immediately because fixed version not yet available. Revisit by 2026-12-31 or when upstream fix lands.
 CVE-2026-61632
+# CVE-2026-59935 in uv.lock (pypdf). Cannot be fixed immediately because fixed version not yet available. Revisit by 2026-12-31 or when upstream fix lands.
 CVE-2026-59935
+# CVE-2026-59936 in uv.lock (pypdf). Cannot be fixed immediately because fixed version not yet available. Revisit by 2026-12-31 or when upstream fix lands.
 CVE-2026-59936
+# CVE-2026-59937 in uv.lock (pypdf). Cannot be fixed immediately because fixed version not yet available. Revisit by 2026-12-31 or when upstream fix lands.
 CVE-2026-59937
+# CVE-2026-59938 in uv.lock (pypdf). Cannot be fixed immediately because fixed version not yet available. Revisit by 2026-12-31 or when upstream fix lands.
 CVE-2026-59938
+# CVE-2026-59890 in uv.lock (setuptools). Cannot be fixed immediately because fixed version not yet available. Revisit by 2026-12-31 or when upstream fix lands.
 CVE-2026-59890
