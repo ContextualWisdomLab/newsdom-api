@@ -100,3 +100,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
+
+## [0.2.1] - 2025-05-18
+
+### Security
+- [CRITICAL] `Authorization` 헤더의 Bearer 토큰 비교 시 비-ASCII 문자열로 인한 500 에러 및 DoS(서비스 거부) 취약점을 해결했습니다. `hmac.compare_digest`를 호출하기 전에 검증 값들을 UTF-8 바이트로 인코딩하도록 강제합니다.
