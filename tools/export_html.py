@@ -8,7 +8,19 @@ from pathlib import Path
 from typing import Any
 
 
+def _format_bbox(bbox: Any) -> str:
+    if isinstance(bbox, dict):
+        x0 = bbox.get("x0")
+        y0 = bbox.get("y0")
+        x1 = bbox.get("x1")
+        y1 = bbox.get("y1")
+        if x0 is not None and y0 is not None and x1 is not None and y1 is not None:
+            return f"(x0: {x0}, y0: {y0}, x1: {x1}, y1: {y1})"
+    return ""
+
+
 def _caption_text(caption: Any) -> str:
+
     if isinstance(caption, dict):
         return html.escape(str(caption.get("text", "")))
     return html.escape(str(caption))
@@ -30,6 +42,10 @@ def generate_html(data: dict[str, Any]) -> str:
         .footnote { font-size: 0.85em; color: #777; border-top: 1px solid #eee; padding-top: 0.5rem; margin-top: 1rem; }
         .ad-block { background: #ffeaa7; padding: 1rem; margin-bottom: 1rem; border-left: 4px solid #fdcb6e; }
         .footer-block { font-size: 0.8em; text-align: center; color: #999; border-top: 1px solid #eee; padding-top: 1rem; margin-top: 2rem; }
+        .quality-block { background: #e8f4f8; padding: 1rem; margin-bottom: 2rem; border-radius: 4px; }
+        .bbox { font-size: 0.85em; color: #888; font-family: monospace; }
+        .media-type { font-size: 0.85em; background: #eee; padding: 0.2rem 0.4rem; border-radius: 3px; }
+        .dimensions { font-size: 0.9em; color: #555; margin-bottom: 1rem; }
     """
 
     lines: list[str] = [
@@ -44,6 +60,22 @@ def generate_html(data: dict[str, Any]) -> str:
         f"<h1>Document: {document_id}</h1>",
     ]
 
+    quality = data.get("quality")
+    if isinstance(quality, dict):
+        status = html.escape(str(quality.get("status", "unknown")))
+        parser = html.escape(str(quality.get("parser", "unknown")))
+        lines.append('<div class="quality-block">')
+        lines.append(
+            f"<div><strong>Parse Status:</strong> {status} (Parser: {parser})</div>"
+        )
+        warnings = quality.get("warnings", [])
+        if warnings:
+            lines.append("<div><strong>Warnings:</strong><ul>")
+            for w in warnings:
+                lines.append(f"<li>{html.escape(str(w))}</li>")
+            lines.append("</ul></div>")
+        lines.append("</div>")
+
     for page in data.get("pages", []):
         if not isinstance(page, dict):
             continue
@@ -52,10 +84,17 @@ def generate_html(data: dict[str, Any]) -> str:
         lines.append('<div class="page">')
         lines.append(f'<div class="page-header"><h2>Page {page_number}</h2></div>')
 
+        width = page.get("width")
+        height = page.get("height")
+        if width is not None and height is not None:
+            lines.append(
+                f'<div class="dimensions">Dimensions: {width} x {height}</div>'
+            )
+
         headers = page.get("headers", [])
         if headers:
             lines.append('<div class="headers">')
-            for header in headers:
+            for header in headers:  # pragma: no branch
                 lines.append(
                     f"<div><strong>Header:</strong> {html.escape(str(header))}</div>"
                 )
@@ -69,6 +108,12 @@ def generate_html(data: dict[str, Any]) -> str:
             lines.append('<div class="article">')
             lines.append(f'<h3 class="article-headline">{headline}</h3>')
 
+            bbox = article.get("bbox")
+            if bbox:
+                bbox_str = html.escape(_format_bbox(bbox))
+                if bbox_str:
+                    lines.append(f'<div class="bbox">Bounding Box: {bbox_str}</div>')
+
             for block in article.get("body_blocks", []):
                 lines.append(f'<p class="body-block">{html.escape(str(block))}</p>')
 
@@ -76,23 +121,46 @@ def generate_html(data: dict[str, Any]) -> str:
                 if not isinstance(image, dict):
                     continue
                 path = html.escape(str(image.get("path", "")))
+                media_type = html.escape(str(image.get("media_type", "image")))
                 lines.append('<div class="image-container">')
-                lines.append(
-                    f"<div><strong>Image {index}:</strong> <code>{path}</code></div>"
-                )
+
+                img_desc = f'<strong>Image {index}:</strong> <code>{path}</code> <span class="media-type">{media_type}</span>'
+                bbox = image.get("bbox")
+                if bbox:
+                    bbox_str = html.escape(_format_bbox(bbox))
+                    if bbox_str:
+                        img_desc += f' <span class="bbox">[BBox: {bbox_str}]</span>'
+                lines.append(f"<div>{img_desc}</div>")
+
                 for caption in image.get("captions", []):
-                    lines.append(
-                        f'<div class="caption">Caption: {_caption_text(caption)}</div>'
-                    )
+                    cap_text = _caption_text(caption)
+                    cap_line = f"Caption: {cap_text}"
+                    if isinstance(caption, dict):
+                        cap_bbox = caption.get("bbox")
+                        if cap_bbox:
+                            cap_bbox_str = html.escape(_format_bbox(cap_bbox))
+                            if cap_bbox_str:
+                                cap_line += (
+                                    f' <span class="bbox">[BBox: {cap_bbox_str}]</span>'
+                                )
+                    lines.append(f'<div class="caption">{cap_line}</div>')
                 lines.append("</div>")
 
             captions = article.get("captions", [])
             if captions:
                 lines.append('<div class="captions">')
-                for caption in captions:
-                    lines.append(
-                        f'<div class="caption">Caption: {_caption_text(caption)}</div>'
-                    )
+                for caption in captions:  # pragma: no branch
+                    cap_text = _caption_text(caption)
+                    cap_line = f"Caption: {cap_text}"
+                    if isinstance(caption, dict):
+                        cap_bbox = caption.get("bbox")
+                        if cap_bbox:
+                            cap_bbox_str = html.escape(_format_bbox(cap_bbox))
+                            if cap_bbox_str:
+                                cap_line += (
+                                    f' <span class="bbox">[BBox: {cap_bbox_str}]</span>'
+                                )
+                    lines.append(f'<div class="caption">{cap_line}</div>')
                 lines.append("</div>")
 
             footnotes = article.get("footnotes", [])
