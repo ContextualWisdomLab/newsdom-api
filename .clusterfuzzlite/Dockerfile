@@ -8,3 +8,5 @@ WORKDIR /src/newsdom-api
 COPY --from=uv-bin /uv /uvx /usr/local/bin/
 COPY . .
 COPY .clusterfuzzlite/build.sh /src/build.sh
+
+HEALTHCHECK NONE
