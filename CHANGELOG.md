@@ -100,3 +100,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
+
+## [0.2.1] - 2026-08-01
+### Added
+- OpenAPI 스키마 (Swagger UI) 가독성 향상을 위해 `ParseQuality` 및 `HealthResponse` 모델에 `example` 예제 데이터 추가.
