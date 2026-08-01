@@ -215,113 +215,308 @@ def test_main_file_output_error(
     assert excinfo.value.code == 1
     assert "Error exporting HTML" in capsys.readouterr().err
 
+
 def test_generate_html_bbox_missing():
-    html_out = generate_html({"pages": [{"articles": [{"images": [{"path": "img", "bbox": {"x0": 1, "y0": 1, "x1": 1}}], "captions": [{"text": "cap", "bbox": {"x0": 1, "y0": 1, "x1": 1}}]}]}]})
+    html_out = generate_html(
+        {
+            "pages": [
+                {
+                    "articles": [
+                        {
+                            "images": [
+                                {"path": "img", "bbox": {"x0": 1, "y0": 1, "x1": 1}}
+                            ],
+                            "captions": [
+                                {"text": "cap", "bbox": {"x0": 1, "y0": 1, "x1": 1}}
+                            ],
+                        }
+                    ]
+                }
+            ]
+        }
+    )
     assert html_out
+
 
 def test_generate_html_bbox_none():
-    html_out = generate_html({"pages": [{"articles": [{"images": [{"path": "img", "bbox": None}], "captions": [{"text": "cap", "bbox": None}]}]}]})
+    html_out = generate_html(
+        {
+            "pages": [
+                {
+                    "articles": [
+                        {
+                            "images": [{"path": "img", "bbox": None}],
+                            "captions": [{"text": "cap", "bbox": None}],
+                        }
+                    ]
+                }
+            ]
+        }
+    )
     assert html_out
+
 
 def test_generate_html_invalid_bbox_values():
-    html_out = generate_html({"pages": [{"articles": [{"images": [{"path": "img", "bbox": {"x0": None, "y0": None, "x1": None, "y1": None}}], "captions": [{"text": "cap", "bbox": {"x0": None, "y0": None, "x1": None, "y1": None}}]}]}]})
+    html_out = generate_html(
+        {
+            "pages": [
+                {
+                    "articles": [
+                        {
+                            "images": [
+                                {
+                                    "path": "img",
+                                    "bbox": {
+                                        "x0": None,
+                                        "y0": None,
+                                        "x1": None,
+                                        "y1": None,
+                                    },
+                                }
+                            ],
+                            "captions": [
+                                {
+                                    "text": "cap",
+                                    "bbox": {
+                                        "x0": None,
+                                        "y0": None,
+                                        "x1": None,
+                                        "y1": None,
+                                    },
+                                }
+                            ],
+                        }
+                    ]
+                }
+            ]
+        }
+    )
     assert html_out
+
 
 def test_generate_html_missing_dims():
-    html_out = generate_html({"pages": [{"width": None, "height": None, "articles": []}]})
+    html_out = generate_html(
+        {"pages": [{"width": None, "height": None, "articles": []}]}
+    )
     assert html_out
+
 
 def test_generate_html_quality_no_warnings():
-    html_out = generate_html({"quality": {"status": "success", "parser": "mineru", "warnings": []}})
+    html_out = generate_html(
+        {"quality": {"status": "success", "parser": "mineru", "warnings": []}}
+    )
     assert html_out
+
 
 def test_generate_html_empty_caption_bbox():
-    html_out = generate_html({"pages": [{"articles": [{"captions": [{"text": "cap", "bbox": None}]}]}]})
+    html_out = generate_html(
+        {"pages": [{"articles": [{"captions": [{"text": "cap", "bbox": None}]}]}]}
+    )
     assert html_out
+
 
 def test_generate_html_bbox_not_dict():
-    html_out = generate_html({"pages": [{"articles": [{"images": [{"path": "img", "bbox": "not_a_dict"}], "captions": [{"text": "cap", "bbox": "not_a_dict"}]}]}]})
+    html_out = generate_html(
+        {
+            "pages": [
+                {
+                    "articles": [
+                        {
+                            "images": [{"path": "img", "bbox": "not_a_dict"}],
+                            "captions": [{"text": "cap", "bbox": "not_a_dict"}],
+                        }
+                    ]
+                }
+            ]
+        }
+    )
     assert html_out
 
+
 def test_generate_html_caption_dict_no_bbox():
-    html_out = generate_html({"pages": [{"articles": [{"captions": [{"text": "cap"}]}]}]})
+    html_out = generate_html(
+        {"pages": [{"articles": [{"captions": [{"text": "cap"}]}]}]}
+    )
     assert html_out
+
 
 def test_generate_html_article_bbox():
     # test article with bbox, and one with none
-    html_out = generate_html({"pages": [{"articles": [{"headline": "A1", "bbox": {"x0": 1, "y0": 2, "x1": 3, "y1": 4}}, {"headline": "A2", "bbox": None}]}]})
+    html_out = generate_html(
+        {
+            "pages": [
+                {
+                    "articles": [
+                        {
+                            "headline": "A1",
+                            "bbox": {"x0": 1, "y0": 2, "x1": 3, "y1": 4},
+                        },
+                        {"headline": "A2", "bbox": None},
+                    ]
+                }
+            ]
+        }
+    )
     assert html_out
+
 
 def test_generate_html_article_captions():
     # test article captions loop missing bbox branch
-    html_out = generate_html({"pages": [{"articles": [{"captions": [{"text": "cap", "bbox": {"x0": 1, "y0": 2, "x1": 3, "y1": 4}}], "images": []}]}]})
+    html_out = generate_html(
+        {
+            "pages": [
+                {
+                    "articles": [
+                        {
+                            "captions": [
+                                {
+                                    "text": "cap",
+                                    "bbox": {"x0": 1, "y0": 2, "x1": 3, "y1": 4},
+                                }
+                            ],
+                            "images": [],
+                        }
+                    ]
+                }
+            ]
+        }
+    )
     assert html_out
+
 
 def test_generate_html_headers_dict():
     html_out = generate_html({"pages": [{"headers": [{"text": "header1"}]}]})
     assert html_out
 
+
 def test_generate_html_caption_bbox_missing_coords():
-    html_out = generate_html({"pages": [{"articles": [{"captions": [{"text": "cap", "bbox": {"x0": 1, "y0": 2}}], "images": []}]}]})
+    html_out = generate_html(
+        {
+            "pages": [
+                {
+                    "articles": [
+                        {
+                            "captions": [{"text": "cap", "bbox": {"x0": 1, "y0": 2}}],
+                            "images": [],
+                        }
+                    ]
+                }
+            ]
+        }
+    )
     assert html_out
 
+
 def test_generate_html_image_caption_bbox_missing_coords():
-    html_out = generate_html({"pages": [{"articles": [{"images": [{"path": "img1", "captions": [{"text": "cap", "bbox": {"x0": 1, "y0": 2}}]}], "captions": []}]}]})
+    html_out = generate_html(
+        {
+            "pages": [
+                {
+                    "articles": [
+                        {
+                            "images": [
+                                {
+                                    "path": "img1",
+                                    "captions": [
+                                        {"text": "cap", "bbox": {"x0": 1, "y0": 2}}
+                                    ],
+                                }
+                            ],
+                            "captions": [],
+                        }
+                    ]
+                }
+            ]
+        }
+    )
     assert html_out
+
 
 def test_generate_html_article_not_dict():
     html_out = generate_html({"pages": [{"articles": ["not a dict"]}]})
     assert html_out
 
+
 def test_generate_html_image_not_dict():
     html_out = generate_html({"pages": [{"articles": [{"images": ["not a dict"]}]}]})
     assert html_out
+
 
 def test_generate_html_headers_empty_iterable():
     html_out = generate_html({"pages": [{"headers": (h for h in [])}]})
     assert html_out
 
+
 def test_generate_html_captions_empty_iterable():
     html_out = generate_html({"pages": [{"articles": [{"captions": (c for c in [])}]}]})
     assert html_out
+
 
 def test_generate_html_headers_generator():
     html_out = generate_html({"pages": [{"headers": (h for h in ["header1"])}]})
     assert html_out
 
+
 def test_generate_html_captions_generator():
-    html_out = generate_html({"pages": [{"articles": [{"captions": (c for c in [{"text": "cap"}])}]}]})
+    html_out = generate_html(
+        {"pages": [{"articles": [{"captions": (c for c in [{"text": "cap"}])}]}]}
+    )
     assert html_out
+
 
 def test_generate_html_headers_gen_empty():
     html_out = generate_html({"pages": [{"headers": (h for h in [])}]})
     assert html_out
 
+
 def test_generate_html_captions_gen_empty():
     html_out = generate_html({"pages": [{"articles": [{"captions": (c for c in [])}]}]})
     assert html_out
 
+
 class TrueButEmpty:
     def __bool__(self):
         return True
+
     def __iter__(self):
         return iter([])
+
 
 def test_generate_html_headers_true_empty_iterable():
     html_out = generate_html({"pages": [{"headers": TrueButEmpty()}]})
     assert html_out
 
+
 def test_generate_html_captions_true_empty_iterable():
     html_out = generate_html({"pages": [{"articles": [{"captions": TrueButEmpty()}]}]})
     assert html_out
+
 
 def test_generate_html_empty_bbox_str():
     # Covers article.bbox -> empty str (114->117)
     # Covers image.captions.bbox -> cap_bbox = None (140->146)
     # Covers image.captions.bbox -> cap_bbox_str empty
-    html_out = generate_html({"pages": [{"articles": [{
-        "headline": "A",
-        "bbox": {"x0": None}, # Missing y0, so bbox_str is ""
-        "images": [{"path": "img", "captions": [{"text": "cap", "bbox": None}, {"text": "cap2", "bbox": {"x0": None}}]}]
-    }]}]})
+    html_out = generate_html(
+        {
+            "pages": [
+                {
+                    "articles": [
+                        {
+                            "headline": "A",
+                            "bbox": {"x0": None},  # Missing y0, so bbox_str is ""
+                            "images": [
+                                {
+                                    "path": "img",
+                                    "captions": [
+                                        {"text": "cap", "bbox": None},
+                                        {"text": "cap2", "bbox": {"x0": None}},
+                                    ],
+                                }
+                            ],
+                        }
+                    ]
+                }
+            ]
+        }
+    )
     assert html_out

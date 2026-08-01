@@ -180,111 +180,312 @@ def test_main_file_output_error(tmp_path, sample_json_data, capsys):
     assert excinfo.value.code == 1
     assert "Error exporting Markdown" in capsys.readouterr().err
 
+
 def test_generate_markdown_bbox_missing():
-    md_out = generate_markdown({"pages": [{"articles": [{"images": [{"path": "img", "bbox": {"x0": 1, "y0": 1, "x1": 1}}], "captions": [{"text": "cap", "bbox": {"x0": 1, "y0": 1, "x1": 1}}]}]}]})
+    md_out = generate_markdown(
+        {
+            "pages": [
+                {
+                    "articles": [
+                        {
+                            "images": [
+                                {"path": "img", "bbox": {"x0": 1, "y0": 1, "x1": 1}}
+                            ],
+                            "captions": [
+                                {"text": "cap", "bbox": {"x0": 1, "y0": 1, "x1": 1}}
+                            ],
+                        }
+                    ]
+                }
+            ]
+        }
+    )
     assert md_out
+
 
 def test_generate_markdown_bbox_none():
-    md_out = generate_markdown({"pages": [{"articles": [{"images": [{"path": "img", "bbox": None}], "captions": [{"text": "cap", "bbox": None}]}]}]})
+    md_out = generate_markdown(
+        {
+            "pages": [
+                {
+                    "articles": [
+                        {
+                            "images": [{"path": "img", "bbox": None}],
+                            "captions": [{"text": "cap", "bbox": None}],
+                        }
+                    ]
+                }
+            ]
+        }
+    )
     assert md_out
+
 
 def test_generate_markdown_invalid_bbox_values():
-    md_out = generate_markdown({"pages": [{"articles": [{"images": [{"path": "img", "bbox": {"x0": None, "y0": None, "x1": None, "y1": None}}], "captions": [{"text": "cap", "bbox": {"x0": None, "y0": None, "x1": None, "y1": None}}]}]}]})
+    md_out = generate_markdown(
+        {
+            "pages": [
+                {
+                    "articles": [
+                        {
+                            "images": [
+                                {
+                                    "path": "img",
+                                    "bbox": {
+                                        "x0": None,
+                                        "y0": None,
+                                        "x1": None,
+                                        "y1": None,
+                                    },
+                                }
+                            ],
+                            "captions": [
+                                {
+                                    "text": "cap",
+                                    "bbox": {
+                                        "x0": None,
+                                        "y0": None,
+                                        "x1": None,
+                                        "y1": None,
+                                    },
+                                }
+                            ],
+                        }
+                    ]
+                }
+            ]
+        }
+    )
     assert md_out
+
 
 def test_generate_markdown_missing_dims():
-    md_out = generate_markdown({"pages": [{"width": None, "height": None, "articles": []}]})
+    md_out = generate_markdown(
+        {"pages": [{"width": None, "height": None, "articles": []}]}
+    )
     assert md_out
+
 
 def test_generate_markdown_quality_no_warnings():
-    md_out = generate_markdown({"quality": {"status": "success", "parser": "mineru", "warnings": []}})
+    md_out = generate_markdown(
+        {"quality": {"status": "success", "parser": "mineru", "warnings": []}}
+    )
     assert md_out
+
 
 def test_generate_markdown_empty_caption_bbox():
-    md_out = generate_markdown({"pages": [{"articles": [{"captions": [{"text": "cap", "bbox": None}]}]}]})
+    md_out = generate_markdown(
+        {"pages": [{"articles": [{"captions": [{"text": "cap", "bbox": None}]}]}]}
+    )
     assert md_out
+
 
 def test_generate_markdown_bbox_not_dict():
-    md_out = generate_markdown({"pages": [{"articles": [{"images": [{"path": "img", "bbox": "not_a_dict"}], "captions": [{"text": "cap", "bbox": "not_a_dict"}]}]}]})
+    md_out = generate_markdown(
+        {
+            "pages": [
+                {
+                    "articles": [
+                        {
+                            "images": [{"path": "img", "bbox": "not_a_dict"}],
+                            "captions": [{"text": "cap", "bbox": "not_a_dict"}],
+                        }
+                    ]
+                }
+            ]
+        }
+    )
     assert md_out
+
 
 def test_generate_markdown_caption_dict_no_bbox():
-    md_out = generate_markdown({"pages": [{"articles": [{"captions": [{"text": "cap"}]}]}]})
+    md_out = generate_markdown(
+        {"pages": [{"articles": [{"captions": [{"text": "cap"}]}]}]}
+    )
     assert md_out
+
 
 def test_generate_markdown_article_bbox():
-    md_out = generate_markdown({"pages": [{"articles": [{"headline": "A1", "bbox": {"x0": 1, "y0": 2, "x1": 3, "y1": 4}}, {"headline": "A2", "bbox": None}]}]})
+    md_out = generate_markdown(
+        {
+            "pages": [
+                {
+                    "articles": [
+                        {
+                            "headline": "A1",
+                            "bbox": {"x0": 1, "y0": 2, "x1": 3, "y1": 4},
+                        },
+                        {"headline": "A2", "bbox": None},
+                    ]
+                }
+            ]
+        }
+    )
     assert md_out
 
+
 def test_generate_markdown_article_captions():
-    md_out = generate_markdown({"pages": [{"articles": [{"captions": [{"text": "cap", "bbox": {"x0": 1, "y0": 2, "x1": 3, "y1": 4}}], "images": []}]}]})
+    md_out = generate_markdown(
+        {
+            "pages": [
+                {
+                    "articles": [
+                        {
+                            "captions": [
+                                {
+                                    "text": "cap",
+                                    "bbox": {"x0": 1, "y0": 2, "x1": 3, "y1": 4},
+                                }
+                            ],
+                            "images": [],
+                        }
+                    ]
+                }
+            ]
+        }
+    )
     assert md_out
+
 
 def test_generate_markdown_headers_dict():
     md_out = generate_markdown({"pages": [{"headers": [{"text": "header1"}]}]})
     assert md_out
 
+
 def test_generate_markdown_caption_bbox_missing_coords():
-    md_out = generate_markdown({"pages": [{"articles": [{"captions": [{"text": "cap", "bbox": {"x0": 1, "y0": 2}}], "images": []}]}]})
+    md_out = generate_markdown(
+        {
+            "pages": [
+                {
+                    "articles": [
+                        {
+                            "captions": [{"text": "cap", "bbox": {"x0": 1, "y0": 2}}],
+                            "images": [],
+                        }
+                    ]
+                }
+            ]
+        }
+    )
     assert md_out
 
+
 def test_generate_markdown_image_caption_bbox_missing_coords():
-    md_out = generate_markdown({"pages": [{"articles": [{"images": [{"path": "img1", "captions": [{"text": "cap", "bbox": {"x0": 1, "y0": 2}}]}], "captions": []}]}]})
+    md_out = generate_markdown(
+        {
+            "pages": [
+                {
+                    "articles": [
+                        {
+                            "images": [
+                                {
+                                    "path": "img1",
+                                    "captions": [
+                                        {"text": "cap", "bbox": {"x0": 1, "y0": 2}}
+                                    ],
+                                }
+                            ],
+                            "captions": [],
+                        }
+                    ]
+                }
+            ]
+        }
+    )
     assert md_out
+
 
 def test_generate_markdown_article_not_dict():
     md_out = generate_markdown({"pages": [{"articles": ["not a dict"]}]})
     assert md_out
 
+
 def test_generate_markdown_image_not_dict():
     md_out = generate_markdown({"pages": [{"articles": [{"images": ["not a dict"]}]}]})
     assert md_out
+
 
 def test_generate_markdown_headers_empty_iterable():
     md_out = generate_markdown({"pages": [{"headers": (h for h in [])}]})
     assert md_out
 
+
 def test_generate_markdown_captions_empty_iterable():
-    md_out = generate_markdown({"pages": [{"articles": [{"captions": (c for c in [])}]}]})
+    md_out = generate_markdown(
+        {"pages": [{"articles": [{"captions": (c for c in [])}]}]}
+    )
     assert md_out
+
 
 def test_generate_markdown_headers_generator():
     md_out = generate_markdown({"pages": [{"headers": (h for h in ["header1"])}]})
     assert md_out
 
+
 def test_generate_markdown_captions_generator():
-    md_out = generate_markdown({"pages": [{"articles": [{"captions": (c for c in [{"text": "cap"}])}]}]})
+    md_out = generate_markdown(
+        {"pages": [{"articles": [{"captions": (c for c in [{"text": "cap"}])}]}]}
+    )
     assert md_out
+
 
 def test_generate_markdown_headers_gen_empty():
     md_out = generate_markdown({"pages": [{"headers": (h for h in [])}]})
     assert md_out
 
+
 def test_generate_markdown_captions_gen_empty():
-    md_out = generate_markdown({"pages": [{"articles": [{"captions": (c for c in [])}]}]})
+    md_out = generate_markdown(
+        {"pages": [{"articles": [{"captions": (c for c in [])}]}]}
+    )
     assert md_out
+
 
 class TrueButEmpty:
     def __bool__(self):
         return True
+
     def __iter__(self):
         return iter([])
+
 
 def test_generate_markdown_headers_true_empty_iterable():
     md_out = generate_markdown({"pages": [{"headers": TrueButEmpty()}]})
     assert md_out
 
+
 def test_generate_markdown_captions_true_empty_iterable():
-    md_out = generate_markdown({"pages": [{"articles": [{"captions": TrueButEmpty()}]}]})
+    md_out = generate_markdown(
+        {"pages": [{"articles": [{"captions": TrueButEmpty()}]}]}
+    )
     assert md_out
+
 
 def test_generate_markdown_empty_bbox_str():
     # Covers article.bbox -> empty str
     # Covers image.captions.bbox -> cap_bbox = None
     # Covers image.captions.bbox -> cap_bbox_str empty
-    md_out = generate_markdown({"pages": [{"articles": [{
-        "headline": "A",
-        "bbox": {"x0": None},
-        "images": [{"path": "img", "captions": [{"text": "cap", "bbox": None}, {"text": "cap2", "bbox": {"x0": None}}]}]
-    }]}]})
+    md_out = generate_markdown(
+        {
+            "pages": [
+                {
+                    "articles": [
+                        {
+                            "headline": "A",
+                            "bbox": {"x0": None},
+                            "images": [
+                                {
+                                    "path": "img",
+                                    "captions": [
+                                        {"text": "cap", "bbox": None},
+                                        {"text": "cap2", "bbox": {"x0": None}},
+                                    ],
+                                }
+                            ],
+                        }
+                    ]
+                }
+            ]
+        }
+    )
     assert md_out
