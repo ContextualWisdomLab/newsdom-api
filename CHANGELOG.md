@@ -104,3 +104,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.1] - 2026-08-01
 ### Added
 - OpenAPI 스키마 (Swagger UI) 가독성 향상을 위해 `ParseQuality` 및 `HealthResponse` 모델에 `example` 예제 데이터 추가.
+
+## [0.2.2] - 2026-08-01
+### Security
+- 오래된 종속성 (`pillow`, `pypdf`, `setuptools`) 버전을 업그레이드하여 Trivy CI 취약점 스캔 문제를 해결했습니다.
+- `mkdocs-material` 제약 조건으로 인해 수정 불가능한 `pymdown-extensions` 취약점(CVE-2026-61632)을 `.trivyignore`에 문서화하여 임시 제외 처리했습니다.
