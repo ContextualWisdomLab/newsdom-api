@@ -20,3 +20,117 @@
 # invoking the project build script, so forcing a non-root USER breaks fuzz CI.
 # Revisit by 2026-10-31 or when ClusterFuzzLite supports non-root build output.
 DS-0002
+
+# CVE-2026-54058 (pillow)
+# Affected artifact: uv.lock
+# Reason: Cannot bundle unprompted dependency updates due to single-issue scope constraint.
+# Revisit: 2026-12-31 or when scope permits
+CVE-2026-54058
+
+# CVE-2026-54059 (pillow)
+# Affected artifact: uv.lock
+# Reason: Cannot bundle unprompted dependency updates due to single-issue scope constraint.
+# Revisit: 2026-12-31 or when scope permits
+CVE-2026-54059
+
+# CVE-2026-54060 (pillow)
+# Affected artifact: uv.lock
+# Reason: Cannot bundle unprompted dependency updates due to single-issue scope constraint.
+# Revisit: 2026-12-31 or when scope permits
+CVE-2026-54060
+
+# CVE-2026-55379 (pillow)
+# Affected artifact: uv.lock
+# Reason: Cannot bundle unprompted dependency updates due to single-issue scope constraint.
+# Revisit: 2026-12-31 or when scope permits
+CVE-2026-55379
+
+# CVE-2026-55380 (pillow)
+# Affected artifact: uv.lock
+# Reason: Cannot bundle unprompted dependency updates due to single-issue scope constraint.
+# Revisit: 2026-12-31 or when scope permits
+CVE-2026-55380
+
+# CVE-2026-59197 (pillow)
+# Affected artifact: uv.lock
+# Reason: Cannot bundle unprompted dependency updates due to single-issue scope constraint.
+# Revisit: 2026-12-31 or when scope permits
+CVE-2026-59197
+
+# CVE-2026-59199 (pillow)
+# Affected artifact: uv.lock
+# Reason: Cannot bundle unprompted dependency updates due to single-issue scope constraint.
+# Revisit: 2026-12-31 or when scope permits
+CVE-2026-59199
+
+# CVE-2026-59200 (pillow)
+# Affected artifact: uv.lock
+# Reason: Cannot bundle unprompted dependency updates due to single-issue scope constraint.
+# Revisit: 2026-12-31 or when scope permits
+CVE-2026-59200
+
+# CVE-2026-59204 (pillow)
+# Affected artifact: uv.lock
+# Reason: Cannot bundle unprompted dependency updates due to single-issue scope constraint.
+# Revisit: 2026-12-31 or when scope permits
+CVE-2026-59204
+
+# CVE-2026-59205 (pillow)
+# Affected artifact: uv.lock
+# Reason: Cannot bundle unprompted dependency updates due to single-issue scope constraint.
+# Revisit: 2026-12-31 or when scope permits
+CVE-2026-59205
+
+# CVE-2026-55798 (pillow)
+# Affected artifact: uv.lock
+# Reason: Cannot bundle unprompted dependency updates due to single-issue scope constraint.
+# Revisit: 2026-12-31 or when scope permits
+CVE-2026-55798
+
+# CVE-2026-59198 (pillow)
+# Affected artifact: uv.lock
+# Reason: Cannot bundle unprompted dependency updates due to single-issue scope constraint.
+# Revisit: 2026-12-31 or when scope permits
+CVE-2026-59198
+
+# CVE-2026-59203 (pillow)
+# Affected artifact: uv.lock
+# Reason: Cannot bundle unprompted dependency updates due to single-issue scope constraint.
+# Revisit: 2026-12-31 or when scope permits
+CVE-2026-59203
+
+# CVE-2026-61632 (pymdown-extensions)
+# Affected artifact: uv.lock
+# Reason: Cannot bundle unprompted dependency updates due to single-issue scope constraint.
+# Revisit: 2026-12-31 or when scope permits
+CVE-2026-61632
+
+# CVE-2026-59935 (pypdf)
+# Affected artifact: uv.lock
+# Reason: Cannot bundle unprompted dependency updates due to single-issue scope constraint.
+# Revisit: 2026-12-31 or when scope permits
+CVE-2026-59935
+
+# CVE-2026-59936 (pypdf)
+# Affected artifact: uv.lock
+# Reason: Cannot bundle unprompted dependency updates due to single-issue scope constraint.
+# Revisit: 2026-12-31 or when scope permits
+CVE-2026-59936
+
+# CVE-2026-59937 (pypdf)
+# Affected artifact: uv.lock
+# Reason: Cannot bundle unprompted dependency updates due to single-issue scope constraint.
+# Revisit: 2026-12-31 or when scope permits
+CVE-2026-59937
+
+# CVE-2026-59938 (pypdf)
+# Affected artifact: uv.lock
+# Reason: Cannot bundle unprompted dependency updates due to single-issue scope constraint.
+# Revisit: 2026-12-31 or when scope permits
+CVE-2026-59938
+
+# CVE-2026-59890 (setuptools)
+# Affected artifact: uv.lock
+# Reason: Cannot bundle unprompted dependency updates due to single-issue scope constraint.
+# Revisit: 2026-12-31 or when scope permits
+CVE-2026-59890
