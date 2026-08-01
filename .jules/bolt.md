@@ -63,3 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2024-08-01 - Avoid intermediate string allocation when loading JSON files
+**Learning:** Calling `Path.read_text(encoding="utf-8")` and passing it to `json.loads()` forces the creation of an intermediate Python string, which involves memory allocation and UTF-8 decoding overhead. `json.loads()` natively supports `bytes` inputs.
+**Action:** Use `Path.read_bytes()` directly with `json.loads()` to bypass the intermediate string allocation and decoding, which improves performance and reduces peak memory usage.
