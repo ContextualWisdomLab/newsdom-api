@@ -20,3 +20,8 @@
 # invoking the project build script, so forcing a non-root USER breaks fuzz CI.
 # Revisit by 2026-10-31 or when ClusterFuzzLite supports non-root build output.
 DS-0002
+
+# Revisit by 2026-11-02
+# Affected artifact: pymdown-extensions
+# Reason: No patch available for CVE-2026-61632 in the 10.x line.
+CVE-2026-61632
