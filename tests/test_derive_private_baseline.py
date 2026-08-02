@@ -44,7 +44,7 @@ def test_derive_private_baseline_direct_call(
 
     derive_baseline(fixtures_dir, output_json_path)
 
-    baseline_data = json.loads(output_json_path.read_text())
+    baseline_data = json.loads(output_json_path.read_bytes())
     assert baseline_data["page_count"] == 2
     assert baseline_data["article_count"] == 2
     assert baseline_data["headline_page_coverage"] == 0.5
@@ -74,7 +74,7 @@ def test_derive_baseline_recursive_and_non_strict(tmp_path: Path, capsys) -> Non
 
         derive_baseline(fixtures_dir, output_path, recursive=True, strict=False)
 
-    data = json.loads(output_path.read_text())
+    data = json.loads(output_path.read_bytes())
     assert data["page_count"] == 1
     assert data["article_count"] == 2
     assert data["headline_page_coverage"] == 1.0
@@ -95,7 +95,7 @@ def test_derive_baseline_no_headline_coverage(tmp_path: Path) -> None:
     ):
         derive_baseline(fixtures_dir, output_path)
 
-    data = json.loads(output_path.read_text())
+    data = json.loads(output_path.read_bytes())
     assert data["page_count"] == 1
     assert data["article_count"] == 0
     assert data["headline_page_coverage"] == 0.0

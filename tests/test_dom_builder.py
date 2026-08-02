@@ -19,7 +19,7 @@ from newsdom_api.dom_builder import (
 
 
 def _load_fixture(name: str):
-    return json.loads(Path(f"tests/fixtures/{name}").read_text(encoding="utf-8"))
+    return json.loads(Path(f"tests/fixtures/{name}").read_bytes())
 
 
 def test_build_dom_extracts_articles_from_mineru_sample():

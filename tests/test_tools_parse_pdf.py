@@ -45,7 +45,7 @@ def test_parse_pdf_success_file_output(mock_parse, mock_pdf_file, tmp_path, caps
     out = capsys.readouterr().out
     assert "Output written to" in out
 
-    res = json.loads(out_path.read_text())
+    res = json.loads(out_path.read_bytes())
     assert res["status"] == "ok"
 
 

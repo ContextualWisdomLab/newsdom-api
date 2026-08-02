@@ -131,7 +131,7 @@ def test_synthetic_fixture_truth_declares_single_page_metrics(tmp_path: Path):
     from newsdom_api.synthetic import generate_fixture
 
     _, truth_path = generate_fixture(tmp_path, seed=7)
-    truth = json.loads(truth_path.read_text(encoding="utf-8"))
+    truth = json.loads(truth_path.read_bytes())
 
     assert truth["page_count"] == 1
     assert truth["headline_page_coverage"] == 1.0

@@ -44,7 +44,7 @@ def test_anonymize_dom_success(tmp_path):
     anonymize_dom(input_file, output_file)
 
     assert output_file.exists()
-    out_data = json.loads(output_file.read_text())
+    out_data = json.loads(output_file.read_bytes())
     page = out_data["pages"][0]
 
     assert page["ads"] == ["*" * 9, "*" * 4]

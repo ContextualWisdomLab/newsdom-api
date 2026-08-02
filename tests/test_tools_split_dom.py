@@ -26,12 +26,12 @@ def test_split_dom_success(tmp_path):
     assert (output_dir / "input_page_1.json").exists()
     assert (output_dir / "input_page_2.json").exists()
 
-    p1 = json.loads((output_dir / "input_page_1.json").read_text())
+    p1 = json.loads((output_dir / "input_page_1.json").read_bytes())
     assert p1["document_id"] == "test_doc_page_1"
     assert len(p1["pages"]) == 1
     assert p1["pages"][0]["page_number"] == 1
 
-    p2 = json.loads((output_dir / "input_page_2.json").read_text())
+    p2 = json.loads((output_dir / "input_page_2.json").read_bytes())
     assert p2["document_id"] == "test_doc_page_2"
     assert len(p2["pages"]) == 1
     assert p2["pages"][0]["page_number"] == 2

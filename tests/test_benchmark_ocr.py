@@ -53,7 +53,7 @@ def test_benchmark_ocr_harness_json(mock_pdf_dir: Path, tmp_path: Path) -> None:
             ]
         )
 
-    results = json.loads(output_path.read_text())
+    results = json.loads(output_path.read_bytes())
 
     assert results["engine1"]["success"] == 3
     assert results["engine1"]["failed"] == 0

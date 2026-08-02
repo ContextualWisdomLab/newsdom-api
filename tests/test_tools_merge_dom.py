@@ -56,7 +56,7 @@ def test_merge_dom_success(tmp_path: Path) -> None:
     merge_dom([input1, input2], output)
 
     assert output.exists()
-    merged_data = json.loads(output.read_text(encoding="utf-8"))
+    merged_data = json.loads(output.read_bytes())
 
     assert merged_data["document_id"] == "doc_1"
     assert len(merged_data["pages"]) == 2
