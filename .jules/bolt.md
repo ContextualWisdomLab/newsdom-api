@@ -63,3 +63,7 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2026-08-01 - [Feature Addition Rejected Due to Scope and Quality Issues]
+**Learning:** Mixing feature implementations with unrelated CI fixes (e.g., CVE suppressions via `.trivyignore`) violates scope. Workarounds for test coverage (e.g., `# pragma: no branch`) and exhaustive copy-paste assertions are rejected as low-signal "gaming". HTML exporters must strictly escape all data fields, including numeric fields like `width/height` if handled dynamically, to prevent XSS. Helper functions like `_format_bbox` require proper docstrings.
+**Action:** Strictly isolate tasks (never bundle CVE/CI fixes into feature PRs unless prompted). Use table-driven `pytest.mark.parametrize` for tests instead of repeating assertion blocks. Always escape all extracted fields in HTML rendering. Ensure all new functions, even internal helpers, include docstrings. If a PR is rejected with specific instructions, implement exactly what is asked.
