@@ -20,13 +20,19 @@ This single-flight contract prevents autonomous work from accumulating behind
 an unresolved review or from creating multiple competing implementations of the
 same product gap.
 
-## Authentication
+## Authentication and API contract
 
 The built-in `GITHUB_TOKEN` is used only for read-only pull-request inventory.
-GitHub's Agent Tasks API requires a fine-grained user token and does not accept
-the workflow's installation token. Configure `COPILOT_GITHUB_TOKEN` as a
-repository or organization secret with Agent tasks read/write permission for
+GitHub's Agent Tasks API requires a fine-grained user token or GitHub App user
+access token and does not accept an installation access token such as the
+workflow `GITHUB_TOKEN`. Configure `COPILOT_GITHUB_TOKEN` as a repository or
+organization secret with Agent tasks read/write permission for
 `ContextualWisdomLab/newsdom-api`.
+
+The workflow sends the GitHub-recommended media type and supported REST API
+version `2022-11-28`. Agent Tasks endpoints are in public preview, so their
+request and response contract must remain covered by the repository workflow
+tests and reviewed when GitHub changes the preview.
 
 When the secret is absent, task inventory is unavailable, or the API returns an
 unexpected state, the workflow fails closed and records the reason in the step
