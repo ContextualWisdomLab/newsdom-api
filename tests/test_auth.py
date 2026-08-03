@@ -64,6 +64,17 @@ def test_parse_accepts_valid_bearer_when_secret_set(monkeypatch, stub_parser):
     assert response.status_code == 200
 
 
+def test_require_authorization_handles_non_ascii_gracefully(monkeypatch):
+    from fastapi import HTTPException
+    from newsdom_api.main import require_authorization
+
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+    with pytest.raises(HTTPException) as exc_info:
+        require_authorization("Bearer 안녕")
+    assert exc_info.value.status_code == 401
+    assert exc_info.value.detail == "Unauthorized"
+
+
 def test_health_is_unauthenticated_even_when_secret_set(monkeypatch):
     monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
     client = TestClient(app)
