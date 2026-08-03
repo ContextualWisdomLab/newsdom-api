@@ -1,0 +1,68 @@
+import httpx
+from fastapi import FastAPI, Request, File, UploadFile, HTTPException
+import uvicorn
+import threading
+import time
+from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
+
+MAX_BYTES = 100
+app = FastAPI()
+
+class ContentLengthLimitMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        content_length = request.headers.get("content-length")
+        if content_length:
+            try:
+                length = int(content_length)
+                if length > MAX_BYTES:
+                    return JSONResponse(status_code=413, content={"detail": "Payload Too Large"})
+            except ValueError:
+                return JSONResponse(status_code=400, content={"detail": "Invalid Content-Length"})
+
+        # Enforce stream limit for chunked requests
+        receive_ = request.receive
+        bytes_received = 0
+
+        async def bounded_receive():
+            nonlocal bytes_received
+            message = await receive_()
+            if message["type"] == "http.request":
+                body = message.get("body", b"")
+                bytes_received += len(body)
+                if bytes_received > MAX_BYTES:
+                    raise ValueError("Payload Too Large")
+            return message
+
+        request._receive = bounded_receive
+
+        try:
+            return await call_next(request)
+        except ValueError as e:
+            if str(e) == "Payload Too Large":
+                return JSONResponse(status_code=413, content={"detail": "Payload Too Large"})
+            raise
+
+app.add_middleware(ContentLengthLimitMiddleware)
+
+@app.post("/")
+async def upload(file: UploadFile = File(...)):
+    return {"size": getattr(file, "size", 0)}
+
+def run():
+    uvicorn.run(app, host="127.0.0.1", port=8015, log_level="error")
+
+t = threading.Thread(target=run, daemon=True)
+t.start()
+time.sleep(2)
+
+def generate_chunked():
+    yield b"--boundary\r\n"
+    yield b"Content-Disposition: form-data; name=\"file\"; filename=\"test.txt\"\r\n"
+    yield b"Content-Type: text/plain\r\n\r\n"
+    yield b"A" * 150 + b"\r\n"
+    yield b"--boundary--\r\n"
+
+resp = httpx.post("http://127.0.0.1:8015/", content=generate_chunked(), headers={"Content-Type": "multipart/form-data; boundary=boundary"})
+print("Status:", resp.status_code)
+print("Text:", resp.text)

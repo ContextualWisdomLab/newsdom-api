@@ -23,6 +23,7 @@ from fastapi import (
 from fastapi.responses import JSONResponse
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
+from starlette.formparsers import MultiPartParser
 
 from .config import get_api_token
 from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
@@ -38,8 +39,32 @@ from .service import parse_pdf
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
 MAX_VALIDATION_PAGES = 1000
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
+
 PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
 INVALID_PARSE_PARAMS_DETAIL = "Invalid parse parameters"
+
+_original_multipart_parse = MultiPartParser.parse
+
+async def _bounded_multipart_parse(self):
+    """Enforce a strict ceiling on multipart parsing streams."""
+
+    bytes_received = 0
+    original_stream = self.stream
+
+    async def _bounded_stream():
+        """Count bytes and abort if ceiling is breached."""
+
+        nonlocal bytes_received
+        async for chunk in original_stream:
+            bytes_received += len(chunk)
+            if bytes_received > MAX_PARSE_UPLOAD_BYTES:
+                raise HTTPException(status_code=413, detail=PAYLOAD_TOO_LARGE_DETAIL)
+            yield chunk
+
+    self.stream = _bounded_stream()
+    return await _original_multipart_parse(self)
+
+MultiPartParser.parse = _bounded_multipart_parse
 UNAUTHORIZED_DETAIL = "Unauthorized"
 LOGGER = logging.getLogger("newsdom_api")
 

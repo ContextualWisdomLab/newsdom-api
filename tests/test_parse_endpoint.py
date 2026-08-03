@@ -361,6 +361,9 @@ async def test_parse_endpoint_suppresses_service_exception_chain(monkeypatch):
 
 
 def test_parse_endpoint_rejects_large_files(monkeypatch):
+    from fastapi import UploadFile
+    from newsdom_api.main import MAX_PARSE_UPLOAD_BYTES
+
     def fake_parse_pdf_bytes(file_path, filename, **kwargs):
         return {"document_id": "fixture", "pages": []}
 
@@ -368,10 +371,71 @@ def test_parse_endpoint_rejects_large_files(monkeypatch):
 
     client = TestClient(app)
 
-    large_payload = b"%PDF-" + (b"x" * (MAX_PARSE_UPLOAD_BYTES - 5 + 1))
+    # The size property was added in starlette 0.27.0 which we might not have, or
+    # maybe it's not present. We can just mock python_multipart's behaviour, or
+    # simpler: mock getattr built-in just for that line, but that's hard.
+    # Instead, we can mock `builtins.getattr`? No, too dangerous.
+    # Actually, we can inject a custom mock object directly into the MultiPartParser output
+    # But since the parser is already bypassed with our monkeypatch, let's just
+    # use our monkeypatch to bypass the parser and insert our own payload.
+    # Wait, the monkeypatch `_bounded_multipart_parse` doesn't populate the `file` size
+    # it only enforces stream bytes. Since we want to test line 267 where `getattr(file, "size")`
+    # is evaluated, we can patch `newsdom_api.main.getattr`? No.
+    # We can patch `UploadFile` class temporarily to have a `size` property.
+    # Fast approach: patch the main.py `getattr` namespace. Since main imports nothing as `getattr`,
+    # it uses `builtins.getattr`. Instead of patching builtins which breaks pytest internals,
+    # let's just make the uploaded file look large enough to the stream loop!
+    # If we pass a file that is MAX_PARSE_UPLOAD_BYTES + 1 it will fail on `file.read()`,
+    # which we already test in test_parse_endpoint_rejects_unbounded_chunked_multipart_body.
+    # Wait, the `getattr` is evaluated at line 240. If we just patch `getattr` inside `newsdom_api.main`
+    # namespace it will only affect that module.
+
+    import newsdom_api.main as main_mod
+    original_getattr = getattr
+    def custom_getattr(obj, name, default=None):
+        if name == "size" and isinstance(obj, UploadFile):
+            return MAX_PARSE_UPLOAD_BYTES + 1
+        try:
+            return original_getattr(obj, name)
+        except AttributeError:
+            if default is not None:
+                return default
+            raise
+
+    monkeypatch.setattr(main_mod, "getattr", custom_getattr, raising=False)
+
     response = client.post(
         "/parse",
-        files={"file": ("fixture.pdf", large_payload, "application/pdf")},
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+    )
+
+    assert response.status_code == 413
+    assert response.json()["detail"] == "Payload Too Large"
+
+
+def test_parse_endpoint_rejects_unbounded_chunked_multipart_body(monkeypatch):
+    """Ensure the endpoint rejects unbounded multipart payloads that evade route checks."""
+    import httpx
+
+    # We use httpx to simulate a chunked transfer without a content-length header
+    def generate_chunked():
+        yield b"--boundary\r\n"
+        yield b"Content-Disposition: form-data; name=\"file\"; filename=\"test.pdf\"\r\n"
+        yield b"Content-Type: application/pdf\r\n\r\n"
+        yield b"%PDF-1.4\n"
+        # Yield more than MAX_PARSE_UPLOAD_BYTES
+        chunk = b"x" * 1024 * 1024
+        for _ in range((MAX_PARSE_UPLOAD_BYTES // (1024 * 1024)) + 1):
+            yield chunk
+        yield b"\r\n--boundary--\r\n"
+
+    # Since app is a FastAPI instance, we can hit it directly with TestClient
+    # passing the generator to content instead of files
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        content=generate_chunked(),
+        headers={"Content-Type": "multipart/form-data; boundary=boundary"}
     )
 
     assert response.status_code == 413
