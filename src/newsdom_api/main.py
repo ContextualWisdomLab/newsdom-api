@@ -32,6 +32,7 @@ from .mineru_runner import (
     normalize_language,
     normalize_mode,
 )
+from .runtime_readiness import router as runtime_readiness_router
 from .schemas import HealthResponse, ParseResponse
 from .service import parse_pdf
 
@@ -76,6 +77,8 @@ app = FastAPI(
         "tryItOutEnabled": True,
     },
 )
+
+app.include_router(runtime_readiness_router)
 
 
 def _apply_security_headers(response: Response, request: Request) -> Response:
