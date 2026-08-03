@@ -59,6 +59,31 @@ def test_build_dom_rejects_non_list_content():
         build_dom(("not", "a", "list"), document_id="doc-not-list")
 
 
+def test_build_dom_skips_non_dict_content_blocks():
+    # dom_builder is an untrusted-input surface: MinerU may emit a content_list
+    # containing non-object JSON elements (a bare string, number, null, or
+    # nested array). build_dom must normalize such output tolerantly instead of
+    # raising an undocumented AttributeError from a downstream ``block.get(...)``
+    # call, matching how the fuzzer's _coerce_content_list and
+    # _caption_nodes_from_items already treat non-dict items.
+    dom = build_dom(
+        [
+            "orphan string block",
+            123,
+            None,
+            ["nested", "array"],
+            {"type": "text", "text": "real body", "bbox": [1, 1, 2, 2]},
+        ],
+        document_id="doc-non-dict-blocks",
+    )
+
+    assert len(dom.pages) == 1
+    page = dom.pages[0]
+    assert len(page.articles) == 1
+    assert page.articles[0].headline == "(untitled)"
+    assert page.articles[0].body_blocks == ["real body"]
+
+
 def test_build_dom_handles_non_headline_paths():
     dom = build_dom(
         [

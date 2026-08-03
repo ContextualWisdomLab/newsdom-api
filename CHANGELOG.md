@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - [CLI] 여러 개의 분할된 NewsDOM JSON 파일을 하나의 문서로 병합하는 `tools/merge_dom.py` 도구를 추가했습니다.
-- [CLI] 파싱된 NewsDOM JSON 데이터를 CSV 형식으로 추출하는 `tools/export_csv.py` 도구를 추가했습니다.
+- [CLI] NewsDOM JSON 데이터를 CSV 형식으로 추출하는 `tools/export_csv.py` 도구를 추가했습니다.
 - [CLI] 파싱된 NewsDOM JSON을 HTML 포맷으로 변환하여 웹 브라우저에서 보기 쉽게 만들어주는 `tools/export_html.py` 도구를 추가했습니다.
 - [CLI] 파싱된 NewsDOM JSON이 Pydantic 스키마(`ParseResponse`)와 일치하는지 엄격하게 검증하는 `tools/validate_dom.py` 도구 추가
 - [CLI] 파싱된 NewsDOM JSON의 기사 제목(headline)과 본문(body_blocks)에서 텍스트를 검색하여 위치를 반환하는 `tools/search_dom.py` 도구 추가
@@ -53,6 +53,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Improved OpenAPI metadata for the `/parse` endpoint by documenting 415, 502, and 503 error responses.
+
+### Fixed
+
+- `dom_builder.build_dom`가 신뢰할 수 없는 MinerU `content_list`의 비-객체 요소(bare string/number/null/array)를 만나면 `block.get(...)`에서 미문서화 `AttributeError`를 던지던 문제를 수정. 이제 비-dict 블록을 건너뛰어(fuzzer의 `_coerce_content_list` 및 `_caption_nodes_from_items`와 동일한 관용적 처리) untrusted-input 표면 불변식(임의 입력에 대해 예기치 못한 예외 타입 금지)을 지킴.
 
 ## [0.2.0] - 2026-04-24
 
