@@ -1,3 +1,5 @@
+"""Validate package metadata, lockfile invariants, and release constraints."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -5,6 +7,8 @@ import re
 
 
 def _locked_package_version(name: str) -> tuple[int, ...]:
+    """Return a locked package version as an integer tuple."""
+
     text = Path("uv.lock").read_text(encoding="utf-8")
     match = re.search(
         rf'\[\[package\]\]\nname = "{re.escape(name)}"\nversion = "([^"]+)"',
@@ -15,6 +19,8 @@ def _locked_package_version(name: str) -> tuple[int, ...]:
 
 
 def _dependencies_section(text: str) -> str:
+    """Extract the top-level project dependency array from TOML source text."""
+
     marker = "dependencies = ["
     if marker not in text:
         raise AssertionError("pyproject.toml is missing a project dependencies section")
@@ -53,6 +59,8 @@ def _dependencies_section(text: str) -> str:
 
 
 def _project_version(text: str) -> str:
+    """Return the version declared specifically inside the project table."""
+
     match = re.search(
         r'^\[project\]\n(?:.*\n)*?^version = "([^"]+)"',
         text,
@@ -170,5 +178,15 @@ def test_uv_lock_does_not_track_external_mineru_pipeline_runtime_stack():
     assert '[[package]]\nname = "torch"' not in text
 
 
-def test_uv_lock_pins_pypdf_at_patched_release():
-    assert _locked_package_version("pypdf") >= (6, 10, 0)
+def test_uv_lock_pins_all_security_remediations():
+    """Prevent vulnerable dependency versions from returning on lock refresh."""
+
+    patched_floors = {
+        "pillow": (12, 3, 0),
+        "pypdf": (6, 14, 2),
+        "pymdown-extensions": (11, 0, 1),
+        "setuptools": (83, 0, 0),
+    }
+
+    for package_name, minimum_version in patched_floors.items():
+        assert _locked_package_version(package_name) >= minimum_version
