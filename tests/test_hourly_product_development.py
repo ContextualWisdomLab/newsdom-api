@@ -38,6 +38,7 @@ def test_hourly_product_development_is_single_flight_and_fail_closed():
 
     assert 'cron: "41 * * * *"' in workflow
     assert "cancel-in-progress: false" in workflow
+    assert "timeout-minutes: 15" in workflow
     assert '--state open --limit 1 --json number,url' in workflow
     assert '"/agents/repos/${GITHUB_REPOSITORY}/tasks?per_page=100"' in workflow
     assert "reason=open_pull_request" in workflow
