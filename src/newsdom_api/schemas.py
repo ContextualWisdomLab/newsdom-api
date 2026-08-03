@@ -33,7 +33,7 @@ class CaptionNode(BaseModel):
 
     text: str = Field(
         description="Text content of the caption.",
-        json_schema_extra={"example": "Figure 1: Process overview."},
+        json_schema_extra={"example": "Figure 1: Architectural diagram."},
     )
     bbox: Optional[BoundingBox] = Field(
         default=None,
@@ -46,7 +46,7 @@ class ImageNode(BaseModel):
 
     path: str = Field(
         description="Relative path to the extracted image asset.",
-        json_schema_extra={"example": "images/figure-001.png"},
+        json_schema_extra={"example": "images/article_123_fig1.jpg"},
     )
     media_type: str = Field(
         default="image",
@@ -77,14 +77,14 @@ class ArticleNode(BaseModel):
 
     article_id: str = Field(
         description="Stable identifier for the section within the parsed document.",
-        json_schema_extra={"example": "section-001"},
+        json_schema_extra={"example": "section-20231015-001"},
     )
     headline: str = Field(
         description=(
             "Primary section heading text. This is a generic section heading, "
             "not tied to any newspaper or language-specific concept."
         ),
-        json_schema_extra={"example": "Overview"},
+        json_schema_extra={"example": "Quarterly results"},
     )
     bbox: Optional[BoundingBox] = Field(
         default=None,
@@ -93,9 +93,7 @@ class ArticleNode(BaseModel):
     body_blocks: List[str] = Field(
         default_factory=list,
         description="Ordered text blocks that make up the article body.",
-        json_schema_extra={
-            "example": ["This is the first paragraph.", "This is the second paragraph."]
-        },
+        json_schema_extra={"example": ["This is the first paragraph.", "This is the second paragraph."]},
     )
     images: List[ImageNode] = Field(
         default_factory=list,
@@ -135,12 +133,12 @@ class PageNode(BaseModel):
     ads: List[str] = Field(
         default_factory=list,
         description="Advertisement text blocks extracted from this page.",
-        json_schema_extra={"example": ["Promotional notice"]},
+        json_schema_extra={"example": ["Promotional content block"]},
     )
     headers: List[str] = Field(
         default_factory=list,
         description="Header text blocks extracted from this page.",
-        json_schema_extra={"example": ["Document title"]},
+        json_schema_extra={"example": ["Annual Report - 2023"]},
     )
     footers: List[str] = Field(
         default_factory=list,

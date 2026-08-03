@@ -320,7 +320,9 @@ def run_mineru(
         )
 
         completed = _execute_mineru(cmd)
-        content_list, model = _parse_mineru_output(output_dir, input_pdf, resolved_mode)
+        content_list, model = _parse_mineru_output(
+            output_dir, input_pdf, resolved_mode
+        )
 
         return {
             "content_list": content_list,
