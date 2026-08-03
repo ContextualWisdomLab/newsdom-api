@@ -36,6 +36,7 @@ from .schemas import HealthResponse, ParseResponse
 from .service import parse_pdf
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
+MAX_AUTHORIZATION_HEADER_BYTES = 8 * 1024
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
 PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
 INVALID_PARSE_PARAMS_DETAIL = "Invalid parse parameters"
@@ -116,6 +117,16 @@ async def global_exception_handler(request: Request, exc: Exception) -> Response
     return _apply_security_headers(response, request)
 
 
+def _authorization_failure() -> HTTPException:
+    """Build the canonical bearer-authentication failure response."""
+
+    return HTTPException(
+        status_code=401,
+        detail=UNAUTHORIZED_DETAIL,
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
 def require_authorization(
     authorization: Annotated[str | None, Header()] = None,
 ) -> None:
@@ -125,20 +136,26 @@ def require_authorization(
     :func:`newsdom_api.config.get_api_token`), callers must present a matching
     ``Authorization: Bearer <token>`` header; otherwise a ``401`` is raised. If
     no secret is configured the service stays open, which keeps the standalone
-    development experience friction-free. The comparison is constant-time.
+    development experience friction-free. Values are compared as UTF-8 bytes
+    in constant time, and untrusted header input is bounded before comparison.
     """
 
     token = get_api_token()
     if token is None:
         return
+
     expected = f"Bearer {token}"
     provided = authorization or ""
-    if not hmac.compare_digest(provided, expected):
-        raise HTTPException(
-            status_code=401,
-            detail=UNAUTHORIZED_DETAIL,
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    if len(provided) > MAX_AUTHORIZATION_HEADER_BYTES:
+        raise _authorization_failure()
+
+    provided_bytes = provided.encode("utf-8")
+    if len(provided_bytes) > MAX_AUTHORIZATION_HEADER_BYTES:
+        raise _authorization_failure()
+
+    expected_bytes = expected.encode("utf-8")
+    if not hmac.compare_digest(provided_bytes, expected_bytes):
+        raise _authorization_failure()
 
 
 @app.get(
