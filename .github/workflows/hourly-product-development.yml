@@ -27,6 +27,7 @@ permissions:
 jobs:
   dispatch-product-gap:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       AGENT_TASK_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
       DEFAULT_BRANCH: develop
