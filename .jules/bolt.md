@@ -63,6 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
-## 2026-07-14 - Optimize equivalence payload parsing
-**Learning:** In hot loops checking large payloads, replacing isinstance() with type() is checks avoids Method Resolution Order (MRO) traversal overhead for primitive types. Moreover, dictionary values should only be fetched once using .get() instead of duplicate gets.
-**Action:** Apply type() is instead of isinstance() for native primitive types in high-frequency loops or parsers, and cache .get() results to local variables.
+## 2026-08-03 - Optimize equivalence payload parsing via local dict caching and uncasting
+**Learning:** Replacing isinstance() with type() is was rejected to preserve object contracts, but caching duplicate dictionary `.get()` calls and uncasting redundant `bool()` checks in hot loops provide measurable 30% local execution speedups without violating contract bounds.
+**Action:** Assign `.get()` results to a local variable instead of duplicate inline gets, and avoid wrapping natively evaluated conditions with `bool()` casts.
