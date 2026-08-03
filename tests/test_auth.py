@@ -111,6 +111,33 @@ def test_require_authorization_rejects_oversized_header_before_digest(
     assert exc_info.value.headers == {"WWW-Authenticate": "Bearer"}
 
 
+def test_require_authorization_accepts_exactly_at_limit_header(monkeypatch):
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "a" * (_MAX_AUTHORIZATION_HEADER_BYTES - 7))
+    # Length of "Bearer " is 7. Total length will be exactly _MAX_AUTHORIZATION_HEADER_BYTES
+    assert (
+        require_authorization("Bearer " + ("a" * (_MAX_AUTHORIZATION_HEADER_BYTES - 7)))
+        is None
+    )
+
+
+def test_require_authorization_rejects_one_byte_over_limit_header(monkeypatch):
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+
+    def unexpected_digest(*_args, **_kwargs):
+        pytest.fail(
+            "oversized headers must be rejected before constant-time comparison"
+        )
+
+    monkeypatch.setattr("newsdom_api.main.hmac.compare_digest", unexpected_digest)
+
+    with pytest.raises(HTTPException) as exc_info:
+        require_authorization("a" * (_MAX_AUTHORIZATION_HEADER_BYTES + 1))
+
+    assert exc_info.value.status_code == 401
+    assert exc_info.value.detail == "Unauthorized"
+    assert exc_info.value.headers == {"WWW-Authenticate": "Bearer"}
+
+
 def test_health_is_unauthenticated_even_when_secret_set(monkeypatch):
     monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
     client = TestClient(app)
