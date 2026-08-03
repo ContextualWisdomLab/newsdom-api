@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MinerU subprocess argv 생성 시 `-`로 시작하는 option-like 인자를 거부하여 argument injection 위험을 낮춤
 - API 에러 응답 생성 시 내부 예외 체인을 억제하여 의존성 오류나 내부 경로가 노출될 가능성을 줄임
 - API 응답 미들웨어에 `Cache-Control: no-store, max-age=0` 헤더를 추가하여 민감한 파싱 데이터의 브라우저 및 중간 캐싱을 방지
+- Bearer 인증 값을 UTF-8 바이트로 비교하여 비-ASCII 헤더가 `hmac.compare_digest`의 `TypeError`와 500 응답을 유발하지 않도록 하고, 8 KiB를 초과하는 인코딩 결과는 상수 시간 비교 전에 401로 거부하여 헤더 기반 자원 고갈 위험을 제한
 
 ### Performance
 - `newsdom_api.dom_builder._html_safe_text` 함수에 early return과 타입 체크를 도입하여 불필요한 `str()` 캐스팅을 제거함으로써 처리 속도를 개선했습니다.
@@ -98,5 +99,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
-[0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
