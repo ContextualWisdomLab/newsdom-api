@@ -8,7 +8,7 @@ from typing import Any
 
 
 def load_metrics(path: Path) -> dict[str, Any]:
-    """Load a JSON metrics file from disk using UTF-8 encoding."""
+    """Load a JSON metrics file from disk."""
 
     # ⚡ Bolt: Fast path for json load to avoid intermediate string allocation
     return json.loads(path.read_bytes())

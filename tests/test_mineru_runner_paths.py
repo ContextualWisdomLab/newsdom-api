@@ -286,12 +286,12 @@ def test_parse_mineru_output_distinguishes_read_failures(
         json.dumps([{"layout_dets": []}]), encoding="utf-8"
     )
 
-    original_read_text = Path.read_bytes
+    original_read_bytes = Path.read_bytes
 
     def fake_read_bytes(self, *args, **kwargs):
         if self.name == file_name:
             raise read_error
-        return original_read_text(self, *args, **kwargs)
+        return original_read_bytes(self, *args, **kwargs)
 
     monkeypatch.setattr(Path, "read_bytes", fake_read_bytes)
 
@@ -613,12 +613,12 @@ def test_run_mineru_wraps_output_read_failures(
 
         return Result()
 
-    original_read_text = Path.read_bytes
+    original_read_bytes = Path.read_bytes
 
     def fake_read_bytes(self, *args, **kwargs):
         if self.name == file_name:
             raise read_error
-        return original_read_text(self, *args, **kwargs)
+        return original_read_bytes(self, *args, **kwargs)
 
     monkeypatch.setattr(Path, "read_bytes", fake_read_bytes)
     monkeypatch.setattr(mineru_runner.subprocess, "run", fake_run)
