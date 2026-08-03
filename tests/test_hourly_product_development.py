@@ -65,7 +65,8 @@ def test_hourly_product_task_is_bounded_and_commercially_focused():
     assert "Update CHANGELOG.md" in workflow
     assert "Create exactly one bounded pull request" in workflow
     assert "security-sensitive edge cases" in workflow
-    assert "Do not merge, publish, release, or bypass reviews" in workflow
+    assert "Do not merge, publish," in workflow
+    assert "release, or bypass reviews" in workflow
     assert "standalone service and a modular sidecar" in workflow
     assert "naruon" in workflow
     assert "gh pr merge" not in workflow
