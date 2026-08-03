@@ -57,3 +57,23 @@ def test_openapi_metadata_includes_contact_and_license():
         "name": "MIT License",
         "identifier": "MIT",
     }
+
+
+def test_openapi_parse_upload_remains_required_and_examples_are_exposed():
+    schema = app.openapi()
+    components = schema["components"]["schemas"]
+    request_body = schema["paths"]["/parse"]["post"]["requestBody"]
+
+    assert request_body["required"] is True
+    multipart_schema = request_body["content"]["multipart/form-data"]["schema"]
+    multipart_component = multipart_schema["$ref"].rsplit("/", maxsplit=1)[-1]
+    assert "file" in components[multipart_component]["required"]
+
+    assert components["ArticleNode"]["properties"]["headline"]["example"] == "Overview"
+    assert components["PageNode"]["properties"]["headers"]["example"] == [
+        "Document title"
+    ]
+    assert components["ParseQuality"]["properties"]["status"]["example"] == (
+        "success"
+    )
+    assert components["HealthResponse"]["properties"]["status"]["example"] == "ok"
