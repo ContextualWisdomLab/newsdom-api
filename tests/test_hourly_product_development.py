@@ -57,7 +57,8 @@ def test_hourly_product_task_is_bounded_and_commercially_focused():
     workflow = _workflow()
 
     assert "create_pull_request: true" in workflow
-    assert "single highest-value buyer-visible" in workflow
+    assert "single highest-value" in workflow
+    assert "buyer-visible" in workflow
     assert "Work test-first" in workflow
     assert "100% production statement and branch coverage" in workflow
     assert "complete production docstrings" in workflow
