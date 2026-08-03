@@ -18,7 +18,7 @@ submodule / sidecar in a larger system.
   official language families and compatibility aliases such as `japan` remain
   available
 - Parsing `mode` defaults to `auto` so born-digital text PDFs skip forced OCR
-- Optional bearer auth on `/parse`; unauthenticated `/health` liveness probe
+- Optional bearer auth on `/parse`; unauthenticated `/health` liveness and `/ready` MinerU readiness probes
 
 ## Quickstart
 
@@ -60,11 +60,10 @@ Silicon hosts running the API service inside Docker.
 The default image ships the API service only and does not bundle the MinerU runtime.
 `/parse` requires a compatible MinerU runtime to be available inside the container image or exposed through `NEWSDOM_MINERU_BIN`.
 
-> Readiness caveat: `/health` reports process liveness only. Because the
-> default image does not bundle MinerU, a container can report a green
-> `/health` while `/parse` still returns `503` until a MinerU runtime is
-> reachable. Treat MinerU availability as a separate readiness concern when
-> wiring this sidecar into a larger system.
+> Probe contract: `/health` reports process liveness. `/ready` returns `200`
+> only when the configured MinerU executable is discoverable and returns a
+> sanitized `503` otherwise. Both endpoints stay unauthenticated. Use `/health`
+> as the liveness probe and `/ready` as the traffic-routing readiness probe.
 
 #### docker compose
 
@@ -77,7 +76,25 @@ docker compose up --build
 
 Uncomment `NEWSDOM_MINERU_BIN` (path to a MinerU executable) and/or
 `NEWSDOM_API_TOKEN` (bearer secret) in the compose `environment:` block to make
-`/parse` functional and/or protected.
+`/parse` functional and/or protected. The Compose healthcheck intentionally
+uses `/health`; verify parser traffic readiness separately with:
+
+```bash
+curl --fail http://127.0.0.1:8000/ready
+```
+
+For Kubernetes, separate restart decisions from traffic routing:
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 8000
+```
 
 #### Building a MinerU-bundled image
 
@@ -153,7 +170,7 @@ curl -F "file=@sample.pdf" -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
 ```
 
 Requests without a matching `Authorization: Bearer <token>` header receive
-`401`. `/health` stays unauthenticated so orchestrators can always probe it.
+`401`. `/health` and `/ready` stay unauthenticated so orchestrators can probe them.
 Supply the token from your deployment's secret store rather than committing it.
 
 Each request is written to a request-scoped temporary directory before MinerU
