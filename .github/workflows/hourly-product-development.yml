@@ -1,0 +1,202 @@
+name: Hourly Product Development
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Evaluate the gate and prompt without creating an agent task
+        required: false
+        default: false
+        type: boolean
+  schedule:
+    - cron: "41 * * * *"
+
+concurrency:
+  group: hourly-product-development-${{ github.repository }}
+  cancel-in-progress: false
+
+# The built-in token is used only for repository inventory. The Agent Tasks REST
+# API rejects GitHub App installation tokens, including GITHUB_TOKEN, so task
+# inventory and creation use a fine-grained user token stored as the
+# COPILOT_GITHUB_TOKEN repository or organization secret. That token needs Agent
+# tasks read/write permission for this repository.
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  dispatch-product-gap:
+    runs-on: ubuntu-latest
+    env:
+      AGENT_TASK_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+      DEFAULT_BRANCH: develop
+      DRY_RUN: ${{ inputs.dry_run || false }}
+      REPOSITORY_TOKEN: ${{ github.token }}
+    steps:
+      - name: Enforce pull-request-first single-flight gate
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          open_prs="$(
+            GH_TOKEN="$REPOSITORY_TOKEN" gh pr list \
+              --repo "$GITHUB_REPOSITORY" --state open --limit 1 --json number,url
+          )"
+          if [ "$(jq 'length' <<<"$open_prs")" -gt 0 ]; then
+            {
+              echo "dispatch=false"
+              echo "reason=open_pull_request"
+            } >>"$GITHUB_OUTPUT"
+            echo "An open pull request exists; the central PR-maintenance loop owns this hour." \
+              >>"$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          if [ -z "${AGENT_TASK_TOKEN:-}" ]; then
+            {
+              echo "dispatch=false"
+              echo "reason=agent_task_token_unavailable"
+            } >>"$GITHUB_OUTPUT"
+            cat >>"$GITHUB_STEP_SUMMARY" <<'SUMMARY'
+          Agent task dispatch is disabled because `COPILOT_GITHUB_TOKEN` is not configured.
+          Configure a fine-grained personal access token with Agent tasks read/write
+          permission; the Agent Tasks API does not accept `GITHUB_TOKEN`.
+          SUMMARY
+            exit 0
+          fi
+
+          tasks_endpoint="/agents/repos/${GITHUB_REPOSITORY}/tasks?per_page=100"
+          if ! tasks_json="$(
+            GH_TOKEN="$AGENT_TASK_TOKEN" gh api \
+              --paginate \
+              --slurp \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2026-03-10" \
+              "$tasks_endpoint"
+          )"; then
+            {
+              echo "dispatch=false"
+              echo "reason=task_inventory_unavailable"
+            } >>"$GITHUB_OUTPUT"
+            echo "Agent task inventory was unavailable; failing closed." \
+              >>"$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          active_tasks="$(
+            jq '[
+              .[] | .tasks[]?
+              | ((.state // "unknown") | ascii_downcase) as $state
+              | select(
+                  $state != "completed" and
+                  $state != "failed" and
+                  $state != "timed_out" and
+                  $state != "cancelled"
+                )
+            ] | length' <<<"$tasks_json"
+          )"
+          if [ "$active_tasks" -gt 0 ]; then
+            {
+              echo "dispatch=false"
+              echo "reason=active_agent_task"
+            } >>"$GITHUB_OUTPUT"
+            echo "An agent task is active or in an unknown state; no duplicate was created." \
+              >>"$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          {
+            echo "dispatch=true"
+            echo "reason=ready"
+          } >>"$GITHUB_OUTPUT"
+
+      - name: Prepare bounded commercial-quality task
+        if: steps.gate.outputs.dispatch == 'true'
+        shell: bash
+        run: |
+          cat >"$RUNNER_TEMP/newsdom-api-agent-prompt.md" <<'PROMPT'
+          Continue product development for ContextualWisdomLab/newsdom-api.
+
+          Read AGENTS.md, CLAUDE.md, README.md, CHANGELOG.md, SECURITY.md,
+          docs/, the current source and tests, open issues, and recent merged
+          pull requests before choosing work. Identify the single highest-value
+          buyer-visible product, reliability, security, performance, deployment,
+          or integration gap that can be completed as one reviewable increment.
+          Prefer reliable PDF-to-DOM conversion, explicit API and schema contracts,
+          bounded resource use, operational readiness, observability, idempotency,
+          failure recovery, packaging, provenance, and CWL/naruon interoperability
+          over cosmetic or speculative work.
+
+          Research current authoritative standards, upstream primary documentation,
+          and peer-reviewed evidence when relevant. Use Figma or Product Design only
+          when the selected increment has a genuine user-interface or interaction
+          surface; do not create decorative design work for this backend-first API.
+
+          Work test-first. Reproduce the gap with a failing test, implement the
+          smallest coherent feature or fix, and preserve deterministic behavior and
+          security boundaries. Maintain 100% production statement and branch coverage
+          and complete production docstrings. Run focused tests first, then the full
+          repository suite, lint, type checks, package builds, strict documentation
+          build, dependency and container security checks, and security-sensitive edge cases.
+
+          Keep NewsDOM API usable both as a standalone service and a modular sidecar
+          in CWL MSA deployments and naruon. Do not create a new repository. Preserve
+          backwards-compatible public APIs unless a clearly documented versioned
+          migration is necessary. Any database object introduced must have a
+          descriptive two-word-or-longer snake_case, CamelCase, or PascalCase name,
+          with snake_case preferred.
+
+          Update CHANGELOG.md and all user, operator, API, architecture, and research
+          documentation affected by the behavior. Create exactly one bounded pull request
+          against develop with verification evidence, source citations where relevant,
+          explicit residual risks, and no unrelated refactoring. Do not merge, publish,
+          release, or bypass reviews. If the repository is genuinely release-ready,
+          prepare the semantic-version, changelog, and release-note changes in the PR,
+          but leave tagging and publication to the protected release process.
+          PROMPT
+
+      - name: Record dry-run decision
+        if: steps.gate.outputs.dispatch == 'true' && env.DRY_RUN == 'true'
+        shell: bash
+        run: |
+          echo "Dry run: a bounded product-development task would be created." \
+            >>"$GITHUB_STEP_SUMMARY"
+          cat "$RUNNER_TEMP/newsdom-api-agent-prompt.md" >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Create Copilot cloud-agent task
+        if: steps.gate.outputs.dispatch == 'true' && env.DRY_RUN != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          request_file="$RUNNER_TEMP/newsdom-api-agent-request.json"
+          jq -n \
+            --rawfile prompt "$RUNNER_TEMP/newsdom-api-agent-prompt.md" \
+            --arg base "$DEFAULT_BRANCH" \
+            '{
+              prompt: $prompt,
+              base_ref: $base,
+              create_pull_request: true
+            }' >"$request_file"
+
+          response="$(
+            GH_TOKEN="$AGENT_TASK_TOKEN" gh api \
+              --method POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2026-03-10" \
+              "/agents/repos/${GITHUB_REPOSITORY}/tasks" \
+              --input "$request_file"
+          )"
+
+          task_id="$(jq -r '.id // "unknown"' <<<"$response")"
+          task_state="$(jq -r '.state // "unknown"' <<<"$response")"
+          task_url="$(jq -r '.html_url // empty' <<<"$response")"
+          {
+            echo "Created Copilot cloud-agent task \`$task_id\`."
+            echo "Initial state: \`$task_state\`."
+            if [ -n "$task_url" ]; then
+              echo "Task: $task_url"
+            fi
+            echo "The central PR-maintenance workflow owns review, repair, revalidation, and merge."
+          } >>"$GITHUB_STEP_SUMMARY"
