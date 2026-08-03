@@ -26,7 +26,7 @@ def test_hourly_product_development_uses_supported_agent_task_authentication():
     assert 'REPOSITORY_TOKEN: ${{ github.token }}' in workflow
     assert 'GH_TOKEN="$AGENT_TASK_TOKEN" gh api' in workflow
     assert 'GH_TOKEN="$REPOSITORY_TOKEN" gh pr list' in workflow
-    assert 'X-GitHub-Api-Version: 2026-03-10' in workflow
+    assert 'X-GitHub-Api-Version: 2022-11-28' in workflow
     assert "copilot-requests: write" not in workflow
     assert "GH_TOKEN: ${{ github.token }}" not in workflow
 
