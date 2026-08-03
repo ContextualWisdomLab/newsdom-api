@@ -63,6 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
-## 2024-06-30 - Replace Sum Generator in OCR Benchmark
-**Learning:** Generator expressions passed to `sum()` add iterator setup and state management overhead in simple list scans, which is particularly noticeable when performing metric aggregation across pages.
-**Action:** Refactor `sum(len(p.articles) for p in response.pages)` into an explicit `for` loop to eliminate generator allocation and state management overhead.
+## 2024-07-09 - Avoid eager list allocation on glob generators
+**Learning:** In file discovery routines, eagerly resolving a glob generator into a list (e.g., `list(path.glob(...))`) causes unnecessary directory traversals and memory allocation when only a single match is needed. Or when sorting, it adds an extra wrapper list allocation step `sorted(list(glob()))` when `sorted(glob())` handles the generator directly.
+**Action:** Remove unnecessary `list()` wrappers around generators in hot or frequent routines.

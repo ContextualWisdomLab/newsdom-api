@@ -18,9 +18,9 @@ def derive_baseline(
     structural baseline for equivalence testing.
     """
     if recursive:
-        pdf_paths = sorted(list(fixtures_dir.rglob("*.pdf")))
+        pdf_paths = sorted(fixtures_dir.rglob("*.pdf"))
     else:
-        pdf_paths = sorted(list(fixtures_dir.glob("*.pdf")))
+        pdf_paths = sorted(fixtures_dir.glob("*.pdf"))
 
     if not pdf_paths:
         raise FileNotFoundError(f"No PDF files found in {fixtures_dir}")

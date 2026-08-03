@@ -24,13 +24,10 @@ def run_mineru_engine(pdf_path: Path) -> dict[str, Any]:
         A dictionary containing the processing status and key metrics.
     """
     response = parse_pdf_bytes(pdf_path.read_bytes(), filename=pdf_path.name)
-    article_count = 0
-    for p in response.pages:
-        article_count += len(p.articles)
     return {
         "status": "success",
         "page_count": len(response.pages),
-        "article_count": article_count,
+        "article_count": sum(len(p.articles) for p in response.pages),
     }
 
 
@@ -61,9 +58,9 @@ def run_benchmark(
         output_format: The format to save the results ('json' or 'csv').
     """
     if recursive:
-        pdf_paths = sorted(list(fixtures_dir.rglob("*.pdf")))
+        pdf_paths = sorted(fixtures_dir.rglob("*.pdf"))
     else:
-        pdf_paths = sorted(list(fixtures_dir.glob("*.pdf")))
+        pdf_paths = sorted(fixtures_dir.glob("*.pdf"))
 
     if not pdf_paths:
         raise FileNotFoundError(f"No PDF files found in {fixtures_dir}")
