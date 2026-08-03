@@ -100,3 +100,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
+
+## [0.2.1] - 2024-08-01
+
+### Changed
+- `newsdom-api`의 `parse` 엔드포인트에서 비동기 파일 업로드시 청크 크기를 8KB에서 1MB(`UPLOAD_READ_CHUNK_SIZE_BYTES`)로 증가시켜 `run_in_threadpool`의 컨텍스트 스위칭 오버헤드를 대폭 줄였습니다.

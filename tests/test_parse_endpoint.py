@@ -555,3 +555,21 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_reads_in_large_chunks(monkeypatch):
+    def fake_parse_pdf_bytes(file_path, filename, **kwargs):
+        return {"document_id": "fixture", "pages": []}
+
+    monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+
+    from newsdom_api.main import UPLOAD_READ_CHUNK_SIZE_BYTES
+
+    upload = _ReadTrackingUpload(b"%PDF-" + (b"x" * (UPLOAD_READ_CHUNK_SIZE_BYTES * 2 + 10)))
+    await parse(upload)
+
+    # 5 bytes for magic check, then 1MB chunks
+    assert upload.read_sizes[0] == 5
+    assert upload.read_sizes[1] == UPLOAD_READ_CHUNK_SIZE_BYTES
+    assert upload.read_sizes[2] == UPLOAD_READ_CHUNK_SIZE_BYTES
