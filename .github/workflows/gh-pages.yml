@@ -49,6 +49,7 @@ jobs:
         with:
           version: '0.9.29'
           enable-cache: true
+          prune-cache: true
 
       - name: Install locked docs dependencies
         run: uv sync --frozen --extra docs
