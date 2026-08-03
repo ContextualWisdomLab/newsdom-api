@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 
 from newsdom_api import config
 from newsdom_api.config import API_TOKEN_ENV_VAR, get_api_token
-from newsdom_api.main import app
+from newsdom_api.main import app, MAX_AUTH_HEADER_LENGTH
 
 _PDF_FILES = {"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")}
 
@@ -67,7 +67,7 @@ def test_parse_accepts_valid_bearer_when_secret_set(monkeypatch, stub_parser):
 def test_parse_rejects_oversized_bearer_token(monkeypatch, stub_parser):
     monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
     client = TestClient(app)
-    oversized_token = "Bearer " + "a" * 512
+    oversized_token = "Bearer " + "a" * MAX_AUTH_HEADER_LENGTH
     response = client.post(
         "/parse",
         files=_PDF_FILES,

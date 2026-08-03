@@ -41,6 +41,7 @@ PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
 INVALID_PARSE_PARAMS_DETAIL = "Invalid parse parameters"
 UNAUTHORIZED_DETAIL = "Unauthorized"
 LOGGER = logging.getLogger("newsdom_api")
+MAX_AUTH_HEADER_LENGTH = 512
 
 tags_metadata = [
     {
@@ -134,14 +135,14 @@ def require_authorization(
     expected = f"Bearer {token}"
     provided = authorization or ""
 
-    if len(provided) > 512:
+    if len(provided) > MAX_AUTH_HEADER_LENGTH:
         raise HTTPException(
             status_code=401,
             detail=UNAUTHORIZED_DETAIL,
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    if not hmac.compare_digest(provided, expected):
+    if not hmac.compare_digest(provided.encode("utf-8"), expected.encode("utf-8")):
         raise HTTPException(
             status_code=401,
             detail=UNAUTHORIZED_DETAIL,
