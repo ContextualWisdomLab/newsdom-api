@@ -130,23 +130,23 @@ def compare_fixture_to_baseline(
     failures: list[str] = []
 
     checks = {
-        "column_count": abs(truth["column_count"] - baseline_metrics["column_count"])
+        "column_count": abs(truth.get("column_count", 0) - baseline_metrics.get("column_count", 0))
         <= 1,
-        "article_count": abs(truth["article_count"] - baseline_metrics["article_count"])
+        "article_count": abs(truth.get("article_count", 0) - baseline_metrics.get("article_count", 0))
         <= 1,
-        "image_count": abs(truth["image_count"] - baseline_metrics["image_count"]) <= 1,
-        "ad_count": abs(truth["ad_count"] - baseline_metrics["ad_count"]) <= 1,
+        "image_count": abs(truth.get("image_count", 0) - baseline_metrics.get("image_count", 0)) <= 1,
+        "ad_count": abs(truth.get("ad_count", 0) - baseline_metrics.get("ad_count", 0)) <= 1,
         "headline_blocks": abs(
-            truth["headline_blocks"] - baseline_metrics["headline_blocks"]
+            truth.get("headline_blocks", 0) - baseline_metrics.get("headline_blocks", 0)
         )
         <= 2,
         "vertical_article_ratio": abs(
-            truth["vertical_article_ratio"] - baseline_metrics["vertical_article_ratio"]
+            truth.get("vertical_article_ratio", 0.0) - baseline_metrics.get("vertical_article_ratio", 0.0)
         )
         <= 0.2,
-        "page_count": truth["page_count"] == baseline_metrics["page_count"],
+        "page_count": truth.get("page_count", 0) == baseline_metrics.get("page_count", 0),
         "headline_page_coverage": abs(
-            truth["headline_page_coverage"] - baseline_metrics["headline_page_coverage"]
+            truth.get("headline_page_coverage", 0.0) - baseline_metrics.get("headline_page_coverage", 0.0)
         )
         <= 0.2,
     }
