@@ -3,8 +3,9 @@
 # The default `Dockerfile` ships the API only and does NOT bundle the MinerU
 # runtime, so `/parse` returns 503 until a MinerU runtime is available inside
 # the image or is pointed to via `NEWSDOM_MINERU_BIN`. The healthcheck below
-# targets the unauthenticated `/health` liveness endpoint; note that a green
-# `/health` does not by itself guarantee `/parse` readiness (see README).
+# targets the unauthenticated `/health` liveness endpoint so a missing parser
+# runtime does not restart the API process. Use `/ready` for traffic-routing
+# readiness; it returns 503 until the MinerU executable is discoverable.
 services:
   newsdom-api:
     build:
