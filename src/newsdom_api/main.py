@@ -36,6 +36,7 @@ from .schemas import HealthResponse, ParseResponse
 from .service import parse_pdf
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
+UPLOAD_READ_CHUNK_BYTES = 1024 * 1024
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
 PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
 INVALID_PARSE_PARAMS_DETAIL = "Invalid parse parameters"
@@ -251,7 +252,7 @@ async def parse(
 
             bytes_read = len(header)
             # ⚡ Bolt: Increase chunk size to 1MB to significantly reduce async loop iteration overhead
-            while chunk := await file.read(1024 * 1024):
+            while chunk := await file.read(UPLOAD_READ_CHUNK_BYTES):
                 bytes_read += len(chunk)
                 if bytes_read > MAX_PARSE_UPLOAD_BYTES:
                     LOGGER.warning(

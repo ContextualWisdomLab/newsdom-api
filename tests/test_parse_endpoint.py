@@ -9,6 +9,7 @@ from pypdf.errors import PdfReadError
 from newsdom_api import mineru_runner
 from newsdom_api.main import (
     MAX_PARSE_UPLOAD_BYTES,
+    UPLOAD_READ_CHUNK_BYTES,
     app,
     parse,
     _validate_pdf_structure,
@@ -555,3 +556,16 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
+
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_reads_with_correct_chunk_size(monkeypatch):
+    upload = _ReadTrackingUpload(b"%PDF-" + (b"x" * 1024 * 1024))
+    monkeypatch.setattr("newsdom_api.main.parse_pdf", lambda *args, **kwargs: None)
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+
+    await parse(upload)
+
+    assert len(upload.read_sizes) >= 2
+    assert upload.read_sizes[0] == 5
+    assert upload.read_sizes[1] == UPLOAD_READ_CHUNK_BYTES
