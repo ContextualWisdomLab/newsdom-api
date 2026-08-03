@@ -97,7 +97,9 @@ def test_require_authorization_rejects_oversized_header_before_digest(
     monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
 
     def unexpected_digest(*_args, **_kwargs):
-        pytest.fail("oversized headers must be rejected before constant-time comparison")
+        pytest.fail(
+            "oversized headers must be rejected before constant-time comparison"
+        )
 
     monkeypatch.setattr("newsdom_api.main.hmac.compare_digest", unexpected_digest)
 
