@@ -30,7 +30,7 @@
 **Action:** After truthiness and string fast-path checks, detect whether text contains HTML-sensitive characters before calling `html.escape()`.
 
 ## 2026-06-30 - Avoid Sorting Single-Artifact Glob Matches
-**Learning:** Sorting all glob matches allocates and orders every candidate even when the parser only needs one fallback MinerU artifact path.
+**Learning:** Sorting all glob matches allocates and ordering every candidate even when the parser only needs one fallback MinerU artifact path.
 **Action:** Use `next(path.glob(...))` with `StopIteration` handling for single-artifact fallback lookups in hot or repeated file discovery paths.
 
 ## 2026-06-30 - Replace Max Generator in Page Metrics
@@ -40,6 +40,7 @@
 ## 2026-06-30 - Regex over Generator `any` string loops
 **Learning:** Using `any(...)` with a generator comprehension in string evaluation paths allocates a new generator and adds Python-level loop overhead for every character.
 **Action:** Replace `any()` generators with a pre-compiled regex (`re.compile().search()`) to evaluate string patterns in C, achieving a ~7x speedup for text-heavy operations.
+
 ## 2024-07-09 - Avoid eager list allocation on glob generators
 **Learning:** In file discovery routines, eagerly resolving a glob generator into a list (e.g., `list(path.glob(...))`) causes unnecessary directory traversals and memory allocation when only a single match is needed.
 **Action:** Use `next(path.glob(...))` with a `try/except StopIteration` block to efficiently avoid this performance overhead.
@@ -64,6 +65,6 @@
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
 
-## 2026-07-28 - Avoid redundant dictionary `.get()` lookups for type checks
-**Learning:** In hot loops, evaluating `isinstance(dict.get("key"), type)` inline incurs the cost of dictionary key lookups twice if you need the value afterward, and `isinstance` adds overhead compared to `type() is`.
-**Action:** Fetch the value once by assigning `.get("key")` to a variable, then use `type(val) is type` for type safety to minimize function overhead and redundant dict lookups.
+## 2026-07-28 - Rejection of exact-type replacements
+**Learning:** Replacing `isinstance` with `type() is` as a micro-optimization rejects valid subclasses (like mapping wrappers or custom strings) which changes behavior and narrows the API contract.
+**Action:** Do not substitute `isinstance` with exact `type()` checks unless there is explicit instruction or evidence that subclass rejection is intentional. Do not mix unrelated files (like helper scripts) in optimization PRs.
