@@ -60,6 +60,9 @@ def test_article_has_headline_supports_boolean_and_text_forms():
         is False
     )
     assert _article_has_headline({"headline": "headline"}) is True
+    assert _article_has_headline({"headline": ""}) is False
+    assert _article_has_headline({"headline": "   \n\t"}) is False
+    assert _article_has_headline({"headline": "  visible  "}) is True
 
 
 def test_compare_fixture_to_baseline_derives_page_count_from_pages_list(tmp_path: Path):

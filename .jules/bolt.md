@@ -64,6 +64,6 @@
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
 
-## 2024-07-31 - Use isspace() instead of strip() for visible text checks
+## 2026-07-16 - Use isspace() instead of strip() for visible text checks
 **Learning:** Checking if a string contains visible text by evaluating `bool(text.strip())` forces the allocation of a new string just to test its truthiness. Using `.isspace()` avoids this memory allocation and is significantly faster in hot loops.
 **Action:** Replace `bool(text.strip())` with `not text.isspace()` when checking if a string contains visible characters to avoid unnecessary string allocations.
