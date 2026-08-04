@@ -157,20 +157,11 @@ follow it.
 - **The ecosystem:** CWL is an ecosystem built around **naruon** — the
   hub: an email/PIM system that DOM-decomposes emails and files into a
   persisted knowledge graph. Each component is a standalone program that
-  must ALSO work as a git submodule, grown separately and together:
-  - `waf-ids-ai-soc` — WAF / IDS / AI SOC / load balancer / API management.
-  - `clearfolio` — document viewer.
-  - `pg-erd-cloud` — ERD tool.
-  - `contextual-orchestrator` — LLM cost/perf/upstream-LB gateway
-    (beyond LiteLLM).
-  - `codec-carver` — STT / omni-modal speech-video codec.
-  - `fast-mlsirm` — LLM-as-a-Judge calibration + evaluation-item quality
-    (uses aFIPC FIPC + kaefa item-fit).
-  - `feelanet-adfs` — passwordless SSO (OIDC/SCIM/ADFS/LDAP/FIDO2/
-    OAuth2.1; eliminate passwords).
-  - `newsdom-api` — PDF -> DOM sidecar (this repo).
-  - `semantic-data-portal` — upper-ontology / catalog / governance plane
-    with its own graph engine.
+  must ALSO work as a git submodule, grown separately and together. The
+  canonical component map and product ownership live in
+  [`ContextualWisdomLab/.github` → `docs/CWL-MASTER-CONTEXT.md`](https://github.com/ContextualWisdomLab/.github/blob/main/docs/CWL-MASTER-CONTEXT.md);
+  read it there rather than duplicating the list here, so renames land in
+  one place.
 
 ### Research grounding (attach paper PDFs)
 
