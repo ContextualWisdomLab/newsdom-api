@@ -125,9 +125,11 @@ def test_uv_lock_tracks_project_version() -> None:
 def test_docs_theme_range_tracks_pymdownx_cve_fix():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
     # 9.6.x capped pymdown-extensions~=10.2 (<11), blocking the CVE-2026-61632
-    # fix; the theme is held at the 9.7.x line so the docs build can pull
-    # pymdown-extensions>=11. The MkDocs core stays on the 1.x line.
+    # fix. The 9.7.x theme removes that upper bound, while the project retains a
+    # direct major-version security floor and keeps MkDocs core on the 1.x line.
     assert '"mkdocs-material>=9.7,<9.8"' in text
+    assert '"pymdown-extensions>=11,<12"' in text
+    assert _locked_package_version("pymdown-extensions") >= (11, 0, 0)
 
 
 def test_docs_core_range_stays_below_mkdocs_two():
@@ -181,4 +183,4 @@ def test_uv_lock_does_not_track_external_mineru_pipeline_runtime_stack():
 
 
 def test_uv_lock_pins_pypdf_at_patched_release():
-    assert _locked_package_version("pypdf") >= (6, 10, 0)
+    assert _locked_package_version("pypdf") >= (6, 14, 2)
