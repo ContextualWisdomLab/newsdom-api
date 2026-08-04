@@ -90,7 +90,3 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
-## 2025-03-09 - Prevent Unhandled 500s on Non-ASCII Authorization Headers
-**Vulnerability:** Sending an `Authorization` header with non-ASCII characters (e.g., `Bearer 안녕`) caused an unhandled `TypeError` because `hmac.compare_digest` in Python requires ASCII strings or bytes. This resulted in a 500 Internal Server Error, posing a potential DoS and information disclosure risk.
-**Learning:** Python's standard `hmac.compare_digest` lacks implicit encoding for non-ASCII characters, whereas FastAPI's `Header()` accepts standard UTF-8 strings.
-**Prevention:** Always explicitly encode strings as bytes (e.g., `.encode("utf-8")`) before passing them to `hmac.compare_digest` for secure, constant-time validation.
