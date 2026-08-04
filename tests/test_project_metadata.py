@@ -81,6 +81,15 @@ def test_dependencies_section_handles_dependency_extras_safely():
     assert '"plain>=2.0"' in section
 
 
+def test_security_dependency_floors_exclude_known_vulnerable_ranges():
+    text = Path("pyproject.toml").read_text(encoding="utf-8")
+    dependencies_section = _dependencies_section(text)
+
+    assert '"Pillow>=12.3,<13.0"' in dependencies_section
+    assert '"pypdf>=6.14.2,<7.0"' in dependencies_section
+    assert 'requires = ["setuptools>=83", "wheel"]' in text
+
+
 def test_project_metadata_does_not_bundle_mineru_extra():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
     dependencies_section = _dependencies_section(text)
