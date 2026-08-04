@@ -46,6 +46,7 @@ def test_filter_dom_all_removed(sample_json_path: Path, tmp_path: Path) -> None:
         remove_ads=True,
         remove_headers=True,
         remove_footers=True,
+        base_dir=tmp_path,
     )
 
     assert output_path.exists()
@@ -69,6 +70,7 @@ def test_filter_dom_no_removal(sample_json_path: Path, tmp_path: Path) -> None:
         remove_ads=False,
         remove_headers=False,
         remove_footers=False,
+        base_dir=tmp_path,
     )
 
     assert output_path.exists()
@@ -85,24 +87,25 @@ def test_filter_dom_no_removal(sample_json_path: Path, tmp_path: Path) -> None:
 
 def test_filter_dom_file_not_found(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError):
-        filter_dom(tmp_path / "nonexistent.json", tmp_path / "out.json")
+        filter_dom(tmp_path / "nonexistent.json", tmp_path / "out.json", base_dir=tmp_path)
 
 
 def test_filter_dom_invalid_extension(tmp_path: Path) -> None:
     invalid_file = tmp_path / "test.txt"
     invalid_file.touch()
     with pytest.raises(ValueError, match="Input file must be a .json file"):
-        filter_dom(invalid_file, tmp_path / "out.json")
+        filter_dom(invalid_file, tmp_path / "out.json", base_dir=tmp_path)
 
 
 def test_filter_dom_invalid_json(tmp_path: Path) -> None:
     invalid_json = tmp_path / "test.json"
     invalid_json.write_text("{invalid json", encoding="utf-8")
     with pytest.raises(ValueError, match="Invalid JSON file"):
-        filter_dom(invalid_json, tmp_path / "out.json")
+        filter_dom(invalid_json, tmp_path / "out.json", base_dir=tmp_path)
 
 
-def test_main_success(sample_json_path: Path, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+def test_main_success(sample_json_path: Path, tmp_path: Path, capsys: pytest.CaptureFixture, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
     output_path = tmp_path / "out.json"
     main([
         str(sample_json_path),
@@ -121,7 +124,8 @@ def test_main_success(sample_json_path: Path, tmp_path: Path, capsys: pytest.Cap
     assert page["articles"][0]["images"] == []
 
 
-def test_main_failure(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+def test_main_failure(tmp_path: Path, capsys: pytest.CaptureFixture, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
     output_path = tmp_path / "out.json"
     with pytest.raises(SystemExit) as exc:
         main([str(tmp_path / "nonexistent.json"), "-o", str(output_path)])
@@ -137,6 +141,7 @@ def test_filter_dom_captions_without_images(sample_json_path: Path, tmp_path: Pa
         output_path,
         remove_images=False,
         remove_captions=True,
+        base_dir=tmp_path,
     )
 
     assert output_path.exists()
@@ -160,7 +165,36 @@ def test_filter_dom_empty_images(sample_json_path: Path, tmp_path: Path) -> None
         sample_json_path,
         output_path,
         remove_captions=True,
+        base_dir=tmp_path,
     )
 
     out_data = json.loads(output_path.read_text(encoding="utf-8"))
     assert out_data["pages"][0]["articles"][0]["captions"] == []
+def test_filter_dom_path_traversal_input(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Set cwd to a subdirectory
+    work_dir = tmp_path / "work"
+    work_dir.mkdir()
+    monkeypatch.chdir(work_dir)
+
+    # Try to access file outside cwd
+    outside_file = tmp_path / "outside.json"
+    outside_file.write_text("{}", encoding="utf-8")
+
+    output_path = work_dir / "out.json"
+
+    with pytest.raises(ValueError, match="Input path must be within.*work"):
+        filter_dom(outside_file, output_path, base_dir=work_dir)
+
+def test_filter_dom_path_traversal_output(sample_json_path: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    work_dir = tmp_path / "work"
+    work_dir.mkdir()
+
+    # Move sample file to work dir
+    work_file = work_dir / "input.json"
+    work_file.write_text(sample_json_path.read_text(encoding="utf-8"), encoding="utf-8")
+    monkeypatch.chdir(work_dir)
+
+    outside_out = tmp_path / "out.json"
+
+    with pytest.raises(ValueError, match="Output path must be within.*work"):
+        filter_dom(work_file, outside_out, base_dir=work_dir)

@@ -6,6 +6,17 @@ import sys
 from pathlib import Path
 
 
+def validate_path(path: Path, base_dir: Path, description: str) -> Path:
+    """Validate that path is within base_dir to prevent traversal."""
+    resolved = path.resolve()
+    base_resolved = base_dir.resolve()
+    try:
+        resolved.relative_to(base_resolved)
+    except ValueError:
+        raise ValueError(f"{description} path must be within {base_dir}: {path}")
+    return resolved
+
+
 def filter_dom(
     json_path: Path,
     output_path: Path,
@@ -15,8 +26,14 @@ def filter_dom(
     remove_ads: bool = False,
     remove_headers: bool = False,
     remove_footers: bool = False,
+    base_dir: Path | None = None,
 ) -> None:
     """Filter specific elements from a NewsDOM JSON file."""
+    if base_dir is None:
+        base_dir = Path.cwd()
+    json_path = validate_path(json_path, base_dir, "Input")
+    output_path = validate_path(output_path, base_dir, "Output")
+
     if not json_path.is_file():
         raise FileNotFoundError(f"File not found or is not a file: {json_path}")
     if json_path.suffix.lower() != ".json":
