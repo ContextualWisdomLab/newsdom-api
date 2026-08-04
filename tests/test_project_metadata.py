@@ -81,6 +81,15 @@ def test_dependencies_section_handles_dependency_extras_safely():
     assert '"plain>=2.0"' in section
 
 
+def test_security_dependency_floors_exclude_known_vulnerable_ranges():
+    text = Path("pyproject.toml").read_text(encoding="utf-8")
+    dependencies_section = _dependencies_section(text)
+
+    assert '"Pillow>=12.3,<13.0"' in dependencies_section
+    assert '"pypdf>=6.14.2,<7.0"' in dependencies_section
+    assert 'requires = ["setuptools>=83", "wheel"]' in text
+
+
 def test_project_metadata_does_not_bundle_mineru_extra():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
     dependencies_section = _dependencies_section(text)
@@ -113,9 +122,14 @@ def test_uv_lock_tracks_project_version() -> None:
     assert lock_version.group(1) == pyproject_version
 
 
-def test_docs_theme_range_stays_below_warning_release():
+def test_docs_theme_range_tracks_pymdownx_cve_fix():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
-    assert '"mkdocs-material>=9.6,<9.7"' in text
+    # 9.6.x capped pymdown-extensions~=10.2 (<11), blocking the CVE-2026-61632
+    # fix. The 9.7.x theme removes that upper bound, while the project retains a
+    # direct major-version security floor and keeps MkDocs core on the 1.x line.
+    assert '"mkdocs-material>=9.7,<9.8"' in text
+    assert '"pymdown-extensions>=11,<12"' in text
+    assert _locked_package_version("pymdown-extensions") >= (11, 0, 0)
 
 
 def test_docs_core_range_stays_below_mkdocs_two():
@@ -128,7 +142,8 @@ def test_contributing_documents_docs_toolchain_hold():
     expected_phrases = [
         "MkDocs 1.x",
         "mkdocs<2.0",
-        "mkdocs-material<9.7",
+        "mkdocs-material",
+        "CVE-2026-61632",
         "uv.lock",
         "migration path",
     ]
@@ -168,4 +183,4 @@ def test_uv_lock_does_not_track_external_mineru_pipeline_runtime_stack():
 
 
 def test_uv_lock_pins_pypdf_at_patched_release():
-    assert _locked_package_version("pypdf") >= (6, 10, 0)
+    assert _locked_package_version("pypdf") >= (6, 14, 2)

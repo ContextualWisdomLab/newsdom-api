@@ -39,11 +39,16 @@ The GitHub Pages workflow installs documentation tooling from
 sync all extras so the docs build does not drop the test toolchain
 from the active environment.
 
-The supported docs toolchain stays on the MkDocs 1.x line for now.
-Keep `mkdocs<2.0` and `mkdocs-material<9.7` in place until the
-upstream Material team publishes a workable migration path or this
-repository validates a replacement docs stack. `uv.lock` is the source
-of truth for the currently supported docs build.
+The supported docs core stays on the MkDocs 1.x line for now.
+Keep `mkdocs<2.0` in place until the upstream Material team publishes
+a workable migration path or this repository validates a replacement
+docs stack. `mkdocs-material` tracks the `>=9.7,<9.8` line: 9.6.x pinned
+`pymdown-extensions~=10.2` (`<11`), which blocked the fix for
+CVE-2026-61632, so the theme is held at 9.7.x to pull
+`pymdown-extensions>=11` and clear that advisory. The 9.7 line prints an
+informational MkDocs 2.0 banner on build but still builds cleanly under
+`--strict` on the MkDocs 1.x core. `uv.lock` is the source of truth for
+the currently supported docs build.
 
 ```bash
 uv sync --frozen --all-extras

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=83", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -16,8 +16,8 @@ dependencies = [
   "pydantic>=2.9,<3.0",
   "python-multipart>=0.0.31,<1.0",
   "reportlab>=4.2,<6.0",
-  "Pillow>=11.0,<13.0",
-  "pypdf>=6.13.3,<7.0",
+  "Pillow>=12.3,<13.0",
+  "pypdf>=6.14.2,<7.0",
 ]
 
 [project.optional-dependencies]
@@ -31,7 +31,8 @@ dev = [
 ]
 docs = [
     "mkdocs>=1.6,<2.0",
-    "mkdocs-material>=9.6,<9.7",
+    "mkdocs-material>=9.7,<9.8",
+    "pymdown-extensions>=11,<12",
 ]
 fuzz = [
   "atheris==3.0.0 ; platform_system == 'Linux' and python_version >= '3.11'",
