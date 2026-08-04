@@ -158,7 +158,7 @@ follow it.
   hub: an email/PIM system that DOM-decomposes emails and files into a
   persisted knowledge graph. Each component is a standalone program that
   must ALSO work as a git submodule, grown separately and together:
-  - `waf-ids-ai-soc` — WAF / IDS / AI SOC / load balancer / API management.
+  - `wardnet` — WAF / IDS / AI SOC / load balancer / API management.
   - `clearfolio` — document viewer.
   - `pg-erd-cloud` — ERD tool.
   - `contextual-orchestrator` — LLM cost/perf/upstream-LB gateway
