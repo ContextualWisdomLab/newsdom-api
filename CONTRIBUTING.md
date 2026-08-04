@@ -40,10 +40,13 @@ sync all extras so the docs build does not drop the test toolchain
 from the active environment.
 
 The supported docs toolchain stays on the MkDocs 1.x line for now.
-Keep `mkdocs<2.0` and `mkdocs-material<9.7` in place until the
+Keep `mkdocs<2.0` and `mkdocs-material<9.8` in place until the
 upstream Material team publishes a workable migration path or this
-repository validates a replacement docs stack. `uv.lock` is the source
-of truth for the currently supported docs build.
+repository validates a replacement docs stack. The theme ceiling
+moved from `<9.7` to `<9.8` because pymdown-extensions 11 (required
+for CVE-2026-61632) needs mkdocs-material 9.7; `mkdocs build
+--strict` passes on 9.7.x. `uv.lock` is the source of truth for the
+currently supported docs build.
 
 ```bash
 uv sync --frozen --all-extras
