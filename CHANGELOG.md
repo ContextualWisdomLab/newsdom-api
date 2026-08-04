@@ -101,3 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
+
+## [Unreleased]
+### Added
+- [UX/DX] OpenAPI Swagger 문서 이해도 향상을 위해 `ParseQuality` 및 `HealthResponse` 모델에 구체적인 `json_schema_extra` 예제 추가. (Palette)
