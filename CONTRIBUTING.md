@@ -40,9 +40,12 @@ sync all extras so the docs build does not drop the test toolchain
 from the active environment.
 
 The supported docs toolchain stays on the MkDocs 1.x line for now.
-Keep `mkdocs<2.0` and `mkdocs-material<9.7` in place until the
-upstream Material team publishes a workable migration path or this
-repository validates a replacement docs stack. `uv.lock` is the source
+Keep `mkdocs<2.0` in place until the upstream Material team publishes
+a workable migration path to MkDocs 2.x. The theme rides the validated
+`mkdocs-material>=9.7,<9.8` line (moved off `mkdocs-material<9.7` on
+2026-08-04 because pymdown-extensions 11 is required to clear
+CVE-2026-61632 and 9.6.x caps it below that; `mkdocs build --strict`
+was validated against 9.7 before the bump). `uv.lock` is the source
 of truth for the currently supported docs build.
 
 ```bash
