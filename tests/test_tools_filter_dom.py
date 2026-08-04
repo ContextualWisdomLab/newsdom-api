@@ -4,11 +4,13 @@ import json
 from pathlib import Path
 
 import pytest
+
 from tools.filter_dom import filter_dom, main
 
 
 @pytest.fixture
 def mock_dom(tmp_path: Path) -> Path:
+    """Provide a minimal mock NewsDOM JSON file for testing."""
     data = {
         "pages": [
             {"page_number": 1, "articles": [{"headline": "A"}]},
@@ -22,6 +24,7 @@ def mock_dom(tmp_path: Path) -> Path:
 
 
 def test_filter_dom_min_page(mock_dom: Path) -> None:
+    """Test filtering with only min_page set."""
     res = filter_dom(mock_dom, min_page=2, max_page=None)
     assert len(res["pages"]) == 2
     assert res["pages"][0]["page_number"] == 2
@@ -29,6 +32,7 @@ def test_filter_dom_min_page(mock_dom: Path) -> None:
 
 
 def test_filter_dom_max_page(mock_dom: Path) -> None:
+    """Test filtering with only max_page set."""
     res = filter_dom(mock_dom, min_page=None, max_page=2)
     assert len(res["pages"]) == 2
     assert res["pages"][0]["page_number"] == 1
@@ -36,17 +40,20 @@ def test_filter_dom_max_page(mock_dom: Path) -> None:
 
 
 def test_filter_dom_min_max_page(mock_dom: Path) -> None:
+    """Test filtering with both min_page and max_page set."""
     res = filter_dom(mock_dom, min_page=2, max_page=2)
     assert len(res["pages"]) == 1
     assert res["pages"][0]["page_number"] == 2
 
 
 def test_filter_dom_no_filter(mock_dom: Path) -> None:
+    """Test filtering with no bounds applies no filtering."""
     res = filter_dom(mock_dom, min_page=None, max_page=None)
     assert len(res["pages"]) == 3
 
 
 def test_filter_dom_invalid_file(tmp_path: Path) -> None:
+    """Test filtering raises FileNotFoundError for missing file and ValueError for non-JSON."""
     with pytest.raises(FileNotFoundError, match="File not found"):
         filter_dom(tmp_path / "nonexistent.json", min_page=1, max_page=2)
 
@@ -57,6 +64,7 @@ def test_filter_dom_invalid_file(tmp_path: Path) -> None:
 
 
 def test_filter_dom_invalid_range(mock_dom: Path) -> None:
+    """Test filtering raises ValueError for invalid page ranges."""
     with pytest.raises(ValueError, match="min_page must be >= 1"):
         filter_dom(mock_dom, min_page=0, max_page=None)
     with pytest.raises(ValueError, match="max_page must be >= 1"):
@@ -66,6 +74,7 @@ def test_filter_dom_invalid_range(mock_dom: Path) -> None:
 
 
 def test_main_stdout(mock_dom: Path, capsys: pytest.CaptureFixture) -> None:
+    """Test the CLI writes to stdout correctly."""
     main([str(mock_dom), "--min-page", "2", "--max-page", "3"])
     captured = capsys.readouterr()
     res = json.loads(captured.out)
@@ -73,14 +82,30 @@ def test_main_stdout(mock_dom: Path, capsys: pytest.CaptureFixture) -> None:
 
 
 def test_main_file_output(mock_dom: Path, tmp_path: Path) -> None:
+    """Test the CLI writes to file correctly when --output is provided."""
     out = tmp_path / "out.json"
     main([str(mock_dom), "--min-page", "1", "--max-page", "1", "--output", str(out)])
     res = json.loads(out.read_text(encoding="utf-8"))
     assert len(res["pages"]) == 1
 
 
-def test_main_error(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
-    with pytest.raises(SystemExit):
+def test_main_error_file_not_found(
+    tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    """Test the CLI gracefully handles FileNotFoundError."""
+    with pytest.raises(SystemExit) as exc_info:
         main([str(tmp_path / "nonexistent.json")])
+    assert exc_info.value.code == 1
     captured = capsys.readouterr()
     assert "Error: File not found" in captured.err
+
+
+def test_main_error_value_error(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+    """Test the CLI gracefully handles ValueError for invalid range."""
+    p = tmp_path / "mock.json"
+    p.write_text("{}", encoding="utf-8")
+    with pytest.raises(SystemExit) as exc_info:
+        main([str(p), "--min-page", "3", "--max-page", "2"])
+    assert exc_info.value.code == 1
+    captured = capsys.readouterr()
+    assert "Error: min_page cannot be greater than max_page" in captured.err

@@ -7,6 +7,21 @@ from pathlib import Path
 
 
 def filter_dom(json_path: Path, min_page: int | None, max_page: int | None) -> dict:
+    """
+    Filter a NewsDOM JSON document by keeping only pages within a specified range.
+
+    Args:
+        json_path: Path to the NewsDOM JSON file to filter.
+        min_page: Minimum page number to include (inclusive). If None, no lower bound is applied.
+        max_page: Maximum page number to include (inclusive). If None, no upper bound is applied.
+
+    Returns:
+        dict: The filtered NewsDOM document as a Python dictionary.
+
+    Raises:
+        FileNotFoundError: If the specified file does not exist or is not a file.
+        ValueError: If the file is not a JSON file, or if the page range is invalid.
+    """
     if not json_path.is_file():
         raise FileNotFoundError(f"File not found or is not a file: {json_path}")
     if json_path.suffix.lower() != ".json":
@@ -39,6 +54,7 @@ def filter_dom(json_path: Path, min_page: int | None, max_page: int | None) -> d
 
 
 def main(argv: list[str] | None = None) -> None:
+    """Run filter_dom main entry point."""
     parser = argparse.ArgumentParser(
         description="Filter NewsDOM JSON output by page range."
     )
@@ -64,7 +80,10 @@ def main(argv: list[str] | None = None) -> None:
             args.output.write_text(output_str, encoding="utf-8")
         else:
             print(output_str)
-    except Exception as e:
+    except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
