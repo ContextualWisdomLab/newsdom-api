@@ -53,6 +53,20 @@ def test_parse_rejects_invalid_bearer_when_secret_set(monkeypatch, stub_parser):
     assert response.json()["detail"] == "Unauthorized"
 
 
+def test_parse_rejects_non_ascii_bearer_when_secret_set(monkeypatch, stub_parser):
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+    client = TestClient(app, raise_server_exceptions=False)
+    # The ASGI spec and TestClient headers require raw byte tuples to inject non-ASCII
+    # natively without framework-level pre-validation failures.
+    response = client.post(
+        "/parse",
+        files=_PDF_FILES,
+        headers=[(b"Authorization", b"Bearer \xe2\x98\x83")],
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Unauthorized"
+
+
 def test_parse_accepts_valid_bearer_when_secret_set(monkeypatch, stub_parser):
     monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
     client = TestClient(app)
