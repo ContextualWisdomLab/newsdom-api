@@ -133,7 +133,9 @@ def require_authorization(
         return
     expected = f"Bearer {token}"
     provided = authorization or ""
-    if not hmac.compare_digest(provided, expected):
+    # Prevent 500 DoS vulnerability by encoding strings to bytes before comparing
+    # hmac.compare_digest does not support comparing strings with non-ASCII characters
+    if not hmac.compare_digest(provided.encode('utf-8'), expected.encode('utf-8')):
         raise HTTPException(
             status_code=401,
             detail=UNAUTHORIZED_DETAIL,
