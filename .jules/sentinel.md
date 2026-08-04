@@ -95,3 +95,8 @@
 **Vulnerability:** HTTP Authorization headers were being passed directly to `hmac.compare_digest`. If the header contained non-ASCII characters, `hmac.compare_digest` raised a `TypeError`, resulting in an unhandled 500 Internal Server Error instead of a 401 Unauthorized, potentially allowing for a Denial of Service (DoS).
 **Learning:** Python's `hmac.compare_digest` only supports ASCII strings natively. Any non-ASCII input will cause it to crash with a TypeError.
 **Prevention:** Always encode user-supplied strings to bytes (e.g., using `.encode('utf-8')`) before using `hmac.compare_digest` to ensure safe constant-time comparison regardless of the input character set.
+
+## 2026-08-05 - Fix Optional Authentication Risk via Implicit Opt-out
+**Vulnerability:** The `/parse` API endpoints only enforced authentication if the `API_TOKEN_ENV_VAR` was set. If the token was not configured (e.g., accidentally left out during deployment), the endpoint silently fell back to unauthenticated open access. This could lead to resource exhaustion and unauthorized data processing in production.
+**Learning:** Default-open or "optional authentication" patterns that rely on the absence of configuration are dangerous because a simple misconfiguration or missed environment variable injection in CI/CD can expose the service publicly without warning.
+**Prevention:** Make authentication mandatory by default. If a development-mode bypass is needed, require an explicit, intentional environment variable (e.g., `NEWSDOM_AUTH_DISABLED=true`) to disable the check, rather than inferring safety from the absence of a token.

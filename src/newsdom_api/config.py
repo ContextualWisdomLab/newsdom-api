@@ -15,6 +15,21 @@ import os
 # Environment variable holding the optional shared bearer secret for ``/parse``.
 API_TOKEN_ENV_VAR = "NEWSDOM_API_TOKEN"
 
+# Environment variable to explicitly disable authentication for development.
+AUTH_DISABLED_ENV_VAR = "NEWSDOM_AUTH_DISABLED"
+
+
+def is_auth_disabled() -> bool:
+    """Return whether authentication is explicitly disabled.
+
+    By default, authentication is required. It must be explicitly opted-out
+    using the ``NEWSDOM_AUTH_DISABLED=true`` environment variable for local
+    development.
+    """
+
+    val = os.environ.get(AUTH_DISABLED_ENV_VAR, "").strip().lower()
+    return val in ("1", "true", "yes")
+
 
 def get_api_token() -> str | None:
     """Return the configured ``/parse`` bearer token, or ``None`` when unset.

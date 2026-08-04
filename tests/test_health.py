@@ -2,6 +2,14 @@ from fastapi.testclient import TestClient
 
 from newsdom_api.main import app
 
+import pytest
+import os
+
+@pytest.fixture(autouse=True)
+def disable_auth(monkeypatch):
+    monkeypatch.setenv("NEWSDOM_AUTH_DISABLED", "true")
+
+
 
 def test_healthcheck():
     client = TestClient(app, base_url="https://testserver")

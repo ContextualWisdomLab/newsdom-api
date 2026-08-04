@@ -3,6 +3,14 @@ from fastapi.testclient import TestClient
 from newsdom_api.main import app
 from newsdom_api.schemas import PageNode, ParseQuality, ParseResponse
 
+import pytest
+import os
+
+@pytest.fixture(autouse=True)
+def disable_auth(monkeypatch):
+    monkeypatch.setenv("NEWSDOM_AUTH_DISABLED", "true")
+
+
 
 def test_parse_endpoint_returns_dom(monkeypatch):
     def fake_parse_pdf_bytes(

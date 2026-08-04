@@ -23,8 +23,17 @@ def stub_parser(monkeypatch):
     monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf)
 
 
-def test_parse_is_open_when_no_secret_configured(monkeypatch, stub_parser):
+def test_parse_rejects_when_no_secret_configured(monkeypatch, stub_parser):
     monkeypatch.delenv(API_TOKEN_ENV_VAR, raising=False)
+    client = TestClient(app)
+    response = client.post("/parse", files=_PDF_FILES)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Unauthorized"
+
+
+def test_parse_is_open_when_auth_disabled(monkeypatch, stub_parser):
+    monkeypatch.delenv(API_TOKEN_ENV_VAR, raising=False)
+    monkeypatch.setenv("NEWSDOM_AUTH_DISABLED", "true")
     client = TestClient(app)
     response = client.post("/parse", files=_PDF_FILES)
     assert response.status_code == 200
@@ -87,8 +96,9 @@ def test_get_api_token_strips_surrounding_whitespace(monkeypatch):
     assert get_api_token() == "padded-token"
 
 
-def test_config_module_exposes_env_var_name():
+def test_config_module_exposes_env_var_names():
     assert config.API_TOKEN_ENV_VAR == "NEWSDOM_API_TOKEN"
+    assert config.AUTH_DISABLED_ENV_VAR == "NEWSDOM_AUTH_DISABLED"
 
 
 def test_require_authorization_handles_non_ascii_gracefully(monkeypatch):

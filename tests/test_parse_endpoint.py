@@ -2,6 +2,14 @@ import subprocess
 from pathlib import Path
 
 import pytest
+import os
+
+@pytest.fixture(autouse=True)
+def disable_auth(monkeypatch):
+    monkeypatch.setenv("NEWSDOM_AUTH_DISABLED", "true")
+
+
+import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from pypdf.errors import PdfReadError

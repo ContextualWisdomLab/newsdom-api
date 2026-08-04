@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Security
+- `/parse` 엔드포인트의 인증을 기본적으로 필수로 변경하여 환경 변수 미설정으로 인한 의도치 않은 공개 노출 위험(Critical Strix finding) 해결. 로컬 개발 시에는 `NEWSDOM_AUTH_DISABLED=true`를 설정하여 명시적으로 인증을 우회할 수 있음.
 - `Authorization` 헤더에 비-ASCII 문자가 포함될 경우 `hmac.compare_digest`에서 발생하는 `TypeError`로 인한 500 에러 및 잠재적 DoS 취약점 해결
 
 ### Changed

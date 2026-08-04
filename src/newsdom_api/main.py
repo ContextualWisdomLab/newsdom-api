@@ -24,7 +24,7 @@ from fastapi.responses import JSONResponse
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
-from .config import get_api_token
+from .config import get_api_token, is_auth_disabled
 from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 from .mineru_runner import (
     DEFAULT_LANGUAGE,
@@ -119,18 +119,34 @@ async def global_exception_handler(request: Request, exc: Exception) -> Response
 def require_authorization(
     authorization: Annotated[str | None, Header()] = None,
 ) -> None:
-    """Enforce optional bearer authentication on protected endpoints.
+    """Enforce bearer authentication on protected endpoints.
 
-    When the sidecar has a shared secret configured (via
-    :func:`newsdom_api.config.get_api_token`), callers must present a matching
-    ``Authorization: Bearer <token>`` header; otherwise a ``401`` is raised. If
-    no secret is configured the service stays open, which keeps the standalone
-    development experience friction-free. The comparison is constant-time.
+    By default, authentication is mandatory. Callers must present a matching
+    ``Authorization: Bearer <token>`` header configured via
+    :func:`newsdom_api.config.get_api_token`. If no secret is configured,
+    or the provided token does not match, a ``401`` is raised.
+
+    The comparison is constant-time.
+
+    Authentication can only be bypassed if explicitly disabled via
+    :func:`newsdom_api.config.is_auth_disabled` for development.
     """
+
+    if is_auth_disabled():
+        LOGGER.warning(
+            "Authentication is explicitly disabled via NEWSDOM_AUTH_DISABLED. This is unsafe for production."
+        )
+        return
 
     token = get_api_token()
     if token is None:
-        return
+        LOGGER.error("Authentication is required but no API token is configured.")
+        raise HTTPException(
+            status_code=401,
+            detail=UNAUTHORIZED_DETAIL,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     expected = f"Bearer {token}"
     provided = authorization or ""
     if not hmac.compare_digest(provided.encode("utf-8"), expected.encode("utf-8")):
