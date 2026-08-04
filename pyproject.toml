@@ -31,7 +31,7 @@ dev = [
 ]
 docs = [
     "mkdocs>=1.6,<2.0",
-    "mkdocs-material>=9.6,<9.7",
+    "mkdocs-material>=9.6,<9.8",
 ]
 fuzz = [
   "atheris==3.0.0 ; platform_system == 'Linux' and python_version >= '3.11'",
