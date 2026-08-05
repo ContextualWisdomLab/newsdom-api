@@ -28,6 +28,19 @@ def test_workflows_do_not_use_top_level_env_blocks():
         assert "\nenv:\n" not in text.split("jobs:", 1)[0], workflow_path
 
 
+def test_clusterfuzz_checkout_does_not_persist_pull_request_credentials():
+    workflow = yaml.safe_load(
+        Path(".github/workflows/clusterfuzzlite.yml").read_text(encoding="utf-8")
+    )
+    checkout_step = next(
+        step
+        for step in workflow["jobs"]["fuzz"]["steps"]
+        if str(step.get("uses", "")).startswith("actions/checkout@")
+    )
+
+    assert checkout_step["with"]["persist-credentials"] is False
+
+
 def test_scorecards_workflow_keeps_node24_force_out_of_job_env():
     data = yaml.safe_load(
         Path(".github/workflows/scorecards.yml").read_text(encoding="utf-8")
