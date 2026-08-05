@@ -58,7 +58,12 @@ class RuntimeSettings:
             raise RuntimeConfigurationError(
                 "The configured parser authentication token must not be blank"
             )
-        bearer_value = f"Bearer {normalized_token}".encode("utf-8")
+        try:
+            bearer_value = f"Bearer {normalized_token}".encode("utf-8")
+        except UnicodeEncodeError as exc:
+            raise RuntimeConfigurationError(
+                "The configured parser authentication token must be valid UTF-8"
+            ) from exc
         if len(bearer_value) > MAX_BEARER_HEADER_BYTES:
             raise RuntimeConfigurationError(
                 "The configured parser authentication token is too long"
