@@ -36,6 +36,8 @@ from .schemas import HealthResponse, ParseResponse
 from .service import parse_pdf
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
+MAX_AUTHORIZATION_HEADER_BYTES = 8 * 1024
+_BEARER_PREFIX_BYTES = b"Bearer "
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
 PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
 INVALID_PARSE_PARAMS_DETAIL = "Invalid parse parameters"
@@ -116,29 +118,61 @@ async def global_exception_handler(request: Request, exc: Exception) -> Response
     return _apply_security_headers(response, request)
 
 
+def _encode_bounded_utf8(value: str, *, max_bytes: int) -> bytes | None:
+    """Encode text only when its character and UTF-8 byte lengths are bounded."""
+
+    if len(value) > max_bytes:
+        return None
+    try:
+        encoded = value.encode("utf-8")
+    except UnicodeEncodeError:
+        return None
+    if len(encoded) > max_bytes:
+        return None
+    return encoded
+
+
+def _unauthorized_error() -> HTTPException:
+    """Build the fixed public response for bearer-authentication failures."""
+
+    return HTTPException(
+        status_code=401,
+        detail=UNAUTHORIZED_DETAIL,
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
 def require_authorization(
     authorization: Annotated[str | None, Header()] = None,
 ) -> None:
-    """Enforce optional bearer authentication on protected endpoints.
+    """Enforce optional, byte-bounded bearer authentication.
 
     When the sidecar has a shared secret configured (via
     :func:`newsdom_api.config.get_api_token`), callers must present a matching
-    ``Authorization: Bearer <token>`` header; otherwise a ``401`` is raised. If
-    no secret is configured the service stays open, which keeps the standalone
-    development experience friction-free. The comparison is constant-time.
+    ``Authorization: Bearer <token>`` header; otherwise a fixed ``401`` is
+    raised. If no secret is configured the service stays open, which keeps the
+    standalone development experience friction-free. Both operands are bounded
+    before UTF-8 encoding and are compared in constant time.
     """
 
     token = get_api_token()
     if token is None:
         return
-    expected = f"Bearer {token}"
-    provided = authorization or ""
-    if not hmac.compare_digest(provided, expected):
-        raise HTTPException(
-            status_code=401,
-            detail=UNAUTHORIZED_DETAIL,
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+
+    token_bytes = _encode_bounded_utf8(
+        token,
+        max_bytes=MAX_AUTHORIZATION_HEADER_BYTES - len(_BEARER_PREFIX_BYTES),
+    )
+    provided_bytes = _encode_bounded_utf8(
+        authorization or "",
+        max_bytes=MAX_AUTHORIZATION_HEADER_BYTES,
+    )
+    if token_bytes is None or provided_bytes is None:
+        raise _unauthorized_error()
+
+    expected_bytes = _BEARER_PREFIX_BYTES + token_bytes
+    if not hmac.compare_digest(provided_bytes, expected_bytes):
+        raise _unauthorized_error()
 
 
 @app.get(
