@@ -35,7 +35,8 @@ docs = [
     "pymdown-extensions>=11,<12",
 ]
 fuzz = [
-  "atheris==3.0.0 ; platform_system == 'Linux' and python_version >= '3.11'",
+  "atheris==3.0.0 ; platform_system == 'Linux' and python_version == '3.11'",
+  "atheris==3.1.0 ; platform_system == 'Linux' and python_version >= '3.12'",
   "pyinstaller==6.21.0",
 ]
 

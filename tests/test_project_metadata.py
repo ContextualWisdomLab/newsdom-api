@@ -4,14 +4,24 @@ from pathlib import Path
 import re
 
 
-def _locked_package_version(name: str) -> tuple[int, ...]:
+def _locked_package_versions(name: str) -> set[tuple[int, ...]]:
+    """Return every resolved semantic-version tuple for one package name."""
+
     text = Path("uv.lock").read_text(encoding="utf-8")
-    match = re.search(
+    matches = re.findall(
         rf'\[\[package\]\]\nname = "{re.escape(name)}"\nversion = "([^"]+)"',
         text,
     )
-    assert match is not None, f"package {name!r} missing from uv.lock"
-    return tuple(int(part) for part in match.group(1).split("."))
+    assert matches, f"package {name!r} missing from uv.lock"
+    return {tuple(int(part) for part in version.split(".")) for version in matches}
+
+
+def _locked_package_version(name: str) -> tuple[int, ...]:
+    """Return the sole resolved version for a package that must not be split."""
+
+    versions = _locked_package_versions(name)
+    assert len(versions) == 1, f"package {name!r} resolved to multiple versions"
+    return next(iter(versions))
 
 
 def _dependencies_section(text: str) -> str:
@@ -157,10 +167,19 @@ def test_project_uses_spdx_license_string_not_deprecated_table():
     assert 'license = {text = "MIT"}' not in text
 
 
-def test_project_declares_locked_fuzz_extra_without_bundling_nvidia_stack():
+def test_project_declares_python_compatible_locked_fuzz_extra():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
+
     assert "fuzz = [" in text
-    assert '"atheris==3.0.0 ;' in text
+    assert (
+        '"atheris==3.0.0 ; platform_system == \'Linux\' and '
+        'python_version == \'3.11\'"'
+    ) in text
+    assert (
+        '"atheris==3.1.0 ; platform_system == \'Linux\' and '
+        'python_version >= \'3.12\'"'
+    ) in text
+    assert _locked_package_versions("atheris") == {(3, 0, 0), (3, 1, 0)}
     assert '"pyinstaller==6.21.0"' in text
     assert "nvidia = [" not in text
 
