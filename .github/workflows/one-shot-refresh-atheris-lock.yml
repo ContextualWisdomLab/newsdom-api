@@ -1,0 +1,96 @@
+name: One-shot refresh Atheris lock
+
+on:
+  push:
+    branches: [dependabot/pip/develop/python-be28e05158]
+
+concurrency:
+  group: one-shot-refresh-atheris-lock
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  refresh-lock:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - name: Checkout exact dependency branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: dependabot/pip/develop/python-be28e05158
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a4d19eb8a5d6a92ea2e8c1a809f5de9214687f2a # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@e7cce4c7b03fbd2f28e5ea0d16532d0a80f735a9 # v9.0.0
+        with:
+          version: "0.12.1"
+          enable-cache: false
+
+      - name: Refresh only Atheris and project lock metadata
+        run: |
+          set -euo pipefail
+          cp uv.lock "${RUNNER_TEMP}/uv.lock.before"
+          uv lock --upgrade-package atheris
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          before = Path("${{ runner.temp }}/uv.lock.before").read_text(encoding="utf-8")
+          after = Path("uv.lock").read_text(encoding="utf-8")
+
+          def blocks(text: str) -> dict[str, str]:
+              result: dict[str, str] = {}
+              for block in re.split(r"(?=^\[\[package\]\]$)", text, flags=re.MULTILINE):
+                  match = re.search(r'^name = "([^"]+)"$', block, re.MULTILINE)
+                  if match:
+                      result[match.group(1)] = block
+              return result
+
+          before_blocks = blocks(before)
+          after_blocks = blocks(after)
+          if before_blocks.keys() != after_blocks.keys():
+              raise SystemExit("Atheris lock refresh changed the resolved package set")
+          for name in before_blocks:
+              if name in {"atheris", "newsdom-api"}:
+                  continue
+              if before_blocks[name] != after_blocks[name]:
+                  raise SystemExit(f"Atheris lock refresh changed unrelated package: {name}")
+          atheris = after_blocks.get("atheris", "")
+          if 'version = "3.1.0"' not in atheris:
+              raise SystemExit("uv.lock did not resolve Atheris 3.1.0")
+          root = after_blocks.get("newsdom-api", "")
+          if 'name = "atheris"' not in root or 'specifier = "==3.1.0"' not in root:
+              raise SystemExit("project lock metadata does not require Atheris 3.1.0")
+          PY
+
+      - name: Verify locked fuzz environment and repository tests
+        run: |
+          set -euo pipefail
+          uv sync --locked --extra dev --extra fuzz
+          uv run pytest -q
+
+      - name: Publish verified lock and remove this one-shot workflow
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          BRANCH_NAME: dependabot/pip/develop/python-be28e05158
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/one-shot-refresh-atheris-lock.yml
+          git add uv.lock
+          git diff --cached --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(deps-dev): synchronize Atheris 3.1.0 lock"
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push origin "HEAD:${BRANCH_NAME}"
