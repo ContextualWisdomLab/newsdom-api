@@ -4,8 +4,12 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from newsdom_api.config import API_TOKEN_ENV_VAR
-from newsdom_api.main import app
+from newsdom_api.config import (
+    AuthenticationMode,
+    RuntimeProfile,
+    RuntimeSettings,
+)
+from newsdom_api.main import create_app
 
 _PDF_FILES = {
     "file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")
@@ -15,11 +19,13 @@ _PDF_FILES = {
 def test_default_configuration_without_token_blocks_parser_before_work(
     monkeypatch,
 ) -> None:
-    """Required authentication must not silently become open when its token is absent."""
+    """Missing required auth must block parsing before downstream work."""
 
-    monkeypatch.delenv(API_TOKEN_ENV_VAR, raising=False)
-    monkeypatch.delenv("NEWSDOM_AUTH_MODE", raising=False)
-    monkeypatch.delenv("NEWSDOM_RUNTIME_PROFILE", raising=False)
+    settings = RuntimeSettings(
+        authentication_mode=AuthenticationMode.REQUIRED,
+        runtime_profile=RuntimeProfile.PRODUCTION,
+        api_token=None,
+    )
     parser_called = False
 
     def fake_parse_pdf(*_args, **_kwargs):
@@ -30,9 +36,12 @@ def test_default_configuration_without_token_blocks_parser_before_work(
     monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
     monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf)
 
-    response = TestClient(app, raise_server_exceptions=False).post(
-        "/parse", files=_PDF_FILES
+    application = create_app(
+        settings, runtime_readiness_probe=lambda: True
     )
+    response = TestClient(
+        application, raise_server_exceptions=False
+    ).post("/parse", files=_PDF_FILES)
 
     assert response.status_code == 503
     assert response.json() == {"detail": "Service Unavailable"}
@@ -42,13 +51,20 @@ def test_default_configuration_without_token_blocks_parser_before_work(
 def test_ready_fails_closed_when_required_authentication_is_unconfigured(
     monkeypatch,
 ) -> None:
-    """Traffic readiness must expose invalid auth configuration without secret detail."""
+    """Readiness must expose invalid auth configuration without secret detail."""
 
-    monkeypatch.delenv(API_TOKEN_ENV_VAR, raising=False)
-    monkeypatch.delenv("NEWSDOM_AUTH_MODE", raising=False)
-    monkeypatch.delenv("NEWSDOM_RUNTIME_PROFILE", raising=False)
+    settings = RuntimeSettings(
+        authentication_mode=AuthenticationMode.REQUIRED,
+        runtime_profile=RuntimeProfile.PRODUCTION,
+        api_token=None,
+    )
+    application = create_app(
+        settings, runtime_readiness_probe=lambda: True
+    )
 
-    response = TestClient(app, raise_server_exceptions=False).get("/ready")
+    response = TestClient(
+        application, raise_server_exceptions=False
+    ).get("/ready")
 
     assert response.status_code == 503
     assert response.json() == {"detail": "Service Unavailable"}
@@ -61,11 +77,18 @@ def test_health_remains_liveness_only_when_authentication_is_unconfigured(
 ) -> None:
     """Liveness must remain independent from authentication readiness."""
 
-    monkeypatch.delenv(API_TOKEN_ENV_VAR, raising=False)
-    monkeypatch.delenv("NEWSDOM_AUTH_MODE", raising=False)
-    monkeypatch.delenv("NEWSDOM_RUNTIME_PROFILE", raising=False)
+    settings = RuntimeSettings(
+        authentication_mode=AuthenticationMode.REQUIRED,
+        runtime_profile=RuntimeProfile.PRODUCTION,
+        api_token=None,
+    )
+    application = create_app(
+        settings, runtime_readiness_probe=lambda: False
+    )
 
-    response = TestClient(app, raise_server_exceptions=False).get("/health")
+    response = TestClient(
+        application, raise_server_exceptions=False
+    ).get("/health")
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}

@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: newsdom-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: newsdom-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: newsdom-api
+    spec:
+      containers:
+        - name: newsdom-api
+          image: ghcr.io/contextualwisdomlab/newsdom-api:0.3.0
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: NEWSDOM_AUTH_MODE
+              value: required
+            - name: NEWSDOM_RUNTIME_PROFILE
+              value: production
+            - name: NEWSDOM_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: newsdom-api-runtime
+                  key: api_token
+            - name: NEWSDOM_MINERU_BIN
+              value: /opt/mineru/bin/mineru
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: newsdom-api
+spec:
+  selector:
+    app.kubernetes.io/name: newsdom-api
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http

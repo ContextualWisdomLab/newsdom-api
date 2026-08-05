@@ -47,3 +47,33 @@ than a default-image contract.
   artifacts are missing or invalid.
 - Reconcile the failure against `README.md`, `CHANGELOG.md`, and the
   relevant workflow before closing the task.
+
+## Fail-closed authentication migration for 0.3.0
+
+Parser authentication is required by default. The previous default-open behavior
+must not be carried into a production or shared deployment. Configure all three
+settings before routing traffic:
+
+```text
+NEWSDOM_AUTH_MODE=required
+NEWSDOM_RUNTIME_PROFILE=production
+NEWSDOM_API_TOKEN=<secret-store reference>
+```
+
+Use `GET /health` for process liveness and `GET /ready` for traffic readiness.
+A process may be live while `/ready` returns 503 because the required token or
+MinerU executable is unavailable. Keep it out of the load-balancer endpoint set
+until readiness succeeds.
+
+The development-only bypass requires both values below and must be confined to
+an isolated local workstation:
+
+```text
+NEWSDOM_AUTH_MODE=disabled
+NEWSDOM_RUNTIME_PROFILE=development
+```
+
+This bypass is not a production rollback. To roll back a failed production
+upgrade, restore the previous release or repair secret/MinerU injection while
+keeping required authentication. Never log the token, its length, or a hash that
+could become a reusable credential oracle.
