@@ -9,11 +9,14 @@ def _workflow_paths() -> list[Path]:
     )
 
 
-def test_each_workflow_job_forces_javascript_actions_to_node24():
+def test_each_direct_workflow_job_forces_javascript_actions_to_node24():
     for workflow_path in _workflow_paths():
         data = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
         for job_name, job_data in data["jobs"].items():
             if workflow_path.name in {"scorecards.yml", "gh-pages.yml"}:
+                continue
+            if "uses" in job_data:
+                assert "env" not in job_data, (workflow_path, job_name)
                 continue
             assert job_data["env"]["FORCE_JAVASCRIPT_ACTIONS_TO_NODE24"] is True, (
                 workflow_path,
