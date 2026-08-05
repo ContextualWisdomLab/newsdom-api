@@ -160,7 +160,8 @@ def test_project_uses_spdx_license_string_not_deprecated_table():
 def test_project_declares_locked_fuzz_extra_without_bundling_nvidia_stack():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
     assert "fuzz = [" in text
-    assert '"atheris==3.0.0 ;' in text
+    assert '"atheris==3.1.0 ;' in text
+    assert _locked_package_version("atheris") == (3, 1, 0)
     assert '"pyinstaller==6.21.0"' in text
     assert "nvidia = [" not in text
 
