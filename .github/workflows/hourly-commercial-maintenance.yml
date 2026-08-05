@@ -1,0 +1,34 @@
+name: Hourly Commercial Maintenance
+
+on:
+  schedule:
+    - cron: "41 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Inspect the queue without dispatching a repair
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: hourly-commercial-maintenance-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  review-repair:
+    permissions:
+      actions: write
+      contents: read
+      id-token: write
+      issues: write
+      pull-requests: read
+      statuses: read
+    uses: ContextualWisdomLab/.github/.github/workflows/nvidia-nim-pr-maintenance.yml@2ebda8063d3c541e2552dc474c3c8601ddc986f8
+    with:
+      target_repository: ContextualWisdomLab/newsdom-api
+      base_branch: develop
+      dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
+      max_prs: "50"
+      max_dispatches: "1"
+      retry_hours: "1"
