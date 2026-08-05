@@ -6,7 +6,8 @@ from pathlib import Path
 import re
 
 
-WORKFLOW_PATH = Path(".github/workflows/hourly-commercial-maintenance.yml")
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+WORKFLOW_PATH = REPOSITORY_ROOT / ".github/workflows/hourly-commercial-maintenance.yml"
 
 
 def _workflow_text() -> str:
@@ -45,24 +46,33 @@ def test_caller_targets_newsdom_develop_through_immutable_central_source() -> No
     assert "@main" not in workflow
 
 
-def test_caller_grants_only_scheduler_permissions() -> None:
-    """The reusable scheduler receives no code-write or merge permission from the leaf."""
+def test_caller_grants_only_read_and_oidc_permissions() -> None:
+    """The leaf token must be read-only except for the OIDC identity exchange."""
 
     workflow = _workflow_text()
 
+    assert "permissions: {}" in workflow
     required_permissions = (
-        "actions: write",
+        "actions: read",
         "contents: read",
         "id-token: write",
-        "issues: write",
+        "issues: read",
         "pull-requests: read",
         "statuses: read",
     )
     for permission in required_permissions:
         assert permission in workflow
 
-    assert "contents: write" not in workflow
-    assert "pull-requests: write" not in workflow
+    forbidden_permissions = (
+        "actions: write",
+        "contents: write",
+        "issues: write",
+        "pull-requests: write",
+        "statuses: write",
+    )
+    for permission in forbidden_permissions:
+        assert permission not in workflow
+
     assert "secrets: inherit" not in workflow
 
 
