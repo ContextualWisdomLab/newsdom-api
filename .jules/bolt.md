@@ -63,6 +63,3 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
-## 2024-06-25 - Use Path.read_bytes() over Path.read_text() when loading JSON
-**Learning:** When loading a JSON file with `json.loads()`, reading the file as text via `path.read_text(encoding="utf-8")` introduces intermediate string allocation and decoding overhead. Passing bytes directly from `path.read_bytes()` allows `json.loads()` to bypass this overhead, decoding efficiently at the C extension level and resulting in a ~20% speedup for JSON loads.
-**Action:** Replace `path.read_text(encoding="utf-8")` with `path.read_bytes()` wherever file contents are passed directly to `json.loads()`. Ensure any mocked tests are updated to target `Path.read_bytes`.
