@@ -131,8 +131,8 @@ def require_authorization(
     token = get_api_token()
     if token is None:
         return
-    expected = f"Bearer {token}".encode("utf-8")
-    provided = (authorization or "").encode("utf-8")
+    expected = f"Bearer {token}"
+    provided = authorization or ""
     if not hmac.compare_digest(provided, expected):
         raise HTTPException(
             status_code=401,
