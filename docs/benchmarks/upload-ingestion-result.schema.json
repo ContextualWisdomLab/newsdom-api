@@ -15,7 +15,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "1.0.0"
+      "const": "1.1.0"
     },
     "schema_path": {
       "const": "docs/benchmarks/upload-ingestion-result.schema.json"
@@ -52,7 +52,8 @@
         "executable",
         "platform",
         "machine",
-        "processor_count"
+        "processor_count",
+        "rss_provider"
       ],
       "properties": {
         "python_version": {
@@ -77,6 +78,9 @@
         "processor_count": {
           "type": ["integer", "null"],
           "minimum": 1
+        },
+        "rss_provider": {
+          "const": "linux_proc_status_vmrss"
         }
       }
     },
@@ -110,6 +114,7 @@
         "concurrency",
         "repetitions",
         "metrics",
+        "cohort_observations",
         "samples"
       ],
       "properties": {
@@ -143,7 +148,9 @@
             "read_calls",
             "cpu_seconds",
             "peak_rss_bytes",
+            "peak_rss_delta_bytes",
             "temporary_disk_bytes",
+            "event_loop_p95_delay_seconds",
             "event_loop_max_delay_seconds"
           ],
           "properties": {
@@ -171,9 +178,17 @@
               "type": "integer",
               "minimum": 0
             },
+            "peak_rss_delta_bytes": {
+              "type": "integer",
+              "minimum": 0
+            },
             "temporary_disk_bytes": {
               "type": "integer",
               "minimum": 1
+            },
+            "event_loop_p95_delay_seconds": {
+              "type": "number",
+              "minimum": 0
             },
             "event_loop_max_delay_seconds": {
               "type": "number",
@@ -181,11 +196,59 @@
             }
           }
         },
+        "cohort_observations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/cohort_observation"
+          }
+        },
         "samples": {
           "type": "array",
           "minItems": 1,
           "items": {
             "$ref": "#/$defs/sample_record"
+          }
+        }
+      }
+    },
+    "cohort_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "wall_seconds",
+        "cpu_seconds",
+        "rss_baseline_bytes",
+        "peak_rss_bytes",
+        "peak_rss_delta_bytes",
+        "event_loop_delay_samples_seconds"
+      ],
+      "properties": {
+        "wall_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "cpu_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "rss_baseline_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "peak_rss_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "peak_rss_delta_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "event_loop_delay_samples_seconds": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0
           }
         }
       }
@@ -207,10 +270,6 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 20971520
-        },
-        "event_loop_max_delay_seconds": {
-          "type": "number",
-          "minimum": 0
         }
       }
     }
