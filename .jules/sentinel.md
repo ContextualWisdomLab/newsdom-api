@@ -55,7 +55,7 @@
 ## 2025-03-02 - Prevent Disk Exhaustion via Interrupted Uploads
 **Vulnerability:** FastAPIs `UploadFile` payloads were streamed to a `NamedTemporaryFile` within a `with` block that did not cover the file initialization or have a global `finally` block for that path. If a network disconnect or client abort exception interrupted `await file.read()` inside this block, the temporary file path on disk was not properly unlinked, leading to disk space exhaustion over time.
 **Learning:** Context managers alone are insufficient when dealing with manual temporary file persistence (`delete=False`) in async HTTP streams because exceptions inside the stream reading loop can bypass cleanup blocks that are positioned further down the control flow.
-**Prevention:** Wrap the temporary file creation, stream reading, and processing stages in a single overarching `try...finally` block that guarantees explicit cleanup of the temporary file path regardless of when a network or application exception occurs.
+**Prevention:** Wrap both the initialization of the `NamedTemporaryFile` and the *entire* file reading loop inside a single overarching `try...finally` block that guarantees explicit cleanup of the temporary file path regardless of when a network or application exception occurs.
 
 ## 2024-10-24 - Fix DoS vulnerability in file uploads
 **Vulnerability:** Asynchronous file uploads created temporary files before entering a try/finally block. If the client disconnects or an error occurs during `await file.read()`, the temporary file is left orphaned on the filesystem, leading to disk exhaustion (DoS).
@@ -65,7 +65,7 @@
 ## 2025-03-01 - Prevent Disk Exhaustion DoS via Orphaned Temp Files
 **Vulnerability:** The `/parse` API streamed large uploaded files into a `NamedTemporaryFile(delete=False)`. If a read error or client disconnect occurred (e.g. an exception during `await file.read(8192)`), the execution flow would jump past the explicit `try...finally` cleanup block that was located *after* the read loop. This resulted in orphaned temporary files left on disk, creating a Disk Exhaustion DoS vulnerability when under attack.
 **Learning:** File processing loops, especially those consuming asynchronous `UploadFile` streams, are vulnerable to unhandled exceptions like `ClientDisconnect`. Cleanup logic must guarantee removal regardless of *where* the failure occurs. The `NamedTemporaryFile(delete=False)` itself only guarantees a filename, not cleanup upon early exit.
-**Prevention:** Wrap both the initialization of the `NamedTemporaryFile` and the *entire* file reading loop inside a single `try...finally` block that unlinks the temporary file path, ensuring safe cleanup even if network errors or client disconnects interrupt the read process.
+**Prevention:** Wrap both the initialization of the `NamedTemporaryFile` and the *entire* file reading loop inside a single overarching `try...finally` block that unlinks the temporary file path, ensuring safe cleanup even if network errors or client disconnects interrupt the read process.
 
 ## 2025-05-18 - [HIGH] Fix temporary file leak during PDF upload
 **Vulnerability:** 파일 업로드 시 `await file.read(8192)`에서 클라이언트 연결 끊김이나 예외가 발생하면 `try...finally` 블록 바깥에 있어 임시 파일이 삭제되지 않고 디스크에 남음 (디스크 고갈 / DoS 위험).
@@ -80,7 +80,7 @@
 ## 2024-05-24 - [CRITICAL] Fix temporary file cleanup to prevent DoS via disk exhaustion
 **Vulnerability:** Incomplete temporary file cleanup on asynchronous file uploads.
 **Learning:** When processing asynchronous file uploads in FastAPI (`await file.read()`), instantiating temporary files (`NamedTemporaryFile(delete=False)`) inside a nested `try` block while the initial read happens outside can leave temporary files orphaned if an exception occurs before the nested block or during the initial read. This can lead to disk exhaustion (DoS) if clients maliciously disconnect or send malformed data.
-**Prevention:** Ensure the temporary path variable (`tmp_path = None`) is initialized before the main `try` block, and the read loop and file instantiation are entirely enclosed within a unified `try...finally` block. Verify cleanup in the `finally` block with `if tmp_path and tmp_path.exists(): tmp_path.unlink(missing_ok=True)`.
+**Prevention:** Ensure the temporary path variable is initialized before the main `try` block, and the read loop and file instantiation are entirely enclosed within a unified `try...finally` block. Verify cleanup in the `finally` block with `if tmp_path and tmp_path.exists(): tmp_path.unlink(missing_ok=True)`.
 ## 2023-10-27 - 🛡️ Fix naive absolute path traversal protection
 **Vulnerability:** The codebase rejected all absolute paths indiscriminately (e.g., using `is_absolute()`) rather than whitelist-validating them, causing CI breakages when legitimate absolute paths within safe temp directories were provided.
 **Learning:** Naively blocking absolute paths can disrupt legitimate CI and test automation tools that rely on paths pointing to temporary system directories like `/tmp`.
@@ -91,7 +91,7 @@
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
 
-## 2026-07-23 - Prevent DoS via non-ASCII Authorization headers
+## 2026-08-06 - Prevent DoS via non-ASCII Authorization headers
 **Vulnerability:** When comparing an authorization header with a secret using `hmac.compare_digest`, passing a non-ASCII character in the header (e.g. `Bearer abc🚀`) caused Python to raise a `TypeError`, resulting in an unhandled 500 error that could be exploited for a Denial-of-Service (DoS) attack.
 **Learning:** Python's `hmac.compare_digest` only supports comparing ASCII strings or bytes. If user-supplied input (like HTTP headers) can contain non-ASCII characters, it must be explicitly encoded to bytes before comparison.
 **Prevention:** Always encode user-provided strings and the expected secret to bytes (`.encode("utf-8")`) before passing them to `hmac.compare_digest`.
