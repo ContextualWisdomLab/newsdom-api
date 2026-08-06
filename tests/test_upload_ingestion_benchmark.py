@@ -11,6 +11,21 @@ import pytest
 from tools import benchmark_upload_ingestion as benchmark
 
 
+def _sample(
+    duration: float = 0.25,
+    *,
+    read_calls: int = 3,
+    bytes_copied: int = 100,
+) -> dict[str, int | float]:
+    """Return one compact request sample for aggregate-metric tests."""
+
+    return {
+        "duration_seconds": duration,
+        "read_calls": read_calls,
+        "bytes_copied": bytes_copied,
+    }
+
+
 def test_candidate_matrix_preserves_every_issue_534_chunk_option() -> None:
     """The harness must not silently omit or preselect one requested candidate."""
 
@@ -86,6 +101,82 @@ def test_percentile_uses_nearest_rank_for_small_reproducible_samples() -> None:
     assert benchmark.nearest_rank_percentile(values, 0.95) == 0.4
 
 
+def test_current_rss_reads_linux_vmrss_in_bytes(tmp_path: Path) -> None:
+    """Per-case memory evidence must use current RSS rather than lifetime high-water."""
+
+    status_path = tmp_path / "status"
+    status_path.write_text("Name:\tpython\nVmRSS:\t1234 kB\n", encoding="utf-8")
+
+    assert benchmark.current_rss_bytes(status_path=status_path) == 1234 * 1024
+
+
+def test_current_rss_returns_zero_when_status_is_missing_or_malformed(
+    tmp_path: Path,
+) -> None:
+    """Unsupported memory providers should be explicit zero evidence, not stale RSS."""
+
+    missing = tmp_path / "missing"
+    malformed = tmp_path / "status"
+    malformed.write_text("VmRSS:\tnot-a-number kB\n", encoding="utf-8")
+
+    assert benchmark.current_rss_bytes(status_path=missing) == 0
+    assert benchmark.current_rss_bytes(status_path=malformed) == 0
+
+
+def test_metrics_use_case_local_rss_and_nearest_rank_event_loop_p95() -> None:
+    """Memory and responsiveness aggregates must derive from raw cohort evidence."""
+
+    first = benchmark.CohortObservation(
+        samples=(_sample(0.10), _sample(0.30)),
+        wall_seconds=0.40,
+        cpu_seconds=0.20,
+        rss_baseline_bytes=100,
+        peak_rss_bytes=500,
+        event_loop_delay_samples_seconds=(0.001, 0.002, 0.003, 0.100),
+    )
+    second = benchmark.CohortObservation(
+        samples=(_sample(0.20),),
+        wall_seconds=0.20,
+        cpu_seconds=0.10,
+        rss_baseline_bytes=150,
+        peak_rss_bytes=250,
+        event_loop_delay_samples_seconds=(0.004, 0.005),
+    )
+
+    metrics = benchmark.aggregate_metrics((first, second))
+
+    assert metrics["peak_rss_bytes"] == 500
+    assert metrics["peak_rss_delta_bytes"] == 400
+    assert metrics["event_loop_p95_delay_seconds"] == 0.100
+    assert metrics["event_loop_max_delay_seconds"] == 0.100
+    assert metrics["p50_latency_seconds"] == 0.20
+    assert metrics["p95_latency_seconds"] == 0.30
+
+
+def test_later_case_can_report_lower_rss_than_an_earlier_case() -> None:
+    """A process-lifetime high-water mark must not contaminate later matrix cases."""
+
+    high = benchmark.CohortObservation(
+        samples=(_sample(),),
+        wall_seconds=0.25,
+        cpu_seconds=0.10,
+        rss_baseline_bytes=1_000,
+        peak_rss_bytes=9_000,
+        event_loop_delay_samples_seconds=(),
+    )
+    low = benchmark.CohortObservation(
+        samples=(_sample(),),
+        wall_seconds=0.25,
+        cpu_seconds=0.10,
+        rss_baseline_bytes=1_000,
+        peak_rss_bytes=2_000,
+        event_loop_delay_samples_seconds=(),
+    )
+
+    assert benchmark.aggregate_metrics((high,))["peak_rss_bytes"] == 9_000
+    assert benchmark.aggregate_metrics((low,))["peak_rss_bytes"] == 2_000
+
+
 @pytest.mark.asyncio
 async def test_matrix_report_records_environment_cases_and_raw_samples(
     tmp_path: Path,
@@ -102,16 +193,23 @@ async def test_matrix_report_records_environment_cases_and_raw_samples(
         *,
         chunk_bytes: int,
         concurrency: int,
-    ) -> list[dict[str, int | float]]:
+    ) -> benchmark.CohortObservation:
         calls.append((fixture_path.name, chunk_bytes, concurrency))
-        return [
-            {
-                "duration_seconds": 0.25,
-                "read_calls": 3,
-                "bytes_copied": fixture_path.stat().st_size,
-            }
-            for _ in range(concurrency)
-        ]
+        return benchmark.CohortObservation(
+            samples=tuple(
+                {
+                    "duration_seconds": 0.25,
+                    "read_calls": 3,
+                    "bytes_copied": fixture_path.stat().st_size,
+                }
+                for _ in range(concurrency)
+            ),
+            wall_seconds=0.50,
+            cpu_seconds=0.25,
+            rss_baseline_bytes=1_000,
+            peak_rss_bytes=2_000,
+            event_loop_delay_samples_seconds=(0.001, 0.010),
+        )
 
     report = await benchmark.run_matrix(
         [fixture],
@@ -128,13 +226,16 @@ async def test_matrix_report_records_environment_cases_and_raw_samples(
         indent=2,
         sort_keys=True,
     ) + "\n"
-    assert report["schema_version"] == "1.0.0"
+    assert report["schema_version"] == "1.1.0"
     assert report["benchmark_environment"]["python_version"]
     assert len(report["fixtures"]) == 1
     assert len(report["cases"]) == 4
     assert len(report["cases"][0]["samples"]) == 2
+    assert len(report["cases"][0]["cohort_observations"]) == 2
     assert report["cases"][0]["metrics"]["p50_latency_seconds"] == 0.25
     assert report["cases"][0]["metrics"]["p95_latency_seconds"] == 0.25
+    assert report["cases"][0]["metrics"]["peak_rss_delta_bytes"] == 1_000
+    assert report["cases"][0]["metrics"]["event_loop_p95_delay_seconds"] == 0.010
     assert calls == [
         ("fixture.pdf", 8 * 1024, 1),
         ("fixture.pdf", 8 * 1024, 1),
@@ -161,8 +262,10 @@ def test_raw_evidence_schema_is_strict_and_covers_required_metrics() -> None:
     metric_properties = case_schema["properties"]["metrics"]["properties"]
 
     assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
+    assert schema["properties"]["schema_version"] == {"const": "1.1.0"}
     assert schema["additionalProperties"] is False
     assert case_schema["additionalProperties"] is False
+    assert "cohort_observations" in case_schema["required"]
     assert case_schema["properties"]["concurrency"] == {
         "type": "integer",
         "minimum": 1,
@@ -174,7 +277,9 @@ def test_raw_evidence_schema_is_strict_and_covers_required_metrics() -> None:
         "read_calls",
         "cpu_seconds",
         "peak_rss_bytes",
+        "peak_rss_delta_bytes",
         "temporary_disk_bytes",
+        "event_loop_p95_delay_seconds",
         "event_loop_max_delay_seconds",
     ):
         assert required_metric in metric_properties
