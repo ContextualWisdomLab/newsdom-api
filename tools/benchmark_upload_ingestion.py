@@ -13,6 +13,7 @@ import sys
 import tempfile
 import time
 from collections.abc import Awaitable, Callable, Sequence
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -33,7 +34,39 @@ TARGET_FIXTURE_BYTES = (
     20 * 1024 * 1024,
 )
 _RESULT_SCHEMA_PATH = "docs/benchmarks/upload-ingestion-result.schema.json"
-CohortRunner = Callable[..., Awaitable[list[dict[str, int | float]]]]
+SampleRecord = dict[str, int | float]
+
+
+@dataclass(frozen=True, slots=True)
+class CohortObservation:
+    """Raw process and request evidence for one concurrent ingestion cohort."""
+
+    samples: tuple[SampleRecord, ...]
+    wall_seconds: float
+    cpu_seconds: float
+    rss_baseline_bytes: int
+    peak_rss_bytes: int
+    event_loop_delay_samples_seconds: tuple[float, ...]
+
+    def as_record(self) -> dict[str, Any]:
+        """Return the JSON-serializable cohort evidence retained in the report."""
+
+        return {
+            "wall_seconds": self.wall_seconds,
+            "cpu_seconds": self.cpu_seconds,
+            "rss_baseline_bytes": self.rss_baseline_bytes,
+            "peak_rss_bytes": self.peak_rss_bytes,
+            "peak_rss_delta_bytes": max(
+                0,
+                self.peak_rss_bytes - self.rss_baseline_bytes,
+            ),
+            "event_loop_delay_samples_seconds": list(
+                self.event_loop_delay_samples_seconds
+            ),
+        }
+
+
+CohortRunner = Callable[..., Awaitable[CohortObservation]]
 
 
 def resolve_chunk_bytes(candidate: str, fixture_bytes: int) -> int:
@@ -100,17 +133,25 @@ def nearest_rank_percentile(values: Sequence[float], probability: float) -> floa
     return ordered[rank - 1]
 
 
-def _peak_rss_bytes() -> int:
-    """Return the process peak RSS in bytes when the platform exposes it."""
+def current_rss_bytes(*, status_path: Path = Path("/proc/self/status")) -> int:
+    """Return current Linux process RSS in bytes, or zero when unavailable."""
 
     try:
-        import resource
-    except ImportError:
+        lines = status_path.read_text(encoding="utf-8").splitlines()
+    except OSError:
         return 0
-    raw_value = int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
-    if platform.system() == "Darwin":
-        return raw_value
-    return raw_value * 1024
+    for line in lines:
+        if not line.startswith("VmRSS:"):
+            continue
+        fields = line.split()
+        if len(fields) != 3 or fields[2] != "kB":
+            return 0
+        try:
+            kibibytes = int(fields[1])
+        except ValueError:
+            return 0
+        return max(0, kibibytes) * 1024
+    return 0
 
 
 async def _event_loop_probe(
@@ -119,7 +160,7 @@ async def _event_loop_probe(
     *,
     interval_seconds: float = 0.005,
 ) -> None:
-    """Measure maximum event-loop scheduling delay while a cohort is active."""
+    """Sample event-loop scheduling delays while one cohort is active."""
 
     expected = time.perf_counter() + interval_seconds
     while not stop_event.is_set():
@@ -129,12 +170,27 @@ async def _event_loop_probe(
         expected = now + interval_seconds
 
 
+async def _rss_probe(
+    stop_event: asyncio.Event,
+    observed_rss_bytes: list[int],
+    *,
+    rss_reader: Callable[[], int] = current_rss_bytes,
+    interval_seconds: float = 0.005,
+) -> None:
+    """Sample current process RSS so each case has an independent peak."""
+
+    observed_rss_bytes.append(rss_reader())
+    while not stop_event.is_set():
+        await asyncio.sleep(interval_seconds)
+        observed_rss_bytes.append(rss_reader())
+
+
 async def _copy_one_fixture(
     fixture_path: Path,
     *,
     chunk_bytes: int,
     temporary_directory: Path,
-) -> dict[str, int | float]:
+) -> SampleRecord:
     """Copy one real file-backed UploadFile to temporary storage and measure it."""
 
     started = time.perf_counter()
@@ -174,19 +230,26 @@ async def run_cohort(
     *,
     chunk_bytes: int,
     concurrency: int,
-) -> list[dict[str, int | float]]:
-    """Run one concurrent real-file cohort and preserve per-request raw samples."""
+) -> CohortObservation:
+    """Run one real-file cohort and retain raw timing, loop, and RSS evidence."""
 
     if concurrency < 1:
         raise ValueError("Concurrency must be at least one")
     if chunk_bytes < 1:
         raise ValueError("Chunk size must be at least one byte")
 
+    wall_started = time.perf_counter()
+    cpu_started = time.process_time()
+    rss_baseline_bytes = current_rss_bytes()
+    observed_rss_bytes = [rss_baseline_bytes]
     stop_event = asyncio.Event()
     observed_delays: list[float] = []
     with tempfile.TemporaryDirectory(prefix="newsdom-ingestion-benchmark-") as root:
         temporary_directory = Path(root)
-        probe = asyncio.create_task(_event_loop_probe(stop_event, observed_delays))
+        event_loop_probe = asyncio.create_task(
+            _event_loop_probe(stop_event, observed_delays)
+        )
+        rss_probe = asyncio.create_task(_rss_probe(stop_event, observed_rss_bytes))
         try:
             samples = await asyncio.gather(
                 *(
@@ -199,13 +262,18 @@ async def run_cohort(
                 )
             )
         finally:
+            observed_rss_bytes.append(current_rss_bytes())
             stop_event.set()
-            await probe
+            await asyncio.gather(event_loop_probe, rss_probe)
 
-    maximum_delay = max(observed_delays, default=0.0)
-    for sample in samples:
-        sample["event_loop_max_delay_seconds"] = maximum_delay
-    return samples
+    return CohortObservation(
+        samples=tuple(samples),
+        wall_seconds=time.perf_counter() - wall_started,
+        cpu_seconds=time.process_time() - cpu_started,
+        rss_baseline_bytes=rss_baseline_bytes,
+        peak_rss_bytes=max(observed_rss_bytes, default=0),
+        event_loop_delay_samples_seconds=tuple(observed_delays),
+    )
 
 
 def _environment_record() -> dict[str, Any]:
@@ -218,36 +286,48 @@ def _environment_record() -> dict[str, Any]:
         "platform": platform.platform(),
         "machine": platform.machine(),
         "processor_count": os.cpu_count(),
+        "rss_provider": "linux_proc_status_vmrss",
     }
 
 
-def _metrics(
-    samples: Sequence[dict[str, int | float]],
-    *,
-    cohort_wall_seconds: Sequence[float],
-    cpu_seconds: Sequence[float],
-    peak_rss_bytes: Sequence[int],
+def aggregate_metrics(
+    cohorts: Sequence[CohortObservation],
 ) -> dict[str, int | float]:
-    """Aggregate raw samples without discarding the samples themselves."""
+    """Aggregate request and cohort evidence without lifetime RSS contamination."""
 
+    samples = [sample for cohort in cohorts for sample in cohort.samples]
+    if not samples:
+        raise ValueError("At least one request sample is required")
     durations = [float(sample["duration_seconds"]) for sample in samples]
     total_bytes = sum(int(sample["bytes_copied"]) for sample in samples)
-    total_wall = sum(cohort_wall_seconds)
+    total_wall = sum(cohort.wall_seconds for cohort in cohorts)
+    loop_delays = [
+        delay
+        for cohort in cohorts
+        for delay in cohort.event_loop_delay_samples_seconds
+    ]
     return {
         "p50_latency_seconds": nearest_rank_percentile(durations, 0.50),
         "p95_latency_seconds": nearest_rank_percentile(durations, 0.95),
         "throughput_bytes_per_second": total_bytes / total_wall if total_wall else 0.0,
         "read_calls": sum(int(sample["read_calls"]) for sample in samples),
-        "cpu_seconds": sum(cpu_seconds),
-        "peak_rss_bytes": max(peak_rss_bytes, default=0),
-        "temporary_disk_bytes": total_bytes,
-        "event_loop_max_delay_seconds": max(
-            (
-                float(sample.get("event_loop_max_delay_seconds", 0.0))
-                for sample in samples
-            ),
-            default=0.0,
+        "cpu_seconds": sum(cohort.cpu_seconds for cohort in cohorts),
+        "peak_rss_bytes": max(
+            (cohort.peak_rss_bytes for cohort in cohorts),
+            default=0,
         ),
+        "peak_rss_delta_bytes": max(
+            (
+                max(0, cohort.peak_rss_bytes - cohort.rss_baseline_bytes)
+                for cohort in cohorts
+            ),
+            default=0,
+        ),
+        "temporary_disk_bytes": total_bytes,
+        "event_loop_p95_delay_seconds": (
+            nearest_rank_percentile(loop_delays, 0.95) if loop_delays else 0.0
+        ),
+        "event_loop_max_delay_seconds": max(loop_delays, default=0.0),
     }
 
 
@@ -276,22 +356,19 @@ async def run_matrix(
             fixture_bytes = int(fixture_record["size_bytes"])
             for candidate in candidates:
                 chunk_bytes = resolve_chunk_bytes(candidate, fixture_bytes)
-                all_samples: list[dict[str, int | float]] = []
-                cohort_wall_seconds: list[float] = []
-                cpu_seconds: list[float] = []
-                peak_rss_bytes: list[int] = []
-                for _ in range(repetitions):
-                    wall_started = time.perf_counter()
-                    cpu_started = time.process_time()
-                    samples = await cohort_runner(
+                cohorts = [
+                    await cohort_runner(
                         fixture_path,
                         chunk_bytes=chunk_bytes,
                         concurrency=concurrency,
                     )
-                    cpu_seconds.append(time.process_time() - cpu_started)
-                    cohort_wall_seconds.append(time.perf_counter() - wall_started)
-                    peak_rss_bytes.append(_peak_rss_bytes())
-                    all_samples.extend(samples)
+                    for _ in range(repetitions)
+                ]
+                all_samples = [
+                    sample
+                    for cohort in cohorts
+                    for sample in cohort.samples
+                ]
                 cases.append(
                     {
                         "fixture_name": fixture_path.name,
@@ -299,18 +376,16 @@ async def run_matrix(
                         "chunk_bytes": chunk_bytes,
                         "concurrency": concurrency,
                         "repetitions": repetitions,
-                        "metrics": _metrics(
-                            all_samples,
-                            cohort_wall_seconds=cohort_wall_seconds,
-                            cpu_seconds=cpu_seconds,
-                            peak_rss_bytes=peak_rss_bytes,
-                        ),
+                        "metrics": aggregate_metrics(cohorts),
+                        "cohort_observations": [
+                            cohort.as_record() for cohort in cohorts
+                        ],
                         "samples": all_samples,
                     }
                 )
 
     report: dict[str, Any] = {
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
         "schema_path": _RESULT_SCHEMA_PATH,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "benchmark_environment": _environment_record(),
