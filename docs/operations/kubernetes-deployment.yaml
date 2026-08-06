@@ -35,7 +35,7 @@ spec:
         - name: newsdom-api
           # Unreleased example only. Replace this placeholder with an approved,
           # immutable image digest after release acceptance.
-          image: docker.io/contextualwisdomlab/newsdom-api:unreleased
+          image: ghcr.io/contextualwisdomlab/newsdom-api:unreleased
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
