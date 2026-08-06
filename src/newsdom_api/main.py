@@ -24,6 +24,7 @@ from fastapi.security import HTTPBearer
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
+from .admission import ParseAdmissionLimiter
 from .config import (
     AuthenticationMode,
     MAX_BEARER_HEADER_BYTES,
@@ -324,6 +325,9 @@ def create_app(
         },
     )
     application.state.runtime_settings = application_settings
+    application.state.parse_admission_limiter = ParseAdmissionLimiter(
+        application_settings.max_concurrent_parses
+    )
     application.state.runtime_readiness_probe = (
         runtime_readiness_probe or mineru_runtime_available
     )
