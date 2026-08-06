@@ -1,7 +1,6 @@
 """Contracts for process-local parser admission control."""
 
 import json
-from typing import Awaitable, Callable
 
 import pytest
 from fastapi import FastAPI, Request, Response
