@@ -89,3 +89,14 @@ def test_get_api_token_strips_surrounding_whitespace(monkeypatch):
 
 def test_config_module_exposes_env_var_name():
     assert config.API_TOKEN_ENV_VAR == "NEWSDOM_API_TOKEN"
+
+def test_parse_rejects_non_ascii_bearer_when_secret_set(monkeypatch, stub_parser):
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files=_PDF_FILES,
+        headers=[(b"Authorization", b"Bearer \xec\x95\x88\xeb\x85\x95\xed\x95\x98\xec\x84\xb8\xec\x9a\x94")],
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Unauthorized"
