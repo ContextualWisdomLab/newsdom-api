@@ -67,3 +67,7 @@
 ## 2024-08-05 - Avoid string allocation for visible text checks
 **Learning:** Using `bool(text.strip())` to check if a string contains visible characters creates an unnecessary string allocation, which can cause measurable overhead in parsing hot loops when done repeatedly. Using `bool(text) and not text.isspace()` avoids this allocation completely.
 **Action:** Replace `bool(text.strip())` with an early truthiness check combined with `not text.isspace()` (e.g., `bool(text) and not text.isspace()`) to optimize hot paths evaluating string visibility.
+
+## 2024-08-05 - Require end-to-end benchmark for micro-optimizations
+**Learning:** Replacing a short string predicate (like `bool(text.strip())` with `not text.isspace()`) without showing end-to-end latency, CPU, allocation, and correctness effects on realistic workloads creates review and CI cost without a defensible commercial benefit. The optimization was rejected for lacking representative benchmark evidence.
+**Action:** Do not submit micro-optimizations without representative benchmarking demonstrating end-to-end impact that meets product-level performance thresholds.
