@@ -10,7 +10,9 @@ from typing import Mapping
 API_TOKEN_ENV_VAR = "NEWSDOM_API_TOKEN"
 AUTH_MODE_ENV_VAR = "NEWSDOM_AUTH_MODE"
 RUNTIME_PROFILE_ENV_VAR = "NEWSDOM_RUNTIME_PROFILE"
+MAX_CONCURRENT_PARSES_ENV_VAR = "NEWSDOM_MAX_CONCURRENT_PARSES"
 MAX_BEARER_HEADER_BYTES = 4096
+DEFAULT_MAX_CONCURRENT_PARSES = 1
 
 
 class RuntimeConfigurationError(ValueError):
@@ -38,7 +40,7 @@ class RuntimeSettings:
     authentication_mode: AuthenticationMode = AuthenticationMode.REQUIRED
     runtime_profile: RuntimeProfile = RuntimeProfile.PRODUCTION
     api_token: str | None = field(default=None, repr=False)
-    max_concurrent_parses: int = 1
+    max_concurrent_parses: int = DEFAULT_MAX_CONCURRENT_PARSES
 
     def __post_init__(self) -> None:
         """Normalize secrets once and reject unsafe direct construction."""
@@ -132,9 +134,16 @@ def load_runtime_settings(
             RuntimeProfile.PRODUCTION.value,
         )
     )
+    max_concurrent_parses = int(
+        values.get(
+            MAX_CONCURRENT_PARSES_ENV_VAR,
+            str(DEFAULT_MAX_CONCURRENT_PARSES),
+        ).strip()
+    )
 
     return RuntimeSettings(
         authentication_mode=authentication_mode,
         runtime_profile=runtime_profile,
         api_token=get_api_token(values),
+        max_concurrent_parses=max_concurrent_parses,
     )
