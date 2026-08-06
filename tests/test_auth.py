@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
@@ -169,6 +168,7 @@ def test_direct_runtime_settings_reject_invalid_security_invariants() -> None:
     with pytest.raises(RuntimeConfigurationError, match="too long"):
         RuntimeSettings(api_token="x" * 4090)
 
+
 def test_direct_runtime_settings_normalize_token_once() -> None:
     """Direct construction should freeze the normalized bearer secret."""
 
@@ -229,20 +229,18 @@ def test_runtime_settings_are_immutable_after_application_creation(
     assert parser_spy["count"] == 1
 
 
-
 def test_corrupted_application_settings_fail_closed_with_sanitized_response() -> None:
     """Missing runtime state must not expose internals or accept traffic."""
 
     application = create_app(_settings(), runtime_readiness_probe=lambda: True)
     application.state.runtime_settings = object()
 
-    response = TestClient(application, raise_server_exceptions=False).get(
-        "/ready"
-    )
+    response = TestClient(application, raise_server_exceptions=False).get("/ready")
 
     assert response.status_code == 500
     assert response.json() == {"detail": "Internal Server Error"}
     assert response.headers["X-Content-Type-Options"] == "nosniff"
+
 
 def test_health_is_always_liveness_only() -> None:
     """Health should remain public even when authentication readiness is invalid."""
@@ -280,9 +278,7 @@ def test_ready_combines_authentication_and_parser_runtime(
 ) -> None:
     """Readiness must represent both security configuration and parser runtime."""
 
-    application = create_app(
-        settings, runtime_readiness_probe=lambda: runtime_ready
-    )
+    application = create_app(settings, runtime_readiness_probe=lambda: runtime_ready)
     response = TestClient(application).get("/ready")
 
     assert response.status_code == expected_status
