@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-import tomllib
 from pathlib import Path
 
 import yaml
@@ -16,6 +15,19 @@ def _text(path: str) -> str:
     """Read one repository-relative UTF-8 text artifact."""
 
     return (REPOSITORY_ROOT / path).read_text(encoding="utf-8")
+
+
+def _project_version(pyproject_text: str) -> str:
+    """Return the project version without requiring Python 3.11 ``tomllib``."""
+
+    match = re.search(
+        r'^\[project\]\n(?:.*\n)*?^version = "([^"]+)"',
+        pyproject_text,
+        re.MULTILINE,
+    )
+    if match is None:
+        raise AssertionError("pyproject.toml is missing [project].version")
+    return match.group(1)
 
 
 def test_compose_requires_production_authentication_and_probes_readiness() -> None:
@@ -117,7 +129,7 @@ def test_kubernetes_manifest_uses_an_explicit_unreleased_image_placeholder() -> 
     deployment = next(doc for doc in documents if doc["kind"] == "Deployment")
     container = deployment["spec"]["template"]["spec"]["containers"][0]
 
-    assert container["image"] == "docker.io/contextualwisdomlab/newsdom-api:unreleased"
+    assert container["image"] == "ghcr.io/contextualwisdomlab/newsdom-api:unreleased"
     assert container["imagePullPolicy"] == "Always"
     assert ":0.3.0" not in container["image"]
 
@@ -170,14 +182,14 @@ def test_authoritative_deployment_docs_reject_obsolete_default_open_guidance() -
 def test_package_openapi_and_manifest_do_not_claim_an_unreleased_version() -> None:
     """Package and OpenAPI versions must agree while deployment stays Unreleased."""
 
-    project = tomllib.loads(_text("pyproject.toml"))["project"]
+    project_version = _project_version(_text("pyproject.toml"))
     main_source = _text("src/newsdom_api/main.py")
     version_match = re.search(
         r"application = FastAPI\([\s\S]*?\n\s*version=\"([^\"]+)\"",
         main_source,
     )
     assert version_match is not None
-    assert version_match.group(1) == project["version"]
+    assert version_match.group(1) == project_version
 
     documents = list(
         yaml.safe_load_all(_text("docs/operations/kubernetes-deployment.yaml"))
@@ -185,7 +197,29 @@ def test_package_openapi_and_manifest_do_not_claim_an_unreleased_version() -> No
     deployment = next(doc for doc in documents if doc["kind"] == "Deployment")
     image = deployment["spec"]["template"]["spec"]["containers"][0]["image"]
     assert image.endswith(":unreleased")
-    assert f":{project['version']}" not in image
+    assert f":{project_version}" not in image
+
+
+def test_project_version_parser_is_scoped_to_the_project_table() -> None:
+    """Unrelated tool metadata must not be mistaken for the package version."""
+
+    text = (
+        '[tool.example]\nversion = "9.9.9"\n\n'
+        '[project]\nname = "newsdom-api"\nversion = "0.2.0"\n'
+    )
+
+    assert _project_version(text) == "0.2.0"
+
+
+def test_project_version_parser_rejects_missing_project_version() -> None:
+    """Malformed package metadata should fail with an actionable assertion."""
+
+    try:
+        _project_version('[project]\nname = "newsdom-api"\n')
+    except AssertionError as exc:
+        assert str(exc) == "pyproject.toml is missing [project].version"
+    else:
+        raise AssertionError("expected a missing project version assertion")
 
 
 def test_doctoring_records_distinct_failure_domains_and_apa_references() -> None:
