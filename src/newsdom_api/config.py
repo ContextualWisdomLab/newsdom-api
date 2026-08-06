@@ -38,6 +38,7 @@ class RuntimeSettings:
     authentication_mode: AuthenticationMode = AuthenticationMode.REQUIRED
     runtime_profile: RuntimeProfile = RuntimeProfile.PRODUCTION
     api_token: str | None = field(default=None, repr=False)
+    max_concurrent_parses: int = 1
 
     def __post_init__(self) -> None:
         """Normalize secrets once and reject unsafe direct construction."""
