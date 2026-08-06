@@ -64,6 +64,19 @@ def test_parse_accepts_valid_bearer_when_secret_set(monkeypatch, stub_parser):
     assert response.status_code == 200
 
 
+def test_require_authorization_rejects_non_ascii_gracefully(monkeypatch):
+    """Directly test function to bypass httpx ASCII header validation restrictions."""
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+    from fastapi import HTTPException
+    from newsdom_api.main import require_authorization
+
+    with pytest.raises(HTTPException) as exc_info:
+        require_authorization(authorization="Bearer non-ascii-🚀")
+
+    assert exc_info.value.status_code == 401
+    assert exc_info.value.detail == "Unauthorized"
+
+
 def test_health_is_unauthenticated_even_when_secret_set(monkeypatch):
     monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
     client = TestClient(app)
