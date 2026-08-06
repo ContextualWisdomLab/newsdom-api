@@ -127,7 +127,7 @@
         },
         "concurrency": {
           "type": "integer",
-          "enum": [1, 8, 32, 128]
+          "minimum": 1
         },
         "repetitions": {
           "type": "integer",
