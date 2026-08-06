@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+import tomllib
 from pathlib import Path
 
 import yaml
@@ -61,6 +63,56 @@ def test_kubernetes_manifest_separates_liveness_and_readiness() -> None:
     assert "secretKeyRef" in env_by_name["NEWSDOM_API_TOKEN"]["valueFrom"]
 
 
+def test_kubernetes_manifest_uses_restricted_non_root_runtime() -> None:
+    """The example workload must meet the bounded restricted-container contract."""
+
+    documents = list(
+        yaml.safe_load_all(_text("docs/operations/kubernetes-deployment.yaml"))
+    )
+    deployment = next(doc for doc in documents if doc["kind"] == "Deployment")
+    pod_spec = deployment["spec"]["template"]["spec"]
+    pod_security = pod_spec["securityContext"]
+    container = pod_spec["containers"][0]
+    container_security = container["securityContext"]
+
+    assert pod_security["runAsNonRoot"] is True
+    assert pod_security["runAsUser"] == 10001
+    assert pod_security["runAsGroup"] == 10001
+    assert pod_security["fsGroup"] == 10001
+    assert pod_security["seccompProfile"] == {"type": "RuntimeDefault"}
+
+    assert container_security["allowPrivilegeEscalation"] is False
+    assert container_security["privileged"] is False
+    assert container_security["readOnlyRootFilesystem"] is True
+    assert container_security["runAsNonRoot"] is True
+    assert container_security["runAsUser"] == 10001
+    assert container_security["runAsGroup"] == 10001
+    assert container_security["capabilities"] == {"drop": ["ALL"]}
+
+    temporary_mount = next(
+        mount for mount in container["volumeMounts"] if mount["mountPath"] == "/tmp"
+    )
+    temporary_volume = next(
+        volume for volume in pod_spec["volumes"] if volume["name"] == temporary_mount["name"]
+    )
+    assert temporary_mount["readOnly"] is False
+    assert temporary_volume["emptyDir"]["sizeLimit"] == "1Gi"
+
+
+def test_kubernetes_manifest_uses_an_explicit_unreleased_image_placeholder() -> None:
+    """An unreleased migration must not advertise a nonexistent release image."""
+
+    documents = list(
+        yaml.safe_load_all(_text("docs/operations/kubernetes-deployment.yaml"))
+    )
+    deployment = next(doc for doc in documents if doc["kind"] == "Deployment")
+    container = deployment["spec"]["template"]["spec"]["containers"][0]
+
+    assert container["image"] == "ghcr.io/contextualwisdomlab/newsdom-api:unreleased"
+    assert container["imagePullPolicy"] == "Always"
+    assert ":0.3.0" not in container["image"]
+
+
 def test_readme_and_runbook_explain_new_default_and_rollback_boundary() -> None:
     """Operators need an explicit default-open to required migration."""
 
@@ -78,6 +130,53 @@ def test_readme_and_runbook_explain_new_default_and_rollback_boundary() -> None:
         assert phrase in combined
     assert "NEWSDOM_AUTH_MODE=disabled" in combined
     assert "NEWSDOM_RUNTIME_PROFILE=development" in combined
+
+
+def test_authoritative_deployment_docs_reject_obsolete_default_open_guidance() -> None:
+    """Newer text must not coexist with contradictory operator instructions."""
+
+    changelog = _text("CHANGELOG.md")
+    runbook = _text("docs/operations/deploy-runbook.md")
+    authoritative = "\n".join((changelog, _text("README.md"), runbook)).lower()
+
+    for obsolete_phrase in (
+        "미설정 시 개방",
+        "optional bearer",
+        "healthcheck가 `/health`",
+        "healthcheck targets `/health`",
+        "no in-tree kubernetes manifests",
+    ):
+        assert obsolete_phrase not in authoritative
+
+    for required_phrase in (
+        "newsdom_auth_mode=required",
+        "newsdom_runtime_profile=production",
+        "newsdom_api_token",
+        "get /health",
+        "get /ready",
+    ):
+        assert required_phrase in authoritative
+
+
+def test_package_openapi_and_manifest_do_not_claim_an_unreleased_version() -> None:
+    """Package and OpenAPI versions must agree while deployment stays Unreleased."""
+
+    project = tomllib.loads(_text("pyproject.toml"))["project"]
+    main_source = _text("src/newsdom_api/main.py")
+    version_match = re.search(
+        r"application = FastAPI\([\s\S]*?\n\s*version=\"([^\"]+)\"",
+        main_source,
+    )
+    assert version_match is not None
+    assert version_match.group(1) == project["version"]
+
+    documents = list(
+        yaml.safe_load_all(_text("docs/operations/kubernetes-deployment.yaml"))
+    )
+    deployment = next(doc for doc in documents if doc["kind"] == "Deployment")
+    image = deployment["spec"]["template"]["spec"]["containers"][0]["image"]
+    assert image.endswith(":unreleased")
+    assert f":{project['version']}" not in image
 
 
 def test_doctoring_records_distinct_failure_domains_and_apa_references() -> None:
