@@ -64,6 +64,10 @@ spec:
                 secretKeyRef:
                   name: newsdom-api-runtime
                   key: api_token
+            - name: NEWSDOM_MAX_CONCURRENT_PARSES
+              # Capacity is per process and per replica; this two-replica
+              # example therefore admits at most two active parses at once.
+              value: "1"
             - name: NEWSDOM_MINERU_BIN
               value: /opt/mineru/bin/mineru
           volumeMounts:
