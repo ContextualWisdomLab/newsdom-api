@@ -133,7 +133,7 @@ def require_authorization(
         return
     expected = f"Bearer {token}"
     provided = authorization or ""
-    if not hmac.compare_digest(provided.encode("utf-8"), expected.encode("utf-8")):
+    if not hmac.compare_digest(provided, expected):
         raise HTTPException(
             status_code=401,
             detail=UNAUTHORIZED_DETAIL,
