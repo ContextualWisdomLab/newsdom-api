@@ -33,7 +33,7 @@ def test_runtime_settings_reject_invalid_environment_capacity(raw_value: str) ->
         load_runtime_settings({"NEWSDOM_MAX_CONCURRENT_PARSES": raw_value})
 
 
-@pytest.mark.parametrize("capacity", [0, 129, True])
+@pytest.mark.parametrize("capacity", [0, 129, True, "3"])
 def test_runtime_settings_reject_invalid_direct_capacity(capacity: object) -> None:
     """Direct construction must preserve the same immutable capacity boundary."""
 
