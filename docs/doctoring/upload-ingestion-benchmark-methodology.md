@@ -50,10 +50,10 @@ uv run python tools/benchmark_upload_ingestion.py \
 
 The default command runs the complete candidate and concurrency matrix. Filters
 are available for diagnosis, but a filtered run is not sufficient for a default
-selection. Execute the benchmark on an otherwise idle, dedicated environment
-and record the container or host image, CPU model, memory, storage class,
-filesystem, Python and dependency lock, commit SHA, worker count, and whether
-the files were cold or warm in the operating-system cache.
+selection. Execute the benchmark on an otherwise idle, dedicated Linux
+environment and record the container or host image, CPU model, memory, storage
+class, filesystem, Python and dependency lock, commit SHA, worker count, and
+whether the files were cold or warm in the operating-system cache.
 
 ## Measurement implementation
 
@@ -61,28 +61,42 @@ the files were cold or warm in the operating-system cache.
 `UploadFile` and copies each request to an independent temporary file. It does
 not use an in-memory bytes object as the source of accepted evidence.
 
-The harness records unaggregated samples and derives:
+The harness retains both request-level and cohort-level raw observations and
+derives:
 
 - p50 and p95 request latency by deterministic nearest-rank percentile;
 - aggregate copied bytes divided by cohort wall time;
 - total `UploadFile.read(size)` calls;
 - process CPU time;
-- process peak resident set size when the platform exposes `getrusage`;
+- each cohort's current-RSS baseline, sampled peak RSS, and peak-minus-baseline
+  delta;
 - temporary bytes written;
-- maximum observed event-loop scheduling delay.
+- raw event-loop scheduling-delay samples, their nearest-rank p95, and maximum.
 
-Python defines `time.perf_counter()` as a high-resolution clock suitable for
-short durations and `time.process_time()` as process CPU time excluding sleep.
-Python's `resource.getrusage()` exposes `ru_maxrss`, but the unit is platform
-dependent. The harness normalizes Linux values from KiB and Darwin values from
-bytes. Windows reports zero for peak RSS in this version and cannot serve as the
-accepted memory-evidence environment without an additional reviewed provider.
+Python defines `time.perf_counter()` as a high-resolution monotonic clock suited
+to duration measurement and `time.process_time()` as process CPU time excluding
+sleep. Event-loop responsiveness is reported as a real nearest-rank p95 over the
+retained probe samples, not as a maximum mislabeled as a percentile.
 
-Peak RSS is a process high-water mark rather than an isolated per-case delta.
-Accordingly, execute candidates in separate fresh processes when making the
-final memory decision, or treat later in-process values as conservative upper
-bounds. Do not subtract two high-water marks and call the result allocated
-memory.
+On Linux, the harness samples `VmRSS` from `/proc/self/status` during each
+cohort. The Linux kernel distinguishes `VmRSS`, the current resident set, from
+`VmHWM`, the process-lifetime resident-set high-water mark. A lifetime high-water
+metric would contaminate later matrix cases with memory used by earlier cases;
+therefore `resource.getrusage(...).ru_maxrss` is not accepted as case-local
+memory evidence. Every report preserves the cohort baseline and sampled peak so
+the absolute process budget and incremental case pressure can both be audited.
+
+If `/proc/self/status` is unavailable or malformed, the provider returns zero
+and the environment record still identifies `linux_proc_status_vmrss`. Such a
+run does not satisfy the final memory-evidence gate. Other operating systems
+require a separately reviewed current-RSS provider before their memory numbers
+can support a production default.
+
+RSS sampling is observational rather than an allocation profiler. Candidate
+selection therefore requires repeated clean-process runs and should be
+corroborated with operating-system or container memory telemetry. Do not treat
+`peak_rss_delta_bytes` as exact ownership of memory that may be shared,
+allocator-retained, or concurrently used by another thread.
 
 ## Raw evidence schema
 
@@ -92,11 +106,11 @@ The checked-in JSON Schema is:
 docs/benchmarks/upload-ingestion-result.schema.json
 ```
 
-Accepted evidence must validate against schema version `1.0.0`. The report keeps
-raw samples alongside aggregates, rejects unknown top-level and case fields,
-and records the exact resolved byte size even for the adaptive candidate.
-Generated reports are evidence artifacts, not source files; do not commit
-private fixture paths or customer document names.
+Accepted evidence must validate against schema version `1.1.0`. The report keeps
+request samples and raw cohort observations alongside aggregates, rejects
+unknown top-level and case fields, and records the exact resolved byte size even
+for the adaptive candidate. Generated reports are evidence artifacts, not source
+files; do not commit private fixture paths or customer document names.
 
 ## Interpretation and selection gates
 
@@ -105,8 +119,10 @@ of the following across the complete matrix:
 
 1. no upload-size, magic-byte, temporary-file cleanup, authentication, or parser
    admission regression;
-2. no materially worse p95 latency or event-loop delay at high concurrency;
-3. peak RSS and temporary storage remain inside an explicit per-process budget;
+2. no materially worse request p95 latency or event-loop p95 at high
+   concurrency, with the maximum retained for tail diagnosis;
+3. absolute sampled peak RSS and peak-minus-baseline pressure remain inside an
+   explicit per-process budget;
 4. thread-pool read-call reduction does not merely shift cost to larger retained
    buffers or storage stalls;
 5. results are reproduced on at least two runs from clean processes;
@@ -115,9 +131,9 @@ of the following across the complete matrix:
    release evidence all identify the same value or rule.
 
 Compare distributions and operational thresholds rather than publishing a
-single mean. A percentage improvement may be stated only when the checked-in or
-attached raw report, environment manifest, analysis code, and confidence or
-variability treatment support it.
+single mean. A percentage improvement may be stated only when the attached raw
+report, environment manifest, analysis code, and variability treatment support
+it.
 
 ## Accuracy and security invariants
 
@@ -150,12 +166,11 @@ loaded, and rerun the overload and upload-limit smoke tests.
 FastAPI. (2026). *Request files*. FastAPI documentation.
 https://fastapi.tiangolo.com/tutorial/request-files/
 
-Python Software Foundation. (2026). *resource—Resource usage information
-(Python 3.10.20 documentation)*.
-https://docs.python.org/3.10/library/resource.html
+Linux Kernel Organization. (2026). *The /proc filesystem*. Linux kernel
+documentation. https://www.kernel.org/doc/html/latest/filesystems/proc.html
 
 Python Software Foundation. (2026). *time—Time access and conversions (Python
-3.10.20 documentation)*. https://docs.python.org/3.10/library/time.html
+3.14.6 documentation)*. https://docs.python.org/3/library/time.html
 
 Starlette. (2026). *Thread pool*. Starlette documentation.
 https://www.starlette.io/threadpool/
