@@ -163,6 +163,10 @@ def test_raw_evidence_schema_is_strict_and_covers_required_metrics() -> None:
     assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
     assert schema["additionalProperties"] is False
     assert case_schema["additionalProperties"] is False
+    assert case_schema["properties"]["concurrency"] == {
+        "type": "integer",
+        "minimum": 1,
+    }
     for required_metric in (
         "p50_latency_seconds",
         "p95_latency_seconds",
