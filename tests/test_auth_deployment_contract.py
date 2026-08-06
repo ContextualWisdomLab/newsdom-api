@@ -69,16 +69,24 @@ def test_kubernetes_manifest_uses_restricted_non_root_runtime() -> None:
     documents = list(
         yaml.safe_load_all(_text("docs/operations/kubernetes-deployment.yaml"))
     )
+    namespace = next(doc for doc in documents if doc["kind"] == "Namespace")
     deployment = next(doc for doc in documents if doc["kind"] == "Deployment")
     pod_spec = deployment["spec"]["template"]["spec"]
     pod_security = pod_spec["securityContext"]
     container = pod_spec["containers"][0]
     container_security = container["securityContext"]
 
+    assert namespace["metadata"]["labels"] == {
+        "pod-security.kubernetes.io/enforce": "restricted",
+        "pod-security.kubernetes.io/audit": "restricted",
+        "pod-security.kubernetes.io/warn": "restricted",
+    }
+    assert pod_spec["automountServiceAccountToken"] is False
     assert pod_security["runAsNonRoot"] is True
     assert pod_security["runAsUser"] == 10001
     assert pod_security["runAsGroup"] == 10001
     assert pod_security["fsGroup"] == 10001
+    assert pod_security["fsGroupChangePolicy"] == "OnRootMismatch"
     assert pod_security["seccompProfile"] == {"type": "RuntimeDefault"}
 
     assert container_security["allowPrivilegeEscalation"] is False
@@ -89,14 +97,15 @@ def test_kubernetes_manifest_uses_restricted_non_root_runtime() -> None:
     assert container_security["runAsGroup"] == 10001
     assert container_security["capabilities"] == {"drop": ["ALL"]}
 
-    temporary_mount = next(
-        mount for mount in container["volumeMounts"] if mount["mountPath"] == "/tmp"
-    )
-    temporary_volume = next(
-        volume for volume in pod_spec["volumes"] if volume["name"] == temporary_mount["name"]
-    )
+    mounts_by_path = {mount["mountPath"]: mount for mount in container["volumeMounts"]}
+    volumes_by_name = {volume["name"]: volume for volume in pod_spec["volumes"]}
+    temporary_mount = mounts_by_path["/tmp"]
+    cache_mount = mounts_by_path["/home/newsdom"]
+
     assert temporary_mount["readOnly"] is False
-    assert temporary_volume["emptyDir"]["sizeLimit"] == "1Gi"
+    assert cache_mount["readOnly"] is False
+    assert volumes_by_name[temporary_mount["name"]]["emptyDir"]["sizeLimit"] == "1Gi"
+    assert volumes_by_name[cache_mount["name"]]["emptyDir"]["sizeLimit"] == "4Gi"
 
 
 def test_kubernetes_manifest_uses_an_explicit_unreleased_image_placeholder() -> None:
@@ -108,7 +117,7 @@ def test_kubernetes_manifest_uses_an_explicit_unreleased_image_placeholder() -> 
     deployment = next(doc for doc in documents if doc["kind"] == "Deployment")
     container = deployment["spec"]["template"]["spec"]["containers"][0]
 
-    assert container["image"] == "ghcr.io/contextualwisdomlab/newsdom-api:unreleased"
+    assert container["image"] == "docker.io/contextualwisdomlab/newsdom-api:unreleased"
     assert container["imagePullPolicy"] == "Always"
     assert ":0.3.0" not in container["image"]
 
