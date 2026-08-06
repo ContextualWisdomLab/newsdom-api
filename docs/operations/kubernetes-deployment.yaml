@@ -22,18 +22,20 @@ spec:
       labels:
         app.kubernetes.io/name: newsdom-api
     spec:
+      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
         runAsGroup: 10001
         fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: newsdom-api
-          # Unreleased example only. Replace this tag with the published image
-          # digest after release acceptance; never promote the placeholder.
-          image: ghcr.io/contextualwisdomlab/newsdom-api:unreleased
+          # Unreleased example only. Replace this placeholder with an approved,
+          # immutable image digest after release acceptance.
+          image: docker.io/contextualwisdomlab/newsdom-api:unreleased
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
