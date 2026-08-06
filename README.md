@@ -19,6 +19,7 @@ submodule / sidecar in a larger system.
   available
 - Parsing `mode` defaults to `auto` so born-digital text PDFs skip forced OCR
 - Fail-closed bearer authentication on `/parse`; separate unauthenticated `/health` liveness and `/ready` traffic-readiness probes
+- Bounded, non-waiting parser admission with a conservative one-parse default per process and an explicit `429 Too Many Requests` overload contract
 
 ## Quickstart
 
@@ -42,7 +43,13 @@ On Windows, replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
 
 ### Run
 
+Configure the fail-closed production contract before starting the service:
+
 ```bash
+export NEWSDOM_AUTH_MODE=required
+export NEWSDOM_RUNTIME_PROFILE=production
+export NEWSDOM_API_TOKEN=$(openssl rand -hex 32)
+export NEWSDOM_MAX_CONCURRENT_PARSES=1
 uv run uvicorn --app-dir src newsdom_api.main:app --reload
 ```
 
@@ -50,7 +57,12 @@ uv run uvicorn --app-dir src newsdom_api.main:app --reload
 
 ```bash
 docker build -t newsdom-api .
-docker run -p 8000:8000 newsdom-api
+docker run -p 8000:8000 \
+  -e NEWSDOM_AUTH_MODE=required \
+  -e NEWSDOM_RUNTIME_PROFILE=production \
+  -e NEWSDOM_API_TOKEN="$NEWSDOM_API_TOKEN" \
+  -e NEWSDOM_MAX_CONCURRENT_PARSES=1 \
+  newsdom-api
 ```
 
 The default image exposes the REST API on port `8000` as a multi-arch service
@@ -68,8 +80,8 @@ The default image ships the API service only and does not bundle the MinerU runt
 #### docker compose
 
 A production-oriented `docker-compose.yml` is provided for standalone/sidecar
-use. It requires `NEWSDOM_API_TOKEN` before startup and its healthcheck targets
-`/ready`:
+use. It requires `NEWSDOM_API_TOKEN` before startup, sets the explicit
+one-parse process budget, and its healthcheck targets `/ready`:
 
 ```bash
 docker compose up --build
@@ -114,7 +126,9 @@ provide the CUDA user-space/runtime stack required by MinerU.
 ### Parse a PDF
 
 ```bash
-curl -F "file=@sample.pdf" http://127.0.0.1:8000/parse
+curl -F "file=@sample.pdf" \
+  -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
+  http://127.0.0.1:8000/parse
 ```
 
 `/parse` accepts `multipart/form-data` with a required `file` part
@@ -132,6 +146,7 @@ explicitly:
 
 ```bash
 curl -F "file=@sample.pdf" -F "language=japan" -F "mode=ocr" \
+  -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
   http://127.0.0.1:8000/parse
 ```
 
@@ -140,7 +155,7 @@ The accepted language contract follows the official
 MinerU canonicalizes `en`, `japan`, `chinese_cht`, and `latin` to `ch`; this
 sidecar performs the same normalization before launching the subprocess.
 
-#### Authentication and readiness
+#### Authentication, readiness, and parser capacity
 
 Parser authentication is required by default. This replaces the previous
 default-open behavior. Configure the explicit production contract and supply the
@@ -150,6 +165,7 @@ secret from the deployment secret store:
 export NEWSDOM_AUTH_MODE=required
 export NEWSDOM_RUNTIME_PROFILE=production
 export NEWSDOM_API_TOKEN=$(openssl rand -hex 32)
+export NEWSDOM_MAX_CONCURRENT_PARSES=1
 uv run uvicorn --app-dir src newsdom_api.main:app
 curl -F "file=@sample.pdf" -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
   http://127.0.0.1:8000/parse
@@ -159,6 +175,21 @@ Missing or invalid caller credentials receive a fixed `401`; a missing required
 server token returns a fixed `503` before the upload body is processed. `GET
 /health` remains unauthenticated liveness. `GET /ready` succeeds only when the
 authentication configuration and MinerU runtime can accept traffic.
+
+`NEWSDOM_MAX_CONCURRENT_PARSES` is an immutable integer from `1` through `128`
+and defaults to `1`. It controls active MinerU work **per process**. Authentication
+runs first. An authenticated request then obtains one non-waiting lease before the
+multipart body is parsed or copied. When every lease is in use, the service returns
+`429 Too Many Requests` with `Retry-After: 1` and `Cache-Control: no-store` before
+the multipart body, temporary-file allocation, PDF validation, or MinerU execution.
+The service deliberately does not create an unbounded in-process queue.
+
+Total nominal capacity is the process budget multiplied by the number of serving
+processes and each replica. Start with one lease, measure peak RSS/VRAM and parser
+latency on representative PDFs, and scale replicas before increasing per-process
+capacity. Clients should apply bounded, jittered retries and honor `Retry-After: 1`.
+The limit is availability protection rather than a substitute for gateway-level
+per-tenant rate limits or cluster resource quotas.
 
 An isolated local development-only bypass is available only with the explicit
 pair below:
@@ -174,8 +205,8 @@ working secret or the previous release instead.
 
 Each request is written to a request-scoped temporary directory before MinerU
 runs, and those temporary files are removed after the response completes.
-Sanitized parse failures return `503 MinerU runtime unavailable` when the
-runtime cannot be executed and `502 MinerU output was incomplete` when MinerU
+Sanitized parse failures return `503 Service Unavailable` when the
+runtime cannot be executed and `502 Bad Gateway` when MinerU
 finishes without the required output artifacts.
 
 ### Run tests
@@ -228,6 +259,6 @@ Repository branch workflow is documented in `docs/workflow/git-flow.md`.
 
 ## Repository layout
 
-- `src/newsdom_api/`: API, MinerU wrapper, DOM builder, synthetic fixture generator
+- `src/newsdom_api/`: API, MinerU wrapper, admission control, DOM builder, synthetic fixture generator
 - `tests/`: unit tests and committed synthetic fixtures
 - `tools/`: local maintenance utilities
