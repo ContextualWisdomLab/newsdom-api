@@ -23,3 +23,21 @@ def test_application_binds_configured_process_local_parse_capacity() -> None:
     )
 
     assert application.state.parse_admission_limiter.capacity == 3
+
+
+def test_limiter_rejects_excess_work_without_waiting_and_recovers() -> None:
+    """One released lease should immediately restore one unit of capacity."""
+
+    application = create_app(
+        _development_settings(capacity=1),
+        runtime_readiness_probe=lambda: True,
+    )
+    limiter = application.state.parse_admission_limiter
+
+    assert limiter.try_acquire() is True
+    assert limiter.try_acquire() is False
+
+    limiter.release()
+
+    assert limiter.try_acquire() is True
+    limiter.release()
