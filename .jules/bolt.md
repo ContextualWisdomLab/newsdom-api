@@ -63,3 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2024-05-24 - Unbenchmarked micro-optimizations
+**Learning:** Performance work without reproducible workload evidence (profile, latency distribution, CPU sample) or demonstrated buyer-visible benefit will be rejected, even if it theoretically reduces overhead (like caching dictionary lookups).
+**Action:** Do not submit speculative micro-optimizations without representative benchmarking and profiling evidence.

@@ -41,7 +41,7 @@ def _process_articles(metrics: dict[str, Any], articles: list[Any]) -> None:
         if has_headline:
             headline_blocks += 1
 
-        if article.get("vertical"):
+        if bool(article.get("vertical")):
             vertical_count += 1
 
         page_number = article.get("page_number")
@@ -93,19 +93,12 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     """Normalize structural metrics, preferring derivation from structural data when present."""
 
     metrics = dict(payload)
-
-    # ⚡ Bolt: Cache dictionary .get() calls to local variables to avoid redundant lookups
-    raw_articles = payload.get("articles")
-    articles = raw_articles if isinstance(raw_articles, list) else None
-
-    raw_images = payload.get("images")
-    images = raw_images if isinstance(raw_images, list) else None
-
-    raw_ads = payload.get("ads")
-    ads = raw_ads if isinstance(raw_ads, list) else None
-
-    raw_pages = payload.get("pages")
-    pages = raw_pages if isinstance(raw_pages, list) else None
+    articles = (
+        payload.get("articles") if isinstance(payload.get("articles"), list) else None
+    )
+    images = payload.get("images") if isinstance(payload.get("images"), list) else None
+    ads = payload.get("ads") if isinstance(payload.get("ads"), list) else None
+    pages = payload.get("pages") if isinstance(payload.get("pages"), list) else None
 
     if articles is not None:
         _process_articles(metrics, articles)
