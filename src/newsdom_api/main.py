@@ -133,7 +133,8 @@ def require_authorization(
         return
     expected = f"Bearer {token}"
     provided = authorization or ""
-    if not hmac.compare_digest(provided, expected):
+    # 🛡️ Sentinel: Prevent 500 error on non-ASCII auth headers
+    if not hmac.compare_digest(provided.encode("utf-8"), expected.encode("utf-8")):
         raise HTTPException(
             status_code=401,
             detail=UNAUTHORIZED_DETAIL,
