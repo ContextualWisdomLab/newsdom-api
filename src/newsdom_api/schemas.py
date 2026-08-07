@@ -93,6 +93,9 @@ class ArticleNode(BaseModel):
     body_blocks: List[str] = Field(
         default_factory=list,
         description="Ordered text blocks that make up the article body.",
+        json_schema_extra={
+            "example": ["This is a paragraph of text in the article body."]
+        },
     )
     images: List[ImageNode] = Field(
         default_factory=list,
@@ -130,18 +133,22 @@ class PageNode(BaseModel):
     ads: List[str] = Field(
         default_factory=list,
         description="Advertisement text blocks extracted from this page.",
+        json_schema_extra={"example": ["Summer Sale! 50% Off"]},
     )
     headers: List[str] = Field(
         default_factory=list,
         description="Header text blocks extracted from this page.",
+        json_schema_extra={"example": ["1. Introduction"]},
     )
     footers: List[str] = Field(
         default_factory=list,
         description="Footer text blocks extracted from this page.",
+        json_schema_extra={"example": ["Copyright 2023"]},
     )
     page_numbers: List[str] = Field(
         default_factory=list,
         description="Visible page-number text blocks extracted from this page.",
+        json_schema_extra={"example": ["1", "2"]},
     )
 
 
