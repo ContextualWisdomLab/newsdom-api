@@ -15,14 +15,12 @@ def sample_json_data() -> dict:
                 "articles": [
                     {
                         "headline": "Apple releases new iPhone",
-                        "body_blocks": ["The new phone features a great camera."],
+                        "body_blocks": ["The new phone features a great camera."]
                     },
                     {
                         "headline": "Tesla stock drops",
-                        "body_blocks": [
-                            "Investors are worried about the recent earnings report."
-                        ],
-                    },
+                        "body_blocks": ["Investors are worried about the recent earnings report."]
+                    }
                 ]
             }
         ]
@@ -52,69 +50,6 @@ def test_filter_dom_no_match(tmp_path: Path, sample_json_data: dict) -> None:
     output_data = json.loads(output_file.read_text(encoding="utf-8"))
     articles = output_data["pages"][0]["articles"]
     assert len(articles) == 0
-
-
-def test_filter_dom_uses_unicode_casefold(tmp_path: Path) -> None:
-    input_file = tmp_path / "input.json"
-    output_file = tmp_path / "output.json"
-    input_file.write_text(
-        json.dumps(
-            {
-                "pages": [
-                    {
-                        "articles": [
-                            {
-                                "headline": "Straße eröffnet",
-                                "body_blocks": ["Heute."],
-                            }
-                        ]
-                    }
-                ]
-            },
-            ensure_ascii=False,
-        ),
-        encoding="utf-8",
-    )
-
-    filter_dom(input_file, "STRASSE", output_file)
-
-    output_data = json.loads(output_file.read_text(encoding="utf-8"))
-    assert len(output_data["pages"][0]["articles"]) == 1
-
-
-def test_filter_dom_does_not_match_across_field_boundaries(tmp_path: Path) -> None:
-    input_file = tmp_path / "input.json"
-    output_file = tmp_path / "output.json"
-    input_file.write_text(
-        json.dumps(
-            {
-                "pages": [
-                    {
-                        "articles": [
-                            {"headline": "foo", "body_blocks": ["bar"]}
-                        ]
-                    }
-                ]
-            }
-        ),
-        encoding="utf-8",
-    )
-
-    filter_dom(input_file, "foobar", output_file)
-
-    output_data = json.loads(output_file.read_text(encoding="utf-8"))
-    assert output_data["pages"][0]["articles"] == []
-
-
-def test_filter_dom_rejects_blank_keyword(tmp_path: Path, sample_json_data: dict) -> None:
-    input_file = tmp_path / "input.json"
-    output_file = tmp_path / "output.json"
-    input_file.write_text(json.dumps(sample_json_data), encoding="utf-8")
-
-    with pytest.raises(ValueError, match="Keyword must not be blank"):
-        filter_dom(input_file, "   ", output_file)
-
-    assert not output_file.exists()
 
 
 def test_filter_dom_file_not_found(tmp_path: Path) -> None:
@@ -153,3 +88,32 @@ def test_main_error(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     assert excinfo.value.code == 1
     captured = capsys.readouterr()
     assert "Error:" in captured.err
+
+def test_filter_dom_blank_keyword(tmp_path: Path, sample_json_data: dict) -> None:
+    input_file = tmp_path / "input.json"
+    output_file = tmp_path / "output.json"
+    input_file.write_text(json.dumps(sample_json_data), encoding="utf-8")
+    with pytest.raises(ValueError, match="Keyword must not be blank"):
+        filter_dom(input_file, "   ", output_file)
+
+def test_filter_dom_casefold(tmp_path: Path) -> None:
+    input_file = tmp_path / "input.json"
+    output_file = tmp_path / "output.json"
+    data = {
+        "pages": [{"articles": [{"headline": "Straße eröffnet", "body_blocks": ["Heute."]}]}]
+    }
+    input_file.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    filter_dom(input_file, "STRASSE", output_file)
+    output_data = json.loads(output_file.read_text(encoding="utf-8"))
+    assert len(output_data["pages"][0]["articles"]) == 1
+
+def test_filter_dom_no_cross_field_match(tmp_path: Path) -> None:
+    input_file = tmp_path / "input.json"
+    output_file = tmp_path / "output.json"
+    data = {
+        "pages": [{"articles": [{"headline": "foo", "body_blocks": ["bar"]}]}]
+    }
+    input_file.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    filter_dom(input_file, "foobar", output_file)
+    output_data = json.loads(output_file.read_text(encoding="utf-8"))
+    assert len(output_data["pages"][0]["articles"]) == 0

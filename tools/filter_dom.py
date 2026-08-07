@@ -13,9 +13,12 @@ def filter_dom(json_path: Path, keyword: str, output_path: Path) -> None:
     if json_path.suffix.lower() != ".json":
         raise ValueError("File must be a .json file.")
 
+    if not keyword.strip():
+        raise ValueError("Keyword must not be blank.")
+
     data = json.loads(json_path.read_text(encoding="utf-8"))
 
-    keyword_lower = keyword.lower()
+    keyword_lower = keyword.casefold()
 
     for page in data.get("pages", []):
         filtered_articles = []
@@ -23,7 +26,7 @@ def filter_dom(json_path: Path, keyword: str, output_path: Path) -> None:
             headline = article.get("headline", "")
             body_blocks = article.get("body_blocks", [])
 
-            text_to_search = headline.lower() + " ".join(body_blocks).lower()
+            text_to_search = (headline + " " + " ".join(body_blocks)).casefold()
             if keyword_lower in text_to_search:
                 filtered_articles.append(article)
 
