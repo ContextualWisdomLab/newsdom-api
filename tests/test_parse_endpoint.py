@@ -73,7 +73,7 @@ def test_parse_endpoint_rejects_non_pdf_content_type():
         files={"file": ("fixture.txt", b"not a pdf", "text/plain")},
     )
     assert response.status_code == 415
-    assert response.json()["detail"] == "Unsupported Media Type"
+    assert response.json()["detail"] == "Unsupported Media Type: Only structurally valid PDF files are accepted. Please ensure your file is a valid PDF."
 
 
 def test_parse_endpoint_rejects_invalid_pdf_magic_bytes():
@@ -83,7 +83,7 @@ def test_parse_endpoint_rejects_invalid_pdf_magic_bytes():
         files={"file": ("fixture.pdf", b"not a pdf", "application/pdf")},
     )
     assert response.status_code == 415
-    assert response.json()["detail"] == "Unsupported Media Type"
+    assert response.json()["detail"] == "Unsupported Media Type: Only structurally valid PDF files are accepted. Please ensure your file is a valid PDF."
 
 
 def test_validate_pdf_structure_rejects_invalid_magic_bytes(tmp_path):
@@ -92,7 +92,7 @@ def test_validate_pdf_structure_rejects_invalid_magic_bytes(tmp_path):
         _validate_pdf_structure(tmp_path / "test.pdf")
 
     assert exc_info.value.status_code == 415
-    assert exc_info.value.detail == "Unsupported Media Type"
+    assert exc_info.value.detail == "Unsupported Media Type: Only structurally valid PDF files are accepted. Please ensure your file is a valid PDF."
     assert exc_info.value.__cause__ is None
 
 
@@ -108,7 +108,7 @@ def test_validate_pdf_structure_rejects_pypdf_read_errors(monkeypatch, tmp_path)
         _validate_pdf_structure(tmp_path / "test.pdf")
 
     assert exc_info.value.status_code == 415
-    assert exc_info.value.detail == "Unsupported Media Type"
+    assert exc_info.value.detail == "Unsupported Media Type: Only structurally valid PDF files are accepted. Please ensure your file is a valid PDF."
 
 
 def test_parse_endpoint_rejects_prefixed_non_pdf_payload():
@@ -124,7 +124,7 @@ def test_parse_endpoint_rejects_prefixed_non_pdf_payload():
         },
     )
     assert response.status_code == 415
-    assert response.json()["detail"] == "Unsupported Media Type"
+    assert response.json()["detail"] == "Unsupported Media Type: Only structurally valid PDF files are accepted. Please ensure your file is a valid PDF."
 
 
 def test_parse_endpoint_rejects_pdf_without_pages(monkeypatch):
@@ -141,7 +141,7 @@ def test_parse_endpoint_rejects_pdf_without_pages(monkeypatch):
         files={"file": ("fixture.pdf", b"%PDF-1.4\n%%EOF", "application/pdf")},
     )
     assert response.status_code == 415
-    assert response.json()["detail"] == "Unsupported Media Type"
+    assert response.json()["detail"] == "Unsupported Media Type: Only structurally valid PDF files are accepted. Please ensure your file is a valid PDF."
 
 
 def test_parse_endpoint_accepts_structurally_valid_pdf(monkeypatch):
@@ -355,7 +355,7 @@ def test_parse_endpoint_rejects_large_files(monkeypatch):
     )
 
     assert response.status_code == 413
-    assert response.json()["detail"] == "Payload Too Large"
+    assert response.json()["detail"] == "Payload Too Large: File size exceeds the 20MB limit."
 
 
 @pytest.mark.asyncio
@@ -367,7 +367,7 @@ async def test_parse_endpoint_rejects_large_file_without_size_metadata():
         await parse(upload)
 
     assert exc_info.value.status_code == 413
-    assert exc_info.value.detail == "Payload Too Large"
+    assert exc_info.value.detail == "Payload Too Large: File size exceeds the 20MB limit."
     assert sum(upload.read_sizes) > MAX_PARSE_UPLOAD_BYTES
 
 
@@ -380,7 +380,7 @@ def test_parse_endpoint_rejects_missing_magic_bytes():
         },
     )
     assert response.status_code == 415
-    assert response.json()["detail"] == "Unsupported Media Type"
+    assert response.json()["detail"] == "Unsupported Media Type: Only structurally valid PDF files are accepted. Please ensure your file is a valid PDF."
 
 
 @pytest.mark.asyncio
@@ -391,7 +391,7 @@ async def test_parse_endpoint_rejects_magic_bytes_before_full_read():
         await parse(upload)
 
     assert exc_info.value.status_code == 415
-    assert exc_info.value.detail == "Unsupported Media Type"
+    assert exc_info.value.detail == "Unsupported Media Type: Only structurally valid PDF files are accepted. Please ensure your file is a valid PDF."
     assert upload.read_sizes == [5]
 
 

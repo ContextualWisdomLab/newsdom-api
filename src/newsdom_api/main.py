@@ -36,8 +36,8 @@ from .schemas import HealthResponse, ParseResponse
 from .service import parse_pdf
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
-UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
-PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
+UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type: Only structurally valid PDF files are accepted. Please ensure your file is a valid PDF."
+PAYLOAD_TOO_LARGE_DETAIL = f"Payload Too Large: File size exceeds the {MAX_PARSE_UPLOAD_BYTES // (1024 * 1024)}MB limit."
 INVALID_PARSE_PARAMS_DETAIL = "Invalid parse parameters"
 UNAUTHORIZED_DETAIL = "Unauthorized"
 LOGGER = logging.getLogger("newsdom_api")
