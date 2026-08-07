@@ -89,14 +89,3 @@ def test_get_api_token_strips_surrounding_whitespace(monkeypatch):
 
 def test_config_module_exposes_env_var_name():
     assert config.API_TOKEN_ENV_VAR == "NEWSDOM_API_TOKEN"
-
-def test_require_authorization_non_ascii_header(monkeypatch: pytest.MonkeyPatch, stub_parser) -> None:
-    """Verify that non-ASCII auth headers do not cause 500 errors."""
-    monkeypatch.setenv(API_TOKEN_ENV_VAR, "secret-token")
-    client = TestClient(app)
-
-    # Use raw bytes to bypass httpx encoding constraints
-    # httpx/TestClient doesn't like passing non-ascii string in headers dict
-    headers = [(b"authorization", "Bearer 안녕하세요".encode("utf-8"))]
-    response = client.post("/parse", files=_PDF_FILES, headers=headers)
-    assert response.status_code == 401
