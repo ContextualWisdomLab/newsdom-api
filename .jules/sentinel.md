@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-08-07 - 인증 헤더의 HMAC Type Error DoS 취약점 방지
+**Vulnerability:** `/parse` 엔드포인트는 선택적 `Authorization` 헤더를 검증할 때 파이썬 문자열 상태로 `hmac.compare_digest`를 사용했습니다. 공격자가 헤더에 비-ASCII 문자를 제공하면, 파이썬의 `hmac.compare_digest`는 `TypeError`를 발생시켜 처리되지 않은 500 Internal Server Error(DoS)를 유발합니다.
+**Learning:** 비-ASCII 문자가 포함될 수 있는 문자열을 처리할 때 `TypeError`를 피하려면 `hmac.compare_digest`에 바이트 객체를 전달해야 합니다.
+**Prevention:** `hmac.compare_digest`를 사용하기 전에 항상 사용자 입력 문자열과 예상되는 시크릿을 바이트(예: `.encode("utf-8")`)로 인코딩해야 합니다.

@@ -89,3 +89,19 @@ def test_get_api_token_strips_surrounding_whitespace(monkeypatch):
 
 def test_config_module_exposes_env_var_name():
     assert config.API_TOKEN_ENV_VAR == "NEWSDOM_API_TOKEN"
+
+
+def test_require_authorization_rejects_non_ascii_header_safely(monkeypatch):
+    """Ensure non-ASCII characters in the Authorization header are handled safely.
+    Python's hmac.compare_digest raises a TypeError if passed strings with
+    non-ASCII characters. This test directly invokes the dependency rather than
+    using TestClient, as httpx strictly validates header encoding beforehand.
+    """
+    from newsdom_api.main import require_authorization
+    from fastapi import HTTPException
+
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+    with pytest.raises(HTTPException) as exc:
+        require_authorization("Bearer 안녕")
+    assert exc.value.status_code == 401
+    assert exc.value.detail == "Unauthorized"
