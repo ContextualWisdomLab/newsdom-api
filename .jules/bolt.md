@@ -63,6 +63,7 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
 ## 2024-05-25 - Caching redundant dictionary gets and removing redundant bool casts
-**Learning:** Performance Optimization: In hot paths, caching duplicate dictionary `.get()` calls to local variables and removing redundant `.bool()` casts from native truthiness evaluations provide measurable execution speedups without violating semantic object contracts.
-**Action:** When working with dictionary values that are used multiple times, cache the result of `.get()` in a local variable, and rely on native truthiness evaluation in conditional statements rather than explicitly casting with `.bool()`.
+**Learning:** Performance Optimization: In hot paths, caching duplicate dictionary \`.get()\` calls to local variables and removing redundant \`bool()\` casts from native truthiness evaluations provide measurable execution speedups without violating semantic object contracts.
+**Action:** When working with dictionary values that are used multiple times, cache the result of \`.get()\` in a local variable, and rely on native truthiness evaluation in conditional statements rather than explicitly casting with \`bool()\`.
