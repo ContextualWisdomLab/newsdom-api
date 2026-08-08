@@ -133,7 +133,9 @@ def require_authorization(
         return
     expected = f"Bearer {token}"
     provided = authorization or ""
-    if not hmac.compare_digest(provided, expected):
+    # Security: hmac.compare_digest는 ASCII 또는 바이트만 안전하게 처리하므로,
+    # 비 ASCII 문자(예: 이모지) 공격으로 인한 500 에러를 방지하기 위해 utf-8 바이트로 인코딩 후 비교합니다.
+    if not hmac.compare_digest(provided.encode("utf-8"), expected.encode("utf-8")):
         raise HTTPException(
             status_code=401,
             detail=UNAUTHORIZED_DETAIL,

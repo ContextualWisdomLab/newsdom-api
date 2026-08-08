@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-08-08 - 인증 검증 중 500 Internal Server Error 발생 오류 수정
+**Vulnerability:** Python의 `hmac.compare_digest`를 사용할 때 비 ASCII 문자(예: 이모지 등)가 포함된 문자열을 직접 비교하면 `TypeError`가 발생하여 처리되지 않은 500 Internal Server Error를 유발하고 API 요청의 인증 검증 프로세스가 중단됩니다.
+**Learning:** `hmac.compare_digest`는 두 문자열 입력이 엄격히 ASCII이거나 바이트(bytes) 타입이어야 합니다. 헤더에 비 ASCII 문자열이 전달되면 타입 불일치/인코딩 오류가 발생합니다.
+**Prevention:** 모든 문자 셋에 대해 안전한 시간 상수(constant-time) 비교를 보장하고 예기치 않은 충돌을 피하려면 `hmac.compare_digest`로 비교하기 전에 항상 문자열을 바이트로 인코딩(예: `.encode('utf-8')` 사용)해야 합니다.
