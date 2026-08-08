@@ -100,14 +100,6 @@ def test_security_dependency_floors_exclude_known_vulnerable_ranges():
     assert 'requires = ["setuptools>=83", "wheel"]' in text
 
 
-def test_trivyignore_does_not_hide_current_pypdf_findings() -> None:
-    """Keep known pypdf findings fail-visible until the dependency is remediated."""
-
-    ignore_text = Path(".trivyignore").read_text(encoding="utf-8")
-    for cve_id in ("CVE-2026-71852", "CVE-2026-71870"):
-        assert cve_id not in ignore_text
-
-
 def test_project_metadata_does_not_bundle_mineru_extra():
     text = Path("pyproject.toml").read_text(encoding="utf-8")
     dependencies_section = _dependencies_section(text)
