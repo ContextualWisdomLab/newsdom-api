@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 import pytest
 
-from pydantic import ValidationError
 from tools.filter_dom import main, filter_dom
 
 @pytest.fixture
