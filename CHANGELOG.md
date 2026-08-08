@@ -102,3 +102,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
+
+## [Unreleased]
+### Fixed
+- `pypdf` 의존성을 업데이트하여 Trivy CI 취약점(`CVE-2026-71852`, `CVE-2026-71870`) 해결.
+### Changed
+- OpenAPI(Swagger UI) 스키마 모델에 `json_schema_extra` 속성을 통해 예시 데이터를 추가하여 개발자 경험(DX) 향상.
