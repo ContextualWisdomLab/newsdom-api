@@ -79,7 +79,6 @@ class ArticleNode(BaseModel):
         json_schema_extra={"example": "section-20231015-001"},
     )
     headline: str = Field(
-        ...,
         description=(
             "Primary section heading text. This is a generic section heading, "
             "not tied to any newspaper or language-specific concept."
@@ -93,6 +92,9 @@ class ArticleNode(BaseModel):
     body_blocks: List[str] = Field(
         default_factory=list,
         description="Ordered text blocks that make up the article body.",
+        json_schema_extra={
+            "example": ["This is the first paragraph.", "This is the second paragraph."]
+        },
     )
     images: List[ImageNode] = Field(
         default_factory=list,
@@ -118,10 +120,12 @@ class PageNode(BaseModel):
     width: Optional[float] = Field(
         default=None,
         description="Page width reported by the parser, if available.",
+        json_schema_extra={"example": 595.28},
     )
     height: Optional[float] = Field(
         default=None,
         description="Page height reported by the parser, if available.",
+        json_schema_extra={"example": 841.89},
     )
     articles: List[ArticleNode] = Field(
         default_factory=list,
@@ -130,18 +134,22 @@ class PageNode(BaseModel):
     ads: List[str] = Field(
         default_factory=list,
         description="Advertisement text blocks extracted from this page.",
+        json_schema_extra={"example": ["[광고] 신제품 출시 할인 이벤트"]},
     )
     headers: List[str] = Field(
         default_factory=list,
         description="Header text blocks extracted from this page.",
+        json_schema_extra={"example": ["2023년 10월 15일 일간지"]},
     )
     footers: List[str] = Field(
         default_factory=list,
         description="Footer text blocks extracted from this page.",
+        json_schema_extra={"example": ["- 무단 전재 및 재배포 금지 -"]},
     )
     page_numbers: List[str] = Field(
         default_factory=list,
         description="Visible page-number text blocks extracted from this page.",
+        json_schema_extra={"example": ["1", "2"]},
     )
 
 
