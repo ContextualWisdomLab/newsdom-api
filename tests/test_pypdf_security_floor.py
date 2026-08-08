@@ -6,6 +6,7 @@ import re
 
 _REQUIRED_PYPDF_VERSION = (6, 15, 0)
 _CURRENT_PYPDF_CVES = ("CVE-2026-71852", "CVE-2026-71870")
+_LOCKED_PYPDF_REQUIREMENT = '{ name = "pypdf", specifier = ">=6.15.0,<7.0" },'
 
 
 def _locked_pypdf_version() -> tuple[int, ...]:
@@ -31,6 +32,13 @@ def test_lock_uses_current_pypdf_security_release() -> None:
     """Require the resolved parser used by CI and production to be remediated."""
 
     assert _locked_pypdf_version() >= _REQUIRED_PYPDF_VERSION
+
+
+def test_lock_metadata_matches_current_pypdf_security_floor() -> None:
+    """Keep uv's editable-project metadata aligned with the source requirement."""
+
+    lock_text = Path("uv.lock").read_text(encoding="utf-8")
+    assert _LOCKED_PYPDF_REQUIREMENT in lock_text
 
 
 def test_current_pypdf_findings_are_not_suppressed() -> None:
