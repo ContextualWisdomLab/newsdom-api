@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from newsdom_api import config
 from newsdom_api.config import API_TOKEN_ENV_VAR, get_api_token
-from newsdom_api.main import app
+from newsdom_api.main import app, require_authorization
 
 _PDF_FILES = {"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")}
 
@@ -62,6 +63,14 @@ def test_parse_accepts_valid_bearer_when_secret_set(monkeypatch, stub_parser):
         headers={"Authorization": "Bearer s3cret-token"},
     )
     assert response.status_code == 200
+
+
+def test_require_authorization_rejects_non_ascii_without_500_error(monkeypatch):
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+    with pytest.raises(HTTPException) as exc:
+        require_authorization("Bearer 안녕")
+    assert exc.value.status_code == 401
+    assert exc.value.detail == "Unauthorized"
 
 
 def test_health_is_unauthenticated_even_when_secret_set(monkeypatch):
