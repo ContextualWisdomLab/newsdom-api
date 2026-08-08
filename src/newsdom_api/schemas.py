@@ -51,6 +51,7 @@ class ImageNode(BaseModel):
     media_type: str = Field(
         default="image",
         description="Media type label for the extracted image node.",
+        json_schema_extra={"example": "image"},
     )
     bbox: Optional[BoundingBox] = Field(
         default=None,
@@ -93,6 +94,7 @@ class ArticleNode(BaseModel):
     body_blocks: List[str] = Field(
         default_factory=list,
         description="Ordered text blocks that make up the article body.",
+        json_schema_extra={"example": ["The company reported record earnings this quarter.", "Revenue grew by 15% year-over-year."]},
     )
     images: List[ImageNode] = Field(
         default_factory=list,
@@ -118,10 +120,12 @@ class PageNode(BaseModel):
     width: Optional[float] = Field(
         default=None,
         description="Page width reported by the parser, if available.",
+        json_schema_extra={"example": 595.3},
     )
     height: Optional[float] = Field(
         default=None,
         description="Page height reported by the parser, if available.",
+        json_schema_extra={"example": 841.9},
     )
     articles: List[ArticleNode] = Field(
         default_factory=list,
@@ -130,18 +134,22 @@ class PageNode(BaseModel):
     ads: List[str] = Field(
         default_factory=list,
         description="Advertisement text blocks extracted from this page.",
+        json_schema_extra={"example": ["Buy our new product!"]},
     )
     headers: List[str] = Field(
         default_factory=list,
         description="Header text blocks extracted from this page.",
+        json_schema_extra={"example": ["Page 1"]},
     )
     footers: List[str] = Field(
         default_factory=list,
         description="Footer text blocks extracted from this page.",
+        json_schema_extra={"example": ["Company Confidential"]},
     )
     page_numbers: List[str] = Field(
         default_factory=list,
         description="Visible page-number text blocks extracted from this page.",
+        json_schema_extra={"example": ["1"]},
     )
 
 
