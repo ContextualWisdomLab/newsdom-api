@@ -63,3 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2024-08-09 - 비동기 파일 업로드 청크 크기 최적화
+**Learning:** FastAPI/Starlette에서 `await file.read(8192)`와 같이 작은 청크 크기로 비동기 파일 업로드를 처리하면 과도한 스레드 풀 생성 및 컨텍스트 스위칭 오버헤드가 발생하여 성능이 저하될 수 있음을 알게 되었습니다.
+**Action:** 비동기 파일 업로드를 처리할 때는 1MB(`1024 * 1024`)와 같이 더 큰 청크 크기를 사용하여 성능을 향상시켜야 합니다.
