@@ -12,7 +12,7 @@ erDiagram
     PARSE_REQUEST ||--|| SOURCE_DOCUMENT : carries
     PARSE_REQUEST ||--o| TEMP_WORKSPACE : allocates
     TEMP_WORKSPACE ||--o{ PARSER_ARTIFACT : holds
-    PARSER_ARTIFACT ||--|| NEWSDOM_DOCUMENT : normalizes_to
+    PARSER_ARTIFACT }o--|| NEWSDOM_DOCUMENT : normalizes_to
 
     PARSE_REQUEST {
       string request_scope
@@ -153,9 +153,16 @@ Logical uniqueness for the target includes:
 - `(tenant_record_id, idempotency_scope_hash)` for one accepted logical submission scope;
 - `(parse_job_id, attempt_number)` for attempt ordering;
 - immutable digest identity for source/parser/result artifacts;
-- one immutable successful result per exact accepted job contract unless a versioned reparse operation explicitly creates a successor.
+- a partial unique constraint on `(parse_job_id, reproducibility_manifest_id)`
+  where `result_status_code = 'succeeded'`, allowing at most one immutable
+  successful result per exact accepted job contract; a versioned reparse uses
+  a new manifest/contract identity and explicit successor relationship.
 
-`idempotency_scope_hash` binds principal/tenant, caller idempotency key, source digest, parse options, and public schema/version. It is not derived from source digest alone because the same source may be intentionally parsed under different options/versions.
+`idempotency_scope_hash` binds principal/tenant, caller idempotency key, source
+digest, parse options, public API/schema version, and parser runtime/model
+contract identity and version. It is not derived from source digest alone
+because the same source may be intentionally parsed under different options or
+contract versions.
 
 ## Job-state invariant
 

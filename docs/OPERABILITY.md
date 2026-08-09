@@ -74,7 +74,9 @@ Before #548 integrates, do not claim application-level parse admission/backpress
 
 A future production job service requires the following operator-visible states and actions:
 
-- accepted/queued/running/succeeded/failed/cancelled/quarantined status;
+- accepted/queued/running/cancel_requested/succeeded/failed/cancelled/quarantined
+  status, where `cancel_requested` is operator-visible and non-terminal while
+  `cancelled` records acknowledged terminal completion;
 - immutable attempts and failure classification;
 - queue/admission depth and age;
 - active fenced worker lease;

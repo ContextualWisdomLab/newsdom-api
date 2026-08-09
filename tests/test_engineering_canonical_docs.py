@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from newsdom_api.main import app
+
 REQUIRED_CANONICAL_DOCS = [
     "AGENTS.md",
     "ARCHITECTURE.md",
@@ -65,6 +67,21 @@ def test_repo_local_agents_doc_points_to_authoritative_sources() -> None:
         "docs/operations/deploy-runbook.md",
     ):
         assert expected in text
+
+
+def test_repo_local_agents_delegates_ecosystem_ownership() -> None:
+    """Keep the organization component map in its one canonical authority."""
+
+    text = _read("AGENTS.md")
+    assert "docs/CWL-MASTER-CONTEXT.md" in text
+    assert (
+        "read that source rather than duplicating the organization-wide list here"
+        in text
+    )
+    role_section = text.split("### This repo's role in the ecosystem", 1)[1].split(
+        "### Research grounding", 1
+    )[0]
+    assert role_section.count("\n- **") == 2
 
 
 def test_architecture_doc_describes_runtime_modules() -> None:
@@ -155,17 +172,37 @@ def test_erd_does_not_invent_current_durable_newsdom_database() -> None:
     assert "Current protected runtime owns no application database" in trd
     assert "Accepted-target durable job API — not implemented" in api_contract
     assert durable_row.rstrip().endswith("| accepted-target |")
+    assert "PARSER_ARTIFACT }o--|| NEWSDOM_DOCUMENT" in erd
+    assert "where `result_status_code = 'succeeded'`" in erd
+    assert "parser runtime/model\ncontract identity and version" in erd
+
+    operability = _read("docs/OPERABILITY.md")
+    assert "cancel_requested" in operability
+    assert "operator-visible and non-terminal" in operability
 
 
 def test_api_contract_keeps_sync_and_durable_semantics_separate() -> None:
     """Prevent current synchronous parse from acquiring fictional job guarantees."""
 
     contract = _read("docs/API_CONTRACT.md")
-    assert "Current synchronous `/parse` does not claim durable idempotency or automatic retry" in contract
+    assert (
+        "Current synchronous `/parse` does not claim durable idempotency or automatic retry"
+        in contract
+    )
     assert "temporary file names/paths are internal" in contract
     assert "cancellation records durable intent" in contract
     assert "replay creates a new immutable attempt" in contract
-    assert "active/future endpoint prose is not emitted into generated OpenAPI until implemented" in contract
+    assert (
+        "active/future endpoint prose is not emitted into generated OpenAPI until implemented"
+        in contract
+    )
+
+    paths = set(app.openapi()["paths"])
+    assert {"/health", "/parse"} <= paths
+    assert "/ready" not in paths
+    assert not any(
+        path == "/parse-jobs" or path.startswith("/parse-jobs/") for path in paths
+    )
 
 
 def test_adr_index_preserves_current_and_proposed_decisions() -> None:
