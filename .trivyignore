@@ -20,15 +20,3 @@
 # invoking the project build script, so forcing a non-root USER breaks fuzz CI.
 # Revisit by 2026-10-31 or when ClusterFuzzLite supports non-root build output.
 DS-0002
-
-# CVE-2026-71852 applies to pypdf dependency in uv.lock.
-# A vulnerability found in pypdf which is being picked up in uv.lock.
-# Suppressing it here to pass CI checks as there is currently no patch available.
-# Revisit by 2026-10-31 or when an upstream fix for pypdf lands.
-CVE-2026-71852
-
-# CVE-2026-71870 applies to pypdf dependency in uv.lock.
-# Another vulnerability found in pypdf which is being picked up in uv.lock.
-# Suppressing it here for now to allow the PR to pass the strict trivy CI gate.
-# Revisit by 2026-10-31 or when an upstream fix for pypdf lands.
-CVE-2026-71870
