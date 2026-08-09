@@ -26,3 +26,18 @@ def test_page_node_openapi_schema_descriptions():
         == "One-based page number from the parsed PDF."
     )
     assert properties["articles"]["description"] == "Articles extracted from this page."
+
+
+def test_openapi_collection_examples_are_concrete_and_stable():
+    """Keep Swagger collection examples populated with domain-valid values."""
+
+    article_properties = ArticleNode.model_json_schema()["properties"]
+    page_properties = PageNode.model_json_schema()["properties"]
+
+    assert article_properties["body_blocks"]["example"] == [
+        "This is a paragraph of text in the article body."
+    ]
+    assert page_properties["ads"]["example"] == ["Summer Sale! 50% Off"]
+    assert page_properties["headers"]["example"] == ["1. Introduction"]
+    assert page_properties["footers"]["example"] == ["Copyright 2023"]
+    assert page_properties["page_numbers"]["example"] == ["1", "2"]
