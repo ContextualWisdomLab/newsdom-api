@@ -162,7 +162,7 @@ def test_filter_dom_invalid_extension(tmp_path: Path) -> None:
     txt_path = tmp_path / "test.txt"
     txt_path.write_text("not json", encoding="utf-8")
 
-    with pytest.raises(ValueError, match="Input file must be a .json file"):
+    with pytest.raises(ValueError, match=r"Input file must be a \.json file"):
         filter_dom(txt_path)
 
 
