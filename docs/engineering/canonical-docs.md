@@ -13,6 +13,7 @@ Use this index to decide which repository document is authoritative for a given 
 
 - `ARCHITECTURE.md` — current runtime/module responsibilities and integration shape
 - `docs/TRD.md` — technical invariants, failure/resource/persistence/version contracts
+- `docs/API_CONTRACT.md` — current HTTP/schema/error/version semantics plus explicitly labelled active/future auth, readiness, backpressure, durable-job, idempotency, cancellation and replay contracts
 - `docs/UML.md` — current runtime plus explicitly labelled active-PR/accepted-target sequences and state/authority views
 - `docs/ERD.md` — current no-durable-database truth plus explicitly labelled accepted-target logical persistence model
 - `docs/THREAT_MODEL.md` — product assets, trust boundaries, abuse cases, active/target mitigations
