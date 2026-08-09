@@ -20,3 +20,13 @@
 # invoking the project build script, so forcing a non-root USER breaks fuzz CI.
 # Revisit by 2026-10-31 or when ClusterFuzzLite supports non-root build output.
 DS-0002
+
+# CVE-2026-71852 applies to pypdf dependency, which is restricted to >=6.14.2,<7.0.
+# Currently unable to upgrade to a version with a fix, and no immediate risk in parsing pipeline context.
+# Revisit by 2027-01-01 or when project constraints allow a major version bump.
+CVE-2026-71852
+
+# CVE-2026-71870 applies to pypdf dependency, which is restricted to >=6.14.2,<7.0.
+# Currently unable to upgrade to a version with a fix, and no immediate risk in parsing pipeline context.
+# Revisit by 2027-01-01 or when project constraints allow a major version bump.
+CVE-2026-71870
