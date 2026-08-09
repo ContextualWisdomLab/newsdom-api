@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- [CLI] NewsDOM JSON 결과를 특정 페이지(`--pages`)나 특정 기사 ID(`--articles`)로 필터링하는 `tools/filter_dom.py` 도구를 추가했습니다.
+
+- [CLI] NewsDOM JSON 결과를 특정 페이지(`--pages`), 특정 기사 ID(`--articles`), 또는 대소문자를 구분하지 않는 키워드(`--keyword`/`-k`)로 필터링하는 `tools/filter_dom.py` 도구를 추가했습니다. 필터는 함께 지정하면 모두 충족하는 기사만 유지합니다.
 
 ### Changed
 - `/parse`를 언어 선택형 파서로 일반화: MinerU `-l japan`/`-m ocr` 하드코딩을 제거하고 optional form 필드 `language`(MinerU 3.4.4 공식 기본 `ch`, 공개 언어군/alias 검증)와 `mode`(`auto`/`ocr`/`txt`, 기본 `auto`)로 파라미터화. `mode=auto`는 born-digital PDF가 강제 OCR을 건너뛰도록 함. 기존 입력 `language=japan&mode=ocr`는 공식 규약대로 `ch`/`ocr`로 정규화됨.
