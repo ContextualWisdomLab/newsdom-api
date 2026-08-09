@@ -5,6 +5,7 @@ REQUIRED_CANONICAL_DOCS = [
     "ARCHITECTURE.md",
     "docs/PRD.md",
     "docs/TRD.md",
+    "docs/API_CONTRACT.md",
     "docs/UML.md",
     "docs/ERD.md",
     "docs/THREAT_MODEL.md",
@@ -87,6 +88,7 @@ def test_canonical_docs_index_maps_existing_truth_sources() -> None:
         "CHANGELOG.md",
         "docs/PRD.md",
         "docs/TRD.md",
+        "docs/API_CONTRACT.md",
         "docs/UML.md",
         "docs/ERD.md",
         "docs/THREAT_MODEL.md",
@@ -110,10 +112,13 @@ def test_product_docs_keep_liveness_weaker_than_readiness() -> None:
 
     prd = _read("docs/PRD.md")
     trd = _read("docs/TRD.md")
+    api_contract = _read("docs/API_CONTRACT.md")
     uml = _read("docs/UML.md")
     adr = _read("docs/adr/0002-external-parser-and-liveness.md")
     assert "/health" in prd and "liveness" in prd
     assert "must not represent `/health` as parser traffic readiness" in trd
+    assert "process liveness only" in api_contract
+    assert "does not prove MinerU is installed" in api_contract
     assert "/health — protected-develop liveness" in uml
     assert "`/health` means process liveness only" in adr
 
@@ -122,11 +127,15 @@ def test_active_auth_and_admission_work_is_not_promoted() -> None:
     """Keep PR #539/#548 as active work until protected integration."""
 
     prd = _read("docs/PRD.md")
+    api_contract = _read("docs/API_CONTRACT.md")
     canonical = _read("docs/engineering/canonical-docs.md")
     auth_row = _traceability_row("fail-closed production auth before body allocation")
     admission_row = _traceability_row("non-waiting process-local parser admission")
     assert "PR #539 — active-PR" in prd
     assert "PR #548 — active-PR and stacked" in prd
+    assert "PR #539 — authentication + readiness" in api_contract
+    assert "Maturity:** active-PR" in api_contract
+    assert "PR #548 — saturation/backpressure" in api_contract
     assert auth_row.rstrip().endswith("| active-PR |")
     assert "#539" in auth_row
     assert admission_row.rstrip().endswith("| active-PR-stacked |")
@@ -139,11 +148,24 @@ def test_erd_does_not_invent_current_durable_newsdom_database() -> None:
 
     erd = _read("docs/ERD.md")
     trd = _read("docs/TRD.md")
+    api_contract = _read("docs/API_CONTRACT.md")
     durable_row = _traceability_row("durable async parse lifecycle")
     assert "does **not** own durable parse-job" in erd
     assert "Accepted-target durable job model — not implemented" in erd
     assert "Current protected runtime owns no application database" in trd
+    assert "Accepted-target durable job API — not implemented" in api_contract
     assert durable_row.rstrip().endswith("| accepted-target |")
+
+
+def test_api_contract_keeps_sync_and_durable_semantics_separate() -> None:
+    """Prevent current synchronous parse from acquiring fictional job guarantees."""
+
+    contract = _read("docs/API_CONTRACT.md")
+    assert "Current synchronous `/parse` does not claim durable idempotency or automatic retry" in contract
+    assert "temporary file names/paths are internal" in contract
+    assert "cancellation records durable intent" in contract
+    assert "replay creates a new immutable attempt" in contract
+    assert "active/future endpoint prose is not emitted into generated OpenAPI until implemented" in contract
 
 
 def test_adr_index_preserves_current_and_proposed_decisions() -> None:
