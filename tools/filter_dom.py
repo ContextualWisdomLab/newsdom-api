@@ -10,20 +10,30 @@ _SRC_ROOT = _REPO_ROOT / "src"
 if str(_SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(_SRC_ROOT))
 
-from pydantic import ValidationError  # noqa: E402
 from newsdom_api.schemas import ParseResponse  # noqa: E402
+from pydantic import ValidationError  # noqa: E402
+
+
+def _matches_keyword(article: dict, keyword: str) -> bool:
+    """Return whether one validated article contains the keyword in one text field."""
+    searchable_fields = [article["headline"], *article["body_blocks"]]
+    normalized_keyword = keyword.casefold()
+    return any(normalized_keyword in field.casefold() for field in searchable_fields)
 
 
 def filter_dom(
     json_path: Path,
     pages_to_keep: list[int] | None = None,
     articles_to_keep: list[str] | None = None,
+    keyword: str | None = None,
 ) -> dict:
-    """Filter NewsDOM JSON by specific pages or article IDs."""
+    """Filter validated NewsDOM JSON by pages, article IDs, and optional keyword."""
     if not json_path.is_file():
         raise FileNotFoundError(f"File not found or is not a file: {json_path}")
     if json_path.suffix.lower() != ".json":
         raise ValueError(f"Input file must be a .json file: {json_path}")
+    if keyword is not None and not keyword.strip():
+        raise ValueError("Keyword must not be blank.")
 
     try:
         data = json.loads(json_path.read_text(encoding="utf-8"))
@@ -41,17 +51,27 @@ def filter_dom(
 
     for page in data.get("pages", []):
         page_num = page.get("page_number")
-
         if pages_to_keep is not None and page_num not in pages_to_keep:
             continue
 
         new_page = dict(page)
+        filtered_articles = list(new_page.get("articles", []))
 
         if articles_to_keep is not None:
             filtered_articles = [
-                art for art in new_page.get("articles", [])
-                if art.get("article_id") in articles_to_keep
+                article
+                for article in filtered_articles
+                if article.get("article_id") in articles_to_keep
             ]
+
+        if keyword is not None:
+            filtered_articles = [
+                article
+                for article in filtered_articles
+                if _matches_keyword(article, keyword)
+            ]
+
+        if articles_to_keep is not None or keyword is not None:
             new_page["articles"] = filtered_articles
 
         filtered_pages.append(new_page)
@@ -63,7 +83,9 @@ def filter_dom(
 def main(argv: list[str] | None = None) -> None:
     """Run the JSON filtering CLI."""
     parser = argparse.ArgumentParser(
-        description="Filter a NewsDOM JSON file by specific pages or article IDs."
+        description=(
+            "Filter a NewsDOM JSON file by page number, article ID, or keyword."
+        )
     )
     parser.add_argument(
         "input", type=Path, help="Path to the input JSON file to filter."
@@ -86,6 +108,12 @@ def main(argv: list[str] | None = None) -> None:
         nargs="+",
         help="List of article IDs to retain (e.g., --articles sec-1 sec-2).",
     )
+    parser.add_argument(
+        "-k",
+        "--keyword",
+        type=str,
+        help="Case-insensitive keyword to retain within a headline or body block.",
+    )
 
     args = parser.parse_args(argv)
 
@@ -94,6 +122,7 @@ def main(argv: list[str] | None = None) -> None:
             args.input,
             pages_to_keep=args.pages,
             articles_to_keep=args.articles,
+            keyword=args.keyword,
         )
 
         out_json = json.dumps(filtered_data, ensure_ascii=False, indent=2)
@@ -104,7 +133,7 @@ def main(argv: list[str] | None = None) -> None:
             print(f"Filtered DOM successfully written to {args.output}")
         else:
             print(out_json)
-    except Exception as exc:
+    except (OSError, ValueError) as exc:
         print(f"Error filtering JSON file: {exc}", file=sys.stderr)
         sys.exit(1)
 
