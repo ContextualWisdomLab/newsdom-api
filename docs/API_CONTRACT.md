@@ -84,7 +84,7 @@ If a future major NewsDOM JSON schema identifier is introduced, responses/result
 
 ## 5. Identifier and authorization rules
 
-Current synchronous `/parse` does not expose a durable job/object identifier. Temporary file names/paths are internal and are never public resource identities.
+Current synchronous `/parse` does not expose a durable job/object identifier. Current temporary file names/paths are internal and are never public resource identities.
 
 Future opaque IDs such as `parse_job_id`, `parse_attempt_id`, or result/artifact IDs:
 
@@ -135,13 +135,13 @@ It may include attempt count, bounded failure class, timestamps, retry eligibili
 
 Conceptual operation: `POST /parse-jobs/{parse_job_id}/cancel`
 
-Cancellation records durable intent. A successful cancel request does not falsely assert the parser is already stopped; terminal `cancelled` requires fenced worker acknowledgement/safe interruption/cleanup or a recovery path that invalidates stale publication authority.
+For durable jobs, cancellation records durable intent. A successful cancel request does not falsely assert the parser is already stopped; terminal `cancelled` requires fenced worker acknowledgement/safe interruption/cleanup or a recovery path that invalidates stale publication authority.
 
 ### Replay quarantined job
 
 Conceptual operation: `POST /parse-jobs/{parse_job_id}/replay`
 
-Requires explicit authorized action and creates a new immutable attempt under bounded policy. Historical failed attempts remain evidence and are not rewritten as success.
+Authorized replay creates a new immutable attempt under bounded policy. Historical failed attempts remain evidence and are not rewritten as success.
 
 ### Read result
 
