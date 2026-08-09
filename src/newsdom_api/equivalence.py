@@ -93,12 +93,20 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     """Normalize structural metrics, preferring derivation from structural data when present."""
 
     metrics = dict(payload)
-    articles = (
-        payload.get("articles") if isinstance(payload.get("articles"), list) else None
-    )
-    images = payload.get("images") if isinstance(payload.get("images"), list) else None
-    ads = payload.get("ads") if isinstance(payload.get("ads"), list) else None
-    pages = payload.get("pages") if isinstance(payload.get("pages"), list) else None
+
+    # ⚡ Bolt: Cache dictionary lookups and use exact type matching for built-in lists
+    # to avoid redundant .get() calls and isinstance overhead in this parsing loop.
+    raw_articles = payload.get("articles")
+    articles = raw_articles if type(raw_articles) is list else None
+
+    raw_images = payload.get("images")
+    images = raw_images if type(raw_images) is list else None
+
+    raw_ads = payload.get("ads")
+    ads = raw_ads if type(raw_ads) is list else None
+
+    raw_pages = payload.get("pages")
+    pages = raw_pages if type(raw_pages) is list else None
 
     if articles is not None:
         _process_articles(metrics, articles)

@@ -63,3 +63,7 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2024-08-09 - 딕셔너리 조회 캐싱 및 타입 매칭을 통한 성능 최적화
+**Learning:** 파이썬의 파싱 루프 등 핫 패스에서 딕셔너리 요소에 대해 동일한 `.get()` 메서드를 여러 번 호출하고 `isinstance()`를 사용하는 것은 성능 저하를 초래할 수 있다. 특히 데이터가 많을수록 오버헤드가 누적된다.
+**Action:** 동일한 딕셔너리 키를 여러 번 참조해야 하는 경우 그 결과를 로컬 변수에 캐싱하고, 기본 내장 타입(list, dict 등)에 대해서는 `isinstance` 대신 `type() is list`와 같이 정확한 타입 매칭을 사용하여 오버헤드를 줄인다.
