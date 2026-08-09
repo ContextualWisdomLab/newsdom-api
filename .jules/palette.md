@@ -7,3 +7,7 @@
 
 **Learning:** 백엔드 전용 프로젝트(프론트엔드가 없는 경우)에서는 'UX(사용자 경험)'가 주로 'DX(개발자 경험)'로 해석됩니다. OpenAPI/Swagger 스키마에 `json_schema_extra={"example": ...}`와 같은 구체적인 예시를 추가하면 API를 사용하는 개발자들의 인터페이스 이해도를 높일 수 있습니다.
 **Action:** 향후 백엔드 API 중심의 프로젝트에서는 Pydantic 스키마 정의에 풍부한 문서화와 예제 데이터가 포함되어 있는지 확인하여 개발자 경험을 개선할 것입니다.
+
+## 2026-08-09 - OpenAPI 스키마 예시 구체화
+**Learning:** Pydantic 스키마 정의 시 `width`, `height`, `body_blocks` 등 필드에 `json_schema_extra={"example": ...}`가 누락되면 Swagger UI에서 구체적 응답 형태를 유추하기 힘듦.
+**Action:** 누락된 핵심 데이터 필드에 구체적인 Example을 부여하여 Swagger UI에서 API 응답을 더 쉽게 파악할 수 있도록 작성함.
