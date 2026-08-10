@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
-from newsdom_api.main import app
+
 from newsdom_api.config import API_TOKEN_ENV_VAR
+from newsdom_api.main import app
 
 _PDF_FILES = {"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")}
 
