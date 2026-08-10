@@ -95,3 +95,8 @@
 **Vulnerability:** Untrusted non-ASCII input in the `Authorization` header causes a 500 Internal Server Error crash when passed to `hmac.compare_digest` because it attempts to encode it with `ascii` and raises a `TypeError`.
 **Learning:** `hmac.compare_digest` in Python requires byte encoding for safe comparison of strings that might contain non-ASCII characters, especially for untrusted user input like HTTP headers.
 **Prevention:** Always encode both strings to bytes (e.g., `.encode('utf-8')`) before using `hmac.compare_digest` on potentially non-ASCII input.
+
+## 2026-08-10 - [Trivy CI Vulnerability Fix]
+**Vulnerability:** Trivy CI scans block the pipeline when vulnerabilities (like CVE-2026-71852 and CVE-2026-71870 in `pypdf`) are found in dependencies.
+**Learning:** To resolve Trivy CI vulnerabilities for outdated Python packages without causing upstream dependency constraint conflicts in `pyproject.toml`, upgrade the target dependency directly using `uv lock --upgrade-package <package_name>` rather than using `uv add`.
+**Prevention:** Always use `uv lock --upgrade-package` to fix lockfile-specific vulnerabilities in CI.
