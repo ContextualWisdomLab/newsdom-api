@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-08-10 - [CRITICAL] Fix DoS vulnerability in hmac.compare_digest
+**Vulnerability:** `require_authorization` 함수에서 전달받은 `Authorization` 헤더 값 문자열과 토큰 문자열을 직접 `hmac.compare_digest`에 전달했습니다. 파이썬의 `hmac.compare_digest`는 비ASCII 문자를 포함한 문자열을 전달받으면 `TypeError`를 발생시킵니다. 공격자가 비ASCII 문자가 포함된 헤더를 전송하면 처리되지 않은 예외가 발생하여 500 에러를 유발하며, 이는 애플리케이션 충돌 및 서비스 거부(DoS) 공격으로 이어질 수 있습니다.
+**Learning:** `hmac.compare_digest`는 내부적으로 ASCII 문자열만 허용합니다. 사용자 입력을 기반으로 하는 비교에는 인코딩을 명시하여 예외를 방지해야 합니다.
+**Prevention:** `hmac.compare_digest`로 문자열을 비교하기 전에 항상 `.encode("utf-8")`을 사용하여 UTF-8 바이트로 인코딩한 후 비교해야 합니다.

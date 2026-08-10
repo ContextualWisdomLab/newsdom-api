@@ -89,3 +89,17 @@ def test_get_api_token_strips_surrounding_whitespace(monkeypatch):
 
 def test_config_module_exposes_env_var_name():
     assert config.API_TOKEN_ENV_VAR == "NEWSDOM_API_TOKEN"
+
+
+def test_require_authorization_non_ascii(monkeypatch):
+    """Test that non-ASCII authorization headers do not raise TypeError."""
+    from src.newsdom_api.main import require_authorization
+    from fastapi import HTTPException
+    import pytest
+
+    monkeypatch.setenv("NEWSDOM_API_TOKEN", "valid_token")
+
+    # This should raise HTTPException(status_code=401), not TypeError
+    with pytest.raises(HTTPException) as exc_info:
+        require_authorization(authorization="Bearer valid_token\u1234")
+    assert exc_info.value.status_code == 401
