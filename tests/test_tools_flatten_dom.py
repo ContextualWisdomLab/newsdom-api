@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 
 import pytest
@@ -51,24 +50,18 @@ def invalid_dom_json(tmp_path: Path) -> Path:
 def test_sys_path_insertion(monkeypatch):
     """Test the sys.path insertion logic."""
     import sys
+    import importlib
 
-    # Save original path
-    original_path = list(sys.path)
-    try:
-        # Create a fresh sys.path to simulate the script run
-        sys.path.clear()
+    # Use monkeypatch to safely simulate an empty sys.path
+    monkeypatch.setattr(sys, "path", [])
 
-        # Import the script - we need to reload it to trigger the module-level code
-        import importlib
-        import tools.flatten_dom
-        importlib.reload(tools.flatten_dom)
+    # Import the script - we need to reload it to trigger the module-level code
+    import tools.flatten_dom
+    importlib.reload(tools.flatten_dom)
 
-        # Verify src was inserted
-        src_root = str(Path(tools.flatten_dom.__file__).resolve().parents[1] / "src")
-        assert sys.path[0] == src_root
-    finally:
-        sys.path.clear()
-        sys.path.extend(original_path)
+    # Verify src was inserted
+    src_root = str(Path(tools.flatten_dom.__file__).resolve().parents[1] / "src")
+    assert sys.path[0] == src_root
 
 
 def test_flatten_dom_success(valid_dom_json):
