@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenAPI 제목/설명, README, `ArticleNode.headline` 문서를 일반 문서용 (section heading) 표현으로 재구성하여 특정 언어/신문 가정을 소비자에게 노출하지 않도록 함. 응답 스키마 필드는 하위 호환을 위해 변경하지 않음.
 
 ### Added
+- [UX/DX] OpenAPI Swagger UI에서 API 소비자의 테스트 편의성과 DX를 높이기 위해 `/parse` 엔드포인트의 `language` 및 `mode` Form 의존성에 `json_schema_extra` 예제 데이터를 추가. (Palette)
 - [UX/DX] OpenAPI Swagger 문서 이해도 향상을 위해 `ParseQuality` 및 `HealthResponse` 모델에 구체적인 `json_schema_extra` 예제 추가. (Palette)
 - [CLI] 단일 NewsDOM JSON 파일을 페이지 단위로 분리하는 `tools/split_dom.py` 도구를 추가했습니다.
 - [CLI] NewsDOM JSON 파일의 모든 텍스트 내용을 마스킹하여 익명화하는 `tools/anonymize_dom.py` 도구를 추가했습니다.
