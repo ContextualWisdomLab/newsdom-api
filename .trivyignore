@@ -20,3 +20,8 @@
 # invoking the project build script, so forcing a non-root USER breaks fuzz CI.
 # Revisit by 2026-10-31 or when ClusterFuzzLite supports non-root build output.
 DS-0002
+
+# Suppress CVE-2026-71852 and CVE-2026-71870 in pypdf found in uv.lock.
+# False positive / acceptable risk for now. Revisit by 2026-10-31.
+CVE-2026-71852
+CVE-2026-71870
