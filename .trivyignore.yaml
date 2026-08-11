@@ -1,0 +1,20 @@
+misconfigurations:
+  - id: DS-0002
+    paths:
+      - .clusterfuzzlite/Dockerfile
+    statement: >-
+      DS-0002 is limited to the CI-only OSS-Fuzz builder. ClusterFuzzLite mounts
+      /github/workspace/build-out as a root-owned volume and writes libFuzzer
+      artifacts before invoking the project build script. Revisit when upstream
+      supports non-root build output or by 2026-10-31.
+    expired_at: 2026-10-31
+  - id: KSV-0125
+    paths:
+      - docs/operations/kubernetes-deployment.yaml
+    statement: >-
+      KSV-0125 is limited to the source-only unreleased deployment example.
+      Operators must replace the placeholder with an accepted immutable digest
+      and enforce the reviewed repository plus digest or signature at admission.
+      Revisit when the central scan accepts repository-owned trusted-registry
+      data or by 2026-10-31.
+    expired_at: 2026-10-31

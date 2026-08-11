@@ -18,7 +18,7 @@ submodule / sidecar in a larger system.
   official language families and compatibility aliases such as `japan` remain
   available
 - Parsing `mode` defaults to `auto` so born-digital text PDFs skip forced OCR
-- Fail-closed bearer auth on `/parse`; unauthenticated `/health` liveness probe
+- Fail-closed bearer authentication on `/parse`; separate unauthenticated `/health` liveness and `/ready` traffic-readiness probes
 
 ## Quickstart
 
@@ -51,7 +51,10 @@ uv run uvicorn --app-dir src newsdom_api.main:app --reload
 
 ```bash
 docker build -t newsdom-api .
-docker run -e NEWSDOM_API_TOKEN="$NEWSDOM_API_TOKEN" -p 8000:8000 newsdom-api
+docker run -e NEWSDOM_AUTH_MODE=required \
+  -e NEWSDOM_RUNTIME_PROFILE=production \
+  -e NEWSDOM_API_TOKEN="$NEWSDOM_API_TOKEN" \
+  -p 8000:8000 newsdom-api
 ```
 
 The default image exposes the REST API on port `8000` as a multi-arch service
@@ -61,25 +64,24 @@ Silicon hosts running the API service inside Docker.
 The default image ships the API service only and does not bundle the MinerU runtime.
 `/parse` requires a compatible MinerU runtime to be available inside the container image or exposed through `NEWSDOM_MINERU_BIN`.
 
-> Readiness caveat: `/health` reports process liveness only. Because the
-> default image does not bundle MinerU, a container can report a green
-> `/health` while `/parse` still returns `503` until a MinerU runtime is
-> reachable. Treat MinerU availability as a separate readiness concern when
-> wiring this sidecar into a larger system.
+> `GET /health` reports process liveness only. `GET /ready` reports traffic
+> readiness and remains unavailable until both fail-closed authentication and
+> the MinerU runtime are configured. Orchestrators must route traffic by
+> `/ready`, not by `/health`.
 
 #### docker compose
 
-A `docker-compose.yml` is provided for standalone/sidecar use. Its healthcheck
-targets the unauthenticated `/health` endpoint:
+A production-oriented `docker-compose.yml` is provided for standalone/sidecar
+use. It requires `NEWSDOM_API_TOKEN` before startup and its healthcheck targets
+`/ready`:
 
 ```bash
 docker compose up --build
 ```
 
-Uncomment `NEWSDOM_MINERU_BIN` (path to a MinerU executable) and
-`NEWSDOM_API_TOKEN` (bearer secret) in the compose `environment:` block to make
-`/parse` functional and protected. Anonymous parsing requires the explicit
-local-only `NEWSDOM_ALLOW_ANONYMOUS=true` opt-in.
+Export `NEWSDOM_API_TOKEN` from a secret store before running Compose. Mount or
+bundle MinerU and set `NEWSDOM_MINERU_BIN` when using the API-only image. The
+service remains live but not ready until both dependencies are valid.
 
 #### Building a MinerU-bundled image
 
@@ -145,29 +147,37 @@ The accepted language contract follows the official
 MinerU canonicalizes `en`, `japan`, `chinese_cht`, and `latin` to `ch`; this
 sidecar performs the same normalization before launching the subprocess.
 
-#### Authentication
+#### Authentication and readiness
 
-`/parse` is fail-closed by default. Set the sidecar's own
-`NEWSDOM_API_TOKEN` environment variable to require a bearer token:
+Parser authentication is required by default. This replaces the previous
+default-open behavior. Configure the explicit production contract and supply the
+secret from the deployment secret store:
 
 ```bash
-export NEWSDOM_API_TOKEN="$(openssl rand -hex 32)"
+export NEWSDOM_AUTH_MODE=required
+export NEWSDOM_RUNTIME_PROFILE=production
+export NEWSDOM_API_TOKEN=$(openssl rand -hex 32)
 uv run uvicorn --app-dir src newsdom_api.main:app
 curl -F "file=@sample.pdf" -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
   http://127.0.0.1:8000/parse
 ```
 
-Requests without a matching `Authorization: Bearer <token>` header receive
-`401`. `/health` stays unauthenticated so orchestrators can always probe it.
-Supply the token from your deployment's secret store rather than committing it.
-The process environment is bootstrap transport only: application startup copies
-the token and anonymous-access policy into a process-local credential registry,
-and request handling reads that registry. Restart the sidecar to rotate either
-setting.
+Missing or invalid caller credentials receive a fixed `401`; a missing required
+server token returns a fixed `503` before the upload body is processed. `GET
+/health` remains unauthenticated liveness. `GET /ready` succeeds only when the
+authentication configuration and MinerU runtime can accept traffic.
 
-For an isolated local development instance only, set
-`NEWSDOM_ALLOW_ANONYMOUS=true` when no token is configured. Never use that
-opt-in on an exposed deployment.
+An isolated local development-only bypass is available only with the explicit
+pair below:
+
+```bash
+NEWSDOM_AUTH_MODE=disabled \
+NEWSDOM_RUNTIME_PROFILE=development \
+  uv run uvicorn --app-dir src newsdom_api.main:app --reload
+```
+
+Do not use the development-only bypass as a production rollback. Restore a
+working secret or the previous release instead.
 
 Each request is written to a request-scoped temporary directory before MinerU
 runs, and those temporary files are removed after the response completes.

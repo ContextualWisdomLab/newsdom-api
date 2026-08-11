@@ -2,11 +2,11 @@
 
 ## Decision record
 
-This record documents the security and supply-chain basis for the dependency-only
-remediation in pull request #467. The change does not alter the NewsDOM API,
-response schema, MinerU invocation contract, or runtime authorization behavior.
-It raises vulnerable direct and resolved dependencies, preserves bounded version
-ranges, synchronizes `pyproject.toml` with `uv.lock`, and requires the ordinary
+This record documents the security and supply-chain basis for dependency-only
+remediation in NewsDOM. The change does not alter the NewsDOM API, response
+schema, MinerU invocation contract, or runtime authorization behavior. It raises
+vulnerable direct and resolved dependencies, preserves bounded version ranges,
+synchronizes `pyproject.toml` with `uv.lock`, and requires the ordinary
 current-head test, coverage, package, container, SAST, dependency, and independent
 review gates before merge.
 
@@ -14,23 +14,27 @@ The adopted floors are:
 
 - `setuptools>=83` for the build backend;
 - `Pillow>=12.3,<13.0` for image parsing on the untrusted document-ingestion path;
-- `pypdf>=6.14.2,<7.0` for PDF parsing;
+- `pypdf>=6.15.0,<7.0` for PDF parsing;
 - `mkdocs-material>=9.7,<9.8`, allowing `pymdown-extensions>=11` while the MkDocs
   core remains on the supported 1.x line.
 
 The generated lock additionally resolves Click 8.4.2, setuptools 83.0.0,
-Pillow 12.3.0, pypdf 6.14.2, mkdocs-material 9.7.7, and
+Pillow 12.3.0, pypdf 6.15.0, mkdocs-material 9.7.7, and
 pymdown-extensions 11.0.1. Direct floors prevent a later lock refresh from
-silently selecting the known-vulnerable ranges again.
+silently selecting known-vulnerable ranges again.
 
 ## Threat and impact rationale
 
 NewsDOM accepts untrusted PDF uploads. A parser denial of service is therefore a
 runtime availability risk rather than an abstract transitive-dependency finding.
-CVE-2026-59935 affects pypdf versions before 6.14.2 and permits a crafted PDF with
-an unterminated inline image to cause an infinite parsing loop. NVD and OSV both
-identify 6.14.2 as the fixed release. The project floor is therefore set to that
-release, not merely the version currently present in the generated lock.
+The earlier baseline raised pypdf to 6.14.2 for CVE-2026-59935. On August 8,
+2026, the repository's current Trivy filesystem gate began reporting two
+additional MEDIUM findings, CVE-2026-71852 and CVE-2026-71870, against the locked
+6.14.2 artifact. The same repository had already produced a hash-locked 6.15.0
+resolution on an isolated branch; that exact head completed the Security Scan
+successfully without suppressing either finding. The shared direct floor and lock
+therefore move together to 6.15.0 rather than hiding the findings in
+`.trivyignore`.
 
 CVE-2026-59890 affects setuptools versions before 83.0.0. On
 normalization-preserving macOS filesystems, specially named files could bypass
@@ -38,12 +42,12 @@ normalization-preserving macOS filesystems, specially named files could bypass
 is a build-time rather than request-time issue, it can compromise release
 contents, so the build-system floor is raised to 83.0.0.
 
-Pillow 12.3.0 and pypdf 6.14.2 were published through PyPI Trusted Publishing and
-their PyPI release pages expose file digests and publish attestations. Those
-attestations provide evidence about the publishing identity and artifact digest;
-they do not by themselves establish that the package is safe. Repository scans,
-hash-locked resolution, current-head tests, and independent review remain
-mandatory.
+Pillow 12.3.0 and pypdf release artifacts are distributed through PyPI with
+published cryptographic file digests. Those artifacts and digests provide
+provenance inputs; they do not by themselves establish that a package is safe.
+Repository scans, hash-locked resolution, current-head tests, and independent
+review remain mandatory. PyPI's official JSON metadata confirms the 6.15.0
+release and the artifact hashes recorded in this repository's generated lock.
 
 ## Secure-development and provenance controls
 
@@ -119,14 +123,20 @@ Open Source Vulnerabilities. (2026a). *CVE-2026-59935*. Retrieved August 4,
 Open Source Vulnerabilities. (2026b). *CVE-2026-59890*. Retrieved August 4,
     2026, from https://osv.dev/vulnerability/CVE-2026-59890
 
+Open Source Vulnerabilities. (2026c). *CVE-2026-71852*. Retrieved August 9,
+    2026, from https://osv.dev/vulnerability/CVE-2026-71852
+
+Open Source Vulnerabilities. (2026d). *CVE-2026-71870*. Retrieved August 9,
+    2026, from https://osv.dev/vulnerability/CVE-2026-71870
+
 Python Packaging Authority. (2026a). *Digital attestations*. PyPI Docs.
     Retrieved August 4, 2026, from https://docs.pypi.org/attestations/
 
 Python Packaging Authority. (2026b). *Pillow 12.3.0*. Python Package Index.
     Retrieved August 4, 2026, from https://pypi.org/project/pillow/12.3.0/
 
-Python Packaging Authority. (2026c). *pypdf 6.14.2*. Python Package Index.
-    Retrieved August 4, 2026, from https://pypi.org/project/pypdf/6.14.2/
+Python Packaging Authority. (2026c). *pypdf 6.15.0*. Python Package Index.
+    Retrieved August 9, 2026, from https://pypi.org/project/pypdf/6.15.0/
 
 Python Packaging Authority. (2026d). *setuptools 83.0.0*. Python Package Index.
     Retrieved August 4, 2026, from https://pypi.org/project/setuptools/83.0.0/

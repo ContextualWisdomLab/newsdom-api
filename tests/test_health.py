@@ -51,7 +51,7 @@ def test_openapi_metadata_includes_contact_and_license():
     info = response.json()["info"]
     assert info["contact"] == {
         "name": "Seongho Bae",
-        "url": "https://github.com/Seongho-Bae/newsdom-api",
+        "url": "https://github.com/ContextualWisdomLab/newsdom-api",
     }
     assert info["license"] == {
         "name": "MIT License",
