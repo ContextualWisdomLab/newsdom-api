@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - `tools/filter_pages.py`: 특정 페이지 범위(`--start-page`, `--end-page`)에 해당하는 페이지만 추출하여 새로운 JSON을 생성하는 도구 추가.
 - `tools/extract_headlines.py`: DOM JSON 내의 모든 뉴스 헤드라인(headline)을 추출하여 텍스트 파일로 저장하는 도구 추가.
 
