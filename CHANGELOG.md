@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [UX/DX] OpenAPI Swagger 문서 이해도 향상을 위해 `ParseQuality` 및 `HealthResponse` 모델에 구체적인 `json_schema_extra` 예제 추가. (Palette)
 - [CLI] 단일 NewsDOM JSON 파일을 페이지 단위로 분리하는 `tools/split_dom.py` 도구를 추가했습니다.
 - [CLI] NewsDOM JSON 파일의 모든 텍스트 내용을 마스킹하여 익명화하는 `tools/anonymize_dom.py` 도구를 추가했습니다.
-- `/parse`에 대한 optional bearer 인증 게이트: 리프 서비스 자체 설정 `NEWSDOM_API_TOKEN`이 설정되면 `Authorization: Bearer <token>`을 요구(상수 시간 비교), 미설정 시 개방(개발용). `/health`는 항상 미인증 유지.
+- `/parse`에 대한 fail-closed bearer 인증 게이트: 애플리케이션 시작 시 `NEWSDOM_API_TOKEN`과 명시적 로컬 전용 `NEWSDOM_ALLOW_ANONYMOUS` 정책을 process-local credential registry에 적재하고, 요청 경로는 mutable environment 대신 registry를 조회. 토큰 미설정도 기본 `401`, `/health`는 항상 미인증 유지.
 - 서브모듈/사이드카 배포용 `docker-compose.yml`: healthcheck가 `/health`를 대상으로 하며 MinerU 번들 이미지/`NEWSDOM_MINERU_BIN` 및 readiness 주의사항을 README에 문서화.
 - [CLI] 파싱된 NewsDOM JSON에서 순수 텍스트 데이터를 추출하여 텍스트 파일 또는 stdout으로 출력하는 `tools/extract_text.py` 도구를 추가했습니다.
 

@@ -25,7 +25,7 @@ from fastapi.responses import JSONResponse
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
-from .config import allow_anonymous, get_api_token
+from .config import allow_anonymous, bootstrap_runtime_config, get_api_token
 from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 from .mineru_runner import (
     DEFAULT_LANGUAGE,
@@ -53,6 +53,10 @@ tags_metadata = [
         "description": "Health and deployment diagnostic endpoints.",
     },
 ]
+
+# Application import is the standalone sidecar's startup boundary. Snapshot
+# environment transport into the process-local registry before serving requests.
+bootstrap_runtime_config()
 
 app = FastAPI(
     title="NewsDOM API",
