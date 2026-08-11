@@ -41,7 +41,7 @@ def _process_articles(metrics: dict[str, Any], articles: list[Any]) -> None:
         if has_headline:
             headline_blocks += 1
 
-        if article.get("vertical"):
+        if bool(article.get("vertical")):
             vertical_count += 1
 
         page_number = article.get("page_number")
@@ -94,11 +94,11 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
 
     metrics = dict(payload)
     articles = (
-        articles if isinstance((articles := payload.get("articles")), list) else None
+        payload.get("articles") if isinstance(payload.get("articles"), list) else None
     )
-    images = imgs if isinstance((imgs := payload.get("images")), list) else None
-    ads = ad_list if isinstance((ad_list := payload.get("ads")), list) else None
-    pages = pgs if isinstance((pgs := payload.get("pages")), list) else None
+    images = payload.get("images") if isinstance(payload.get("images"), list) else None
+    ads = payload.get("ads") if isinstance(payload.get("ads"), list) else None
+    pages = payload.get("pages") if isinstance(payload.get("pages"), list) else None
 
     if articles is not None:
         _process_articles(metrics, articles)
