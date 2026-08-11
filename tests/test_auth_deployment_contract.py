@@ -20,14 +20,23 @@ def _text(path: str) -> str:
 def _project_version(pyproject_text: str) -> str:
     """Return the project version without requiring Python 3.11 ``tomllib``."""
 
-    match = re.search(
-        r'^\[project\]\n(?:.*\n)*?^version = "([^"]+)"',
+    project_table = re.search(
+        r"^\[project\][ \t]*\n(?P<body>(?:(?!^\[).*(?:\n|$))*)",
         pyproject_text,
         re.MULTILINE,
     )
+    match = (
+        re.search(
+            r'''^version\s*=\s*(["'])([^"']+)\1\s*(?:#.*)?$''',
+            project_table.group("body"),
+            re.MULTILINE,
+        )
+        if project_table is not None
+        else None
+    )
     if match is None:
         raise AssertionError("pyproject.toml is missing [project].version")
-    return match.group(1)
+    return match.group(2)
 
 
 def test_compose_requires_production_authentication_and_probes_readiness() -> None:
@@ -209,6 +218,19 @@ def test_project_version_parser_is_scoped_to_the_project_table() -> None:
     )
 
     assert _project_version(text) == "0.2.0"
+
+
+def test_project_version_parser_accepts_valid_toml_quotes_and_spacing() -> None:
+    """Valid TOML quoting and assignment whitespace must not break the contract."""
+
+    for assignment in (
+        "version='0.2.0'",
+        "version = '0.2.0'",
+        'version  =  "0.2.0"',
+    ):
+        assert _project_version(f"[project]\nname = 'newsdom-api'\n{assignment}\n") == (
+            "0.2.0"
+        )
 
 
 def test_project_version_parser_rejects_missing_project_version() -> None:

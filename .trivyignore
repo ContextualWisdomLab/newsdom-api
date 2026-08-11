@@ -20,13 +20,3 @@
 # invoking the project build script, so forcing a non-root USER breaks fuzz CI.
 # Revisit by 2026-10-31 or when ClusterFuzzLite supports non-root build output.
 DS-0002
-
-# KSV-0125 applies to docs/operations/kubernetes-deployment.yaml because the
-# generic scanner cannot infer the cluster-specific trust decision for the
-# organization-owned ghcr.io/contextualwisdomlab repository. The manifest uses
-# an explicit non-release :unreleased placeholder, and the deployment runbook
-# requires operators to replace it with the accepted immutable @sha256 digest
-# and enforce the reviewed repository path plus digest or signature at admission.
-# Revisit by 2026-10-31 or when the central Security Scan consumes repository-
-# owned ksv0125.trusted_registries config data instead of an ID-level exception.
-KSV-0125

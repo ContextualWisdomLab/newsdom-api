@@ -32,6 +32,9 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
+        # This source-only placeholder is scoped here; deployment admission must
+        # require the approved repository plus an immutable digest or signature.
+        # trivy:ignore:KSV-0125
         - name: newsdom-api
           # Unreleased example only. Replace this placeholder with an approved,
           # immutable image digest after release acceptance.

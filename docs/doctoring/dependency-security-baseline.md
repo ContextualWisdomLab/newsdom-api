@@ -123,6 +123,12 @@ Open Source Vulnerabilities. (2026a). *CVE-2026-59935*. Retrieved August 4,
 Open Source Vulnerabilities. (2026b). *CVE-2026-59890*. Retrieved August 4,
     2026, from https://osv.dev/vulnerability/CVE-2026-59890
 
+Open Source Vulnerabilities. (2026c). *CVE-2026-71852*. Retrieved August 9,
+    2026, from https://osv.dev/vulnerability/CVE-2026-71852
+
+Open Source Vulnerabilities. (2026d). *CVE-2026-71870*. Retrieved August 9,
+    2026, from https://osv.dev/vulnerability/CVE-2026-71870
+
 Python Packaging Authority. (2026a). *Digital attestations*. PyPI Docs.
     Retrieved August 4, 2026, from https://docs.pypi.org/attestations/
 
