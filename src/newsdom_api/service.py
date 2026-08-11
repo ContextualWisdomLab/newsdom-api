@@ -14,6 +14,8 @@ from .schemas import ParseResponse
 
 MAX_UPLOAD_FILENAME_LENGTH = 240
 
+_UNSAFE_FILENAME_PATTERN = re.compile(r"[^a-zA-Z0-9_.-]")
+
 
 def _safe_upload_filename(filename: str) -> str:
     """Return a basename for client-supplied upload filenames."""
@@ -22,7 +24,8 @@ def _safe_upload_filename(filename: str) -> str:
     filename = filename[-512:]
     normalized = filename.replace("\0", "").replace("\\", "/")
     name = PurePosixPath(normalized).name
-    name = re.sub(r"[^a-zA-Z0-9_.-]", "_", name)
+    # ⚡ Bolt: Use pre-compiled regex to avoid re-compiling the pattern on every upload
+    name = _UNSAFE_FILENAME_PATTERN.sub("_", name)
     # ⚡ Bolt: Use .strip("_.") instead of chained .replace() to avoid multiple intermediate string allocations
     if name in ("", ".", "..") or not name.strip("_."):
         return "upload.pdf"
