@@ -35,4 +35,4 @@
 ## 2026-08-09 - [향상된 OpenAPI/Swagger UX]
 
 **Learning:** OpenAPI를 위해 Pydantic 모델을 설계할 때 `Field`의 `description`만으로는 개발자 경험(DX)이 부족할 수 있습니다. `json_schema_extra={"example": ...}`을 활용하여 명확한 예시 데이터를 제공하면 API 사용자가 더 빠르고 정확하게 데이터를 파악할 수 있어, 백엔드 전용 애플리케이션의 훌륭한 UI/UX 개선 방법이 됩니다. 또한, Pydantic V2에서는 `default`가 없는 필드는 자동으로 required로 처리되므로 불필요한 `...` 인자를 제거하여 코드를 깔끔하게 유지할 수 있습니다.
-**Action:** Swagger UI 가독성과 명확성을 높이기 위해 Pydantic 스키마의 주요 필드에 항상 `json_schema_extra={"example": ...}` 속성을 적용하고, Pydantic V2 스펙에 맞지 않는 불필요한 `...` 사용을 지양합니다.
+**Action:** Swagger UI 가독성과 명확성을 높이기 위해 Pydantic 스키마의 주요 필드에 `json_schema_extra={"example": ...}`을 적용합니다. `Field(...)`의 ellipsis는 유효한 명시적 required 선언이지만, `default`와 `default_factory`가 모두 없는 `Field(description="...")` 필드는 이미 required이므로 그 조건에서는 생략할 수 있습니다.
