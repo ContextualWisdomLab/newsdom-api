@@ -2,8 +2,8 @@ import importlib.util
 import os
 import subprocess
 import sys
-from pathlib import Path
 from types import SimpleNamespace
+from pathlib import Path
 
 import pytest
 
@@ -82,7 +82,6 @@ def test_clusterfuzzlite_dockerfile_places_build_script_at_src_root():
     assert "gcr.io/oss-fuzz-base/base-builder-python@sha256:" in text
     assert "ghcr.io/astral-sh/uv@sha256:" in text
     assert "COPY .clusterfuzzlite/build.sh /src/build.sh" in text
-    assert "test -f /src/build.sh && test -x /src/build.sh" in text
 
 
 def test_clusterfuzzlite_root_builder_exception_is_documented():

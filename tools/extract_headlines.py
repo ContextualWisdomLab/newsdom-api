@@ -27,13 +27,12 @@ def main(argv: list[str] | None = None) -> None:
     try:
         headlines = extract_headlines(args.input)
         if args.output:
-            content = "\n".join(headlines)
-            args.output.write_text(f"{content}\n" if content else "", encoding="utf-8")
+            args.output.write_text("\n".join(headlines) + "\n", encoding="utf-8")
             print(f"Extracted {len(headlines)} headlines to {args.output}")
         else:
             for h in headlines:
                 print(h)
-    except (OSError, json.JSONDecodeError, ValueError) as e:
+    except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 

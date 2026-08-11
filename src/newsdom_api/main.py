@@ -6,9 +6,8 @@ import asyncio
 import hmac
 import logging
 import tempfile
-from collections.abc import Callable
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Callable
 
 from fastapi import (
     Depends,
@@ -25,7 +24,7 @@ from fastapi.responses import JSONResponse
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
-from .config import allow_anonymous, bootstrap_runtime_config, get_api_token
+from .config import get_api_token
 from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 from .mineru_runner import (
     DEFAULT_LANGUAGE,
@@ -53,10 +52,6 @@ tags_metadata = [
         "description": "Health and deployment diagnostic endpoints.",
     },
 ]
-
-# Application import is the standalone sidecar's startup boundary. Snapshot
-# environment transport into the process-local registry before serving requests.
-bootstrap_runtime_config()
 
 app = FastAPI(
     title="NewsDOM API",
@@ -124,25 +119,18 @@ async def global_exception_handler(request: Request, exc: Exception) -> Response
 def require_authorization(
     authorization: Annotated[str | None, Header()] = None,
 ) -> None:
-    """Enforce bearer authentication unless explicitly opened for local work.
+    """Enforce optional bearer authentication on protected endpoints.
 
     When the sidecar has a shared secret configured (via
     :func:`newsdom_api.config.get_api_token`), callers must present a matching
-    ``Authorization: Bearer <token>`` header; otherwise a ``401`` is raised.
-    Missing configuration is fail-closed unless
-    ``NEWSDOM_ALLOW_ANONYMOUS=true`` explicitly opts a local development
-    instance into anonymous parsing. The comparison is constant-time.
+    ``Authorization: Bearer <token>`` header; otherwise a ``401`` is raised. If
+    no secret is configured the service stays open, which keeps the standalone
+    development experience friction-free. The comparison is constant-time.
     """
 
     token = get_api_token()
     if token is None:
-        if allow_anonymous():
-            return
-        raise HTTPException(
-            status_code=401,
-            detail=UNAUTHORIZED_DETAIL,
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        return
     expected = f"Bearer {token}"
     provided = authorization or ""
     if not hmac.compare_digest(provided, expected):

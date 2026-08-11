@@ -16,11 +16,9 @@ services:
     environment:
       # Optional: point at a bundled/host MinerU executable so /parse can run.
       # NEWSDOM_MINERU_BIN: /opt/mineru/bin/mineru
-      # Required for exposed deployments: /parse requires `Authorization: Bearer <token>`.
+      # Optional: when set, /parse requires `Authorization: Bearer <token>`.
       # Provide via your orchestrator's secret store rather than inline.
       # NEWSDOM_API_TOKEN: ${NEWSDOM_API_TOKEN:-}
-      # Local-only explicit opt-in when no token is configured; never expose this.
-      # NEWSDOM_ALLOW_ANONYMOUS: "true"
       PYTHONUNBUFFERED: "1"
     healthcheck:
       test:
