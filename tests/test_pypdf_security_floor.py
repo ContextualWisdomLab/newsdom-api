@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 import re
 
+import yaml
+
 
 _REQUIRED_PYPDF_VERSION = (6, 15, 0)
 _CURRENT_PYPDF_CVES = ("CVE-2026-71852", "CVE-2026-71870")
@@ -44,7 +46,7 @@ def test_lock_metadata_matches_current_pypdf_security_floor() -> None:
 def test_current_pypdf_findings_are_not_suppressed() -> None:
     """Keep current pypdf vulnerability findings visible to the Trivy gate."""
 
-    ignore_text = Path(".trivyignore").read_text(encoding="utf-8")
+    ignore_text = Path(".trivyignore.yaml").read_text(encoding="utf-8")
     for cve_id in _CURRENT_PYPDF_CVES:
         assert cve_id not in ignore_text
 
@@ -65,10 +67,16 @@ def test_current_pypdf_advisories_and_floor_are_documented() -> None:
 def test_trivy_registry_exception_is_scoped_to_the_example_manifest() -> None:
     """A documentation exception must not suppress KSV-0125 repository-wide."""
 
-    ignore_text = Path(".trivyignore").read_text(encoding="utf-8")
-    manifest = Path("docs/operations/kubernetes-deployment.yaml").read_text(
-        encoding="utf-8"
+    trivy_config = yaml.safe_load(Path("trivy.yaml").read_text(encoding="utf-8"))
+    ignore_document = yaml.safe_load(
+        Path(".trivyignore.yaml").read_text(encoding="utf-8")
     )
+    exceptions = {
+        entry["id"]: entry for entry in ignore_document["misconfigurations"]
+    }
 
-    assert "KSV-0125" not in ignore_text
-    assert "# trivy:ignore:KSV-0125" in manifest
+    assert trivy_config["ignorefile"] == ".trivyignore.yaml"
+    assert exceptions["KSV-0125"]["paths"] == [
+        "docs/operations/kubernetes-deployment.yaml"
+    ]
+    assert exceptions["DS-0002"]["paths"] == [".clusterfuzzlite/Dockerfile"]
