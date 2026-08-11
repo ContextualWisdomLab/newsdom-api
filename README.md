@@ -48,7 +48,7 @@ Configure the fail-closed production contract before starting the service:
 ```bash
 export NEWSDOM_AUTH_MODE=required
 export NEWSDOM_RUNTIME_PROFILE=production
-export NEWSDOM_API_TOKEN=$(openssl rand -hex 32)
+export NEWSDOM_API_TOKEN="$(openssl rand -hex 32)"
 export NEWSDOM_MAX_CONCURRENT_PARSES=1
 uv run uvicorn --app-dir src newsdom_api.main:app --reload
 ```
