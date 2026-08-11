@@ -18,7 +18,7 @@ submodule / sidecar in a larger system.
   official language families and compatibility aliases such as `japan` remain
   available
 - Parsing `mode` defaults to `auto` so born-digital text PDFs skip forced OCR
-- Optional bearer auth on `/parse`; unauthenticated `/health` liveness probe
+- Fail-closed bearer auth on `/parse`; unauthenticated `/health` liveness probe
 
 ## Quickstart
 
@@ -75,9 +75,10 @@ targets the unauthenticated `/health` endpoint:
 docker compose up --build
 ```
 
-Uncomment `NEWSDOM_MINERU_BIN` (path to a MinerU executable) and/or
+Uncomment `NEWSDOM_MINERU_BIN` (path to a MinerU executable) and
 `NEWSDOM_API_TOKEN` (bearer secret) in the compose `environment:` block to make
-`/parse` functional and/or protected.
+`/parse` functional and protected. Anonymous parsing requires the explicit
+local-only `NEWSDOM_ALLOW_ANONYMOUS=true` opt-in.
 
 #### Building a MinerU-bundled image
 
@@ -142,7 +143,7 @@ sidecar performs the same normalization before launching the subprocess.
 
 #### Authentication
 
-`/parse` is unauthenticated by default (development). Set the sidecar's own
+`/parse` is fail-closed by default. Set the sidecar's own
 `NEWSDOM_API_TOKEN` environment variable to require a bearer token:
 
 ```bash
@@ -155,6 +156,10 @@ curl -F "file=@sample.pdf" -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
 Requests without a matching `Authorization: Bearer <token>` header receive
 `401`. `/health` stays unauthenticated so orchestrators can always probe it.
 Supply the token from your deployment's secret store rather than committing it.
+
+For an isolated local development instance only, set
+`NEWSDOM_ALLOW_ANONYMOUS=true` when no token is configured. Never use that
+opt-in on an exposed deployment.
 
 Each request is written to a request-scoped temporary directory before MinerU
 runs, and those temporary files are removed after the response completes.
