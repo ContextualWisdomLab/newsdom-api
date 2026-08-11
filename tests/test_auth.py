@@ -1,4 +1,4 @@
-"""Tests for the optional bearer-auth gate on ``/parse`` and the leaf config."""
+"""Tests for the fail-closed bearer-auth gate on ``/parse``."""
 
 from __future__ import annotations
 
@@ -6,7 +6,13 @@ import pytest
 from fastapi.testclient import TestClient
 
 from newsdom_api import config
-from newsdom_api.config import API_TOKEN_ENV_VAR, get_api_token
+from newsdom_api.config import (
+    ALLOW_ANONYMOUS_ENV_VAR,
+    API_TOKEN_ENV_VAR,
+    allow_anonymous,
+    bootstrap_runtime_config,
+    get_api_token,
+)
 from newsdom_api.main import app
 
 _PDF_FILES = {"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")}
@@ -23,8 +29,21 @@ def stub_parser(monkeypatch):
     monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf)
 
 
-def test_parse_is_open_when_no_secret_configured(monkeypatch, stub_parser):
+def test_parse_requires_auth_when_no_secret_or_opt_in(monkeypatch, stub_parser):
     monkeypatch.delenv(API_TOKEN_ENV_VAR, raising=False)
+    monkeypatch.delenv(ALLOW_ANONYMOUS_ENV_VAR, raising=False)
+    bootstrap_runtime_config()
+    client = TestClient(app)
+    response = client.post("/parse", files=_PDF_FILES)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Unauthorized"
+    assert response.headers.get("WWW-Authenticate") == "Bearer"
+
+
+def test_parse_is_open_only_with_explicit_anonymous_opt_in(monkeypatch, stub_parser):
+    monkeypatch.delenv(API_TOKEN_ENV_VAR, raising=False)
+    monkeypatch.setenv(ALLOW_ANONYMOUS_ENV_VAR, "true")
+    bootstrap_runtime_config()
     client = TestClient(app)
     response = client.post("/parse", files=_PDF_FILES)
     assert response.status_code == 200
@@ -34,6 +53,7 @@ def test_parse_requires_bearer_when_secret_set_and_header_missing(
     monkeypatch, stub_parser
 ):
     monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+    bootstrap_runtime_config()
     client = TestClient(app)
     response = client.post("/parse", files=_PDF_FILES)
     assert response.status_code == 401
@@ -43,6 +63,7 @@ def test_parse_requires_bearer_when_secret_set_and_header_missing(
 
 def test_parse_rejects_invalid_bearer_when_secret_set(monkeypatch, stub_parser):
     monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+    bootstrap_runtime_config()
     client = TestClient(app)
     response = client.post(
         "/parse",
@@ -55,6 +76,7 @@ def test_parse_rejects_invalid_bearer_when_secret_set(monkeypatch, stub_parser):
 
 def test_parse_accepts_valid_bearer_when_secret_set(monkeypatch, stub_parser):
     monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+    bootstrap_runtime_config()
     client = TestClient(app)
     response = client.post(
         "/parse",
@@ -66,6 +88,7 @@ def test_parse_accepts_valid_bearer_when_secret_set(monkeypatch, stub_parser):
 
 def test_health_is_unauthenticated_even_when_secret_set(monkeypatch):
     monkeypatch.setenv(API_TOKEN_ENV_VAR, "s3cret-token")
+    bootstrap_runtime_config()
     client = TestClient(app)
     response = client.get("/health")
     assert response.status_code == 200
@@ -74,18 +97,47 @@ def test_health_is_unauthenticated_even_when_secret_set(monkeypatch):
 
 def test_get_api_token_returns_none_when_unset(monkeypatch):
     monkeypatch.delenv(API_TOKEN_ENV_VAR, raising=False)
+    bootstrap_runtime_config()
     assert get_api_token() is None
 
 
 def test_get_api_token_treats_blank_as_disabled(monkeypatch):
     monkeypatch.setenv(API_TOKEN_ENV_VAR, "   ")
+    bootstrap_runtime_config()
     assert get_api_token() is None
 
 
 def test_get_api_token_strips_surrounding_whitespace(monkeypatch):
     monkeypatch.setenv(API_TOKEN_ENV_VAR, "  padded-token\n")
+    bootstrap_runtime_config()
     assert get_api_token() == "padded-token"
 
 
 def test_config_module_exposes_env_var_name():
     assert config.API_TOKEN_ENV_VAR == "NEWSDOM_API_TOKEN"
+    assert config.ALLOW_ANONYMOUS_ENV_VAR == "NEWSDOM_ALLOW_ANONYMOUS"
+
+
+@pytest.mark.parametrize("value", ["1", "true", "TRUE", "yes", "on"])
+def test_allow_anonymous_accepts_explicit_true_values(monkeypatch, value):
+    monkeypatch.setenv(ALLOW_ANONYMOUS_ENV_VAR, value)
+    bootstrap_runtime_config()
+    assert allow_anonymous() is True
+
+
+def test_allow_anonymous_rejects_implicit_or_unknown_values(monkeypatch):
+    monkeypatch.setenv(ALLOW_ANONYMOUS_ENV_VAR, "development")
+    bootstrap_runtime_config()
+    assert allow_anonymous() is False
+
+
+def test_runtime_config_reads_bootstrap_snapshot_not_later_environment(monkeypatch):
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "bootstrap-token")
+    monkeypatch.setenv(ALLOW_ANONYMOUS_ENV_VAR, "false")
+    bootstrap_runtime_config()
+
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "mutated-runtime-token")
+    monkeypatch.setenv(ALLOW_ANONYMOUS_ENV_VAR, "true")
+
+    assert get_api_token() == "bootstrap-token"
+    assert allow_anonymous() is False
