@@ -23,6 +23,7 @@ from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import (
     AuthenticationMode,
@@ -162,7 +163,7 @@ async def global_exception_handler(request: Request, exc: Exception) -> Response
 
 
 async def custom_http_exception_handler(
-    request: Request, exc: HTTPException
+    request: Request, exc: StarletteHTTPException
 ) -> Response:
     """Ensure HTTPExceptions also receive standard security headers."""
     response = JSONResponse(
@@ -341,7 +342,9 @@ def create_app(
     )
     application.middleware("http")(security_boundary_middleware)
     application.add_exception_handler(Exception, global_exception_handler)
-    application.add_exception_handler(HTTPException, custom_http_exception_handler)
+    application.add_exception_handler(
+        StarletteHTTPException, custom_http_exception_handler
+    )
     application.add_api_route(
         "/health",
         health,
