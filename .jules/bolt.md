@@ -64,6 +64,6 @@
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
 
-## 2026-10-19 - Redundant Dictionary Lookups in Hot Paths
+## 2026-08-11 - Redundant Dictionary Lookups in Hot Paths
 **Learning:** 딕셔너리에서 동일한 키를 반복해서 조회(`payload.get("key")`)하여 한 번은 타입 체크에, 한 번은 할당에 사용하는 패턴은 루프 핫 패스에서 측정 가능한 함수 호출 오버헤드를 발생시킵니다.
 **Action:** 동일한 키 조회 결과는 지역 변수(예: `raw_articles = payload.get("articles")`)에 캐싱하여 중복 조회를 제거하고 속도를 개선합니다. 더불어 정확한 빌트인 기본형 검사에는 `isinstance()` 대신 `type() is`를 사용합니다.
