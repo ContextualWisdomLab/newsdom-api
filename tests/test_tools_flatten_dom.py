@@ -92,7 +92,7 @@ def test_flatten_dom_not_found(tmp_path):
 def test_flatten_dom_wrong_ext(tmp_path):
     txt = tmp_path / "wrong.txt"
     txt.write_text("test", encoding="utf-8")
-    with pytest.raises(ValueError, match="must be a .json file"):
+    with pytest.raises(ValueError, match=r"must be a \.json file"):
         flatten_dom.flatten_dom(txt)
 
 

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - [CLI] 파싱된 NewsDOM JSON을 RAG 파이프라인에서 활용하기 쉽도록 1차원 JSONL 형식으로 평탄화(Flatten)하는 `tools/flatten_dom.py` 도구를 추가했습니다.
 
 ### Changed
