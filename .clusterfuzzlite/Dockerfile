@@ -8,3 +8,8 @@ WORKDIR /src/newsdom-api
 COPY --from=uv-bin /uv /uvx /usr/local/bin/
 COPY . .
 COPY .clusterfuzzlite/build.sh /src/build.sh
+
+# Keep the CI-only builder observable without changing ClusterFuzzLite's
+# root-owned workspace behavior.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD test -f /src/build.sh && test -d /src/newsdom-api
