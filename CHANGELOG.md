@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- 대용량 파일 업로드 성능 최적화를 위해 `/parse` 엔드포인트의 파일 읽기 청크 크기를 8192 바이트에서 1MB로 증가시켰습니다.
+
 > **Planned 0.3.0 deployment migration:** parser authentication changes from
 > **default-open** to **default-required**. Production must configure
 > `NEWSDOM_AUTH_MODE=required`, `NEWSDOM_RUNTIME_PROFILE=production`, and
