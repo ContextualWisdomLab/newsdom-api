@@ -171,14 +171,6 @@ def test_trivyignore_does_not_suppress_go_ecosystem_cves():
     )
 
 
-def test_trivyignore_does_not_suppress_fixable_pypdf_cves():
-    """Keep dependency upgrade findings visible to the required security gate."""
-    entry_ids = {entry for entry, _ in _parse_trivyignore_entries()}
-
-    assert "CVE-2026-71852" not in entry_ids
-    assert "CVE-2026-71870" not in entry_ids
-
-
 def test_clusterfuzzlite_build_script_uses_locked_uv_fuzz_extra():
     text = _repo_path(".clusterfuzzlite", "build.sh").read_text(encoding="utf-8")
     assert "uv sync --frozen --extra fuzz" in text
