@@ -43,6 +43,7 @@ On Windows, replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
 ### Run
 
 ```bash
+export NEWSDOM_API_TOKEN="$(openssl rand -hex 32)"
 uv run uvicorn --app-dir src newsdom_api.main:app --reload
 ```
 
@@ -50,7 +51,10 @@ uv run uvicorn --app-dir src newsdom_api.main:app --reload
 
 ```bash
 docker build -t newsdom-api .
-docker run -p 8000:8000 newsdom-api
+docker run -e NEWSDOM_AUTH_MODE=required \
+  -e NEWSDOM_RUNTIME_PROFILE=production \
+  -e NEWSDOM_API_TOKEN="$NEWSDOM_API_TOKEN" \
+  -p 8000:8000 newsdom-api
 ```
 
 The default image exposes the REST API on port `8000` as a multi-arch service
@@ -114,7 +118,9 @@ provide the CUDA user-space/runtime stack required by MinerU.
 ### Parse a PDF
 
 ```bash
-curl -F "file=@sample.pdf" http://127.0.0.1:8000/parse
+curl -F "file=@sample.pdf" \
+  -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
+  http://127.0.0.1:8000/parse
 ```
 
 `/parse` accepts `multipart/form-data` with a required `file` part
@@ -132,6 +138,7 @@ explicitly:
 
 ```bash
 curl -F "file=@sample.pdf" -F "language=japan" -F "mode=ocr" \
+  -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
   http://127.0.0.1:8000/parse
 ```
 
