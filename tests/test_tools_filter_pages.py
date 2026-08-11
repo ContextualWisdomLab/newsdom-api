@@ -1,6 +1,5 @@
 import json
 import runpy
-import sys
 from pathlib import Path
 import pytest
 from tools.filter_pages import filter_pages, main
@@ -55,8 +54,7 @@ def test_module_entrypoint(tmp_path: Path, capsys, monkeypatch):
         json.dumps({"pages": [{"page_number": 1}]}), encoding="utf-8"
     )
     monkeypatch.setattr(
-        sys,
-        "argv",
+        "sys.argv",
         ["filter_pages", str(json_file), "--start-page", "1", "--end-page", "1"],
     )
     runpy.run_path(

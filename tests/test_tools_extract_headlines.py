@@ -1,6 +1,5 @@
 import json
 import runpy
-import sys
 from pathlib import Path
 import pytest
 from tools.extract_headlines import extract_headlines, main
@@ -83,7 +82,7 @@ def test_module_entrypoint(tmp_path: Path, capsys, monkeypatch):
         json.dumps({"pages": [{"articles": [{"headline": "Test 1"}]}]}),
         encoding="utf-8",
     )
-    monkeypatch.setattr(sys, "argv", ["extract_headlines", str(json_file)])
+    monkeypatch.setattr("sys.argv", ["extract_headlines", str(json_file)])
     runpy.run_path(
         str(Path(__file__).parents[1] / "tools" / "extract_headlines.py"),
         run_name="__main__",
