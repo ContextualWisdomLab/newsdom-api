@@ -124,6 +124,31 @@ def test_main_output_file(valid_dom_json, tmp_path):
     assert "Test Headline" in lines[0]
 
 
+def test_main_output_file_preserves_existing_file_on_serialization_failure(
+    valid_dom_json, tmp_path, monkeypatch
+):
+    out_file = tmp_path / "out.jsonl"
+    out_file.write_text("previous-output\n", encoding="utf-8")
+    real_dumps = json.dumps
+    calls = 0
+
+    def fail_after_first_record(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise TypeError("synthetic serialization failure")
+        return real_dumps(*args, **kwargs)
+
+    monkeypatch.setattr(flatten_dom.json, "dumps", fail_after_first_record)
+
+    with pytest.raises(SystemExit) as exc:
+        flatten_dom.main([str(valid_dom_json), "--output", str(out_file)])
+
+    assert exc.value.code == 1
+    assert out_file.read_text(encoding="utf-8") == "previous-output\n"
+    assert list(tmp_path.glob(".out.jsonl.*.tmp")) == []
+
+
 def test_main_error(tmp_path, capsys):
     with pytest.raises(SystemExit) as e:
         flatten_dom.main([str(tmp_path / "missing.json")])
