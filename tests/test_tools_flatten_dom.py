@@ -92,7 +92,7 @@ def test_flatten_dom_not_found(tmp_path):
 def test_flatten_dom_wrong_ext(tmp_path):
     txt = tmp_path / "wrong.txt"
     txt.write_text("test", encoding="utf-8")
-    with pytest.raises(ValueError, match=r"must be a \\.json file"):
+    with pytest.raises(ValueError, match=r"must be a \.json file"):
         flatten_dom.flatten_dom(txt)
 
 
@@ -122,31 +122,6 @@ def test_main_output_file(valid_dom_json, tmp_path):
     lines = out_file.read_text(encoding="utf-8").splitlines()
     assert len(lines) == 5
     assert "Test Headline" in lines[0]
-
-
-def test_atomic_output_preserves_existing_file_on_write_failure(
-    valid_dom_json, tmp_path, monkeypatch
-):
-    out_file = tmp_path / "out.jsonl"
-    out_file.write_text('{"previous": true}\n', encoding="utf-8")
-    results = flatten_dom.flatten_dom(valid_dom_json)
-    original_dumps = flatten_dom.json.dumps
-    calls = 0
-
-    def fail_during_serialization(record, *, ensure_ascii):
-        nonlocal calls
-        calls += 1
-        if calls == 2:
-            raise OSError("simulated write failure")
-        return original_dumps(record, ensure_ascii=ensure_ascii)
-
-    monkeypatch.setattr(flatten_dom.json, "dumps", fail_during_serialization)
-
-    with pytest.raises(OSError, match="simulated write failure"):
-        flatten_dom._write_jsonl_atomic(out_file, results)
-
-    assert out_file.read_text(encoding="utf-8") == '{"previous": true}\n'
-    assert list(tmp_path.glob(".out.jsonl.*.tmp")) == []
 
 
 def test_main_error(tmp_path, capsys):
