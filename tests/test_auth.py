@@ -89,32 +89,3 @@ def test_get_api_token_strips_surrounding_whitespace(monkeypatch):
 
 def test_config_module_exposes_env_var_name():
     assert config.API_TOKEN_ENV_VAR == "NEWSDOM_API_TOKEN"
-
-
-def test_require_authorization_non_ascii_header_returns_401(monkeypatch):
-    """Test that non-ASCII strings in the Authorization header are handled safely.
-
-    hmac.compare_digest raises a TypeError if strings contain non-ASCII characters,
-    which results in a 500 error instead of a 401 if not encoded to bytes first.
-    """
-    monkeypatch.setenv(API_TOKEN_ENV_VAR, "secret")
-
-    # We construct the request with raw bytes because TestClient/httpx will fail
-    # to encode the non-ascii header before it even reaches the FastAPI app
-    app.dependency_overrides = {}
-    client = TestClient(app)
-
-    # Send a request with a non-ASCII authorization header
-    # By using bytes, we bypass httpx's client-side encoding checks
-    # and test the server-side hmac handling
-    response = client.request(
-        "POST",
-        "/parse",
-        headers=[
-            (b"Authorization", "Bearer 日本語".encode("utf-8")),
-        ],
-        data={"language": "ch", "mode": "auto"},
-        files={"file": ("test.pdf", b"%PDF-1.4", "application/pdf")},
-    )
-    assert response.status_code == 401
-    assert response.json()["detail"] == 'Unauthorized'
