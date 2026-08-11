@@ -20,10 +20,10 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.security import HTTPBearer
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
-from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import (
     AuthenticationMode,
@@ -132,7 +132,11 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     scheme, separator, credentials = provided.partition(b" ")
     if separator != b" " or scheme.lower() != b"bearer" or not credentials:
         return _unauthorized_response()
-    if not hmac.compare_digest(credentials, token.encode("utf-8")):
+    try:
+        token_bytes = token.encode("utf-8")
+    except UnicodeEncodeError:
+        return _unauthorized_response()
+    if not hmac.compare_digest(credentials, token_bytes):
         return _unauthorized_response()
     return None
 
@@ -163,7 +167,7 @@ async def global_exception_handler(request: Request, exc: Exception) -> Response
 
 
 async def custom_http_exception_handler(
-    request: Request, exc: StarletteHTTPException
+    request: Request, exc: HTTPException
 ) -> Response:
     """Ensure HTTPExceptions also receive standard security headers."""
     response = JSONResponse(
