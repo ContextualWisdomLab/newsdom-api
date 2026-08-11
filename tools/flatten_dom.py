@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+import tempfile
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -86,6 +88,30 @@ def flatten_dom(json_path: Path) -> list[dict[str, str | int]]:
     return results
 
 
+def _write_jsonl_atomic(
+    output_path: Path, results: list[dict[str, str | int]]
+) -> None:
+    """Atomically replace a JSONL output without exposing partial records."""
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            dir=output_path.parent,
+            prefix=f".{output_path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as stream:
+            temporary_path = Path(stream.name)
+            for result in results:
+                stream.write(json.dumps(result, ensure_ascii=False) + "\n")
+        os.replace(temporary_path, output_path)
+        temporary_path = None
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+
+
 def main(argv: list[str] | None = None) -> None:
     """Run flatten_dom main entry point."""
     parser = argparse.ArgumentParser(
@@ -102,9 +128,7 @@ def main(argv: list[str] | None = None) -> None:
         results = flatten_dom(args.input)
 
         if args.output:
-            with args.output.open("w", encoding="utf-8") as f:
-                for res in results:
-                    f.write(json.dumps(res, ensure_ascii=False) + "\n")
+            _write_jsonl_atomic(args.output, results)
             print(f"Flattened DOM saved to {args.output}")
         else:
             for res in results:
