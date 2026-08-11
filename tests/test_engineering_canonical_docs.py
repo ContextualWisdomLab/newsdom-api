@@ -1,8 +1,24 @@
 from pathlib import Path
 
+from newsdom_api.main import app
+
 REQUIRED_CANONICAL_DOCS = [
     "AGENTS.md",
     "ARCHITECTURE.md",
+    "docs/PRD.md",
+    "docs/TRD.md",
+    "docs/API_CONTRACT.md",
+    "docs/UML.md",
+    "docs/ERD.md",
+    "docs/THREAT_MODEL.md",
+    "docs/TEST_STRATEGY.md",
+    "docs/OPERABILITY.md",
+    "docs/TRACEABILITY.md",
+    "docs/adr/README.md",
+    "docs/adr/0002-external-parser-and-liveness.md",
+    "docs/adr/0003-authentication-before-body-and-readiness.md",
+    "docs/adr/0004-process-local-parser-admission.md",
+    "docs/adr/0005-durable-async-jobs-and-idempotency.md",
     "docs/agents/README.md",
     "docs/coderabbit/review-commands.md",
     "docs/engineering/acceptance-criteria.md",
@@ -20,13 +36,28 @@ REQUIRED_CANONICAL_DOCS = [
 ]
 
 
+def _read(path: str) -> str:
+    """Return one canonical repository document as UTF-8 text."""
+
+    return Path(path).read_text(encoding="utf-8")
+
+
+def _traceability_row(marker: str) -> str:
+    """Return the Markdown traceability row containing ``marker``."""
+
+    for line in _read("docs/TRACEABILITY.md").splitlines():
+        if line.startswith("|") and marker in line:
+            return line
+    raise AssertionError(f"missing traceability row containing {marker!r}")
+
+
 def test_repository_ships_engineering_canonical_docs() -> None:
     missing = [path for path in REQUIRED_CANONICAL_DOCS if not Path(path).exists()]
     assert not missing, f"missing canonical engineering docs: {missing}"
 
 
 def test_repo_local_agents_doc_points_to_authoritative_sources() -> None:
-    text = Path("AGENTS.md").read_text(encoding="utf-8")
+    text = _read("AGENTS.md")
     for expected in (
         "docs/engineering/canonical-docs.md",
         "docs/engineering/execution-policy.md",
@@ -38,8 +69,23 @@ def test_repo_local_agents_doc_points_to_authoritative_sources() -> None:
         assert expected in text
 
 
+def test_repo_local_agents_delegates_ecosystem_ownership() -> None:
+    """Keep the organization component map in its one canonical authority."""
+
+    text = _read("AGENTS.md")
+    assert "docs/CWL-MASTER-CONTEXT.md" in text
+    assert (
+        "read that source rather than duplicating the organization-wide list here"
+        in text
+    )
+    role_section = text.split("### This repo's role in the ecosystem", 1)[1].split(
+        "### Research grounding", 1
+    )[0]
+    assert role_section.count("\n- **") == 2
+
+
 def test_architecture_doc_describes_runtime_modules() -> None:
-    text = Path("ARCHITECTURE.md").read_text(encoding="utf-8")
+    text = _read("ARCHITECTURE.md")
     for expected in (
         "src/newsdom_api/main.py",
         "src/newsdom_api/service.py",
@@ -51,12 +97,22 @@ def test_architecture_doc_describes_runtime_modules() -> None:
 
 
 def test_canonical_docs_index_maps_existing_truth_sources() -> None:
-    text = Path("docs/engineering/canonical-docs.md").read_text(encoding="utf-8")
+    text = _read("docs/engineering/canonical-docs.md")
     for expected in (
         "README.md",
         "CONTRIBUTING.md",
         "SECURITY.md",
         "CHANGELOG.md",
+        "docs/PRD.md",
+        "docs/TRD.md",
+        "docs/API_CONTRACT.md",
+        "docs/UML.md",
+        "docs/ERD.md",
+        "docs/THREAT_MODEL.md",
+        "docs/TEST_STRATEGY.md",
+        "docs/OPERABILITY.md",
+        "docs/TRACEABILITY.md",
+        "docs/adr/README.md",
         "docs/agents/README.md",
         "docs/coderabbit/review-commands.md",
         "docs/security/api-security-checklist.md",
@@ -68,8 +124,109 @@ def test_canonical_docs_index_maps_existing_truth_sources() -> None:
         assert Path(expected).exists(), f"canonical truth source missing: {expected}"
 
 
+def test_product_docs_keep_liveness_weaker_than_readiness() -> None:
+    """Prevent `/health` from becoming a false parser-readiness claim."""
+
+    prd = _read("docs/PRD.md")
+    trd = _read("docs/TRD.md")
+    api_contract = _read("docs/API_CONTRACT.md")
+    uml = _read("docs/UML.md")
+    adr = _read("docs/adr/0002-external-parser-and-liveness.md")
+    assert "/health" in prd and "liveness" in prd
+    assert "must not represent `/health` as parser traffic readiness" in trd
+    assert "process liveness only" in api_contract
+    assert "does not prove MinerU is installed" in api_contract
+    assert "/health — protected-develop liveness" in uml
+    assert "`/health` means process liveness only" in adr
+
+
+def test_active_auth_and_admission_work_is_not_promoted() -> None:
+    """Keep PR #539/#548 as active work until protected integration."""
+
+    prd = _read("docs/PRD.md")
+    api_contract = _read("docs/API_CONTRACT.md")
+    canonical = _read("docs/engineering/canonical-docs.md")
+    auth_row = _traceability_row("fail-closed production auth before body allocation")
+    admission_row = _traceability_row("non-waiting process-local parser admission")
+    assert "PR #539 — active-PR" in prd
+    assert "PR #548 — active-PR and stacked" in prd
+    assert "PR #539 — authentication + readiness" in api_contract
+    assert "Maturity:** active-PR" in api_contract
+    assert "PR #548 — saturation/backpressure" in api_contract
+    assert auth_row.rstrip().endswith("| active-PR |")
+    assert "#539" in auth_row
+    assert admission_row.rstrip().endswith("| active-PR-stacked |")
+    assert "#548" in admission_row
+    assert "PR #539 authentication/readiness and PR #548 process-local parser admission remain active-PR" in canonical
+
+
+def test_erd_does_not_invent_current_durable_newsdom_database() -> None:
+    """Keep durable job persistence labelled as accepted target only."""
+
+    erd = _read("docs/ERD.md")
+    trd = _read("docs/TRD.md")
+    api_contract = _read("docs/API_CONTRACT.md")
+    durable_row = _traceability_row("durable async parse lifecycle")
+    assert "does **not** own durable parse-job" in erd
+    assert "Accepted-target durable job model — not implemented" in erd
+    assert "Current protected runtime owns no application database" in trd
+    assert "Accepted-target durable job API — not implemented" in api_contract
+    assert durable_row.rstrip().endswith("| accepted-target |")
+    assert "PARSER_ARTIFACT }o--|| NEWSDOM_DOCUMENT" in erd
+    assert "where `result_status_code = 'succeeded'`" in erd
+    assert "parser runtime/model\ncontract identity and version" in erd
+
+    operability = _read("docs/OPERABILITY.md")
+    assert "cancel_requested" in operability
+    assert "operator-visible and non-terminal" in operability
+
+
+def test_api_contract_keeps_sync_and_durable_semantics_separate() -> None:
+    """Prevent current synchronous parse from acquiring fictional job guarantees."""
+
+    contract = _read("docs/API_CONTRACT.md")
+    assert (
+        "Current synchronous `/parse` does not claim durable idempotency or automatic retry"
+        in contract
+    )
+    assert "temporary file names/paths are internal" in contract
+    assert "cancellation records durable intent" in contract
+    assert "replay creates a new immutable attempt" in contract
+    assert (
+        "active/future endpoint prose is not emitted into generated OpenAPI until implemented"
+        in contract
+    )
+
+    paths = set(app.openapi()["paths"])
+    assert {"/health", "/parse"} <= paths
+    assert "/ready" not in paths
+    assert not any(
+        path == "/parse-jobs" or path.startswith("/parse-jobs/") for path in paths
+    )
+
+
+def test_adr_index_preserves_current_and_proposed_decisions() -> None:
+    """Require runtime and future-job decisions to remain indexed with maturity."""
+
+    index = _read("docs/adr/README.md")
+    for expected in (
+        "0002-external-parser-and-liveness.md",
+        "0003-authentication-before-body-and-readiness.md",
+        "0004-process-local-parser-admission.md",
+        "0005-durable-async-jobs-and-idempotency.md",
+        "Proposed — PR #539",
+        "Proposed — PR #548",
+        "Proposed target",
+    ):
+        assert expected in index
+    assert "**Status:** Accepted" in _read("docs/adr/0002-external-parser-and-liveness.md")
+    assert "**Status:** Proposed" in _read("docs/adr/0003-authentication-before-body-and-readiness.md")
+    assert "**Status:** Proposed" in _read("docs/adr/0004-process-local-parser-admission.md")
+    assert "**Status:** Proposed" in _read("docs/adr/0005-durable-async-jobs-and-idempotency.md")
+
+
 def test_runtime_data_policy_protects_private_inputs() -> None:
-    text = Path("docs/engineering/runtime-data-policy.md").read_text(encoding="utf-8")
+    text = _read("docs/engineering/runtime-data-policy.md")
     for expected in (
         "synthetic fixtures",
         "private reference",
@@ -81,7 +238,7 @@ def test_runtime_data_policy_protects_private_inputs() -> None:
 
 
 def test_review_policy_covers_review_expectations() -> None:
-    text = Path("docs/engineering/review-policy.md").read_text(encoding="utf-8").lower()
+    text = _read("docs/engineering/review-policy.md").lower()
     for expected in (
         "human review",
         "coderabbit",
@@ -93,7 +250,7 @@ def test_review_policy_covers_review_expectations() -> None:
 
 
 def test_review_policy_documents_single_maintainer_exception() -> None:
-    text = Path("docs/engineering/review-policy.md").read_text(encoding="utf-8").lower()
+    text = _read("docs/engineering/review-policy.md").lower()
     for expected in (
         "single-maintainer",
         "reviewer capacity",
@@ -104,7 +261,7 @@ def test_review_policy_documents_single_maintainer_exception() -> None:
 
 
 def test_api_security_checklist_scopes_live_endpoints() -> None:
-    text = Path("docs/security/api-security-checklist.md").read_text(encoding="utf-8")
+    text = _read("docs/security/api-security-checklist.md")
     for expected in (
         "/health",
         "/docs",
@@ -117,7 +274,7 @@ def test_api_security_checklist_scopes_live_endpoints() -> None:
 
 
 def test_contributing_maps_new_canonical_docs() -> None:
-    text = Path("CONTRIBUTING.md").read_text(encoding="utf-8")
+    text = _read("CONTRIBUTING.md")
     for expected in (
         "manual/",
         "docs/agents/README.md",
@@ -127,8 +284,8 @@ def test_contributing_maps_new_canonical_docs() -> None:
 
 
 def test_deploy_runbook_matches_release_trigger_and_assets() -> None:
-    runbook_text = Path("docs/operations/deploy-runbook.md").read_text(encoding="utf-8")
-    release_workflow = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
+    runbook_text = _read("docs/operations/deploy-runbook.md")
+    release_workflow = _read(".github/workflows/release.yml")
 
     assert "push:" in release_workflow and "tags:" in release_workflow
     assert "workflow_dispatch:" in release_workflow
@@ -140,7 +297,7 @@ def test_deploy_runbook_matches_release_trigger_and_assets() -> None:
 
 
 def test_deploy_runbook_describes_current_runtime_and_probe_contract() -> None:
-    text = Path("docs/operations/deploy-runbook.md").read_text(encoding="utf-8")
+    text = _read("docs/operations/deploy-runbook.md")
 
     for expected in (
         "default image ships the API service only",
