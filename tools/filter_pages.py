@@ -9,6 +9,8 @@ def filter_pages(json_path: Path, start_page: int, end_page: int) -> dict:
         raise FileNotFoundError(f"File not found or is not a file: {json_path}")
     if json_path.suffix.lower() != ".json":
         raise ValueError("File must be a .json file.")
+    if start_page > end_page:
+        raise ValueError("start_page must not exceed end_page.")
     data = json.loads(json_path.read_text(encoding="utf-8"))
     pages = data.get("pages", [])
     filtered_pages = [p for p in pages if start_page <= p.get("page_number", 0) <= end_page]
@@ -25,7 +27,7 @@ def main(argv: list[str] | None = None) -> None:
     try:
         filtered_data = filter_pages(args.input, args.start_page, args.end_page)
         print(json.dumps(filtered_data, ensure_ascii=False, indent=2))
-    except Exception as e:
+    except (OSError, json.JSONDecodeError, ValueError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
