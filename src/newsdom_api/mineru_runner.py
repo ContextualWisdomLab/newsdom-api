@@ -214,19 +214,6 @@ def _resolve_mineru_bin() -> str:
     return found
 
 
-def mineru_runtime_available() -> bool:
-    """Return whether the configured MinerU executable resolves for this process."""
-
-    try:
-        executable = _resolve_mineru_bin()
-    except MineruRuntimeUnavailableError:
-        return False
-    if os.path.sep in executable or (os.path.altsep and os.path.altsep in executable):
-        path = Path(executable)
-        return path.is_file() and os.access(path, os.X_OK)
-    return _cached_which(executable) is not None
-
-
 def _find_output_dir(base_output_dir: Path, method: str = DEFAULT_MODE) -> Path:
     """Locate the parse-method output directory created by MinerU.
 

@@ -25,8 +25,8 @@ def main(argv: list[str] | None = None) -> None:
     try:
         filtered_data = filter_pages(args.input, args.start_page, args.end_page)
         print(json.dumps(filtered_data, ensure_ascii=False, indent=2))
-    except (OSError, ValueError) as error:
-        print(f"Error: {error}", file=sys.stderr)
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
 if __name__ == "__main__":  # pragma: no cover
