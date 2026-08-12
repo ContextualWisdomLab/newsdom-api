@@ -6,6 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -89,55 +90,40 @@ def test_clusterfuzzlite_root_builder_exception_is_documented():
     text = _repo_path(".clusterfuzzlite", "Dockerfile").read_text(encoding="utf-8")
 
     assert "USER 10001:10001" not in text
-    ignore_text = _repo_path(".trivyignore").read_text(encoding="utf-8")
-    assert "ClusterFuzzLite mounts /github/workspace/build-out" in ignore_text
-    assert "2026-10-31" in ignore_text
-    assert "DS-0002" in ignore_text
+    ignore_document = yaml.safe_load(
+        _repo_path(".trivyignore.yaml").read_text(encoding="utf-8")
+    )
+    exception = next(
+        entry
+        for entry in ignore_document["misconfigurations"]
+        if entry["id"] == "DS-0002"
+    )
+    assert "ClusterFuzzLite mounts" in exception["statement"]
+    assert "/github/workspace/build-out" in exception["statement"]
+    assert str(exception["expired_at"]) == "2026-10-31"
 
 
-def _parse_trivyignore_entries() -> list[tuple[str, str]]:
-    """Return (entry id, preceding comment block) pairs from .trivyignore.
+def _parse_trivyignore_entries() -> list[dict[str, object]]:
+    """Return the path-scoped Trivy misconfiguration exceptions."""
 
-    A blank line ends a comment block, so only the comment lines directly
-    above an entry count as that entry's documentation.
-    """
-    entries: list[tuple[str, str]] = []
-    comment_lines: list[str] = []
-    for line in _repo_path(".trivyignore").read_text(encoding="utf-8").splitlines():
-        stripped = line.strip()
-        if not stripped:
-            comment_lines = []
-            continue
-        if stripped.startswith("#"):
-            comment_lines.append(stripped.lstrip("#").strip())
-            continue
-        entries.append((stripped.split()[0], " ".join(comment_lines)))
-    return entries
+    document = yaml.safe_load(
+        _repo_path(".trivyignore.yaml").read_text(encoding="utf-8")
+    )
+    return document["misconfigurations"]
 
 
 def test_trivyignore_entries_each_carry_reason_and_revisit_condition():
     # The central trivy-fs gate (security-scan.yml in ContextualWisdomLab/
-    # .github) honours this file via trivy's default --ignorefile, so every
+    # .github) honours this file via the repository's default trivy.yaml, so every
     # suppression silently weakens a required merge gate. Each entry must be
-    # documented inline: the id itself, the affected artifact / why it is
-    # unfixable here, and a revisit condition.
+    # path-scoped and documented with a reason and bounded revisit date.
     entries = _parse_trivyignore_entries()
 
-    assert entries, ".trivyignore lost its documented entries unexpectedly"
-    for entry, documentation in entries:
-        assert documentation, (
-            f".trivyignore entry {entry} has no comment block above it; "
-            "document the finding, why it is unfixable here, and a revisit "
-            "condition before suppressing it"
-        )
-        assert entry in documentation, (
-            f".trivyignore entry {entry} must be named in the comment block "
-            "directly above it"
-        )
-        assert "revisit" in documentation.lower(), (
-            f".trivyignore entry {entry} needs an explicit revisit condition "
-            "(e.g. 'Revisit by <date> or when <upstream fix> lands')"
-        )
+    assert entries, ".trivyignore.yaml lost its documented entries unexpectedly"
+    for entry in entries:
+        assert entry["paths"], f"{entry['id']} must be path scoped"
+        assert "revisit" in str(entry["statement"]).lower()
+        assert entry["expired_at"]
 
 
 def test_trivyignore_does_not_suppress_go_ecosystem_cves():
@@ -148,7 +134,7 @@ def test_trivyignore_does_not_suppress_go_ecosystem_cves():
     # vulnerabilities and this repository ships no Go code, so `trivy fs .`
     # can never legitimately report them here. Suppressions that do not map
     # to a reproduced finding must stay out.
-    entry_ids = {entry for entry, _ in _parse_trivyignore_entries()}
+    entry_ids = {entry["id"] for entry in _parse_trivyignore_entries()}
 
     assert "CVE-2021-4238" not in entry_ids
     assert "CVE-2022-26945" not in entry_ids
@@ -167,7 +153,7 @@ def test_trivyignore_does_not_suppress_go_ecosystem_cves():
     ]
     assert not go_artifacts, (
         "Go artifacts appeared in the repository; re-evaluate whether "
-        "Go-ecosystem CVE suppressions in .trivyignore are now legitimate: "
+        "Go-ecosystem CVE suppressions are now legitimate: "
         f"{go_artifacts}"
     )
 
