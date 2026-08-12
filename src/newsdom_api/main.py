@@ -167,7 +167,7 @@ async def global_exception_handler(request: Request, exc: Exception) -> Response
 
 
 async def custom_http_exception_handler(
-    request: Request, exc: HTTPException
+    request: Request, exc: StarletteHTTPException
 ) -> Response:
     """Ensure HTTPExceptions also receive standard security headers."""
     response = JSONResponse(
