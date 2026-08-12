@@ -99,7 +99,6 @@ def test_get_api_token_strips_surrounding_whitespace(monkeypatch):
     assert get_api_token() == "padded-token"
 
 
-
 def test_runtime_config_reads_bootstrap_snapshot_not_later_environment(monkeypatch):
     monkeypatch.setenv(API_TOKEN_ENV_VAR, "bootstrap-token")
     bootstrap_runtime_config()
