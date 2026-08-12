@@ -14,11 +14,9 @@
 # suppressing, and rebase stale branches onto develop before concluding that
 # a repo-wide finding is real.
 
-# DS-0002 documented suppression.
-# Affected artifact: .clusterfuzzlite/Dockerfile, a CI-only OSS-Fuzz builder.
-# Why unfixable here: ClusterFuzzLite mounts /github/workspace/build-out as a
-# root-owned volume and writes libFuzzer artifacts before invoking the project
-# build script, so forcing a non-root USER breaks fuzz CI.
-# Revisit condition: by 2026-10-31 or when ClusterFuzzLite supports non-root
-# build output.
+# DS-0002 applies to .clusterfuzzlite/Dockerfile, which is a CI-only OSS-Fuzz
+# builder image. ClusterFuzzLite mounts /github/workspace/build-out as a
+# root-owned volume and its build harness writes libFuzzer artifacts before
+# invoking the project build script, so forcing a non-root USER breaks fuzz CI.
+# Revisit by 2026-10-31 or when ClusterFuzzLite supports non-root build output.
 DS-0002
