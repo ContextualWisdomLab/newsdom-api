@@ -19,7 +19,7 @@ The adopted floors are:
   core remains on the supported 1.x line.
 
 The generated lock additionally resolves Click 8.4.2, setuptools 83.0.0,
-Pillow 12.3.0, pypdf 6.14.2, mkdocs-material 9.7.7, and
+Pillow 12.3.0, pypdf 6.15.0, mkdocs-material 9.7.7, and
 pymdown-extensions 11.0.1. Direct floors prevent a later lock refresh from
 silently selecting the known-vulnerable ranges again.
 

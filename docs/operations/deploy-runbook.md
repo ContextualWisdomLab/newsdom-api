@@ -17,12 +17,13 @@ delivery paths.
 ## Container smoke
 
 1. `docker build -t newsdom-api .`
-2. `docker run --rm -p 18080:8000 newsdom-api`
+2. `docker run --detach --rm --name newsdom-api-smoke -p 18080:8000 newsdom-api`
 3. Verify:
    - `curl -fsS http://127.0.0.1:18080/health`
    - `curl -fsS -F "file=@sample.pdf" http://127.0.0.1:18080/parse`
      only after a compatible MinerU runtime is installed or exposed through
      `NEWSDOM_MINERU_BIN`
+4. `docker stop newsdom-api-smoke`
 
 The default image ships the API service only and does not bundle the MinerU runtime,
 so container smoke should treat `/parse` as an external-runtime check rather
