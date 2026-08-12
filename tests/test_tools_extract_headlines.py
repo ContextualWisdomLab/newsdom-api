@@ -57,6 +57,7 @@ def test_main_error(tmp_path: Path, capsys, monkeypatch):
 
 def test_main_does_not_hide_programming_errors(monkeypatch):
     """Unexpected implementation errors must remain visible to operators."""
+
     def raise_type_error(*_args):
         raise TypeError("unexpected extraction defect")
 
