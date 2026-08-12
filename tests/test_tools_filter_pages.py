@@ -1,4 +1,5 @@
 import json
+import sys
 from pathlib import Path
 import pytest
 from tools.filter_pages import filter_pages, main
