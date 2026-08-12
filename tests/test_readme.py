@@ -41,6 +41,13 @@ def test_readme_documents_uv_run_entrypoints():
     )
 
 
+def test_readme_parse_examples_export_and_send_bearer_token():
+    text = Path("README.md").read_text(encoding="utf-8")
+
+    assert 'export NEWSDOM_API_TOKEN="$(openssl rand -hex 32)"' in text
+    assert text.count('-H "Authorization: Bearer $NEWSDOM_API_TOKEN"') >= 3
+
+
 def test_repo_docs_note_windows_uv_python_path_equivalent():
     for path in [Path("README.md"), Path("CONTRIBUTING.md")]:
         text = path.read_text(encoding="utf-8")

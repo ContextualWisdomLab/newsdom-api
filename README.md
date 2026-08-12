@@ -18,7 +18,7 @@ submodule / sidecar in a larger system.
   official language families and compatibility aliases such as `japan` remain
   available
 - Parsing `mode` defaults to `auto` so born-digital text PDFs skip forced OCR
-- Optional bearer auth on `/parse`; unauthenticated `/health` liveness probe
+- Fail-closed bearer auth on `/parse`; unauthenticated `/health` liveness probe
 
 ## Quickstart
 
@@ -43,6 +43,7 @@ On Windows, replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
 ### Run
 
 ```bash
+export NEWSDOM_API_TOKEN="$(openssl rand -hex 32)"
 uv run uvicorn --app-dir src newsdom_api.main:app --reload
 ```
 
@@ -50,7 +51,7 @@ uv run uvicorn --app-dir src newsdom_api.main:app --reload
 
 ```bash
 docker build -t newsdom-api .
-docker run -p 8000:8000 newsdom-api
+docker run -e NEWSDOM_API_TOKEN="$NEWSDOM_API_TOKEN" -p 8000:8000 newsdom-api
 ```
 
 The default image exposes the REST API on port `8000` as a multi-arch service
@@ -75,9 +76,10 @@ targets the unauthenticated `/health` endpoint:
 docker compose up --build
 ```
 
-Uncomment `NEWSDOM_MINERU_BIN` (path to a MinerU executable) and/or
+Uncomment `NEWSDOM_MINERU_BIN` (path to a MinerU executable) and
 `NEWSDOM_API_TOKEN` (bearer secret) in the compose `environment:` block to make
-`/parse` functional and/or protected.
+`/parse` functional and protected. Anonymous parsing requires the explicit
+local-only `NEWSDOM_ALLOW_ANONYMOUS=true` opt-in.
 
 #### Building a MinerU-bundled image
 
@@ -114,7 +116,9 @@ provide the CUDA user-space/runtime stack required by MinerU.
 ### Parse a PDF
 
 ```bash
-curl -F "file=@sample.pdf" http://127.0.0.1:8000/parse
+curl -F "file=@sample.pdf" \
+  -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
+  http://127.0.0.1:8000/parse
 ```
 
 `/parse` accepts `multipart/form-data` with a required `file` part
@@ -132,6 +136,7 @@ explicitly:
 
 ```bash
 curl -F "file=@sample.pdf" -F "language=japan" -F "mode=ocr" \
+  -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
   http://127.0.0.1:8000/parse
 ```
 
@@ -142,12 +147,12 @@ sidecar performs the same normalization before launching the subprocess.
 
 #### Authentication
 
-`/parse` is unauthenticated by default (development). Set the sidecar's own
+`/parse` is fail-closed by default. Set the sidecar's own
 `NEWSDOM_API_TOKEN` environment variable to require a bearer token:
 
 ```bash
-NEWSDOM_API_TOKEN=$(openssl rand -hex 32) \
-  uv run uvicorn --app-dir src newsdom_api.main:app
+export NEWSDOM_API_TOKEN="$(openssl rand -hex 32)"
+uv run uvicorn --app-dir src newsdom_api.main:app
 curl -F "file=@sample.pdf" -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
   http://127.0.0.1:8000/parse
 ```
@@ -155,6 +160,14 @@ curl -F "file=@sample.pdf" -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
 Requests without a matching `Authorization: Bearer <token>` header receive
 `401`. `/health` stays unauthenticated so orchestrators can always probe it.
 Supply the token from your deployment's secret store rather than committing it.
+The process environment is bootstrap transport only: application startup copies
+the token and anonymous-access policy into a process-local credential registry,
+and request handling reads that registry. Restart the sidecar to rotate either
+setting.
+
+For an isolated local development instance only, set
+`NEWSDOM_ALLOW_ANONYMOUS=true` when no token is configured. Never use that
+opt-in on an exposed deployment.
 
 Each request is written to a request-scoped temporary directory before MinerU
 runs, and those temporary files are removed after the response completes.
