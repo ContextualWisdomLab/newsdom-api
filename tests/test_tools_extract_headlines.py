@@ -1,5 +1,4 @@
 import json
-import sys
 from pathlib import Path
 import pytest
 from tools.extract_headlines import extract_headlines, main
