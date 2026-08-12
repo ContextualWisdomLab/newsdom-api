@@ -37,9 +37,7 @@ class CaptionNode(BaseModel):
     )
     bbox: Optional[BoundingBox] = Field(
         default=None,
-        description=(
-            "Bounding box of the caption when parser coordinates are available."
-        ),
+        description="Bounding box of the caption when parser coordinates are available.",
     )
 
 
@@ -90,14 +88,11 @@ class ArticleNode(BaseModel):
     )
     bbox: Optional[BoundingBox] = Field(
         default=None,
-        description=(
-            "Bounding box enclosing the article when parser coordinates are available."
-        ),
+        description="Bounding box enclosing the article when parser coordinates are available.",
     )
     body_blocks: List[str] = Field(
         default_factory=list,
         description="Ordered text blocks that make up the article body.",
-        json_schema_extra={"example": ["First paragraph of the article.", "Second paragraph."]},
     )
     images: List[ImageNode] = Field(
         default_factory=list,
@@ -194,14 +189,4 @@ class HealthResponse(BaseModel):
         default="ok",
         description="Current operational status of the service.",
         json_schema_extra={"example": "ok"},
-    )
-
-
-class ReadinessResponse(BaseModel):
-    """Traffic-readiness response emitted only when all required dependencies work."""
-
-    status: str = Field(
-        default="ready",
-        description="Stable traffic-readiness status.",
-        json_schema_extra={"example": "ready"},
     )
