@@ -63,3 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2026-10-24 - 불필요한 중복 딕셔너리 조회 최적화
+**Learning:** `src/newsdom_api/equivalence.py`와 같은 핫 패스(hot path) 또는 대용량 페이로드 검증 로직에서, 동일한 키(예: `payload.get("articles")`)를 타입 검사와 할당 시에 두 번 조회하는 중복 호출은 Python의 런타임 성능을 저하시키는 주요 안티패턴임을 확인했습니다.
+**Action:** 딕셔너리 조회가 반복될 때는 결과를 항상 로컬 변수(예: `raw_articles = payload.get("articles")`)에 캐싱하여 중복된 키 해싱 및 조회 비용을 제거하십시오.
