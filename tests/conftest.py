@@ -15,12 +15,13 @@ if str(ROOT) not in sys.path:
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from newsdom_api.config import bootstrap_runtime_config
 
 
 @pytest.fixture(autouse=True)
 def reset_runtime_config():
     """Keep process-local credentials isolated between tests."""
+    from newsdom_api.config import bootstrap_runtime_config
+
     bootstrap_runtime_config({})
     yield
     bootstrap_runtime_config({})
