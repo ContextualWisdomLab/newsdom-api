@@ -16,7 +16,6 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 
-
 @pytest.fixture(autouse=True)
 def reset_runtime_config():
     """Keep process-local credentials isolated between tests."""
