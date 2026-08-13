@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-08-13 - [MEDIUM] JSON 로딩 시 크기 제한 부재로 인한 메모리 고갈 (Resource Exhaustion) 방지
+**Vulnerability:** `load_metrics` 함수에서 JSON 파일을 읽어 들일 때, 파일 크기에 대한 제한 없이 `json.loads`를 호출하면 악의적으로 거대한 JSON 파일이 입력될 경우 메모리 자원 고갈 (Denial of Service)이 발생할 수 있습니다.
+**Learning:** 외부 또는 제어되지 않는 파일 경로에서 데이터를 읽어 들여 파싱할 때는, 파싱을 시도하기 전에 반드시 입력 데이터의 크기를 확인하여 안전한 범위(예: 10MB) 내인지 제한해야 합니다.
+**Prevention:** `path.read_text()`로 데이터를 읽은 후 `len(data)`가 허용된 최대 크기를 초과하면 `ValueError`를 발생시켜 리소스 고갈을 사전에 방지합니다.

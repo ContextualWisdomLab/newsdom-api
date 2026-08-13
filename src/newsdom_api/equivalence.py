@@ -10,7 +10,10 @@ from typing import Any
 def load_metrics(path: Path) -> dict[str, Any]:
     """Load a JSON metrics file from disk using UTF-8 encoding."""
 
-    return json.loads(path.read_text(encoding="utf-8"))
+    if path.stat().st_size > 10 * 1024 * 1024:
+        raise ValueError("JSON file too large")
+    data = path.read_text(encoding="utf-8")
+    return json.loads(data)
 
 
 def _article_has_headline(article: dict[str, Any]) -> bool:
