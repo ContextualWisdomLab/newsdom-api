@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import hmac
 import logging
+import os
 import tempfile
 from pathlib import Path
 from typing import Annotated, Callable
@@ -276,10 +277,15 @@ async def parse(
 
         LOGGER.debug("Wrote %s upload bytes to %s", bytes_read, tmp_path)
         _validate_pdf_structure(tmp_path)
+
+        safe_filename = (
+            os.path.basename(file.filename) if file.filename else "upload.pdf"
+        )
+
         return await asyncio.to_thread(
             parse_pdf,
             tmp_path,
-            filename=file.filename or "upload.pdf",
+            filename=safe_filename,
             language=resolved_language,
             mode=resolved_mode,
         )
