@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-08-13 - [MEDIUM] JSON 로딩 시 TOCTOU 및 메모리 고갈 방지 (TOCTOU & Resource Exhaustion)
+**Vulnerability:** `load_metrics` 함수에서 JSON 파일을 읽기 전 `path.stat().st_size`로 크기를 검사하는 방식은 검사 시점과 사용 시점 사이의 경쟁 조건(TOCTOU)을 유발하며, FIFO 파이프 등을 통해 크기 검사를 우회하여 악의적인 대용량 데이터를 메모리에 주입할 수 있는 메모리 자원 고갈 (Denial of Service) 공격에 취약합니다.
+**Learning:** 파일 크기를 사전에 검사한 후 전체 데이터를 읽는 방식은 TOCTOU 우회 공격에 취약하므로, 반드시 단일 파일 핸들을 사용하여 데이터를 안전한 제한선까지만 읽어 들인 후 크기를 검증해야 합니다.
+**Prevention:** `path.read_text()` 대신 파일을 `rb` 모드로 열고 `f.read(limit + 1)`로 데이터를 읽은 후, 반환된 바이트 길이가 제한을 초과하면 예외를 발생시키도록 구현하여 TOCTOU 취약점을 원천적으로 차단합니다.
