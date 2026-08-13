@@ -29,3 +29,7 @@
 ## 2026-07-07 - [Improve Swagger UX with Pydantic V2 Examples]
 **Learning:** Using json_schema_extra={'example': ...} instead of example=... in Pydantic V2 schemas ensures OpenAPI compatibility and prevents deprecation warnings, significantly improving Developer Experience (DX) for API consumers.
 **Action:** Apply json_schema_extra to Pydantic Field definitions to automatically generate rich, self-documenting OpenAPI schemas for headless APIs.
+
+## 2026-08-13 - Enhance PageNode OpenAPI Schema Examples
+**Learning:** For a backend service, providing examples in `json_schema_extra` for optional fields such as `width`, `height`, `ads`, `headers`, `footers`, and `page_numbers` on Pydantic models directly improves the Developer Experience (DX). These examples display rich mock data in Swagger UI, which helps consumers instantly understand what kind of structure the API returns without needing external documentation.
+**Action:** Enhance all missing schema fields with realistic examples via `json_schema_extra` to provide clearer API contracts on OpenAPI generation.
