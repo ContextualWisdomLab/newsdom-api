@@ -164,3 +164,18 @@ def test_filter_dom_remove_images_missing_images_key(tmp_path: Path):
 
     out_data = json.loads(output_path.read_text())
     assert "images" not in out_data["pages"][0]["articles"][0]
+
+
+def test_filter_dom_path_traversal(tmp_path: Path):
+    input_path = tmp_path / "input.json"
+    data = {"pages": []}
+    input_path.write_text(json.dumps(data))
+
+    # Use absolute path outside cwd and temp
+    output_path = Path("/etc/evil.json")
+
+    with pytest.raises(
+        ValueError,
+        match=r"Output path must be within the current working directory or temp directory",
+    ):
+        filter_dom(input_path, output_path)

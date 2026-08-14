@@ -60,6 +60,16 @@ def filter_dom(
 
     data["pages"] = filtered_pages
 
+    resolved_output = output_path.resolve()
+    import tempfile
+
+    if not resolved_output.is_relative_to(
+        Path.cwd()
+    ) and not resolved_output.is_relative_to(Path(tempfile.gettempdir())):
+        raise ValueError(
+            f"Output path must be within the current working directory or temp directory: {output_path}"
+        )
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
         json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
