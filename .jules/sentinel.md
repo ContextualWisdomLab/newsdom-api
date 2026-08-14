@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-08-14 - [CRITICAL] PDF 구조 검증 시 예외 처리 미흡으로 인한 DoS 취약점 해결
+**Vulnerability:** 파일 파싱 엔드포인트(`/parse`)에서 `PdfReader`를 사용해 PDF 구조를 검증할 때, `PdfReadError`, `RecursionError` 등 특정 예외만 처리하고 있었습니다. 잘못된 형식의 파일이 입력되었을 때 `MemoryError`나 `TypeError` 같은 예상치 못한 예외가 발생할 경우, 이는 핸들링되지 않아 500 HTTP 상태 코드를 반환하게 되고, 이는 Strix 보안 스캐너에서 치명적인 서비스 거부(DoS) 취약점으로 간주됩니다.
+**Learning:** 구조 검증 라이브러리(예: `PdfReader`)는 악의적으로 조작된 파일에 대해 예상치 못한 다양한 예외를 발생시킬 수 있습니다. 한정된 예외만 처리할 경우 엣지 케이스를 놓치고 어플리케이션 안정성을 해칠 수 있습니다.
+**Prevention:** 외부 구조 검증 라이브러리의 호출을 광범위한 `except Exception:` 블록으로 감싸서 500 에러 발생을 방지하고 적절한 4xx 에러(예: 415 Unsupported Media Type)로 처리되도록 하여 DoS를 예방해야 합니다.

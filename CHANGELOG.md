@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- `/parse` 엔드포인트의 구조 검증(structural validation) 로직에서 예상치 못한 예외(`MemoryError`, `TypeError` 등)가 발생하여 500 상태 코드가 반환되는 DoS(서비스 거부) 취약점을 해결했습니다.
+
 > **Planned 0.3.0 deployment migration:** parser authentication changes from
 > **default-open** to **default-required**. Production must configure
 > `NEWSDOM_AUTH_MODE=required`, `NEWSDOM_RUNTIME_PROFILE=production`, and
