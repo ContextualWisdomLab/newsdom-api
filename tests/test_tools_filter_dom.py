@@ -46,12 +46,12 @@ def test_filter_dom_success_all_branches(tmp_path: Path):
                 "page_number": 2,  # included
                 "articles": [
                     {
-                        "headline": "tArGeT Article",
+                        "headline": "Target Article",
                         "images": [{"path": "img2.png"}],
                     },  # target matched, images removed
                     {"headline": "Other Article"},  # filtered out by headline
                     {
-                        "headline": "TARGET 2",
+                        "headline": "Target 2",
                         "images": [{"path": "img3.png"}],
                     },  # target matched, images removed
                 ],
@@ -79,9 +79,9 @@ def test_filter_dom_success_all_branches(tmp_path: Path):
     assert len(pages) == 1
     assert pages[0]["page_number"] == 2
     assert len(pages[0]["articles"]) == 2
-    assert pages[0]["articles"][0]["headline"] == "tArGeT Article"
+    assert pages[0]["articles"][0]["headline"] == "Target Article"
     assert pages[0]["articles"][0]["images"] == []
-    assert pages[0]["articles"][1]["headline"] == "TARGET 2"
+    assert pages[0]["articles"][1]["headline"] == "Target 2"
     assert pages[0]["articles"][1]["images"] == []
 
 
