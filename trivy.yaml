@@ -1,0 +1,3 @@
+# Trivy reads this repository-local configuration by default. The structured
+# ignore file scopes each exception to the exact artifact that owns the risk.
+ignorefile: .trivyignore.yaml
