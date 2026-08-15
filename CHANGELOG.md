@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > acceptance are aligned for an actual 0.3.0 publication.
 
 ### Added
+
 - [CLI] 파싱된 NewsDOM JSON을 조건(페이지 번호, 기사 제목 정규식 매칭, 이미지 제외)에 맞춰 필터링하는 `tools/filter_dom.py` 도구를 추가했습니다.
 
 ### Changed
