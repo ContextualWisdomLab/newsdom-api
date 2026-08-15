@@ -57,3 +57,26 @@ def test_openapi_metadata_includes_contact_and_license():
         "name": "MIT License",
         "identifier": "MIT",
     }
+
+
+def test_parse_openapi_form_fields_publish_standard_examples():
+    """The multipart request schema must expose current JSON Schema examples."""
+
+    client = TestClient(app)
+    response = client.get("/openapi.json")
+
+    assert response.status_code == 200
+    document = response.json()
+    request_schema = document["paths"]["/parse"]["post"]["requestBody"]["content"][
+        "multipart/form-data"
+    ]["schema"]
+    schema_reference = request_schema["$ref"]
+    assert schema_reference.startswith("#/components/schemas/")
+
+    schema_name = schema_reference.rsplit("/", 1)[-1]
+    properties = document["components"]["schemas"][schema_name]["properties"]
+
+    assert properties["language"]["examples"] == ["ch"]
+    assert properties["mode"]["examples"] == ["auto"]
+    assert "example" not in properties["language"]
+    assert "example" not in properties["mode"]
