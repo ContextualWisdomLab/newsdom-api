@@ -8,6 +8,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
+from typing import TypedDict
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _SRC_ROOT = _REPO_ROOT / "src"
@@ -17,6 +18,17 @@ if str(_SRC_ROOT) not in sys.path:
 from pydantic import ValidationError  # noqa: E402
 
 from newsdom_api.schemas import BoundingBox, ParseResponse  # noqa: E402
+
+
+class _PageProvenance(TypedDict):
+    """Typed keyword arguments shared by records from one parsed page."""
+
+    document_id: str
+    parser: str
+    parse_status: str
+    page_number: int
+    page_width: float | None
+    page_height: float | None
 
 
 def _json_pointer(*tokens: str | int) -> str:
@@ -130,7 +142,7 @@ def flatten_dom(json_path: Path) -> list[dict[str, object]]:
     parse_status = document.quality.status
 
     for page_index, page in enumerate(document.pages):
-        common_page = {
+        common_page: _PageProvenance = {
             "document_id": document.document_id,
             "parser": parser,
             "parse_status": parse_status,
