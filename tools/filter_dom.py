@@ -1,5 +1,3 @@
-"""Filter validated NewsDOM JSON without discarding unselected document metadata."""
-
 from __future__ import annotations
 
 import argparse
@@ -28,16 +26,8 @@ def filter_dom(
     pages_to_keep: list[int] | None = None,
     articles_to_keep: list[str] | None = None,
     keyword: str | None = None,
-    remove_ads: bool = False,
-    remove_images: bool = False,
 ) -> dict:
-    """Return validated NewsDOM data filtered by selectors and removal flags.
-
-    Page, article, and keyword selectors compose with logical AND semantics.
-    ``remove_ads`` and ``remove_images`` then remove those content classes from
-    the retained structure while preserving text, quality metadata, and every
-    other page field.
-    """
+    """Filter validated NewsDOM JSON by pages, article IDs, and optional keyword."""
     if not json_path.is_file():
         raise FileNotFoundError(f"File not found or is not a file: {json_path}")
     if json_path.suffix.lower() != ".json":
@@ -65,9 +55,7 @@ def filter_dom(
             continue
 
         new_page = dict(page)
-        filtered_articles = [
-            dict(article) for article in new_page.get("articles", [])
-        ]
+        filtered_articles = list(new_page.get("articles", []))
 
         if articles_to_keep is not None:
             filtered_articles = [
@@ -83,15 +71,8 @@ def filter_dom(
                 if _matches_keyword(article, keyword)
             ]
 
-        if remove_images:
-            for article in filtered_articles:
-                article["images"] = []
-
-        if articles_to_keep is not None or keyword is not None or remove_images:
+        if articles_to_keep is not None or keyword is not None:
             new_page["articles"] = filtered_articles
-
-        if remove_ads:
-            new_page["ads"] = []
 
         filtered_pages.append(new_page)
 
@@ -103,8 +84,7 @@ def main(argv: list[str] | None = None) -> None:
     """Run the JSON filtering CLI."""
     parser = argparse.ArgumentParser(
         description=(
-            "Filter a NewsDOM JSON file by page, article, keyword, or removable "
-            "content class."
+            "Filter a NewsDOM JSON file by page number, article ID, or keyword."
         )
     )
     parser.add_argument(
@@ -114,10 +94,7 @@ def main(argv: list[str] | None = None) -> None:
         "-o",
         "--output",
         type=Path,
-        help=(
-            "Path to write the filtered JSON output file. If not provided, "
-            "prints to stdout."
-        ),
+        help="Path to write the filtered JSON output file. If not provided, prints to stdout.",
     )
     parser.add_argument(
         "--pages",
@@ -137,16 +114,6 @@ def main(argv: list[str] | None = None) -> None:
         type=str,
         help="Case-insensitive keyword to retain within a headline or body block.",
     )
-    parser.add_argument(
-        "--remove-ads",
-        action="store_true",
-        help="Remove advertisement text from every retained page.",
-    )
-    parser.add_argument(
-        "--remove-images",
-        action="store_true",
-        help="Remove image references from every retained article.",
-    )
 
     args = parser.parse_args(argv)
 
@@ -156,8 +123,6 @@ def main(argv: list[str] | None = None) -> None:
             pages_to_keep=args.pages,
             articles_to_keep=args.articles,
             keyword=args.keyword,
-            remove_ads=args.remove_ads,
-            remove_images=args.remove_images,
         )
 
         out_json = json.dumps(filtered_data, ensure_ascii=False, indent=2)
