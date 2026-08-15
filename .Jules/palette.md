@@ -9,7 +9,7 @@
 **Action:** Enhance Pydantic model properties with detailed `description` fields using `Field()` to automatically generate rich, self-documenting OpenAPI schemas for developers.
 
 ## 2026-06-02 - OpenAPI/Swagger Tagging Grouping
-**Learning:** Organizing API endpoints using `openapi_tags` significantly improves the readability of Swagger UI by logically grouping related endpoints (e.g., `Parser` vs `System`). This structural enhancement improves the Developer Experience (DX) for consumers of headless APIs.
+**Learning:** Organizing API endpoints using `openapi_tags` significantly improves the readability of Swagger UI by logically grouping related endpoints (e.g. `Parser` vs `System`). This structural enhancement improves the Developer Experience (DX) for consumers of headless APIs.
 **Action:** Always assign descriptive metadata to endpoints and utilize `openapi_tags` when building or enhancing FastAPI applications.
 
 ## 2026-06-01 - [Developer Experience as UX for APIs]
@@ -18,18 +18,20 @@
 
 ## 2025-03-01 - Enhance OpenAPI/Swagger DX for Headless API
 **Learning:** For a backend-only headless API where there is no frontend UI, the OpenAPI/Swagger documentation page acts as the primary user interface. Improving metadata such as `summary`, `description`, and parameter descriptions significantly improves Developer Experience (DX) and makes the API much more intuitive and accessible for developers testing or integrating the service.
-**Action:** When working on backend-only services, prioritize adding rich, clear OpenAPI metadata (titles, descriptions, summaries, file parameter descriptions) to endpoints. This provides the most significant "UX" value for these types of repositories.
+**Action:** When working on backend-only services, prioritize adding rich, clear OpenAPI metadata (titles, descriptions, summaries, file parameter descriptions) to endpoints. This provides the most significant UX value for these types of repositories.
+
 ## 2024-05-18 - Preserve required field status in Pydantic V2 schemas for OpenAPI
-**Learning:** When using Pydantic V2 schemas and FastAPI `File` dependency for OpenAPI documentation with `description` properties, `Field(description="...")` will silently mark fields as optional (not required) in the generated OpenAPI specs since there's an implicit `default=None` when `default` or `default_factory` are not defined.
-**Action:** Always explicitly use `Field(..., description="...")` (or `File(..., description="...")`) to properly preserve the required status for mandatory API fields and enhance Developer Experience (DX).
+**Learning:** When using Pydantic V2 schemas and FastAPI `File` dependency for OpenAPI documentation with `description` properties, `Field(description="...")` can silently mark fields as optional when no explicit required default is present.
+**Action:** Explicitly use `Field(..., description="...")` or `File(..., description="...")` for mandatory API fields and verify the generated OpenAPI required array.
+
 ## 2024-05-18 - Improve Swagger UI DX with swagger_ui_parameters
-**Learning:** The default Swagger UI configuration for FastAPI applications often lacks helpful features like request duration display or dark-themed syntax highlighting, and requires users to manually click "Try it out" for every endpoint.
-**Action:** Always configure `swagger_ui_parameters` in the `FastAPI()` instantiation with options like `{"displayRequestDuration": True, "syntaxHighlight.theme": "monokai", "tryItOutEnabled": True}` to significantly improve the Developer Experience (DX) when interacting with the API documentation.
+**Learning:** The default Swagger UI configuration for FastAPI applications often lacks helpful features like request duration display and requires users to manually click "Try it out" for every endpoint.
+**Action:** Configure only reviewed Swagger UI parameters that improve task completion without introducing remote assets or weakening the API security boundary.
 
-## 2026-07-07 - [Improve Swagger UX with Pydantic V2 Examples]
-**Learning:** Using json_schema_extra={'example': ...} instead of example=... in Pydantic V2 schemas ensures OpenAPI compatibility and prevents deprecation warnings, significantly improving Developer Experience (DX) for API consumers.
-**Action:** Apply json_schema_extra to Pydantic Field definitions to automatically generate rich, self-documenting OpenAPI schemas for headless APIs.
+## 2026-07-07 - [Use current JSON Schema examples metadata]
+**Learning:** OpenAPI 3.1 aligns Schema Objects with JSON Schema Draft 2020-12. The singular Schema Object `example` field is retained for compatibility but deprecated; the standard `examples` array is preferred.
+**Action:** Use FastAPI/Pydantic `examples=[...]` for schema-level examples and verify the generated `/openapi.json` document rather than relying on source declarations alone.
 
-## 2026-08-04 - [Improve DX for Form Parameters in OpenAPI]
-**Learning:** 백엔드 전용 API 서비스에서는 Swagger UI에서 제공되는 파라미터의 예시 데이터가 개발자 경험(DX)에 큰 영향을 미칩니다. Pydantic 스키마뿐만 아니라 FastAPI의 `Form` 디펜던시에도 `json_schema_extra`를 적용하여 구체적인 예시를 제공함으로써, API 소비자가 직관적으로 사용 방법을 이해할 수 있게 됩니다.
-**Action:** 멀티파트 폼 데이터와 같이 스키마가 아닌 의존성을 통해 데이터를 받는 엔드포인트에서도 항상 `json_schema_extra={"example": ...}`를 추가하여 OpenAPI 문서를 풍부하게 만들도록 합니다.
+## 2026-08-15 - [Improve DX for multipart form parameters]
+**Learning:** A headless API's generated OpenAPI document is a buyer-facing interface. Optional multipart form fields need realistic, schema-compatible examples, but the metadata must follow the current OpenAPI/JSON Schema contract.
+**Action:** Add `examples=[...]` to FastAPI `Form` declarations and lock the emitted multipart request schema with an exact contract test. Do not add a filename example that implies browsers can pre-populate a local file picker.
