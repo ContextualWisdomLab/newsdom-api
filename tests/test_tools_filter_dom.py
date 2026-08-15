@@ -22,7 +22,14 @@ def valid_dom_data() -> dict:
                         "article_id": "art-1",
                         "headline": "Apple Straße opens",
                         "body_blocks": ["Camera launch details."],
-                        "images": [],
+                        "images": [
+                            {
+                                "path": "images/art-1-camera.png",
+                                "media_type": "image/png",
+                                "captions": [],
+                                "footnotes": [],
+                            }
+                        ],
                         "captions": [],
                         "footnotes": [],
                     },
@@ -35,7 +42,7 @@ def valid_dom_data() -> dict:
                         "footnotes": [],
                     },
                 ],
-                "ads": [],
+                "ads": ["Buy the morning edition."],
                 "headers": [],
                 "footers": [],
                 "page_numbers": [],
@@ -52,7 +59,7 @@ def valid_dom_data() -> dict:
                         "footnotes": [],
                     }
                 ],
-                "ads": [],
+                "ads": ["Subscribe today."],
                 "headers": [],
                 "footers": [],
                 "page_numbers": [],
@@ -75,6 +82,10 @@ def test_filter_dom_no_filters(tmp_path: Path, valid_dom_data: dict) -> None:
 
     assert len(result["pages"]) == 2
     assert len(result["pages"][0]["articles"]) == 2
+    assert result["pages"][0]["ads"] == ["Buy the morning edition."]
+    assert result["pages"][0]["articles"][0]["images"][0]["path"] == (
+        "images/art-1-camera.png"
+    )
 
 
 def test_filter_dom_by_pages(tmp_path: Path, valid_dom_data: dict) -> None:
@@ -139,6 +150,30 @@ def test_filter_dom_combines_page_article_and_keyword_filters(
     assert len(result["pages"]) == 1
     assert [article["article_id"] for article in result["pages"][0]["articles"]] == [
         "art-1"
+    ]
+
+
+def test_filter_dom_removes_ads_and_images_after_selecting_articles(
+    tmp_path: Path, valid_dom_data: dict
+) -> None:
+    input_file = _write_dom(tmp_path, valid_dom_data)
+
+    result = filter_dom(
+        input_file,
+        pages_to_keep=[1],
+        articles_to_keep=["art-1"],
+        remove_ads=True,
+        remove_images=True,
+    )
+
+    assert len(result["pages"]) == 1
+    assert result["pages"][0]["ads"] == []
+    assert [article["article_id"] for article in result["pages"][0]["articles"]] == [
+        "art-1"
+    ]
+    assert result["pages"][0]["articles"][0]["images"] == []
+    assert result["pages"][0]["articles"][0]["body_blocks"] == [
+        "Camera launch details."
     ]
 
 
@@ -223,6 +258,23 @@ def test_main_accepts_keyword_filter(
     assert [article["article_id"] for article in out_data["pages"][0]["articles"]] == [
         "art-1"
     ]
+
+
+def test_main_accepts_content_removal_filters(
+    tmp_path: Path, valid_dom_data: dict, capsys: pytest.CaptureFixture[str]
+) -> None:
+    input_file = _write_dom(tmp_path, valid_dom_data)
+
+    main([str(input_file), "--remove-ads", "--remove-images"])
+
+    captured = capsys.readouterr()
+    out_data = json.loads(captured.out)
+    assert all(page["ads"] == [] for page in out_data["pages"])
+    assert all(
+        article["images"] == []
+        for page in out_data["pages"]
+        for article in page["articles"]
+    )
 
 
 def test_main_error(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
