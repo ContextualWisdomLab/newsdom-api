@@ -48,6 +48,7 @@ PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
 INVALID_PARSE_PARAMS_DETAIL = "Invalid parse parameters"
 UNAUTHORIZED_DETAIL = "Unauthorized"
 SERVICE_UNAVAILABLE_DETAIL = "Service Unavailable"
+UPLOAD_READ_CHUNK_SIZE_BYTES = 1024 * 1024
 LOGGER = logging.getLogger("newsdom_api")
 BEARER_SCHEME = HTTPBearer(auto_error=False, scheme_name="BearerAuth")
 
@@ -252,7 +253,8 @@ async def parse(
             temporary_file.write(header)
 
             bytes_read = len(header)
-            while chunk := await file.read(8192):
+            # ⚡ Bolt: Increase chunk size to 1MB to reduce threadpool and context-switching overhead
+            while chunk := await file.read(UPLOAD_READ_CHUNK_SIZE_BYTES):
                 bytes_read += len(chunk)
                 if bytes_read > MAX_PARSE_UPLOAD_BYTES:
                     LOGGER.warning(
