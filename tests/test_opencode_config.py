@@ -5,8 +5,8 @@ from pathlib import Path
 
 
 OPENCODE_CONFIG = Path("opencode.jsonc")
-DEFAULT_MODEL = "nvidia-nim/nvidia/llama-3.3-nemotron-super-49b-v1.5"
-SMALL_MODEL = "nvidia-nim/meta/llama-3.3-70b-instruct"
+DEFAULT_MODEL = "nvidia-nim/nvidia/nemotron-3-ultra-550b-a55b"
+SMALL_MODEL = "nvidia-nim/nvidia/nemotron-3-super-120b-a12b"
 NIM_BASE_URL = "https://integrate.api.nvidia.com/v1"
 FORBIDDEN_FRAGMENTS = (
     "github-models",
@@ -41,7 +41,8 @@ def test_opencode_uses_nvidia_nim_only() -> None:
     assert nim["npm"] == "@ai-sdk/openai-compatible"
     assert nim["options"]["baseURL"] == NIM_BASE_URL
     assert nim["options"]["apiKey"] == "{env:NVIDIA_API_KEY}"
-    assert "nvidia/llama-3.3-nemotron-super-49b-v1.5" in nim["models"]
+    assert "nvidia/nemotron-3-ultra-550b-a55b" in nim["models"]
+    assert "nvidia/nemotron-3-super-120b-a12b" in nim["models"]
 
 
 def test_opencode_rejects_github_models_and_copilot_tokens() -> None:
