@@ -12,6 +12,8 @@ Apply this checklist whenever the FastAPI surface changes.
 ## Baseline checks
 
 - validate upload handling and content-type expectations for `/parse`
+- keep structural PDF validation off the ASGI event loop in a
+  disposable child with CPU, memory, and wall-clock limits
 - ensure error messages do not leak private reference paths,
   secrets, or credentials
 - keep synthetic fixtures in tests and examples; never use private

@@ -4,8 +4,6 @@ from pathlib import Path
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
-from pypdf.errors import PdfReadError
-
 from newsdom_api import mineru_runner
 from newsdom_api.main import (
     MAX_PARSE_UPLOAD_BYTES,
@@ -86,26 +84,22 @@ def test_parse_endpoint_rejects_invalid_pdf_magic_bytes():
     assert response.json()["detail"] == "Unsupported Media Type"
 
 
-def test_validate_pdf_structure_rejects_invalid_magic_bytes(tmp_path):
+@pytest.mark.asyncio
+async def test_validate_pdf_structure_rejects_invalid_magic_bytes(tmp_path):
     with pytest.raises(HTTPException) as exc_info:
         (tmp_path / "test.pdf").write_bytes(b"not a pdf")
-        _validate_pdf_structure(tmp_path / "test.pdf")
+        await _validate_pdf_structure(tmp_path / "test.pdf")
 
     assert exc_info.value.status_code == 415
     assert exc_info.value.detail == "Unsupported Media Type"
     assert exc_info.value.__cause__ is None
 
 
-def test_validate_pdf_structure_rejects_pypdf_read_errors(monkeypatch, tmp_path):
-    def reject_pdf(_stream, *, strict):
-        assert strict is True
-        raise PdfReadError("invalid xref table")
-
-    monkeypatch.setattr("newsdom_api.main.PdfReader", reject_pdf)
-
+@pytest.mark.asyncio
+async def test_validate_pdf_structure_rejects_pypdf_read_errors(tmp_path):
     with pytest.raises(HTTPException) as exc_info:
         (tmp_path / "test.pdf").write_bytes(b"%PDF-1.4\n%%EOF")
-        _validate_pdf_structure(tmp_path / "test.pdf")
+        await _validate_pdf_structure(tmp_path / "test.pdf")
 
     assert exc_info.value.status_code == 415
     assert exc_info.value.detail == "Unsupported Media Type"
@@ -127,14 +121,7 @@ def test_parse_endpoint_rejects_prefixed_non_pdf_payload():
     assert response.json()["detail"] == "Unsupported Media Type"
 
 
-def test_parse_endpoint_rejects_pdf_without_pages(monkeypatch):
-    class EmptyPdfReader:
-        pages = []
-
-    monkeypatch.setattr(
-        "newsdom_api.main.PdfReader", lambda *_args, **_kwargs: EmptyPdfReader()
-    )
-
+def test_parse_endpoint_rejects_pdf_without_pages():
     client = TestClient(app)
     response = client.post(
         "/parse",
@@ -145,23 +132,19 @@ def test_parse_endpoint_rejects_pdf_without_pages(monkeypatch):
 
 
 def test_parse_endpoint_accepts_structurally_valid_pdf(monkeypatch):
-    class OnePagePdfReader:
-        pages = [object()]
+    fixture = Path("tests/fixtures/synthetic_reference.pdf").read_bytes()
 
     def fake_parse_pdf_bytes(file_path, filename, **kwargs):
-        assert file_path.read_bytes() == b"%PDF-1.4\n%%EOF"
+        assert file_path.read_bytes() == fixture
         assert filename == "fixture.pdf"
         return {"document_id": "fixture", "pages": []}
 
-    monkeypatch.setattr(
-        "newsdom_api.main.PdfReader", lambda *_args, **_kwargs: OnePagePdfReader()
-    )
     monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
 
     client = TestClient(app)
     response = client.post(
         "/parse",
-        files={"file": ("fixture.pdf", b"%PDF-1.4\n%%EOF", "application/pdf")},
+        files={"file": ("fixture.pdf", fixture, "application/pdf")},
     )
     assert response.status_code == 200
 

@@ -92,8 +92,15 @@ a cluster-specific registry trust policy.
 - Capture sanitized logs outside request temporary directories when a delivery
   path fails.
 - Expect `/parse` failures to stay sanitized: use generic client-facing details
-  for `503 Service Unavailable` when the backend runtime cannot execute and `502
-  Bad Gateway` when required OCR artifacts are missing or invalid.
+  for `415 Unsupported Media Type` when isolated structural validation rejects
+  the upload, `503 Service Unavailable` when the validator cannot start or the
+  backend runtime cannot execute, and `502 Bad Gateway` when required OCR
+  artifacts are missing or invalid.
+- Isolated validation uses a 5-second wall-clock limit, 5 CPU seconds, and a
+  512 MiB address-space cap in a disposable child. On 415, re-export the
+  document as a standard PDF and retry. On validator 503, confirm the Linux
+  host still exposes `RLIMIT_CPU` and `RLIMIT_AS`, then roll back to the
+  previous image if the child cannot spawn.
 - Reconcile the failure against `README.md`, `CHANGELOG.md`, package/OpenAPI
   versions, and the relevant workflow before closing the task.
 
