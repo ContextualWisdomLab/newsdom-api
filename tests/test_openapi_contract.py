@@ -43,6 +43,10 @@ def test_parse_multipart_schema_guides_callers_to_a_valid_request() -> None:
         properties["file"].get("format", "binary") == "binary"
     )  # FastAPI > 0.100 might use contentMediaType instead
     assert properties["language"]["default"] == "ch"
-    assert properties["language"]["example"] == "ch"
+    assert properties["language"].get("example") == "ch" or properties["language"].get(
+        "examples"
+    ) == ["ch"]
     assert properties["mode"]["default"] == "auto"
-    assert properties["mode"]["example"] == "auto"
+    assert properties["mode"].get("example") == "auto" or properties["mode"].get(
+        "examples"
+    ) == ["auto"]
