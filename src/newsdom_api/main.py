@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import asyncio
 import hmac
 import logging
@@ -250,7 +249,6 @@ async def parse(
             raise HTTPException(status_code=415, detail=UNSUPPORTED_MEDIA_DETAIL)
 
         with tempfile.NamedTemporaryFile(delete=False) as temporary_file:
-            os.chmod(temporary_file.name, 0o600)
             tmp_path = Path(temporary_file.name)
             LOGGER.debug("Created temporary upload file %s", tmp_path)
             temporary_file.write(header)
