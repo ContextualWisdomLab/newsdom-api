@@ -64,6 +64,8 @@ spec:
                 secretKeyRef:
                   name: newsdom-api-runtime
                   key: api_token
+            - name: NEWSDOM_MAX_CONCURRENT_PARSES
+              value: "1"
             - name: NEWSDOM_MINERU_BIN
               value: /opt/mineru/bin/mineru
           volumeMounts:

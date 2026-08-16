@@ -10,7 +10,11 @@ from typing import Mapping
 API_TOKEN_ENV_VAR = "NEWSDOM_API_TOKEN"
 AUTH_MODE_ENV_VAR = "NEWSDOM_AUTH_MODE"
 RUNTIME_PROFILE_ENV_VAR = "NEWSDOM_RUNTIME_PROFILE"
+MAX_CONCURRENT_PARSES_ENV_VAR = "NEWSDOM_MAX_CONCURRENT_PARSES"
 MAX_BEARER_HEADER_BYTES = 4096
+DEFAULT_MAX_CONCURRENT_PARSES = 1
+MIN_MAX_CONCURRENT_PARSES = 1
+MAX_MAX_CONCURRENT_PARSES = 128
 
 
 class RuntimeConfigurationError(ValueError):
@@ -38,9 +42,19 @@ class RuntimeSettings:
     authentication_mode: AuthenticationMode = AuthenticationMode.REQUIRED
     runtime_profile: RuntimeProfile = RuntimeProfile.PRODUCTION
     api_token: str | None = field(default=None, repr=False)
+    max_concurrent_parses: int = DEFAULT_MAX_CONCURRENT_PARSES
 
     def __post_init__(self) -> None:
         """Normalize secrets once and reject unsafe direct construction."""
+
+        if not (
+            MIN_MAX_CONCURRENT_PARSES
+            <= self.max_concurrent_parses
+            <= MAX_MAX_CONCURRENT_PARSES
+        ):
+            raise RuntimeConfigurationError(
+                f"{MAX_CONCURRENT_PARSES_ENV_VAR} must be an integer in 1..128"
+            )
 
         if (
             self.authentication_mode is AuthenticationMode.DISABLED
@@ -109,6 +123,24 @@ def get_api_token(source: Mapping[str, str] | None = None) -> str | None:
     return token or None
 
 
+def _parse_max_concurrent_parses(source: Mapping[str, str]) -> int:
+    """Parse the process-local parser admission cap or fail closed."""
+
+    raw = source.get(
+        MAX_CONCURRENT_PARSES_ENV_VAR, str(DEFAULT_MAX_CONCURRENT_PARSES)
+    ).strip()
+    if not raw.isdigit():
+        raise RuntimeConfigurationError(
+            f"Invalid value for {MAX_CONCURRENT_PARSES_ENV_VAR}; use an integer in 1..128"
+        )
+    value = int(raw)
+    if not (MIN_MAX_CONCURRENT_PARSES <= value <= MAX_MAX_CONCURRENT_PARSES):
+        raise RuntimeConfigurationError(
+            f"Invalid value for {MAX_CONCURRENT_PARSES_ENV_VAR}; use an integer in 1..128"
+        )
+    return value
+
+
 def load_runtime_settings(
     source: Mapping[str, str] | None = None,
 ) -> RuntimeSettings:
@@ -136,4 +168,5 @@ def load_runtime_settings(
         authentication_mode=authentication_mode,
         runtime_profile=runtime_profile,
         api_token=get_api_token(values),
+        max_concurrent_parses=_parse_max_concurrent_parses(values),
     )
