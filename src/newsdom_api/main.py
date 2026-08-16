@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import hmac
+import inspect
 import logging
 import tempfile
 from pathlib import Path
@@ -21,8 +22,6 @@ from fastapi import (
 )
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
-from pypdf import PdfReader
-from pypdf.errors import PdfReadError
 
 from .config import (
     AuthenticationMode,
@@ -37,6 +36,10 @@ from .mineru_runner import (
     mineru_runtime_available,
     normalize_language,
     normalize_mode,
+)
+from .pdf_structure_validator import (
+    ValidationOutcome,
+    validate_pdf_structure_isolated,
 )
 from .schemas import HealthResponse, ParseResponse, ReadinessResponse
 from .service import parse_pdf
@@ -182,22 +185,17 @@ def ready(request: Request) -> ReadinessResponse:
     return ReadinessResponse()
 
 
-def _validate_pdf_structure(file_path: Path) -> None:
-    """Reject payloads that are not structurally parseable PDFs."""
+async def _validate_pdf_structure(file_path: Path) -> None:
+    """Reject unparseable or limit-killed PDFs with 415; fail closed with 503."""
 
-    with file_path.open("rb") as file_handle:
-        magic = file_handle.read(5)
-    if magic != b"%PDF-":
+    outcome = await validate_pdf_structure_isolated(file_path)
+    if outcome is ValidationOutcome.INVALID_DOCUMENT:
         raise HTTPException(status_code=415, detail=UNSUPPORTED_MEDIA_DETAIL)
-    try:
-        reader = PdfReader(file_path, strict=True)
-        if len(reader.pages) < 1:
-            raise ValueError("PDF has no pages")
-    except (PdfReadError, RecursionError, ValueError, OverflowError):
+    if outcome is ValidationOutcome.VALIDATOR_FAILURE:
+        LOGGER.error("PDF structural validator failed closed")
         raise HTTPException(
-            status_code=415,
-            detail=UNSUPPORTED_MEDIA_DETAIL,
-        ) from None
+            status_code=503, detail=SERVICE_UNAVAILABLE_DETAIL
+        )
 
 
 async def parse(
@@ -266,7 +264,9 @@ async def parse(
                 temporary_file.write(chunk)
 
         LOGGER.debug("Wrote %s upload bytes to %s", bytes_read, tmp_path)
-        _validate_pdf_structure(tmp_path)
+        validation = _validate_pdf_structure(tmp_path)
+        if inspect.isawaitable(validation):
+            await validation
         return await asyncio.to_thread(
             parse_pdf,
             tmp_path,

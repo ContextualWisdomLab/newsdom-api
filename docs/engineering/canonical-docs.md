@@ -41,6 +41,8 @@ for a given question.
 - `docs/engineering/skills-subagents-mcp.md` — subagent/MCP defaults
 - `docs/security/api-security-checklist.md` — API hardening baseline
   for FastAPI surface changes
+- `docs/doctoring/` — standards, papers, and APA 7th citations that
+  justify runtime boundaries (authentication, isolated PDF validation)
 
 ## Planning truth
 
