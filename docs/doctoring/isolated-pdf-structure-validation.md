@@ -16,8 +16,9 @@ boundary. The parent FastAPI worker copies at most 20 MiB to a
 temporary file, then starts a disposable child that applies CPU and
 address-space limits before `pypdf.PdfReader(..., strict=True)`. The
 parent enforces a 5-second wall-clock timeout and kills the child.
-The child prints one JSON object `{"outcome":"..."}` and never echoes
-paths, exception text, or uploaded bytes.
+The child prints one JSON object whose `outcome` is exactly `valid`,
+`invalid_document`, or `validator_failure`, and never echoes paths,
+exception text, or uploaded bytes.
 
 This is a leaf-service control. A naruon gateway may add tenant
 fairness or a job queue, but bypassing the gateway must not restore
@@ -30,7 +31,7 @@ unbounded in-process parsing.
 | `valid` | Continue to MinerU | None |
 | `invalid_document` | `415 Unsupported Media Type` | Ask the client to re-export the PDF |
 | timeout / killed child | `415 Unsupported Media Type` | Treat as a pathological PDF; do not raise worker concurrency |
-| spawn or missing `setrlimit` | `503 Service Unavailable` | Restore the previous image or move the replica to a Linux host with POSIX resource limits |
+| `validator_failure` | `503 Service Unavailable` | Restore the previous image or move the replica to a Linux host with POSIX resource limits |
 
 ## Limits
 
