@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > acceptance are aligned for an actual 0.3.0 publication.
 
 ### Changed
+- `/parse`의 413/415 오류는 허용되는 PDF 조건과 정확한 20 MiB 업로드 한계, 그리고 재시도에 필요한 다음 행동을 고정된 비민감 응답으로 안내합니다.
 - `/parse`를 언어 선택형 파서로 일반화: MinerU `-l japan`/`-m ocr` 하드코딩을 제거하고 optional form 필드 `language`(MinerU 3.4.4 공식 기본 `ch`, 공개 언어군/alias 검증)와 `mode`(`auto`/`ocr`/`txt`, 기본 `auto`)로 파라미터화. `mode=auto`는 born-digital PDF가 강제 OCR을 건너뛰도록 함. 기존 입력 `language=japan&mode=ocr`는 공식 규약대로 `ch`/`ocr`로 정규화됨.
 - OpenAPI 제목/설명, README, `ArticleNode.headline` 문서를 일반 문서용 (section heading) 표현으로 재구성하여 특정 언어/신문 가정을 소비자에게 노출하지 않도록 함. 응답 스키마 필드는 하위 호환을 위해 변경하지 않음.
 
@@ -41,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - [CLI] 여러 개의 분할된 NewsDOM JSON 파일을 하나의 문서로 병합하는 `tools/merge_dom.py` 도구를 추가했습니다.
+- [CLI] NewsDOM JSON 파일의 모든 텍스트 내용을 마스킹하여 익명화하는 `tools/anonymize_dom.py` 도구를 추가했습니다.
 - [CLI] 파싱된 NewsDOM JSON 데이터를 CSV 형식으로 추출하는 `tools/export_csv.py` 도구를 추가했습니다.
 - [CLI] 파싱된 NewsDOM JSON을 HTML 포맷으로 변환하여 웹 브라우저에서 보기 쉽게 만들어주는 `tools/export_html.py` 도구를 추가했습니다.
 - [CLI] 파싱된 NewsDOM JSON이 Pydantic 스키마(`ParseResponse`)와 일치하는지 엄격하게 검증하는 `tools/validate_dom.py` 도구 추가
@@ -106,7 +108,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - MinerU-backed DOM parsing API for scanned Japanese newspaper PDFs
 - Synthetic newspaper fixture generation and structural equivalence checks
-- Protected-branch CI, security gates, release provenance workflow, and Git Flow documentation
+- Protected-branch CI, security gates, release provenance workflow
 
 [Unreleased]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
