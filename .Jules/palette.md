@@ -29,3 +29,7 @@
 ## 2026-07-07 - [Improve Swagger UX with Pydantic V2 Examples]
 **Learning:** Using json_schema_extra={'example': ...} instead of example=... in Pydantic V2 schemas ensures OpenAPI compatibility and prevents deprecation warnings, significantly improving Developer Experience (DX) for API consumers.
 **Action:** Apply json_schema_extra to Pydantic Field definitions to automatically generate rich, self-documenting OpenAPI schemas for headless APIs.
+
+## 2024-05-24 - [OpenAPI Swagger UI DX 개선]
+**Learning:** 백엔드 전용 서비스에서 프론트엔드 UX 대신 개발자 경험(DX)을 개선하기 위해 OpenAPI 스키마에 Pydantic `Field` 및 FastAPI `Form`의 `json_schema_extra`를 활용하여 직관적인 페이로드 예시를 제공하는 것이 중요함을 배웠습니다.
+**Action:** 앞으로 Pydantic 모델과 FastAPI 의존성을 정의할 때 명확한 설명과 함께 JSON 예시를 항상 추가하여 API 소비자의 사용성을 높일 것입니다.
