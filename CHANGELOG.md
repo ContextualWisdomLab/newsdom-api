@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CLI] 파싱된 NewsDOM JSON에서 순수 텍스트 데이터를 추출하여 텍스트 파일 또는 stdout으로 출력하는 `tools/extract_text.py` 도구를 추가했습니다.
 
 ### Security
+- `/parse` now admits expensive MinerU work with a process-local, non-waiting cap (`NEWSDOM_MAX_CONCURRENT_PARSES`, default `1`, range `1..128`) after authentication and before the multipart body is read. A saturated replica returns the fixed `429 Too Many Requests` body and `Retry-After: 1` so callers retry once instead of opening a queue or treating overload as `503`. Each FastAPI application owns its own limiter. The upload chunk stays 8 KiB until a reviewed #534 benchmark selects another value. On 429, wait one second and retry; add replicas or raise the integer cap only after measuring RSS.
 - `/parse` authentication is now immutable per application instance and fails closed before multipart body parsing when required configuration is missing. Hostile missing, invalid, Unicode, oversized, and duplicated Authorization headers return one non-sensitive response.
 - Added unauthenticated `/ready` traffic readiness that combines authentication configuration with MinerU executable availability while `/health` remains liveness-only.
 - Hardened the Kubernetes deployment example with a restricted namespace policy, explicit non-root UID/GID, `RuntimeDefault` seccomp, disabled privilege escalation, dropped Linux capabilities, a read-only root filesystem, and bounded writable runtime volumes.

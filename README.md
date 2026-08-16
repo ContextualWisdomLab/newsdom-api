@@ -54,6 +54,7 @@ docker build -t newsdom-api .
 docker run -e NEWSDOM_AUTH_MODE=required \
   -e NEWSDOM_RUNTIME_PROFILE=production \
   -e NEWSDOM_API_TOKEN="$NEWSDOM_API_TOKEN" \
+  -e NEWSDOM_MAX_CONCURRENT_PARSES=1 \
   -p 8000:8000 newsdom-api
 ```
 
@@ -157,13 +158,16 @@ secret from the deployment secret store:
 export NEWSDOM_AUTH_MODE=required
 export NEWSDOM_RUNTIME_PROFILE=production
 export NEWSDOM_API_TOKEN=$(openssl rand -hex 32)
+export NEWSDOM_MAX_CONCURRENT_PARSES=1
 uv run uvicorn --app-dir src newsdom_api.main:app
 curl -F "file=@sample.pdf" -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
   http://127.0.0.1:8000/parse
 ```
 
 Missing or invalid caller credentials receive a fixed `401`; a missing required
-server token returns a fixed `503` before the upload body is processed. `GET
+server token returns a fixed `503` before the upload body is processed. A
+saturated replica returns a fixed `429` with `Retry-After: 1`. Wait one second
+and retry; add replicas before raising `NEWSDOM_MAX_CONCURRENT_PARSES`. `GET
 /health` remains unauthenticated liveness. `GET /ready` succeeds only when the
 authentication configuration and MinerU runtime can accept traffic.
 

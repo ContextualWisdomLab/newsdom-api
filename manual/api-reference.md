@@ -68,6 +68,10 @@ else:
 
 #### 실패 응답 계약
 
+- `429 Too Many Requests`
+  - 이 프로세스의 동시 `/parse` 한도에 도달했을 때 반환됩니다. `Retry-After`
+    초만큼 기다린 뒤 한 번 재시도하십시오. 지속되면 레플리카를 늘리거나
+    `NEWSDOM_MAX_CONCURRENT_PARSES`를 RSS 측정 후에만 올리십시오.
 - `503 Service Unavailable`
   - backend parser 실행 파일을 찾을 수 없거나 실행 자체가 실패했을 때 반환됩니다.
 - `502 Bad Gateway`

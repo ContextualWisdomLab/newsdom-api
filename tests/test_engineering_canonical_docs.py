@@ -42,6 +42,7 @@ def test_architecture_doc_describes_runtime_modules() -> None:
     text = Path("ARCHITECTURE.md").read_text(encoding="utf-8")
     for expected in (
         "src/newsdom_api/main.py",
+        "src/newsdom_api/parse_admission.py",
         "src/newsdom_api/service.py",
         "src/newsdom_api/mineru_runner.py",
         "src/newsdom_api/dom_builder.py",
@@ -60,6 +61,7 @@ def test_canonical_docs_index_maps_existing_truth_sources() -> None:
         "docs/agents/README.md",
         "docs/coderabbit/review-commands.md",
         "docs/security/api-security-checklist.md",
+        "docs/doctoring/",
         "docs/workflow/git-flow.md",
         "manual/index.md",
         "docs/plans/",

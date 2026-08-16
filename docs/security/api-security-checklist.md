@@ -12,6 +12,8 @@ Apply this checklist whenever the FastAPI surface changes.
 ## Baseline checks
 
 - validate upload handling and content-type expectations for `/parse`
+- keep process-local `/parse` admission non-waiting and return `429`
+  with `Retry-After` before multipart body reads when the replica is full
 - ensure error messages do not leak private reference paths,
   secrets, or credentials
 - keep synthetic fixtures in tests and examples; never use private

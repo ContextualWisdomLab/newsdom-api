@@ -38,16 +38,20 @@ from .mineru_runner import (
     normalize_language,
     normalize_mode,
 )
+from .parse_admission import ParseAdmissionLimiter
 from .schemas import HealthResponse, ParseResponse, ReadinessResponse
 from .service import parse_pdf
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
 MAX_AUTHORIZATION_HEADER_BYTES = MAX_BEARER_HEADER_BYTES
+PARSE_UPLOAD_CHUNK_BYTES = 8192
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
 PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
 INVALID_PARSE_PARAMS_DETAIL = "Invalid parse parameters"
 UNAUTHORIZED_DETAIL = "Unauthorized"
+TOO_MANY_REQUESTS_DETAIL = "Too Many Requests"
 SERVICE_UNAVAILABLE_DETAIL = "Service Unavailable"
+RETRY_AFTER_SECONDS = "1"
 LOGGER = logging.getLogger("newsdom_api")
 BEARER_SCHEME = HTTPBearer(auto_error=False, scheme_name="BearerAuth")
 
@@ -108,6 +112,25 @@ def _unauthorized_response() -> JSONResponse:
     )
 
 
+def _too_many_requests_response() -> JSONResponse:
+    """Return one fixed overload response that tells the caller when to retry."""
+
+    return JSONResponse(
+        status_code=429,
+        content={"detail": TOO_MANY_REQUESTS_DETAIL},
+        headers={"Retry-After": RETRY_AFTER_SECONDS},
+    )
+
+
+def _parse_admission_limiter(request: Request) -> ParseAdmissionLimiter:
+    """Return the process-local limiter bound to this application instance."""
+
+    limiter = request.app.state.parse_admission_limiter
+    if not isinstance(limiter, ParseAdmissionLimiter):
+        raise RuntimeError("Parser admission limiter is unavailable")
+    return limiter
+
+
 def _parse_access_failure(request: Request) -> JSONResponse | None:
     """Validate `/parse` authorization before multipart upload parsing begins."""
 
@@ -146,6 +169,14 @@ async def security_boundary_middleware(
         failure = _parse_access_failure(request)
         if failure is not None:
             return _apply_security_headers(failure, request)
+        limiter = _parse_admission_limiter(request)
+        if not limiter.try_acquire():
+            return _apply_security_headers(_too_many_requests_response(), request)
+        try:
+            response = await call_next(request)
+            return _apply_security_headers(response, request)
+        finally:
+            limiter.release()
     response = await call_next(request)
     return _apply_security_headers(response, request)
 
@@ -252,7 +283,7 @@ async def parse(
             temporary_file.write(header)
 
             bytes_read = len(header)
-            while chunk := await file.read(8192):
+            while chunk := await file.read(PARSE_UPLOAD_CHUNK_BYTES):
                 bytes_read += len(chunk)
                 if bytes_read > MAX_PARSE_UPLOAD_BYTES:
                     LOGGER.warning(
@@ -324,6 +355,9 @@ def create_app(
         },
     )
     application.state.runtime_settings = application_settings
+    application.state.parse_admission_limiter = ParseAdmissionLimiter(
+        application_settings.max_concurrent_parses
+    )
     application.state.runtime_readiness_probe = (
         runtime_readiness_probe or mineru_runtime_available
     )
@@ -365,6 +399,7 @@ def create_app(
         responses={
             401: {"description": UNAUTHORIZED_DETAIL},
             413: {"description": PAYLOAD_TOO_LARGE_DETAIL},
+            429: {"description": TOO_MANY_REQUESTS_DETAIL},
             415: {"description": UNSUPPORTED_MEDIA_DETAIL},
             422: {"description": INVALID_PARSE_PARAMS_DETAIL},
             502: {"description": "Bad Gateway"},

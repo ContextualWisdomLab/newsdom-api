@@ -63,6 +63,8 @@ Tests marked `integration` require the MinerU CLI and model cache
 
 - `src/newsdom_api/main.py` — FastAPI entrypoint exposing `/health`
   and `/parse`.
+- `src/newsdom_api/parse_admission.py` — process-local non-waiting
+  `/parse` admission (`429` + `Retry-After` when saturated).
 - `src/newsdom_api/service.py` — orchestrates PDF parsing,
   request-scoped temporary files, and response construction.
 - `src/newsdom_api/mineru_runner.py` — shells out to the MinerU CLI
@@ -76,10 +78,11 @@ Tests marked `integration` require the MinerU CLI and model cache
 - `src/newsdom_api/synthetic.py` / `equivalence.py` — synthetic
   fixture generation and structural comparison.
 
-Request flow: upload → temp workspace → MinerU run → DOM
-normalization → typed JSON. MinerU runtime-unavailable failures map
-to `503`; incomplete MinerU output maps to `502`. Error responses are
-sanitized — no internal exception chains at the public boundary.
+Request flow: authorize → admit → temp workspace → MinerU run → DOM
+normalization → typed JSON. Saturation maps to `429`; MinerU
+runtime-unavailable failures map to `503`; incomplete MinerU output
+maps to `502`. Error responses are sanitized — no internal exception
+chains at the public boundary.
 
 Supporting areas: `tests/fixtures/` (synthetic fixtures and
 provenance notes), `tools/` (local CLI maintenance utilities such as

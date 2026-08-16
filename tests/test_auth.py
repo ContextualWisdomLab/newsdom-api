@@ -38,6 +38,7 @@ def _settings(
     token: str | None = "s3cret-token",
     mode: AuthenticationMode = AuthenticationMode.REQUIRED,
     profile: RuntimeProfile = RuntimeProfile.PRODUCTION,
+    max_concurrent_parses: int = 1,
 ) -> RuntimeSettings:
     """Build one explicit immutable settings object for an application test."""
 
@@ -45,6 +46,7 @@ def _settings(
         authentication_mode=mode,
         runtime_profile=profile,
         api_token=token,
+        max_concurrent_parses=max_concurrent_parses,
     )
 
 
@@ -346,7 +348,8 @@ def test_concurrent_requests_cannot_switch_authentication_state(
     """Concurrent callers should observe one frozen token and mode."""
 
     application = create_app(
-        _settings(token="fixed"), runtime_readiness_probe=lambda: True
+        _settings(token="fixed", max_concurrent_parses=10),
+        runtime_readiness_probe=lambda: True,
     )
 
     def request(token: str) -> int:
@@ -407,3 +410,4 @@ def test_config_module_exposes_versioned_environment_contract() -> None:
     assert config.API_TOKEN_ENV_VAR == "NEWSDOM_API_TOKEN"
     assert config.AUTH_MODE_ENV_VAR == "NEWSDOM_AUTH_MODE"
     assert config.RUNTIME_PROFILE_ENV_VAR == "NEWSDOM_RUNTIME_PROFILE"
+    assert config.MAX_CONCURRENT_PARSES_ENV_VAR == "NEWSDOM_MAX_CONCURRENT_PARSES"

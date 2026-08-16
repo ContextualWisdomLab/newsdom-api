@@ -10,6 +10,9 @@ orchestration, MinerU process execution, and DOM normalization.
 
 - `src/newsdom_api/main.py` exposes `/health` and `/parse`
   through FastAPI.
+- `src/newsdom_api/parse_admission.py` holds a process-local,
+  non-waiting limiter so one replica cannot start unbounded MinerU
+  work. A saturated replica returns `429` with `Retry-After: 1`.
 - `src/newsdom_api/service.py` orchestrates PDF parsing,
   temporary files, and response construction.
 - `src/newsdom_api/mineru_runner.py` shells out to the MinerU CLI,
@@ -25,9 +28,11 @@ orchestration, MinerU process execution, and DOM normalization.
 
 ## Request flow
 
-1. `src/newsdom_api/main.py` receives an uploaded PDF.
-2. `src/newsdom_api/service.py` writes the upload to a temporary
-   workspace and calls MinerU.
+1. `src/newsdom_api/main.py` authorizes the caller, then acquires one
+   process-local parse lease before reading the multipart body.
+2. A saturated replica returns `429 Too Many Requests` without copying
+   the upload or calling MinerU. An admitted request is written to a
+   temporary workspace and `src/newsdom_api/service.py` calls MinerU.
 3. `src/newsdom_api/mineru_runner.py` resolves the executable, runs
    the OCR pipeline, loads generated JSON artifacts, and raises typed
    sanitized errors for runtime-unavailable or incomplete-output cases.
@@ -35,7 +40,27 @@ orchestration, MinerU process execution, and DOM normalization.
    canonical response while preserving page-aware structure from
    MinerU model metadata.
 5. FastAPI returns typed JSON from `src/newsdom_api/schemas.py` and
-   maps MinerU runtime failures to 503 and incomplete output to 502.
+   maps saturation to 429, MinerU runtime failures to 503, and
+   incomplete output to 502.
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Parse as /parse
+    participant Limiter as admission limiter
+    participant MinerU
+    Client->>Parse: authenticated PDF upload
+    Parse->>Limiter: try_acquire
+    alt saturated
+        Limiter-->>Parse: no lease
+        Parse-->>Client: 429 Retry-After 1
+    else admitted
+        Parse->>MinerU: parse_pdf
+        MinerU-->>Parse: content_list + page models
+        Parse->>Limiter: release
+        Parse-->>Client: NewsDOM JSON
+    end
+```
 
 ## Supporting systems
 

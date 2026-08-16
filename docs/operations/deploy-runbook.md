@@ -92,8 +92,13 @@ a cluster-specific registry trust policy.
 - Capture sanitized logs outside request temporary directories when a delivery
   path fails.
 - Expect `/parse` failures to stay sanitized: use generic client-facing details
-  for `503 Service Unavailable` when the backend runtime cannot execute and `502
+  for `429 Too Many Requests` when this replica's parser admission cap is
+  saturated (`Retry-After: 1`; wait and retry, then add replicas), `503
+  Service Unavailable` when the backend runtime cannot execute, and `502
   Bad Gateway` when required OCR artifacts are missing or invalid.
+- Size each replica with `NEWSDOM_MAX_CONCURRENT_PARSES` (default `1`,
+  maximum `128`). The value is per process, not cluster-wide. Keep the
+  8 KiB upload chunk until a reviewed upload-ingestion benchmark lands.
 - Reconcile the failure against `README.md`, `CHANGELOG.md`, package/OpenAPI
   versions, and the relevant workflow before closing the task.
 

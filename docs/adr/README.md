@@ -7,6 +7,8 @@ This directory contains Architecture Decision Records (ADRs) for the `newsdom-ap
 | ADR                                                       | Title                                         | Status   | Date       |
 | --------------------------------------------------------- | --------------------------------------------- | -------- | ---------- |
 | [0001](0001-defer-openssf-best-practices-enrollment.md)   | Defer OpenSSF Best Practices Enrollment       | Accepted | 2026-04-24 |
+| [0002](0002-single-maintainer-review-exception.md)        | Single-maintainer review exception            | Accepted | 2026-04-11 |
+| [0004](0004-bounded-parser-admission.md)                  | Bound concurrent parser admission             | Accepted | 2026-08-16 |
 
 ## ADR Status
 

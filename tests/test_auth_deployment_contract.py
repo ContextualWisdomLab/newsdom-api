@@ -52,6 +52,7 @@ def test_compose_requires_production_authentication_and_probes_readiness() -> No
     assert environment["NEWSDOM_API_TOKEN"] == (
         "${NEWSDOM_API_TOKEN:?set NEWSDOM_API_TOKEN}"
     )
+    assert environment["NEWSDOM_MAX_CONCURRENT_PARSES"] == "1"
     assert "/ready" in " ".join(healthcheck["test"])
     assert "/health" not in " ".join(healthcheck["test"])
 
@@ -64,6 +65,7 @@ def test_example_environment_documents_only_explicit_safe_modes() -> None:
     assert "NEWSDOM_AUTH_MODE=required" in example
     assert "NEWSDOM_RUNTIME_PROFILE=production" in example
     assert "NEWSDOM_API_TOKEN=" in example
+    assert "NEWSDOM_MAX_CONCURRENT_PARSES=1" in example
     assert "NEWSDOM_AUTH_MODE=disabled" not in example
 
 
@@ -82,6 +84,7 @@ def test_kubernetes_manifest_separates_liveness_and_readiness() -> None:
     assert env_by_name["NEWSDOM_AUTH_MODE"]["value"] == "required"
     assert env_by_name["NEWSDOM_RUNTIME_PROFILE"]["value"] == "production"
     assert "secretKeyRef" in env_by_name["NEWSDOM_API_TOKEN"]["valueFrom"]
+    assert env_by_name["NEWSDOM_MAX_CONCURRENT_PARSES"]["value"] == "1"
 
 
 def test_kubernetes_manifest_uses_restricted_non_root_runtime() -> None:
@@ -260,6 +263,24 @@ def test_doctoring_records_distinct_failure_domains_and_apa_references() -> None
         "OWASP Foundation. (2023)",
         "Kubernetes Authors. (2025)",
         "0.3.0",
+    ):
+        assert phrase in doctoring
+
+
+def test_admission_doctoring_records_limits_and_apa_references() -> None:
+    """Operators must keep the 429 contract and its sources together."""
+
+    doctoring = _text("docs/doctoring/bounded-parser-admission.md")
+
+    for phrase in (
+        "wait for the `Retry-After`",
+        "429 Too Many Requests",
+        "NEWSDOM_MAX_CONCURRENT_PARSES",
+        "8 KiB",
+        "Fielding, R., Nottingham, M., & Reschke, J. (Eds.). (2022)",
+        "Nottingham, M., & Fielding, R. (2012)",
+        "Open Worldwide Application Security Project. (2023)",
+        "Python Software Foundation. (n.d.)",
     ):
         assert phrase in doctoring
 
