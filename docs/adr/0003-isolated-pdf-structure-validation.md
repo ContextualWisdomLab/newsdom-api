@@ -27,16 +27,22 @@ reusable as a naruon module.
 Run structural validation in `src/newsdom_api/pdf_structure_validator.py`:
 
 - the parent never opens the PDF with pypdf on the event loop
-- the child applies `RLIMIT_CPU` (5 seconds) and `RLIMIT_AS` (512 MiB)
-  before `PdfReader`
-- the parent kills the child after 5 wall-clock seconds
+- the child applies `RLIMIT_CPU` (5 seconds), `RLIMIT_AS` (512 MiB),
+  `RLIMIT_CORE` (0), and `RLIMIT_NPROC` (64) before `PdfReader`
+- the parent kills the process group after 5 wall-clock seconds and
+  waits at most 1 second to reclaim it
+- a child killed by signal (`returncode < 0`), including `RLIMIT_CPU`
+  `SIGKILL`, is an invalid document — never a retried 503
+- the child inherits only an allowlisted environment, `stdin=DEVNULL`,
+  and a new session; this is resource isolation, not a full sandbox
 - the child returns only `valid`, `invalid_document`, or
   `validator_failure`
-- client-caused parser errors and timeouts map to the fixed 415
-  contract
+- client-caused parser errors, timeouts, and signal kills map to the
+  fixed 415 contract
 - spawn or unsupported-platform failures fail closed with the fixed
   503 contract and an operator log
-- hosts without `setrlimit` do not fall back to in-process parsing
+- non-Linux hosts fail closed even when `RLIMIT_*` names exist; there
+  is no in-process `PdfReader` fallback
 
 ## Consequences
 
@@ -50,8 +56,8 @@ Run structural validation in `src/newsdom_api/pdf_structure_validator.py`:
 
 - Each upload pays one process spawn. Accuracy and isolation outrank
   speed.
-- Windows and other hosts without POSIX resource limits fail closed
-  until an equivalent sandbox is explicitly adopted.
+- Non-Linux hosts, including Darwin where `RLIMIT_AS` may be a no-op,
+  fail closed until an equivalent Linux sandbox is explicitly adopted.
 
 ## Rollback
 

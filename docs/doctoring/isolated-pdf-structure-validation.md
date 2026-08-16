@@ -36,8 +36,12 @@ unbounded in-process parsing.
 ## Limits
 
 - wall clock: 5 seconds
-- CPU: 5 seconds (`RLIMIT_CPU`)
+- CPU: 5 seconds (`RLIMIT_CPU`); a signal-killed child is a 415
 - address space: 512 MiB (`RLIMIT_AS`)
+- core dumps: 0 (`RLIMIT_CORE`)
+- child processes: 64 (`RLIMIT_NPROC`)
+- reclaim wait: 1 second
+- production host: Linux only
 - upload size: 20 MiB (unchanged outer defense)
 
 Rollback is an image revert. There is no environment flag that

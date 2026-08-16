@@ -186,7 +186,7 @@ def ready(request: Request) -> ReadinessResponse:
 
 
 async def _validate_pdf_structure(file_path: Path) -> None:
-    """Reject payloads that are not structurally parseable PDFs."""
+    """Reject unparseable or limit-killed PDFs with 415; fail closed with 503."""
 
     outcome = await validate_pdf_structure_isolated(file_path)
     if outcome is ValidationOutcome.INVALID_DOCUMENT:

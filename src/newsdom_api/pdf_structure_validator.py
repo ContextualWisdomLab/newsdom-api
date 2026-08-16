@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import resource
+import signal
 import sys
 from enum import Enum
 from pathlib import Path
@@ -20,7 +21,18 @@ LOGGER = logging.getLogger("newsdom_api")
 DEFAULT_WALL_CLOCK_SECONDS: Final[float] = 5.0
 DEFAULT_CPU_SECONDS: Final[int] = 5
 DEFAULT_ADDRESS_SPACE_BYTES: Final[int] = 512 * 1024 * 1024
+DEFAULT_MAX_CHILD_PROCESSES: Final[int] = 64
+DEFAULT_RECLAIM_SECONDS: Final[float] = 1.0
 OUTCOME_KEY: Final[str] = "outcome"
+CHILD_ENV_ALLOWLIST: Final[tuple[str, ...]] = (
+    "PATH",
+    "LANG",
+    "LC_ALL",
+    "LC_CTYPE",
+    "TMPDIR",
+    "HOME",
+    "TZ",
+)
 CLIENT_INVALID_EXCEPTIONS: Final[tuple[type[BaseException], ...]] = (
     PdfReadError,
     RecursionError,
@@ -40,9 +52,13 @@ class ValidationOutcome(str, Enum):
 
 
 def resource_limits_supported() -> bool:
-    """Return whether this platform exposes CPU and address-space limits."""
+    """Return whether this Linux host can apply CPU and address-space limits."""
 
-    return hasattr(resource, "RLIMIT_CPU") and hasattr(resource, "RLIMIT_AS")
+    return (
+        sys.platform.startswith("linux")
+        and hasattr(resource, "RLIMIT_CPU")
+        and hasattr(resource, "RLIMIT_AS")
+    )
 
 
 def apply_resource_limits(
@@ -50,7 +66,7 @@ def apply_resource_limits(
     cpu_seconds: int = DEFAULT_CPU_SECONDS,
     address_space_bytes: int = DEFAULT_ADDRESS_SPACE_BYTES,
 ) -> None:
-    """Apply production-supported CPU and address-space limits or raise."""
+    """Apply CPU, address-space, core-dump, and process-count limits or raise."""
 
     if not resource_limits_supported():
         raise RuntimeError("CPU and address-space limits are unavailable")
@@ -58,6 +74,12 @@ def apply_resource_limits(
     resource.setrlimit(
         resource.RLIMIT_AS, (address_space_bytes, address_space_bytes)
     )
+    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+    if hasattr(resource, "RLIMIT_NPROC"):
+        resource.setrlimit(
+            resource.RLIMIT_NPROC,
+            (DEFAULT_MAX_CHILD_PROCESSES, DEFAULT_MAX_CHILD_PROCESSES),
+        )
 
 
 def validate_pdf_structure_in_process(file_path: Path) -> ValidationOutcome:
@@ -118,12 +140,41 @@ def _child_pythonpath() -> str:
     return src_dir + os.pathsep + existing
 
 
+def _child_environment() -> dict[str, str]:
+    """Copy only the import and locale keys the disposable child needs."""
+
+    env = {
+        key: os.environ[key]
+        for key in CHILD_ENV_ALLOWLIST
+        if key in os.environ
+    }
+    env["PYTHONPATH"] = _child_pythonpath()
+    env["PYTHONNOUSERSITE"] = "1"
+    return env
+
+
+def _terminate_child(process: asyncio.subprocess.Process) -> None:
+    """Kill the validator session, falling back to the direct child."""
+
+    pid = getattr(process, "pid", None)
+    if pid:
+        try:
+            os.killpg(pid, signal.SIGKILL)
+            return
+        except OSError:
+            pass
+    process.kill()
+
+
 async def _reclaim_child(process: asyncio.subprocess.Process) -> None:
-    """Terminate a disposable validator child and wait for exit."""
+    """Terminate a disposable validator child and wait briefly for exit."""
 
     try:
-        process.kill()
-        await asyncio.shield(process.wait())
+        _terminate_child(process)
+        await asyncio.wait_for(
+            asyncio.shield(process.wait()),
+            timeout=DEFAULT_RECLAIM_SECONDS,
+        )
     except Exception:
         LOGGER.exception("Failed to reclaim PDF structural validator child")
 
@@ -145,15 +196,15 @@ async def validate_pdf_structure_isolated(
         "newsdom_api.pdf_structure_validator",
         str(file_path),
     )
-    child_env = os.environ.copy()
-    child_env["PYTHONPATH"] = _child_pythonpath()
     process: asyncio.subprocess.Process | None = None
     try:
         process = await asyncio.create_subprocess_exec(
             *command,
+            stdin=asyncio.subprocess.DEVNULL,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
-            env=child_env,
+            env=_child_environment(),
+            start_new_session=True,
         )
         try:
             stdout, _stderr = await asyncio.wait_for(
@@ -166,6 +217,12 @@ async def validate_pdf_structure_isolated(
         except asyncio.TimeoutError:
             await _reclaim_child(process)
             LOGGER.warning("PDF structural validator exceeded wall-clock limit")
+            return ValidationOutcome.INVALID_DOCUMENT
+        if process.returncode is not None and process.returncode < 0:
+            LOGGER.warning(
+                "PDF structural validator was killed by signal %s",
+                -process.returncode,
+            )
             return ValidationOutcome.INVALID_DOCUMENT
         return decode_child_payload(stdout or b"")
     except asyncio.CancelledError:

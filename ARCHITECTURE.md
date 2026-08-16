@@ -11,8 +11,9 @@ orchestration, MinerU process execution, and DOM normalization.
 - `src/newsdom_api/main.py` exposes `/health` and `/parse`
   through FastAPI.
 - `src/newsdom_api/pdf_structure_validator.py` validates an
-  uploaded PDF in a disposable child process with CPU, address-space,
-  and wall-clock limits before MinerU runs.
+  uploaded PDF in a disposable Linux child process with CPU,
+  address-space, core-dump, process-count, and wall-clock limits
+  before MinerU runs. A signal-killed child is an invalid document.
 - `src/newsdom_api/service.py` orchestrates PDF parsing,
   temporary files, and response construction.
 - `src/newsdom_api/mineru_runner.py` shells out to the MinerU CLI,
@@ -43,8 +44,9 @@ orchestration, MinerU process execution, and DOM normalization.
    canonical response while preserving page-aware structure from
    MinerU model metadata.
 6. FastAPI returns typed JSON from `src/newsdom_api/schemas.py` and
-   maps invalid structure to 415, validator/platform failure to 503,
-   MinerU runtime failures to 503, and incomplete output to 502.
+   maps invalid structure, timeouts, and signal-killed children to
+   415, validator/platform failure to 503, MinerU runtime failures to
+   503, and incomplete output to 502.
 
 ```mermaid
 sequenceDiagram

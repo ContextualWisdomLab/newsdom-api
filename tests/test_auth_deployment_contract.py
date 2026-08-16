@@ -281,6 +281,8 @@ def test_isolated_pdf_doctoring_records_limits_and_apa_references() -> None:
         "Open Worldwide Application Security Project. (2023)",
         "The Open Group. (2018)",
         "512 MiB",
+        "Linux only",
+        "signal-killed",
     ):
         assert phrase in doctoring
 

@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import resource
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -15,7 +17,9 @@ from pypdf.errors import PdfReadError
 
 from newsdom_api.pdf_structure_validator import (
     ValidationOutcome,
+    _child_environment,
     _child_pythonpath,
+    _terminate_child,
     apply_resource_limits,
     child_main,
     decode_child_payload,
@@ -57,7 +61,19 @@ class _HangingProcess:
 def test_linux_runtime_exposes_cpu_and_address_space_limits() -> None:
     """Production Linux must expose the POSIX limits the child applies."""
 
+    assert sys.platform.startswith("linux")
     assert resource_limits_supported() is True
+
+
+def test_resource_limits_supported_rejects_non_linux(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Darwin and other hosts must fail closed even when rlimit names exist."""
+
+    monkeypatch.setattr(
+        "newsdom_api.pdf_structure_validator.sys.platform", "darwin"
+    )
+    assert resource_limits_supported() is False
 
 
 def test_in_process_validation_accepts_synthetic_reference_pdf() -> None:
@@ -168,8 +184,102 @@ def test_apply_resource_limits_sets_cpu_and_address_space(
         "newsdom_api.pdf_structure_validator.resource.setrlimit", fake_setrlimit
     )
     apply_resource_limits(cpu_seconds=3, address_space_bytes=1024)
-    assert recorded[0][1] == (3, 3)
-    assert recorded[1][1] == (1024, 1024)
+    limits_by_id = {resource_id: limits for resource_id, limits in recorded}
+    assert limits_by_id[resource.RLIMIT_CPU] == (3, 3)
+    assert limits_by_id[resource.RLIMIT_AS] == (1024, 1024)
+    assert limits_by_id[resource.RLIMIT_CORE] == (0, 0)
+    assert resource.RLIMIT_NPROC in limits_by_id
+
+
+def test_apply_resource_limits_skips_missing_nproc_limit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Hosts without RLIMIT_NPROC must still apply CPU, VAS, and core limits."""
+
+    recorded: list[int] = []
+
+    def fake_setrlimit(resource_id: int, limits: tuple[int, int]) -> None:
+        recorded.append(resource_id)
+
+    monkeypatch.setattr(
+        "newsdom_api.pdf_structure_validator.resource_limits_supported",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "newsdom_api.pdf_structure_validator.resource.setrlimit", fake_setrlimit
+    )
+    nproc_limit = resource.RLIMIT_NPROC
+    monkeypatch.delattr(
+        "newsdom_api.pdf_structure_validator.resource.RLIMIT_NPROC",
+        raising=False,
+    )
+    apply_resource_limits()
+    assert resource.RLIMIT_CPU in recorded
+    assert resource.RLIMIT_AS in recorded
+    assert resource.RLIMIT_CORE in recorded
+    assert nproc_limit not in recorded
+
+
+def test_child_environment_omits_parent_secrets(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The disposable child must not inherit operator or review credentials."""
+
+    monkeypatch.setenv("NVIDIA_NIM_API_KEY", "must-not-reach-child")
+    monkeypatch.setenv("PATH", "/usr/bin")
+    env = _child_environment()
+    assert env["PATH"] == "/usr/bin"
+    assert env["PYTHONNOUSERSITE"] == "1"
+    assert "NVIDIA_NIM_API_KEY" not in env
+
+
+def test_terminate_child_kills_process_group(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A session-isolated child is reclaimed through its process group."""
+
+    class GroupProcess:
+        pid = 4242
+        killed = False
+
+        def kill(self) -> None:
+            self.killed = True
+
+    recorded: list[tuple[int, int]] = []
+
+    def fake_killpg(pid: int, sig: int) -> None:
+        recorded.append((pid, sig))
+
+    monkeypatch.setattr(
+        "newsdom_api.pdf_structure_validator.os.killpg", fake_killpg
+    )
+    process = GroupProcess()
+    _terminate_child(process)  # type: ignore[arg-type]
+    assert recorded == [(4242, signal.SIGKILL)]
+    assert process.killed is False
+
+
+def test_terminate_child_falls_back_when_process_group_is_gone(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A missing process group still terminates the direct child."""
+
+    class GroupProcess:
+        pid = 4242
+        killed = False
+
+        def kill(self) -> None:
+            self.killed = True
+
+    def fake_killpg(_pid: int, _sig: int) -> None:
+        raise OSError("no such process group")
+
+    monkeypatch.setattr(
+        "newsdom_api.pdf_structure_validator.os.killpg", fake_killpg
+    )
+    process = GroupProcess()
+    _terminate_child(process)  # type: ignore[arg-type]
+    assert process.killed is True
 
 
 def test_apply_resource_limits_fails_closed_without_platform_support(
@@ -524,6 +634,146 @@ async def test_isolated_validation_empty_stdout_is_validator_failure(
     )
     outcome = await validate_pdf_structure_isolated(Path("unused.pdf"))
     assert outcome is ValidationOutcome.VALIDATOR_FAILURE
+
+
+@pytest.mark.asyncio
+async def test_isolated_validation_signal_killed_child_is_invalid_document(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """RLIMIT_CPU SIGKILL must be a client 415, not a retried 503."""
+
+    class SignalKilledProcess:
+        returncode = -9
+
+        async def communicate(self) -> tuple[bytes, bytes]:
+            return b"", b""
+
+        def kill(self) -> None:
+            raise AssertionError("already-reaped children must not be killed")
+
+        async def wait(self) -> int:
+            return -9
+
+    async def factory(*_args: object, **_kwargs: object) -> SignalKilledProcess:
+        return SignalKilledProcess()
+
+    monkeypatch.setattr(
+        "newsdom_api.pdf_structure_validator.resource_limits_supported",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "newsdom_api.pdf_structure_validator.asyncio.create_subprocess_exec",
+        factory,
+    )
+    outcome = await validate_pdf_structure_isolated(Path("unused.pdf"))
+    assert outcome is ValidationOutcome.INVALID_DOCUMENT
+
+
+def test_posix_cpu_limit_kills_busy_loop() -> None:
+    """A 1-second RLIMIT_CPU must terminate a spinning child with a signal."""
+
+    script = (
+        "import resource, time\n"
+        "resource.setrlimit(resource.RLIMIT_CPU, (1, 1))\n"
+        "start = time.monotonic()\n"
+        "while time.monotonic() - start < 10:\n"
+        "    pass\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        check=False,
+        capture_output=True,
+        timeout=8,
+    )
+    assert result.returncode is not None
+    assert result.returncode < 0
+
+
+@pytest.mark.asyncio
+async def test_isolated_validation_reclaim_does_not_block_after_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An unkillable child must not pin the worker after the wall-clock budget."""
+
+    class UnkillableProcess:
+        returncode: int | None = None
+        started = asyncio.Event()
+
+        async def communicate(self) -> tuple[bytes, bytes]:
+            self.started.set()
+            await asyncio.sleep(30)
+            return b"", b""
+
+        def kill(self) -> None:
+            return None
+
+        async def wait(self) -> int:
+            await asyncio.sleep(5)
+            return 0
+
+    hanging = UnkillableProcess()
+
+    async def factory(*_args: object, **_kwargs: object) -> UnkillableProcess:
+        return hanging
+
+    monkeypatch.setattr(
+        "newsdom_api.pdf_structure_validator.resource_limits_supported",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "newsdom_api.pdf_structure_validator.asyncio.create_subprocess_exec",
+        factory,
+    )
+    started_at = asyncio.get_running_loop().time()
+    outcome = await validate_pdf_structure_isolated(
+        Path("unused.pdf"), timeout_seconds=0.05
+    )
+    elapsed = asyncio.get_running_loop().time() - started_at
+    assert outcome is ValidationOutcome.INVALID_DOCUMENT
+    assert elapsed < 2.0
+
+
+@pytest.mark.asyncio
+async def test_isolated_validation_spawns_session_isolated_child(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The untrusted parser must not inherit stdin or the parent environment."""
+
+    recorded: dict[str, object] = {}
+
+    class FinishedProcess:
+        returncode = 0
+
+        async def communicate(self) -> tuple[bytes, bytes]:
+            return b'{"outcome":"valid"}', b""
+
+        def kill(self) -> None:
+            raise AssertionError("successful children must not be killed")
+
+        async def wait(self) -> int:
+            return 0
+
+    async def factory(*_args: object, **kwargs: object) -> FinishedProcess:
+        recorded.update(kwargs)
+        return FinishedProcess()
+
+    monkeypatch.setenv("NVIDIA_NIM_API_KEY", "must-not-reach-child")
+    monkeypatch.setattr(
+        "newsdom_api.pdf_structure_validator.resource_limits_supported",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "newsdom_api.pdf_structure_validator.asyncio.create_subprocess_exec",
+        factory,
+    )
+    outcome = await validate_pdf_structure_isolated(Path("unused.pdf"))
+    assert outcome is ValidationOutcome.VALID
+    assert recorded["stdin"] is asyncio.subprocess.DEVNULL
+    assert recorded["start_new_session"] is True
+    child_env = recorded["env"]
+    assert isinstance(child_env, dict)
+    assert "NVIDIA_NIM_API_KEY" not in child_env
+    assert "PYTHONPATH" in child_env
 
 
 @pytest.mark.asyncio
