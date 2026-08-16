@@ -7,3 +7,7 @@
 
 **Learning:** 백엔드 전용 프로젝트(프론트엔드가 없는 경우)에서는 'UX(사용자 경험)'가 주로 'DX(개발자 경험)'로 해석됩니다. OpenAPI/Swagger 스키마에 `json_schema_extra={"example": ...}`와 같은 구체적인 예시를 추가하면 API를 사용하는 개발자들의 인터페이스 이해도를 높일 수 있습니다.
 **Action:** 향후 백엔드 API 중심의 프로젝트에서는 Pydantic 스키마 정의에 풍부한 문서화와 예제 데이터가 포함되어 있는지 확인하여 개발자 경험을 개선할 것입니다.
+
+## 2026-08-16 - Swagger UI 사용자 인증 유지 (Developer Experience 향상)
+**Learning:** FastAPI의 자동 생성된 Swagger UI 문서에서 `persistAuthorization: True` 옵션을 활성화하면 페이지를 새로고침할 때마다 인증 토큰(예: Bearer 토큰)이 초기화되는 불편함을 없앨 수 있습니다. 프론트엔드가 없는 API 전용 애플리케이션의 경우, 개발자 경험(Developer Experience, DX)이 곧 주된 사용자 경험(UX) 개선 대상이 됩니다.
+**Action:** FastAPI나 유사한 OpenAPI/Swagger 문서 자동화 도구를 설정할 때 개발자의 불필요한 반복 작업을 방지하기 위해 인증 상태를 유지할 수 있는 기능을 기본으로 설정하는 것을 고려해야 합니다.
