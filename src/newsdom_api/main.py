@@ -22,7 +22,6 @@ from fastapi import (
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from pypdf import PdfReader
-from pypdf.errors import PdfReadError
 
 from .config import (
     AuthenticationMode,
@@ -150,6 +149,17 @@ async def security_boundary_middleware(
     return _apply_security_headers(response, request)
 
 
+async def http_exception_handler(request: Request, exc: HTTPException) -> Response:
+    """Return parameterized HTTP error responses with the standard security headers."""
+
+    response = JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers=exc.headers,
+    )
+    return _apply_security_headers(response, request)
+
+
 async def global_exception_handler(request: Request, exc: Exception) -> Response:
     """Return sanitized 500 responses with the standard security headers."""
 
@@ -193,7 +203,8 @@ def _validate_pdf_structure(file_path: Path) -> None:
         reader = PdfReader(file_path, strict=True)
         if len(reader.pages) < 1:
             raise ValueError("PDF has no pages")
-    except (PdfReadError, RecursionError, ValueError, OverflowError):
+    except Exception as exc:
+        LOGGER.error("Structural PDF validation failed", exc_info=exc)
         raise HTTPException(
             status_code=415,
             detail=UNSUPPORTED_MEDIA_DETAIL,
@@ -329,6 +340,7 @@ def create_app(
     )
     application.middleware("http")(security_boundary_middleware)
     application.add_exception_handler(Exception, global_exception_handler)
+    application.add_exception_handler(HTTPException, http_exception_handler)
     application.add_api_route(
         "/health",
         health,
