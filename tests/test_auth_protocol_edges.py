@@ -12,7 +12,9 @@ from newsdom_api.config import (
 )
 from newsdom_api.main import create_app
 
-_PDF_FILES = {"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")}
+_PDF_FILES = {
+    "file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")
+}
 _BEARER_PREFIX = "Bearer "
 
 
