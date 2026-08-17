@@ -208,8 +208,7 @@ async def parse(
             description=(
                 "MinerU language family or compatibility alias (e.g. `ch`, "
                 "`en`, `japan`, `korean`, `arabic`, `devanagari`)."
-            ),
-            json_schema_extra={"example": "ch"},
+            )
         ),
     ] = DEFAULT_LANGUAGE,
     mode: Annotated[
@@ -218,8 +217,7 @@ async def parse(
             description=(
                 "MinerU parsing mode: `auto` (born-digital text PDFs skip forced "
                 "OCR), `ocr` (force OCR), or `txt` (embedded text layer only)."
-            ),
-            json_schema_extra={"example": "auto"},
+            )
         ),
     ] = DEFAULT_MODE,
 ) -> ParseResponse:
