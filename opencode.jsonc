@@ -103,9 +103,6 @@
           "name": "NVIDIA Nemotron 3 Ultra 550B",
           "tool_call": true,
           "reasoning": true,
-          "options": {
-            "reasoningEffort": "high"
-          },
           "limit": {
             "context": 131072,
             "output": 32768
@@ -115,9 +112,6 @@
           "name": "NVIDIA Nemotron 3 Super 120B",
           "tool_call": true,
           "reasoning": true,
-          "options": {
-            "reasoningEffort": "high"
-          },
           "limit": {
             "context": 131072,
             "output": 32768
