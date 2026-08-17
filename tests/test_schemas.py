@@ -1,3 +1,4 @@
+from newsdom_api.main import app
 from newsdom_api.schemas import ArticleNode, HealthResponse, PageNode, ParseResponse
 
 
@@ -26,3 +27,23 @@ def test_page_node_openapi_schema_descriptions():
         == "One-based page number from the parsed PDF."
     )
     assert properties["articles"]["description"] == "Articles extracted from this page."
+
+
+def test_openapi_examples_match_documented_request_and_response_contract():
+    schema = app.openapi()
+    components = schema["components"]["schemas"]
+
+    page_properties = components["PageNode"]["properties"]
+    assert page_properties["width"]["example"] == 595.27
+    assert page_properties["height"]["example"] == 841.88
+    assert page_properties["ads"]["example"] == ["[광고] 신제품 출시"]
+    assert components["ImageNode"]["properties"]["media_type"]["example"] == "image"
+
+    request_schema = schema["paths"]["/parse"]["post"]["requestBody"]["content"][
+        "multipart/form-data"
+    ]["schema"]
+    request_component = request_schema["$ref"].rsplit("/", 1)[-1]
+    request_properties = components[request_component]["properties"]
+
+    assert request_properties["language"]["example"] == "ch"
+    assert request_properties["mode"]["example"] == "auto"
