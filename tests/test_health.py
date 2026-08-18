@@ -57,3 +57,19 @@ def test_openapi_metadata_includes_contact_and_license():
         "name": "MIT License",
         "identifier": "MIT",
     }
+
+
+def test_openapi_parse_form_examples_match_runtime_defaults():
+    client = TestClient(app)
+    response = client.get("/openapi.json")
+
+    assert response.status_code == 200
+    schema = response.json()
+    request_schema = schema["paths"]["/parse"]["post"]["requestBody"]["content"][
+        "multipart/form-data"
+    ]["schema"]
+    component_name = request_schema["$ref"].rsplit("/", maxsplit=1)[-1]
+    properties = schema["components"]["schemas"][component_name]["properties"]
+
+    assert properties["language"]["example"] == "ch"
+    assert properties["mode"]["example"] == "auto"
