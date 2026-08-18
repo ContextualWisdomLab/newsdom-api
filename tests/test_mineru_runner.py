@@ -159,3 +159,11 @@ def test_run_mineru_handles_called_process_error(tmp_path: Path):
 
         assert exc_info.value.returncode == 1
         assert "Something went wrong" in str(exc_info.value.stderr)
+
+
+def test_find_output_dir_handles_oserror(tmp_path):
+    import unittest.mock
+    from newsdom_api.mineru_runner import _find_output_dir
+    with unittest.mock.patch("pathlib.Path.iterdir", side_effect=OSError):
+        with pytest.raises(FileNotFoundError, match="MinerU output directory was not produced"):
+            _find_output_dir(tmp_path)
