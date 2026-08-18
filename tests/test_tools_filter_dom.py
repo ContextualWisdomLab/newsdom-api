@@ -84,6 +84,7 @@ def test_filter_dom_invalid_json(tmp_path, capsys):
     assert e.value.code == 1
     assert "Invalid JSON file" in capsys.readouterr().err
 
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
 def test_filter_dom_main_branch(monkeypatch):
     """Test the if __name__ == '__main__': block for 100% coverage."""
     monkeypatch.setattr(sys, "argv", ["filter_dom.py", "-h"])
