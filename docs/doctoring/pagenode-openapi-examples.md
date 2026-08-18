@@ -1,15 +1,17 @@
-# PageNode OpenAPI example contract
+# Response-schema OpenAPI example contract
 
 ## Decision
 
-The optional page-geometry and repeated text-block fields in `PageNode` publish
-examples through Pydantic's plural `Field(examples=[...])` metadata.
+The optional page-geometry and repeated text-block fields in `PageNode`, plus
+`ImageNode.media_type`, publish examples through Pydantic's plural
+`Field(examples=[...])` metadata.
 
 Scalar fields use scalar example values:
 
 ```python
 width: float | None = Field(default=None, examples=[595.28])
 height: float | None = Field(default=None, examples=[841.89])
+media_type: str = Field(default="image", examples=["image"])
 ```
 
 List-valued fields use arrays as the individual example values, so the metadata
@@ -32,7 +34,8 @@ API consumers can inspect the generated response schema and immediately see:
 
 - the coordinate scale used by a realistic PDF page;
 - that advertisements, headers, footers, and visible page numbers are arrays of
-  strings rather than one concatenated string; and
+  strings rather than one concatenated string;
+- the stable `image` media-type label attached to extracted image nodes; and
 - representative multi-value output without consulting source code.
 
 The examples deliberately use domain-neutral report language rather than the
@@ -46,8 +49,8 @@ plural JSON Schema `examples` array.
 
 JSON Schema Draft 2020-12 defines `examples` as annotation metadata whose value
 is an array. Each example should be a value valid under the associated schema;
-therefore an example for `list[str]` is itself an array, while an example for a
-numeric field is a number.
+therefore an example for `list[str]` is itself an array, while examples for a
+numeric or string field are numbers or strings.
 
 NewsDOM currently emits OpenAPI 3.1 through FastAPI. OpenAPI 3.1 aligns its
 Schema Object with JSON Schema 2020-12 and retains the singular `example`
@@ -57,12 +60,12 @@ is a separate framework-compatibility project.
 
 ## Verification contract
 
-`tests/test_pagenode_openapi_schema.py` obtains `PageNode.model_json_schema()`
-and proves for each affected field that:
+`tests/test_pagenode_openapi_schema.py` obtains generated Pydantic schemas and
+proves for each affected field that:
 
 - the exact plural example array is present;
 - singular `example` metadata is absent; and
-- the first example is accepted by an actual `PageNode` instance.
+- the first example is accepted by an actual `PageNode` or `ImageNode` instance.
 
 This test verifies generated schema and runtime type compatibility. It does not
 claim that every OpenAPI renderer displays annotation metadata identically.
@@ -72,8 +75,8 @@ Representative Swagger UI rendering remains separate release evidence.
 
 This documentation-only response-contract enhancement does not change PDF
 parsing, response serialization, authentication, upload handling, MinerU
-execution, database objects, dependencies, or lockfiles. Examples are annotations
-and do not become runtime defaults.
+execution, database objects, dependencies, or lockfiles. Examples are
+annotations and do not become runtime defaults.
 
 ## References
 
