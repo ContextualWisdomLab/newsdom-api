@@ -1,10 +1,10 @@
-"""Generated-schema regressions for the public ``PageNode`` response contract."""
+"""Generated-schema regressions for public response-example contracts."""
 
 from __future__ import annotations
 
 from typing import Any
 
-from newsdom_api.schemas import PageNode
+from newsdom_api.schemas import ImageNode, PageNode
 
 
 EXPECTED_EXAMPLES: dict[str, list[Any]] = {
@@ -18,7 +18,7 @@ EXPECTED_EXAMPLES: dict[str, list[Any]] = {
 
 
 def test_pagenode_schema_publishes_typed_plural_examples() -> None:
-    """Each documented example must be plural metadata and a valid field value."""
+    """Each documented page example must be plural metadata and a valid field value."""
 
     properties = PageNode.model_json_schema()["properties"]
 
@@ -28,3 +28,13 @@ def test_pagenode_schema_publishes_typed_plural_examples() -> None:
         assert "example" not in field_schema
 
         PageNode(page_number=1, **{field_name: examples[0]})
+
+
+def test_imagenode_media_type_publishes_a_typed_plural_example() -> None:
+    """Image media metadata should use the same standards-based plural example contract."""
+
+    field_schema = ImageNode.model_json_schema()["properties"]["media_type"]
+
+    assert field_schema["examples"] == ["image"]
+    assert "example" not in field_schema
+    ImageNode(media_type=field_schema["examples"][0], path="page-1/image-1.png")
