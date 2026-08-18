@@ -53,6 +53,7 @@ class ImageNode(BaseModel):
     media_type: str = Field(
         default="image",
         description="Media type label for the extracted image node.",
+        examples=["image"],
     )
     bbox: Optional[BoundingBox] = Field(
         default=None,
