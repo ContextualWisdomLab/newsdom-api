@@ -31,3 +31,7 @@ def test_parse_endpoint_returns_dom(monkeypatch):
     )
     assert response.status_code == 200
     assert response.json()["document_id"] == "fixture.pdf"
+    assert response.headers["Permissions-Policy"] == (
+        "geolocation=(), camera=(), microphone=()"
+    )
+    assert response.headers["X-XSS-Protection"] == "0"
