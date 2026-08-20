@@ -63,3 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2025-03-01 - 파일 업로드 시 사용되는 정규표현식 컴파일 최적화
+**Learning:** Python의 `re.sub()`를 호출할 때마다 매번 패턴 문자열을 인자로 넘기면 내부적인 캐싱에도 불구하고 약간의 오버헤드가 발생한다.
+**Action:** 자주 호출되는 파일 업로드 경로(`_safe_upload_filename`)의 정규표현식을 모듈 레벨에서 미리 컴파일(`re.compile()`)해두고 재사용하여 오버헤드를 줄인다.
