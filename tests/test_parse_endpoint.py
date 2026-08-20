@@ -372,7 +372,7 @@ async def test_parse_endpoint_rejects_large_file_without_size_metadata(monkeypat
 
     assert exc_info.value.status_code == 413
     assert exc_info.value.detail == "Payload Too Large"
-    assert sum(upload.read_sizes) > synthetic_limit
+    assert upload._offset > synthetic_limit
 
 
 def test_parse_endpoint_budget_is_larger_than_the_previous_20_mib_limit():
