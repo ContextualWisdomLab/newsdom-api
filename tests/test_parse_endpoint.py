@@ -358,6 +358,11 @@ def test_parse_endpoint_rejects_large_files(monkeypatch):
     assert response.json()["detail"] == "Payload Too Large"
 
 
+def test_parse_endpoint_budget_matches_naruon_transport_contract():
+    """Keep the sidecar upload ceiling aligned with Naruon's PDF transport."""
+    assert MAX_PARSE_UPLOAD_BYTES == 64 * 1024 * 1024
+
+
 @pytest.mark.asyncio
 async def test_parse_endpoint_rejects_large_file_without_size_metadata():
     upload = _ReadTrackingUpload(b"%PDF-" + (b"x" * MAX_PARSE_UPLOAD_BYTES))
