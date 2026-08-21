@@ -222,3 +222,21 @@ def test_minify_dom_sys_path_not_in_path():
             if key not in original_modules:
                 del sys.modules[key]
         sys.modules.update(original_modules)
+
+
+def test_main_path_traversal_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    input_path = tmp_path / "input.json"
+    input_path.write_text("{}", encoding="utf-8")
+
+    # Use a path outside of cwd and tmp
+    # Assuming root / doesn't match either cwd or tmp
+    output_path = Path("/tmp_does_not_exist/output.json")
+
+    with pytest.raises(SystemExit) as exc_info:
+        main([str(input_path), "-o", str(output_path)])
+
+    assert exc_info.value.code == 1
+    captured = capsys.readouterr()
+    assert "Output path must be within" in captured.err

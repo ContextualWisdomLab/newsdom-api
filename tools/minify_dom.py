@@ -71,6 +71,25 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     try:
+        # Validate output path to prevent directory traversal
+        import tempfile
+
+        output_path = args.output.resolve()
+        base_dir = Path.cwd().resolve()
+        temp_dir = Path(tempfile.gettempdir()).resolve()
+
+        try:
+            output_path.relative_to(base_dir)
+        except ValueError:
+            try:
+                output_path.relative_to(temp_dir)
+            except ValueError:
+                print(
+                    f"Error: Output path must be within {base_dir} or {temp_dir}",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+
         minify_dom(args.input, args.output)
         print(f"Minified JSON successfully written to {args.output}")
     except Exception as exc:
