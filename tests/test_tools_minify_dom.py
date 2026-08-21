@@ -162,60 +162,64 @@ def test_main_error(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
 
 
 def test_minify_dom_sys_path():
-    import sys
     import runpy
+    import pathlib
 
-    # Temporarily remove and add _SRC_ROOT to ensure line 11 branch coverage
-    # line 11 is 'if str(_SRC_ROOT) not in sys.path:'
+    # ensure _SRC_ROOT IS in sys.path to hit line 11 (if str(_SRC_ROOT) not in sys.path)
+    repo_root = pathlib.Path(".").resolve()
+    src_root = str(repo_root / "src")
 
-    # ensure it IS in sys.path
+    # Store original sys.path and sys.modules
+    original_path = sys.path.copy()
+    original_modules = sys.modules.copy()
+
+    try:
+        # 1. Modify sys.path to force the `if ... not in sys.path` condition to be False
+        if src_root not in sys.path:
+            sys.path.insert(0, src_root)
+
+        # 2. Force runpy to load tools.minify_dom cleanly without triggering warnings
+        if "tools.minify_dom" in sys.modules:
+            del sys.modules["tools.minify_dom"]
+
+        with patch("sys.argv", ["minify_dom", "--help"]):
+            try:
+                runpy.run_module("tools.minify_dom", run_name="__main__")
+            except SystemExit:
+                pass
+    finally:
+        # Restore environment
+        sys.path = original_path
+
+        # Restore sys.modules (removing any newly imported modules that might pollute state)
+        for key in list(sys.modules.keys()):
+            if key not in original_modules:
+                del sys.modules[key]
+        sys.modules.update(original_modules)
+
+
+def test_minify_dom_sys_path_not_in_path():
+    import sys
+    import importlib
     import pathlib
 
     repo_root = pathlib.Path(".").resolve()
     src_root = str(repo_root / "src")
-    if src_root not in sys.path:
-        sys.path.insert(0, src_root)
-
-    # run module as __main__
-    with patch("sys.argv", ["minify_dom", "--help"]):
-        try:
-            runpy.run_module("tools.minify_dom", run_name="__main__")
-        except SystemExit:
-            pass
-
-
-def test_minify_dom_sys_path_not_in_path():
-    # Remove _SRC_ROOT from sys.path if it exists to test the 'not in' branch
-    _REPO_ROOT = Path(__file__).resolve().parents[1]
-    _SRC_ROOT = _REPO_ROOT / "src"
 
     original_path = sys.path.copy()
+    original_modules = sys.modules.copy()
 
-    # ensure it's not in sys.path
-    if str(_SRC_ROOT) in sys.path:
-        sys.path.remove(str(_SRC_ROOT))
+    try:
+        if src_root in sys.path:
+            sys.path.remove(src_root)
 
-    # reload module
-    import importlib
-    import tools.minify_dom
+        import tools.minify_dom
 
-    importlib.reload(tools.minify_dom)
+        importlib.reload(tools.minify_dom)
 
-    sys.path = original_path
-
-
-def test_minify_dom_sys_path_in_path():
-    _REPO_ROOT = Path(__file__).resolve().parents[1]
-    _SRC_ROOT = _REPO_ROOT / "src"
-
-    original_path = sys.path.copy()
-
-    if str(_SRC_ROOT) not in sys.path:
-        sys.path.insert(0, str(_SRC_ROOT))
-
-    import importlib
-    import tools.minify_dom
-
-    importlib.reload(tools.minify_dom)
-
-    sys.path = original_path
+    finally:
+        sys.path = original_path
+        for key in list(sys.modules.keys()):
+            if key not in original_modules:
+                del sys.modules[key]
+        sys.modules.update(original_modules)
