@@ -1,9 +1,9 @@
 # ADR-0003: Bounded PDF upload transport
 
-**Status:** Accepted  
-**Date:** 2026-08-21  
-**Decision owner:** NewsDOM maintainers  
-**Scope:** Authenticated `POST /parse` upload boundary  
+**Status:** Accepted
+**Date:** 2026-08-21
+**Decision owner:** NewsDOM maintainers
+**Scope:** Authenticated `POST /parse` upload boundary
 **Figma File ID:** N/A — sidecar API contract; no visual surface.
 
 ## Context
