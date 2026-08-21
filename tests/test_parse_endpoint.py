@@ -32,17 +32,35 @@ class _ReadTrackingUpload:
     filename = "fixture.pdf"
     size = 10 * 1024 * 1024
 
-    def __init__(self, payload: bytes):
+    def __init__(self, payload: bytes | int):
         self._payload = payload
         self._offset = 0
         self.read_sizes: list[int] = []
+        self.bytes_returned = 0
 
     async def read(self, size: int = -1) -> bytes:
         self.read_sizes.append(size)
-        if size < 0:
-            size = len(self._payload) - self._offset
-        chunk = self._payload[self._offset : self._offset + size]
+        if isinstance(self._payload, int):
+            remaining = self._payload - self._offset
+            if remaining <= 0:
+                return b""
+            if size < 0:
+                size = remaining
+            count = min(size, remaining)
+            prefix = b"%PDF-"
+            chunk = b""
+            if self._offset < len(prefix):
+                prefix_count = min(count, len(prefix) - self._offset)
+                chunk = prefix[self._offset : self._offset + prefix_count]
+                count -= prefix_count
+            if count:
+                chunk += b"x" * count
+        else:
+            if size < 0:
+                size = len(self._payload) - self._offset
+            chunk = self._payload[self._offset : self._offset + size]
         self._offset += len(chunk)
+        self.bytes_returned += len(chunk)
         return chunk
 
 
@@ -361,6 +379,24 @@ def test_parse_endpoint_rejects_large_files(monkeypatch):
 def test_parse_endpoint_budget_matches_naruon_transport_contract():
     """Keep the sidecar upload ceiling aligned with Naruon's PDF transport."""
     assert MAX_PARSE_UPLOAD_BYTES == 64 * 1024 * 1024
+
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_accepts_exact_upload_budget(monkeypatch):
+    """Accept a valid streamed PDF whose final byte is exactly at the limit."""
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr(
+        "newsdom_api.main.parse_pdf",
+        lambda file_path, filename, **kwargs: {"document_id": "fixture", "pages": []},
+    )
+
+    upload = _ReadTrackingUpload(MAX_PARSE_UPLOAD_BYTES)
+    upload.size = MAX_PARSE_UPLOAD_BYTES
+
+    result = await parse(upload)
+
+    assert result == {"document_id": "fixture", "pages": []}
+    assert upload.bytes_returned == MAX_PARSE_UPLOAD_BYTES
 
 
 @pytest.mark.asyncio
