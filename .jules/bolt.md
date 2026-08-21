@@ -63,3 +63,7 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2024-08-21 - 캐싱을 통한 중복된 Dictionary 조회 방지
+**학습:** Pydantic이나 딕셔너리 값에 대해 타입 검사를 수행하고 그 값을 재할당할 때, 동일한 키로 `payload.get('key')`를 두 번 호출하면 불필요한 딕셔너리 조회가 발생하여 성능이 저하됩니다.
+**실행:** `payload.get('key')`의 결과를 지역 변수에 캐시하여 딕셔너리 조회를 1회로 줄이면 반복적인 조회 작업에서 오버헤드를 줄일 수 있습니다.
