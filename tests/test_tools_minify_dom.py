@@ -199,7 +199,6 @@ def test_minify_dom_sys_path():
 
 
 def test_minify_dom_sys_path_not_in_path():
-    import sys
     import importlib
     import pathlib
 
