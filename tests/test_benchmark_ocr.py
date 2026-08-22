@@ -155,3 +155,13 @@ def test_run_mineru_engine(mock_parse_pdf_bytes, tmp_path: Path) -> None:
         "page_count": 2,
         "article_count": 3,
     }
+
+def test_main_block():
+    import runpy
+    import sys
+    sys.argv = ['benchmark_ocr.py', '--help']
+    sys.modules.pop('tools.benchmark_ocr', None)
+    try:
+        runpy.run_module('tools.benchmark_ocr', run_name='__main__')
+    except SystemExit:
+        pass
