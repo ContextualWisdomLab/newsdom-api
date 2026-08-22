@@ -53,7 +53,6 @@ class ImageNode(BaseModel):
     media_type: str = Field(
         default="image",
         description="Media type label for the extracted image node.",
-        examples=["image"],
     )
     bbox: Optional[BoundingBox] = Field(
         default=None,
@@ -124,12 +123,12 @@ class PageNode(BaseModel):
     width: Optional[float] = Field(
         default=None,
         description="Page width reported by the parser, if available.",
-        examples=[595.28],
+        json_schema_extra={"example": 800.0},
     )
     height: Optional[float] = Field(
         default=None,
         description="Page height reported by the parser, if available.",
-        examples=[841.89],
+        json_schema_extra={"example": 1200.0},
     )
     articles: List[ArticleNode] = Field(
         default_factory=list,
@@ -138,22 +137,22 @@ class PageNode(BaseModel):
     ads: List[str] = Field(
         default_factory=list,
         description="Advertisement text blocks extracted from this page.",
-        examples=[["Example advertisement text"]],
+        json_schema_extra={"example": ["Summer Sale - 50% Off"]},
     )
     headers: List[str] = Field(
         default_factory=list,
         description="Header text blocks extracted from this page.",
-        examples=[["Quarterly report", "2026 Q2"]],
+        json_schema_extra={"example": ["Business Section", "October 2023"]},
     )
     footers: List[str] = Field(
         default_factory=list,
         description="Footer text blocks extracted from this page.",
-        examples=[["Confidential"]],
+        json_schema_extra={"example": ["Copyright 2023", "All rights reserved"]},
     )
     page_numbers: List[str] = Field(
         default_factory=list,
         description="Visible page-number text blocks extracted from this page.",
-        examples=[["1", "Page 1"]],
+        json_schema_extra={"example": ["1", "Page 1"]},
     )
 
 
