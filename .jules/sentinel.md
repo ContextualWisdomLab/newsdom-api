@@ -90,3 +90,7 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+## 2026-08-16 - Insecure Temporary File Permissions Vulnerability
+**Vulnerability:** The `NamedTemporaryFile` created during file uploads (`/parse`) inherits default permissions, potentially allowing other local users to read sensitive uploaded PDFs within the temporary directory before deletion. Strix flags this as a LOW severity penetration test finding.
+**Learning:** Security context is required for temp files even if they're shortly lived. While `tempfile.NamedTemporaryFile` isolates paths, depending on umask, it might default to readable permissions.
+**Prevention:** Explicitly restrict file permissions using `os.chmod(temporary_file.name, 0o600)` immediately after creating the temporary file to enforce user-only read/write access.
