@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-08-22 - [CRITICAL] 파일 파싱 중 발생하는 처리되지 않은 예외로 인한 DoS 공격 방지
+**취약점:** `_validate_pdf_structure`에서 구조 검증 중 `PdfReader`가 `MemoryError`나 `TypeError` 등 처리되지 않은 예외를 발생시킬 경우 서버가 500 에러를 반환하며 어플리케이션 충돌로 이어져 DoS 취약점이 발생할 수 있습니다.
+**학습:** 파일 파싱과 같은 외부 라이브러리 사용 시 정의된 예외 외에도 예측하지 못한 예외가 발생할 수 있으므로, 광범위한 예외 처리가 필요합니다.
+**예방:** 예상치 못한 예외가 발생하더라도 응용 프로그램이 중단되지 않고 적절한 클라이언트 오류(415 Unsupported Media Type)를 반환하도록 `except Exception:` 블록을 추가하고, 실제 원인 파악을 위해 에러 로그를 남깁니다.
