@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import hmac
 import logging
 import tempfile
@@ -131,7 +132,9 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     scheme, separator, credentials = provided.partition(b" ")
     if separator != b" " or scheme.lower() != b"bearer" or not credentials:
         return _unauthorized_response()
-    if not hmac.compare_digest(credentials, token.encode("utf-8")):
+    provided_hash = hashlib.sha256(credentials).digest()
+    expected_hash = hashlib.sha256(token.encode("utf-8")).digest()
+    if not hmac.compare_digest(provided_hash, expected_hash):
         return _unauthorized_response()
     return None
 
