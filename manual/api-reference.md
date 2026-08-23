@@ -32,7 +32,7 @@ FastAPI는 OpenAPI 기반의 대화형 API 문서를 자동으로 생성합니�
 #### 요청 매개변수 (Request Body)
 - **`file`** (`UploadFile`, 필수): 변환할 PDF 바이너리 파일 데이터 (`multipart/form-data`)
 
-업로드 본문은 최대 64 MiB까지 허용됩니다. 한도를 초과하면 서버가 임시 파일을
+PDF 파일은 최대 64 MiB까지 허용됩니다. 한도를 초과하면 서버가 임시 파일을
 MinerU에 전달하지 않고 `413 Payload Too Large`를 반환하므로, 고객은 PDF를
 분할한 뒤 각 파일을 다시 업로드해야 합니다.
 
