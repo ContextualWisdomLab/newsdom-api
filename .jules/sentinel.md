@@ -93,4 +93,4 @@
 ## 2024-08-23 - Timing attack vulnerability in token verification
 **Vulnerability:** API token length could be exposed via timing attacks because `hmac.compare_digest` returns early when lengths differ.
 **Learning:** While `hmac.compare_digest` prevents timing attacks on string content, it does not hide the length of the expected string.
-**Prevention:** Hash both the expected and provided credentials (e.g., with SHA-256) before passing them to `compare_digest` to ensure constant length comparison.
+**Prevention:** If lengths differ, perform a dummy constant-time comparison (e.g. `compare_digest(credentials, credentials)`) to ensure the execution time only depends on the provided input, effectively hiding the expected token length.

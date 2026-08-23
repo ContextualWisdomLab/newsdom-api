@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import hmac
 import logging
-import secrets
 import tempfile
 from pathlib import Path
 from typing import Annotated, Callable
@@ -133,10 +132,13 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     if separator != b" " or scheme.lower() != b"bearer" or not credentials:
         return _unauthorized_response()
     expected = token.encode("utf-8")
-    mac_key = secrets.token_bytes(32)
-    provided_mac = hmac.new(mac_key, credentials, digestmod="sha256").digest()
-    expected_mac = hmac.new(mac_key, expected, digestmod="sha256").digest()
-    if not hmac.compare_digest(provided_mac, expected_mac):
+    # 🛡️ Sentinel: hmac.compare_digest returns early on length mismatch, which leaks the token length.
+    # If lengths differ, we run a dummy comparison against the provided credentials
+    # to balance the timing and prevent length-based timing attacks.
+    if len(credentials) != len(expected):
+        hmac.compare_digest(credentials, credentials)
+        return _unauthorized_response()
+    if not hmac.compare_digest(credentials, expected):
         return _unauthorized_response()
     return None
 
