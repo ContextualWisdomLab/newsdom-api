@@ -112,3 +112,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
+
+### Added
+- [CLI] NewsDOM JSON 파일에서 특정 페이지만 남기거나 광고 블록을 제거할 수 있는 `tools/filter_dom.py` 도구를 추가했습니다.
