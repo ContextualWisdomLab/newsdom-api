@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import hmac
 import logging
+import secrets
 import tempfile
 from pathlib import Path
 from typing import Annotated, Callable
@@ -132,9 +132,11 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     scheme, separator, credentials = provided.partition(b" ")
     if separator != b" " or scheme.lower() != b"bearer" or not credentials:
         return _unauthorized_response()
-    provided_hash = hashlib.sha256(credentials).digest()
-    expected_hash = hashlib.sha256(token.encode("utf-8")).digest()
-    if not hmac.compare_digest(provided_hash, expected_hash):
+    expected = token.encode("utf-8")
+    mac_key = secrets.token_bytes(32)
+    provided_mac = hmac.new(mac_key, credentials, digestmod="sha256").digest()
+    expected_mac = hmac.new(mac_key, expected, digestmod="sha256").digest()
+    if not hmac.compare_digest(provided_mac, expected_mac):
         return _unauthorized_response()
     return None
 
