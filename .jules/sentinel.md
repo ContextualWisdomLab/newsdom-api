@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2025-05-20 - [HIGH] Prevent Length Leakage in hmac.compare_digest
+**Vulnerability:** `hmac.compare_digest` returns early if lengths differ, leaking the expected token's length through execution time.
+**Learning:** Using `hmac.compare_digest` without length normalization allows timing attacks. Applying `hashlib.sha256()` normalizes lengths but triggers CodeQL insecure hashing warnings.
+**Prevention:** Explicitly compare lengths and execute a dummy `hmac.compare_digest(credentials, credentials)` if they differ to balance execution time without triggering weak hashing rules.
