@@ -29,3 +29,7 @@
 ## 2026-07-07 - [Improve Swagger UX with Pydantic V2 Examples]
 **Learning:** Using json_schema_extra={'example': ...} instead of example=... in Pydantic V2 schemas ensures OpenAPI compatibility and prevents deprecation warnings, significantly improving Developer Experience (DX) for API consumers.
 **Action:** Apply json_schema_extra to Pydantic Field definitions to automatically generate rich, self-documenting OpenAPI schemas for headless APIs.
+
+## 2026-08-24 - [Preserve Authorization in Swagger UI]
+**Learning:** In FastAPI applications, adding `"persistAuthorization": True` to `swagger_ui_parameters` improves Developer Experience (DX) by preserving authentication credentials (e.g., Bearer tokens) across Swagger UI page refreshes.
+**Action:** Always configure `swagger_ui_parameters` with `"persistAuthorization": True` for authenticated APIs to prevent developers from needing to repeatedly re-authenticate during testing.
