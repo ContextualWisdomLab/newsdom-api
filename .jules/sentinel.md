@@ -94,3 +94,7 @@
 **Vulnerability:** The `NamedTemporaryFile` created during file uploads (`/parse`) inherits default permissions, potentially allowing other local users to read sensitive uploaded PDFs within the temporary directory before deletion. Strix flags this as a LOW severity penetration test finding.
 **Learning:** Security context is required for temp files even if they're shortly lived. While `tempfile.NamedTemporaryFile` isolates paths, depending on umask, it might default to readable permissions.
 **Prevention:** Explicitly restrict file permissions using `os.chmod(temporary_file.name, 0o600)` immediately after creating the temporary file to enforce user-only read/write access.
+## 2026-08-24 - Authorization Header Parsing Bypass
+**Vulnerability:** The `_parse_access_failure` function used `provided.partition(b" ")` to split the Authorization header. This method fails to handle leading/trailing whitespace or multiple spaces correctly, potentially allowing an attacker to bypass bearer token validation. Strix flags this as a MEDIUM severity authorization bypass vulnerability.
+**Learning:** `partition` is insufficient for parsing space-separated headers like Authorization because it splits on the exact first occurrence of the separator without considering surrounding whitespace.
+**Prevention:** Use `strip()` and `split(b" ", 1)` to robustly split the Authorization header into its components, and ensure both parts are correctly formatted and non-empty.

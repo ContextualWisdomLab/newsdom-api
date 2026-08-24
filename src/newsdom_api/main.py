@@ -129,10 +129,11 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     if len(provided) > MAX_BEARER_HEADER_BYTES:
         return _unauthorized_response()
 
-    scheme, separator, credentials = provided.partition(b" ")
-    if separator != b" " or scheme.lower() != b"bearer" or not credentials:
+    provided_stripped = provided.strip()
+    parts = provided_stripped.split(b" ", 1)
+    if len(parts) != 2 or parts[0].strip().lower() != b"bearer" or not parts[1].strip():
         return _unauthorized_response()
-    if not hmac.compare_digest(credentials, token.encode("utf-8")):
+    if not hmac.compare_digest(parts[1].strip(), token.encode("utf-8")):
         return _unauthorized_response()
     return None
 
