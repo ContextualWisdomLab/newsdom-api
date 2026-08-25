@@ -7,3 +7,7 @@
 
 **Learning:** 백엔드 전용 프로젝트(프론트엔드가 없는 경우)에서는 'UX(사용자 경험)'가 주로 'DX(개발자 경험)'로 해석됩니다. OpenAPI/Swagger 스키마에 `json_schema_extra={"example": ...}`와 같은 구체적인 예시를 추가하면 API를 사용하는 개발자들의 인터페이스 이해도를 높일 수 있습니다.
 **Action:** 향후 백엔드 API 중심의 프로젝트에서는 Pydantic 스키마 정의에 풍부한 문서화와 예제 데이터가 포함되어 있는지 확인하여 개발자 경험을 개선할 것입니다.
+
+## 2026-07-28 - [FastAPI Route Parameter OpenAPI Examples]
+**학습:** API 경로 의존성(예: `Form`)에 `json_schema_extra={"example": ...}`를 추가하면 Swagger UI에서 개발자가 직관적으로 페이로드 예시를 볼 수 있어 DX(Developer Experience)가 크게 향상됩니다.
+**실행:** FastAPI의 라우트 파라미터(`Form`, `Query` 등) 정의 시 `description`과 함께 `json_schema_extra={"example": [...]}`를 항상 추가하여 풍부한 OpenAPI 문서를 제공합니다.
