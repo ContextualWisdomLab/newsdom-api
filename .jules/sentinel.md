@@ -73,7 +73,7 @@
 **Prevention:** 임시 파일 경로를 할당하거나 파일을 여는 즉시 자원 정리(cleanup) 로직이 보장되도록 `try...finally` 블록으로 감싼다.
 
 ## 2025-03-09 - Prevent Command/Log Injection via Newlines in Filenames
-**Vulnerability:** The blocklist regex `_UNSAFE_CHARS_PATTERN` for CLI arguments did not explicitly filter newline (\n) or carriage return (`\r`) characters. This can allow command or log injection even when `shell=False` is used, by passing arguments containing newlines.
+**Vulnerability:** The blocklist regex `_UNSAFE_CHARS_PATTERN` for CLI arguments did not explicitly filter newline (\n) or carriage return (\r) characters. This can allow command or log injection even when `shell=False` is used, by passing arguments containing newlines.
 **Learning:** Shell metacharacter blocklists must include whitespace metacharacters like newlines and carriage returns, as these can bypass checks and manipulate logs or downstream argument parsing.
 **Prevention:** Explicitly add \n and \r to the `_UNSAFE_CHARS_PATTERN` blocklist for CLI arguments.
 
@@ -82,7 +82,7 @@
 **Learning:** When processing asynchronous file uploads in FastAPI (`await file.read()`), instantiating temporary files (`NamedTemporaryFile(delete=False)`) inside a nested `try` block while the initial read happens outside can leave temporary files orphaned if an exception occurs before the nested block or during the initial read. This can lead to disk exhaustion (DoS) if clients maliciously disconnect or send malformed data.
 **Prevention:** Ensure the temporary path variable (`tmp_path = None`) is initialized before the main `try` block, and the read loop and file instantiation are entirely enclosed within a unified `try...finally` block. Verify cleanup in the `finally` block with `if tmp_path and tmp_path.exists(): tmp_path.unlink(missing_ok=True)`.
 ## 2023-10-27 - 🛡️ Fix naive absolute path traversal protection
-**Vulnerability:** The codebase rejected all absolute paths indiscriminately (e.g., using `is_absolute()`) rather than whitelist-validating them, causing CI breakages when legitimate absolute paths within safe temp directories were provided.
+**Vulnerability:** The codebase rejected all absolute paths indiscriminately (e.g., using `is_absolute()`) rather than whitelist-validating them, causing CI breakages when legitimate absolute paths within safe temp directories like `/tmp`.
 **Learning:** Naively blocking absolute paths can disrupt legitimate CI and test automation tools that rely on paths pointing to temporary system directories like `/tmp`.
 **Prevention:** Rather than rejecting all absolute paths out of hand, allow them if they are validated to fall within a safe directory whitelist (e.g., `tempfile.gettempdir()`) to prevent arbitrary file writes while supporting standard testing mechanisms.
 
