@@ -93,12 +93,15 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     """Normalize structural metrics, preferring derivation from structural data when present."""
 
     metrics = dict(payload)
-    articles = (
-        payload.get("articles") if isinstance(payload.get("articles"), list) else None
-    )
-    images = payload.get("images") if isinstance(payload.get("images"), list) else None
-    ads = payload.get("ads") if isinstance(payload.get("ads"), list) else None
-    pages = payload.get("pages") if isinstance(payload.get("pages"), list) else None
+    # ⚡ Bolt: 반복적인 딕셔너리 조회를 지역 변수로 캐싱하여 중복 조회를 제거하고 실행 속도를 개선
+    raw_articles = payload.get("articles")
+    articles = raw_articles if isinstance(raw_articles, list) else None
+    raw_images = payload.get("images")
+    images = raw_images if isinstance(raw_images, list) else None
+    raw_ads = payload.get("ads")
+    ads = raw_ads if isinstance(raw_ads, list) else None
+    raw_pages = payload.get("pages")
+    pages = raw_pages if isinstance(raw_pages, list) else None
 
     if articles is not None:
         _process_articles(metrics, articles)
