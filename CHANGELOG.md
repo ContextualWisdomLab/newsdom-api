@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- PDF 파싱 엔드포인트의 구조 검증 시 발생하는 처리되지 않은 예외(MemoryError, TypeError 등)에 대해 500 에러 대신 안전한 415 클라이언트 에러를 반환하여 DoS 취약점을 방지합니다.
+
 > **Planned 0.3.0 deployment migration:** parser authentication changes from
 > **default-open** to **default-required**. Production must configure
 > `NEWSDOM_AUTH_MODE=required`, `NEWSDOM_RUNTIME_PROFILE=production`, and
