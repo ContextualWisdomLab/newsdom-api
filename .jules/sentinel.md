@@ -1,6 +1,6 @@
 ## 2025-02-14 - Fix Insecure File Upload via Missing Magic Byte Check
 **Vulnerability:** The `/parse` endpoint verified file types exclusively using the `Content-Type` header, omitting payload inspection. This allowed bypassing checks by supplying malicious payloads with an `application/pdf` header.
-**Learning:** Checking headers is insufficient; APIs consuming binary data must validate content via magic bytes (e.g. `b"%PDF-"`) and structural parsing before processing.
+**Learning:** Checking headers is insufficient; APIs consuming binary data must validate content via magic bytes (e.g., `b"%PDF-"`) and structural parsing before processing.
 **Prevention:** Always inspect magic bytes for binary upload endpoints and reject structurally invalid payloads before handing data to downstream parsers.
 
 ## 2024-06-25 - Prevent DoS from unbounded file read
@@ -73,7 +73,7 @@
 **Prevention:** 임시 파일 경로를 할당하거나 파일을 여는 즉시 자원 정리(cleanup) 로직이 보장되도록 `try...finally` 블록으로 감싼다.
 
 ## 2025-03-09 - Prevent Command/Log Injection via Newlines in Filenames
-**Vulnerability:** The blocklist regex `_UNSAFE_CHARS_PATTERN` for CLI arguments did not explicitly filter newline (\n) or carriage return (\r) characters. This can allow command or log injection even when `shell=False` is used, by passing arguments containing newlines.
+**Vulnerability:** The blocklist regex `_UNSAFE_CHARS_PATTERN` for CLI arguments did not explicitly filter newline (\n) or carriage return (`\r`) characters. This can allow command or log injection even when `shell=False` is used, by passing arguments containing newlines.
 **Learning:** Shell metacharacter blocklists must include whitespace metacharacters like newlines and carriage returns, as these can bypass checks and manipulate logs or downstream argument parsing.
 **Prevention:** Explicitly add \n and \r to the `_UNSAFE_CHARS_PATTERN` blocklist for CLI arguments.
 
