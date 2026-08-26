@@ -1,6 +1,6 @@
 ## 2025-02-14 - Fix Insecure File Upload via Missing Magic Byte Check
 **Vulnerability:** The `/parse` endpoint verified file types exclusively using the `Content-Type` header, omitting payload inspection. This allowed bypassing checks by supplying malicious payloads with an `application/pdf` header.
-**Learning:** Checking headers is insufficient; APIs consuming binary data must validate content via magic bytes (e.g., `b"%PDF-"`) and structural parsing before processing.
+**Learning:** Checking headers is insufficient; APIs consuming binary data must validate content via magic bytes (e.g. `b"%PDF-"`) and structural parsing before processing.
 **Prevention:** Always inspect magic bytes for binary upload endpoints and reject structurally invalid payloads before handing data to downstream parsers.
 
 ## 2024-06-25 - Prevent DoS from unbounded file read
@@ -90,11 +90,3 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
-## 2026-08-24 - Insecure Temporary File Permissions Vulnerability
-**Vulnerability:** The `NamedTemporaryFile` created during file uploads (`/parse`) inherits default permissions, potentially allowing other local users to read sensitive uploaded PDFs within the temporary directory before deletion. Strix flags this as a LOW severity penetration test finding.
-**Learning:** Security context is required for temp files even if they're shortly lived. While `tempfile.NamedTemporaryFile` isolates paths, depending on umask, it might default to readable permissions.
-**Prevention:** Explicitly restrict file permissions using `os.chmod(temporary_file.name, 0o600)` immediately after creating the temporary file to enforce user-only read/write access.
-## 2026-08-24 - Authorization Header Parsing Bypass
-**Vulnerability:** The `_parse_access_failure` function used `provided.partition(b" ")` to split the Authorization header. This method fails to handle leading/trailing whitespace or multiple spaces correctly, potentially allowing an attacker to bypass bearer token validation. Strix flags this as a MEDIUM severity authorization bypass vulnerability.
-**Learning:** `partition` is insufficient for parsing space-separated headers like Authorization because it splits on the exact first occurrence of the separator without considering surrounding whitespace.
-**Prevention:** Use `strip()` and `split(b" ", 1)` to robustly split the Authorization header into its components, and ensure both parts are correctly formatted and non-empty.
