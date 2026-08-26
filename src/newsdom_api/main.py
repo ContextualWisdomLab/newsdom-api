@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import asyncio
 import hmac
 import logging
@@ -129,11 +128,10 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     if len(provided) > MAX_BEARER_HEADER_BYTES:
         return _unauthorized_response()
 
-    provided_stripped = provided.strip()
-    parts = provided_stripped.split(b" ", 1)
-    if len(parts) != 2 or parts[0].strip().lower() != b"bearer" or not parts[1].strip():
+    scheme, separator, credentials = provided.partition(b" ")
+    if separator != b" " or scheme.lower() != b"bearer" or not credentials:
         return _unauthorized_response()
-    if not hmac.compare_digest(parts[1].strip(), token.encode("utf-8")):
+    if not hmac.compare_digest(credentials, token.encode("utf-8")):
         return _unauthorized_response()
     return None
 
@@ -251,7 +249,6 @@ async def parse(
             raise HTTPException(status_code=415, detail=UNSUPPORTED_MEDIA_DETAIL)
 
         with tempfile.NamedTemporaryFile(delete=False) as temporary_file:
-            os.chmod(temporary_file.name, 0o600)
             tmp_path = Path(temporary_file.name)
             LOGGER.debug("Created temporary upload file %s", tmp_path)
             temporary_file.write(header)
