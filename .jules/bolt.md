@@ -63,3 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2024-05-24 - Pre-fetch Directories to Avoid Redundant Glob I/O
+**Learning:** When searching for specific subdirectories across multiple candidate paths, executing `.glob()` multiple times incurs redundant filesystem I/O overhead.
+**Action:** Pre-fetch the base directory's contents once using `.iterdir()` and filter for directories. Iterating over this cached list to construct and check candidate paths is measurably faster than multiple `.glob()` pattern matches.
