@@ -49,3 +49,14 @@ def test_changelog_prepares_the_0_1_1_release_entry():
         "[0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1"
         in text
     )
+
+
+def test_unreleased_changelog_names_all_response_example_fields():
+    """Public schema release notes must match the response-example contract."""
+
+    text = Path("CHANGELOG.md").read_text(encoding="utf-8")
+    unreleased = text.split("## [0.2.0]", maxsplit=1)[0]
+
+    assert "PageNode.page_number" in unreleased
+    assert "ImageNode.media_type" in unreleased
+    assert "plural JSON Schema examples" in unreleased
