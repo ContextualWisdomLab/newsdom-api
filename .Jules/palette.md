@@ -29,3 +29,11 @@
 ## 2026-07-07 - [Improve Swagger UX with Pydantic V2 Examples]
 **Learning:** Using json_schema_extra={'example': ...} instead of example=... in Pydantic V2 schemas ensures OpenAPI compatibility and prevents deprecation warnings, significantly improving Developer Experience (DX) for API consumers.
 **Action:** Apply json_schema_extra to Pydantic Field definitions to automatically generate rich, self-documenting OpenAPI schemas for headless APIs.
+
+## 2026-07-08 - OpenAPI 스키마 필수 필드 표기 간소화
+**학습:** Pydantic V2와 FastAPI에서 `Field(description="...")`를 사용할 때 기본값(default)을 제공하지 않으면 OpenAPI 스키마에 자동으로 필수(required) 필드로 표시되므로 명시적인 `...` 인자는 불필요하다는 것을 발견했습니다. 이는 코드 가독성을 해치는 중복 표현입니다.
+**실행:** API 모델 및 엔드포인트 정의 시 불필요한 `...` (ellipsis) 인자를 제거하여 코드를 간결하게 유지하고 개발자 경험(DX)을 개선합니다.
+
+## 2026-07-09 - OpenAPI 스키마 예제 추가로 DX 향상
+**학습:** Pydantic V2 모델에서 `json_schema_extra={"example": ...}`를 누락하면 Swagger UI에서 해당 필드의 형태를 유추하기 어려워 개발자 경험(DX)이 저하됩니다.
+**실행:** API 모델의 모든 주요 필드에 `json_schema_extra`를 추가하여 OpenAPI 문서가 더 직관적이고 자동화된 예시를 제공하도록 개선합니다.
