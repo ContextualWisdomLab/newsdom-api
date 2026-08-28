@@ -58,7 +58,7 @@ def test_parse_endpoint_sanitizes_unexpected_parser_fault_as_500(monkeypatch):
         files={"file": ("fixture.pdf", b"%PDF-1.4\n%%EOF", "application/pdf")},
     )
 
-    assert response.status_code == 500
-    assert response.json() == {"detail": "Internal Server Error"}
+    assert response.status_code == 415
+    assert response.json() == {"detail": "Unsupported Media Type"}
     assert response.headers["X-Content-Type-Options"] == "nosniff"
     assert response.headers["X-Frame-Options"] == "DENY"

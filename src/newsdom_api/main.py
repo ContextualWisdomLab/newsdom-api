@@ -200,12 +200,10 @@ def _validate_pdf_structure(file_path: Path) -> None:
         ) from None
     except Exception as exc:
         LOGGER.error("Unhandled exception during PDF validation", exc_info=exc)
-        if isinstance(exc, (MemoryError, TypeError)):
-            raise HTTPException(
-                status_code=415,
-                detail=UNSUPPORTED_MEDIA_DETAIL,
-            ) from None
-        raise
+        raise HTTPException(
+            status_code=415,
+            detail=UNSUPPORTED_MEDIA_DETAIL,
+        ) from None
 
 
 async def parse(
