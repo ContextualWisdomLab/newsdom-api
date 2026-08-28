@@ -22,7 +22,6 @@ from fastapi import (
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from pypdf import PdfReader
-from pypdf.errors import PdfReadError
 
 from .config import (
     AuthenticationMode,
@@ -193,7 +192,12 @@ def _validate_pdf_structure(file_path: Path) -> None:
         reader = PdfReader(file_path, strict=True)
         if len(reader.pages) < 1:
             raise ValueError("PDF has no pages")
-    except (PdfReadError, RecursionError, ValueError, OverflowError):
+    except Exception as exc:
+        # 🛡️ Sentinel: Catch all exceptions during parsing to prevent unhandled 500 errors
+        # that could be exploited for DoS, but log them so we don't blind ourselves to real issues.
+        LOGGER.error(
+            "Uncaught exception during PDF structural validation", exc_info=exc
+        )
         raise HTTPException(
             status_code=415,
             detail=UNSUPPORTED_MEDIA_DETAIL,
