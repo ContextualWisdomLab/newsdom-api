@@ -90,3 +90,7 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+## 2024-08-28 - Token Length Timing Attack Prevention
+**Vulnerability:** `hmac.compare_digest` returns early when lengths differ, leaking the expected token's length via a timing side-channel.
+**Learning:** Python's `hmac.compare_digest` is constant-time only when lengths match. Applying `hashlib.sha256()` to normalize lengths can trigger CodeQL's insecure password hashing heuristics.
+**Prevention:** Execute a dummy constant-time comparison (e.g., `hmac.compare_digest(credentials, credentials)`) when lengths differ to safely balance execution time without triggering weak hashing rules.
