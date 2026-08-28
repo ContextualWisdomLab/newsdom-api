@@ -55,7 +55,7 @@ def test_parse_export_counts_real_response_shape_without_document_text():
     assert event["pdf_bytes"] == 4
     assert event["page_count"] == 1
     assert event["ocr_page_count"] == 1
-    assert event["extracted_block_count"] == 5
+    assert event["extracted_block_count"] == 6
     assert "headline" not in event
     assert "body-1" not in event
 
@@ -81,3 +81,30 @@ def test_failed_parse_is_not_exported():
     )
 
     assert queued == []
+
+    partial = ParseResponse(
+        document_id="doc-1",
+        quality={"status": "partial"},
+    )
+    sink.emit_parse(
+        partial,
+        document_job_reference="job-1",
+        pdf_bytes=b"pdf",
+        ocr_page_count=0,
+        occurred_at="2026-08-28T00:00:00Z",
+    )
+    assert len(queued) == 1
+
+
+def test_identity_cannot_override_parse_fields():
+    """Reserved parse fields remain under the sink's explicit authority."""
+    try:
+        CanonicalParseUsageSink(
+            event_builder=lambda **payload: payload,
+            enqueue=lambda _: None,
+            identity={"document_id": "must-not-override"},
+        )
+    except ValueError as error:
+        assert "document_id" in str(error)
+    else:
+        raise AssertionError("reserved identity field was accepted")

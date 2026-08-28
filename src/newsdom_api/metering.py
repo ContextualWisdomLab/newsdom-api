@@ -8,6 +8,22 @@ from typing import Any
 from .schemas import ParseResponse
 
 
+_RESERVED_EVENT_FIELDS = frozenset(
+    {
+        "document_job_reference",
+        "document_id",
+        "occurred_at",
+        "pdf_bytes",
+        "page_count",
+        "ocr_page_count",
+        "extracted_block_count",
+        "shard_reference",
+        "credential_reference",
+        "project_reference",
+    }
+)
+
+
 class CanonicalParseUsageSink:
     """Build and enqueue a count-only event for one parse result."""
 
@@ -18,6 +34,11 @@ class CanonicalParseUsageSink:
         enqueue: Callable[[Mapping[str, Any]], None],
         identity: Mapping[str, str | None],
     ) -> None:
+        """Store the event builder, durable enqueue callback, and parse identity."""
+        reserved = _RESERVED_EVENT_FIELDS.intersection(identity)
+        if reserved:
+            names = ", ".join(sorted(reserved))
+            raise ValueError(f"identity contains reserved event fields: {names}")
         self._event_builder = event_builder
         self._enqueue = enqueue
         self._identity = dict(identity)
@@ -60,6 +81,7 @@ def _extracted_block_count(response: ParseResponse) -> int:
         count += len(page.ads) + len(page.headers) + len(page.footers)
         count += len(page.page_numbers)
         for article in page.articles:
+            count += 1
             count += len(article.body_blocks)
             count += len(article.captions) + len(article.footnotes)
             for image in article.images:
