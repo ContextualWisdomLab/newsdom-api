@@ -8,6 +8,6 @@
 **Learning:** 백엔드 전용 프로젝트(프론트엔드가 없는 경우)에서는 'UX(사용자 경험)'가 주로 'DX(개발자 경험)'로 해석됩니다. OpenAPI/Swagger 스키마에 `json_schema_extra={"example": ...}`와 같은 구체적인 예시를 추가하면 API를 사용하는 개발자들의 인터페이스 이해도를 높일 수 있습니다.
 **Action:** 향후 백엔드 API 중심의 프로젝트에서는 Pydantic 스키마 정의에 풍부한 문서화와 예제 데이터가 포함되어 있는지 확인하여 개발자 경험을 개선할 것입니다.
 
-## 2026-08-20 - Swagger UI persistAuthorization 추가로 DX 개선
-**Learning:** Swagger UI에서 `persistAuthorization: True` 설정을 추가하면 페이지 새로고침 시에도 인증 토큰이 유지되어 개발자 경험(DX)이 크게 향상됩니다.
-**Action:** FastAPI 기반의 백엔드 API에서 개발자 편의성을 위해 Swagger UI 설정에 인증 유지 기능을 기본적으로 포함하도록 구성해야 합니다.
+## 2026-08-20 - Swagger UI authorization persistence
+**Learning:** `persistAuthorization: true` extends how long Swagger UI retains authorization data across browser refresh/close. That is a credential-lifetime security decision, not a presentation-only DX default.
+**Action:** Keep Swagger authorization persistence disabled in protected/production profiles. Enable it only inside the explicit development runtime profile, preserve Bearer authentication itself, and tell protected-profile developers to re-enter the Bearer token after a refresh.
