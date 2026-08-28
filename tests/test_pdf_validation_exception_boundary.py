@@ -3,7 +3,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from newsdom_api.main import _validate_pdf_structure, app
+from newsdom_api.config import AuthenticationMode, RuntimeProfile, RuntimeSettings
+from newsdom_api.main import _validate_pdf_structure, create_app
 
 
 def _write_pdf(path: Path) -> Path:
@@ -11,6 +12,18 @@ def _write_pdf(path: Path) -> Path:
 
     path.write_bytes(b"%PDF-1.4\n%%EOF")
     return path
+
+
+def _development_app():
+    """Create an explicitly auth-disabled development app for parser-boundary tests."""
+
+    return create_app(
+        RuntimeSettings(
+            authentication_mode=AuthenticationMode.DISABLED,
+            runtime_profile=RuntimeProfile.DEVELOPMENT,
+        ),
+        runtime_readiness_probe=lambda: True,
+    )
 
 
 def test_pdf_validation_propagates_unexpected_parser_fault(monkeypatch, tmp_path):
@@ -35,7 +48,7 @@ def test_parse_endpoint_sanitizes_unexpected_parser_fault_as_500(monkeypatch):
 
     monkeypatch.setattr("newsdom_api.main.PdfReader", fail_reader)
 
-    client = TestClient(app, raise_server_exceptions=False)
+    client = TestClient(_development_app(), raise_server_exceptions=False)
     response = client.post(
         "/parse",
         files={"file": ("fixture.pdf", b"%PDF-1.4\n%%EOF", "application/pdf")},
