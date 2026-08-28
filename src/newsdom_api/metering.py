@@ -13,7 +13,6 @@ _CANONICAL_IDENTITY_FIELDS = frozenset(
         "tenant_reference",
         "billing_account_reference",
         "billing_principal_reference",
-        "credential_reference",
         "cost_center_reference",
     }
 )
@@ -70,7 +69,7 @@ class CanonicalParseUsageSink:
 
 
 def _extracted_block_count(response: ParseResponse) -> int:
-    """Count extracted text-bearing blocks while retaining no text content."""
+    """Count article units and text-bearing blocks without retaining text."""
     count = 0
     for page in response.pages:
         count += len(page.ads) + len(page.headers) + len(page.footers)

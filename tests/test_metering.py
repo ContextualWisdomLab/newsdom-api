@@ -49,6 +49,7 @@ def test_parse_export_counts_real_response_shape_without_document_text():
         ocr_page_count=1,
         occurred_at="2026-08-28T00:00:00Z",
         shard_reference="urn:cwl:shard:1",
+        credential_reference="urn:cwl:credential:1",
     )
 
     event = queued[0]
@@ -56,6 +57,7 @@ def test_parse_export_counts_real_response_shape_without_document_text():
     assert event["page_count"] == 1
     assert event["ocr_page_count"] == 1
     assert event["extracted_block_count"] == 6
+    assert event["credential_reference"] == "urn:cwl:credential:1"
     assert "headline" not in event
     assert "body-1" not in event
 
