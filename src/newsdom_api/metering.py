@@ -8,18 +8,13 @@ from typing import Any
 from .schemas import ParseResponse
 
 
-_RESERVED_EVENT_FIELDS = frozenset(
+_CANONICAL_IDENTITY_FIELDS = frozenset(
     {
-        "document_job_reference",
-        "document_id",
-        "occurred_at",
-        "pdf_bytes",
-        "page_count",
-        "ocr_page_count",
-        "extracted_block_count",
-        "shard_reference",
+        "tenant_reference",
+        "billing_account_reference",
+        "billing_principal_reference",
         "credential_reference",
-        "project_reference",
+        "cost_center_reference",
     }
 )
 
@@ -35,10 +30,10 @@ class CanonicalParseUsageSink:
         identity: Mapping[str, str | None],
     ) -> None:
         """Store the event builder, durable enqueue callback, and parse identity."""
-        reserved = _RESERVED_EVENT_FIELDS.intersection(identity)
-        if reserved:
-            names = ", ".join(sorted(reserved))
-            raise ValueError(f"identity contains reserved event fields: {names}")
+        unexpected = set(identity).difference(_CANONICAL_IDENTITY_FIELDS)
+        if unexpected:
+            names = ", ".join(sorted(unexpected))
+            raise ValueError(f"identity contains noncanonical fields: {names}")
         self._event_builder = event_builder
         self._enqueue = enqueue
         self._identity = dict(identity)

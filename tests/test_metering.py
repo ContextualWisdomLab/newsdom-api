@@ -108,3 +108,17 @@ def test_identity_cannot_override_parse_fields():
         assert "document_id" in str(error)
     else:
         raise AssertionError("reserved identity field was accepted")
+
+
+def test_identity_cannot_inject_document_content():
+    """Private document text is rejected before reaching the builder."""
+    try:
+        CanonicalParseUsageSink(
+            event_builder=lambda **payload: payload,
+            enqueue=lambda _: None,
+            identity={"document_text": "must-not-reach-builder"},
+        )
+    except ValueError as error:
+        assert "document_text" in str(error)
+    else:
+        raise AssertionError("private document content was accepted as identity")
