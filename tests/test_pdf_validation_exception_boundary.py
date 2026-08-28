@@ -3,7 +3,9 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from newsdom_api.main import _validate_pdf_structure, app
+from newsdom_api.config import AuthenticationMode, RuntimeProfile, RuntimeSettings
+from newsdom_api.main import _validate_pdf_structure, create_app
+from fastapi import HTTPException
 
 
 def _write_pdf(path: Path) -> Path:
@@ -13,7 +15,17 @@ def _write_pdf(path: Path) -> Path:
     return path
 
 
-from fastapi import HTTPException
+def _development_app():
+    """Create an explicitly auth-disabled development app for parser-boundary tests."""
+
+    return create_app(
+        RuntimeSettings(
+            authentication_mode=AuthenticationMode.DISABLED,
+            runtime_profile=RuntimeProfile.DEVELOPMENT,
+        ),
+        runtime_readiness_probe=lambda: True,
+    )
+
 
 def test_pdf_validation_propagates_unexpected_parser_fault(monkeypatch, tmp_path):
     """Unexpected parser/runtime failures must not masquerade as invalid input."""
@@ -30,8 +42,9 @@ def test_pdf_validation_propagates_unexpected_parser_fault(monkeypatch, tmp_path
     assert exc_info.value.status_code == 415
     assert exc_info.value.detail == "Unsupported Media Type"
 
+
 def test_parse_endpoint_sanitizes_unexpected_parser_fault_as_500(monkeypatch):
-    """The application-level error boundary must sanitize unexpected PDF failures."""
+    """The application error boundary must sanitize unexpected PDF failures."""
 
     def fail_reader(_stream, *, strict):
         assert strict is True
@@ -39,7 +52,7 @@ def test_parse_endpoint_sanitizes_unexpected_parser_fault_as_500(monkeypatch):
 
     monkeypatch.setattr("newsdom_api.main.PdfReader", fail_reader)
 
-    client = TestClient(app, raise_server_exceptions=False)
+    client = TestClient(_development_app(), raise_server_exceptions=False)
     response = client.post(
         "/parse",
         files={"file": ("fixture.pdf", b"%PDF-1.4\n%%EOF", "application/pdf")},
