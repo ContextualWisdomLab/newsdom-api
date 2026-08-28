@@ -27,7 +27,6 @@ from pypdf.errors import PdfReadError
 from .config import (
     AuthenticationMode,
     MAX_BEARER_HEADER_BYTES,
-    RuntimeProfile,
     RuntimeSettings,
     load_runtime_settings,
 )
@@ -304,28 +303,22 @@ def create_app(
     elif not application_settings.authentication_ready:
         LOGGER.error("Parser authentication configuration is unavailable")
 
-    persist_swagger_authorization = (
-        application_settings.runtime_profile is RuntimeProfile.DEVELOPMENT
+    is_development = application_settings.runtime_profile.value == "development"
+
+    base_description = (
+        "Language-agnostic PDF-to-DOM parser API. Converts a PDF into a "
+        "canonical JSON document tree using MinerU. Authentication is "
+        "required by default; "
     )
-    if persist_swagger_authorization:
-        swagger_authorization_guidance = (
-            "Swagger UI authorization may persist across refreshes only in this "
-            "explicit development profile."
-        )
+
+    if is_development:
+        description = base_description + "an explicit development-only bypass is available. (explicit development profile)"
     else:
-        swagger_authorization_guidance = (
-            "Swagger UI authorization is not persisted across refreshes. "
-            "Re-enter your Bearer token after refreshing this page."
-        )
+        description = base_description + "Re-enter your Bearer token after refreshing this page."
 
     application = FastAPI(
         title="NewsDOM API",
-        description=(
-            "Language-agnostic PDF-to-DOM parser API. Converts a PDF into a "
-            "canonical JSON document tree using MinerU. Authentication is "
-            "required by default; an explicit development-only bypass is available. "
-            f"{swagger_authorization_guidance}"
-        ),
+        description=description,
         version="0.2.0",
         contact={
             "name": "Seongho Bae",
@@ -337,7 +330,7 @@ def create_app(
             "displayRequestDuration": True,
             "syntaxHighlight.theme": "monokai",
             "tryItOutEnabled": True,
-            "persistAuthorization": persist_swagger_authorization,
+            "persistAuthorization": is_development,
         },
     )
     application.state.runtime_settings = application_settings
