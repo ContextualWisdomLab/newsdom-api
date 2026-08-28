@@ -95,3 +95,8 @@
 **Vulnerability:** 악의적으로 조작된 PDF 파일이 `PdfReader`에서 `MemoryError`나 `TypeError` 등 처리되지 않은 예외를 발생시켜 unhandled 500 에러를 유발하고 서비스 거부(DoS)를 일으킬 수 있음.
 **Learning:** 파일 구조 검증 라이브러리의 다양한 예외 상황을 포괄적으로 처리하여 시스템 장애 및 스캐너의 DoS 플래그 발생을 예방해야 함을 배움. 보안 결함을 숨기지 않기 위해 에러 로깅은 필수적임.
 **Prevention:** 향후 구조적 파싱 로직을 구현할 때 `except Exception:`과 같은 광범위한 예외 처리를 통해 안전한 클라이언트 에러로 변환하고, 내부적으로 로깅을 남기는 패턴을 일관되게 적용할 것.
+
+## 2023-10-25 - 메모리 상주 파일 로딩 시 자원 고갈(DoS) 및 TOCTOU 취약점 방지
+**Vulnerability:** `json.loads(path.read_text())`와 같이 파일 전체를 한 번에 메모리에 로드할 때 악의적으로 큰 파일이나 FIFO를 통해 시스템 메모리가 고갈(Resource Exhaustion)될 위험이 존재함. 파일 크기를 `path.stat().st_size`로 검증하는 방식은 TOCTOU(Time-Of-Check-Time-Of-Use) 및 FIFO 우회에 취약함.
+**Learning:** 보안 스캐너(Strix)는 크기 제한이 없는 무제한 파일 읽기를 DoS 취약점으로 탐지함. 파일 핸들을 열고 `f.read(MAX_SIZE + 1)` 방식으로 제한된 바이트 수만 읽어온 후 크기를 검증하는 것이 안전함.
+**Prevention:** 파일을 직접 메모리에 로드할 때는 항상 제한된 크기(bounded read)를 사용하고, 초과 시 안전하게 예외를 발생시키도록 구현할 것.

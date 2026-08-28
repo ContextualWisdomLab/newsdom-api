@@ -286,14 +286,27 @@ def test_parse_mineru_output_distinguishes_read_failures(
         json.dumps([{"layout_dets": []}]), encoding="utf-8"
     )
 
-    original_read_text = Path.read_text
+    original_open = Path.open
 
-    def fake_read_text(self, *args, **kwargs):
+    def fake_open(self, *args, **kwargs):
         if self.name == file_name:
-            raise read_error
-        return original_read_text(self, *args, **kwargs)
+            if isinstance(read_error, (OSError, FileNotFoundError)):
+                raise read_error
 
-    monkeypatch.setattr(Path, "read_text", fake_read_text)
+            class FakeFile:
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, *a, **k):
+                    pass
+
+                def read(self, *a, **k):
+                    raise read_error
+
+            return FakeFile()
+        return original_open(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", fake_open)
 
     with pytest.raises(MineruIncompleteOutputError, match=expected_detail) as exc_info:
         mineru_runner._parse_mineru_output(tmp_path, Path("sample.pdf"))
@@ -613,14 +626,27 @@ def test_run_mineru_wraps_output_read_failures(
 
         return Result()
 
-    original_read_text = Path.read_text
+    original_open = Path.open
 
-    def fake_read_text(self, *args, **kwargs):
+    def fake_open(self, *args, **kwargs):
         if self.name == file_name:
-            raise read_error
-        return original_read_text(self, *args, **kwargs)
+            if isinstance(read_error, (OSError, FileNotFoundError)):
+                raise read_error
 
-    monkeypatch.setattr(Path, "read_text", fake_read_text)
+            class FakeFile:
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, *a, **k):
+                    pass
+
+                def read(self, *a, **k):
+                    raise read_error
+
+            return FakeFile()
+        return original_open(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", fake_open)
     monkeypatch.setattr(mineru_runner.subprocess, "run", fake_run)
 
     with pytest.raises(Exception) as exc_info:
@@ -632,3 +658,21 @@ def test_run_mineru_wraps_output_read_failures(
     else:
         assert "model JSON could not be read" in str(exc_info.value)
     _assert_no_private_path_material(str(exc_info.value))
+
+
+def test_parse_mineru_output_rejects_oversized_json(monkeypatch, tmp_path: Path):
+    """Verify that bounded reads prevent resource exhaustion from oversized JSON artifacts."""
+    # 🛡️ Sentinel: Provide specific test coverage intentionally triggering the oversized artifact exception.
+    oversized_data = " " * (10 * 1024 * 1024 + 1)
+    (tmp_path / "doc" / "ocr").mkdir(parents=True)
+    (tmp_path / "doc" / "ocr" / "dummy_content_list.json").write_text(oversized_data)
+    (tmp_path / "doc" / "ocr" / "dummy_model.json").write_text("{}")
+
+    from newsdom_api.errors import MineruIncompleteOutputError
+    from newsdom_api.mineru_runner import _parse_mineru_output
+
+    with pytest.raises(
+        MineruIncompleteOutputError,
+        match="content list JSON exceeds maximum allowed size",
+    ):
+        _parse_mineru_output(tmp_path, Path("dummy.pdf"), method="ocr")
