@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pytest
-from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from newsdom_api.config import AuthenticationMode, RuntimeProfile, RuntimeSettings
@@ -25,6 +24,9 @@ def _development_app():
         ),
         runtime_readiness_probe=lambda: True,
     )
+
+
+from fastapi import HTTPException
 
 
 def test_pdf_validation_propagates_unexpected_parser_fault(monkeypatch, tmp_path):
