@@ -53,7 +53,6 @@ class ImageNode(BaseModel):
     media_type: str = Field(
         default="image",
         description="Media type label for the extracted image node.",
-        json_schema_extra={"example": "image"},
     )
     bbox: Optional[BoundingBox] = Field(
         default=None,
@@ -65,12 +64,10 @@ class ImageNode(BaseModel):
     captions: List[CaptionNode] = Field(
         default_factory=list,
         description="Captions associated with this image.",
-        json_schema_extra={"example": [{"text": "Image caption"}]},
     )
     footnotes: List[CaptionNode] = Field(
         default_factory=list,
         description="Footnotes associated with this image.",
-        json_schema_extra={"example": [{"text": "Image footnote"}]},
     )
 
 
@@ -113,17 +110,14 @@ class ArticleNode(BaseModel):
     images: List[ImageNode] = Field(
         default_factory=list,
         description="Images associated with the article.",
-        json_schema_extra={"example": [{"path": "images/article_123_fig1.jpg"}]},
     )
     captions: List[CaptionNode] = Field(
         default_factory=list,
         description="Captions associated with the article.",
-        json_schema_extra={"example": [{"text": "Article caption"}]},
     )
     footnotes: List[CaptionNode] = Field(
         default_factory=list,
         description="Footnotes associated with the article.",
-        json_schema_extra={"example": [{"text": "Article footnote"}]},
     )
 
 
@@ -137,12 +131,10 @@ class PageNode(BaseModel):
     width: Optional[float] = Field(
         default=None,
         description="Page width reported by the parser, if available.",
-        json_schema_extra={"example": 800.0},
     )
     height: Optional[float] = Field(
         default=None,
         description="Page height reported by the parser, if available.",
-        json_schema_extra={"example": 1200.0},
     )
     articles: List[ArticleNode] = Field(
         default_factory=list,
@@ -156,22 +148,18 @@ class PageNode(BaseModel):
     ads: List[str] = Field(
         default_factory=list,
         description="Advertisement text blocks extracted from this page.",
-        json_schema_extra={"example": ["Ad block text"]},
     )
     headers: List[str] = Field(
         default_factory=list,
         description="Header text blocks extracted from this page.",
-        json_schema_extra={"example": ["Header block text"]},
     )
     footers: List[str] = Field(
         default_factory=list,
         description="Footer text blocks extracted from this page.",
-        json_schema_extra={"example": ["Footer block text"]},
     )
     page_numbers: List[str] = Field(
         default_factory=list,
         description="Visible page-number text blocks extracted from this page.",
-        json_schema_extra={"example": ["1"]},
     )
 
 
@@ -205,7 +193,6 @@ class ParseResponse(BaseModel):
     pages: List[PageNode] = Field(
         default_factory=list,
         description="Sequential list of structured pages extracted from the PDF.",
-        json_schema_extra={"example": [{"page_number": 1}]},
     )
     quality: ParseQuality = Field(
         default_factory=ParseQuality,

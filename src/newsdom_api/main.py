@@ -201,7 +201,14 @@ def _validate_pdf_structure(file_path: Path) -> None:
 
 
 async def parse(
-    file: Annotated[UploadFile, File(..., description="The PDF file to parse.")],
+    file: Annotated[
+        UploadFile,
+        File(
+            ...,
+            description="The PDF file to parse.",
+            json_schema_extra={"example": "sample.pdf"},
+        ),
+    ],
     language: Annotated[
         str,
         Form(
@@ -339,6 +346,7 @@ def create_app(
         summary="Health Check",
         description="Returns liveness without evaluating traffic readiness.",
         tags=["System"],
+        responses={503: {"description": SERVICE_UNAVAILABLE_DETAIL}},
     )
     application.add_api_route(
         "/ready",
