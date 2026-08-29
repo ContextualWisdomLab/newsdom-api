@@ -241,3 +241,26 @@ def test_derived_metrics_invalid_types():
     }
     metrics = _derived_metrics(payload)
     assert metrics == payload
+
+
+def test_derived_metrics_caching():
+    from newsdom_api.equivalence import _derived_metrics
+
+    # Create an object that counts the number of times it is accessed
+    class PayloadSpy(dict):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.access_counts = {}
+
+        def get(self, key, default=None):
+            self.access_counts[key] = self.access_counts.get(key, 0) + 1
+            return super().get(key, default)
+
+    payload = PayloadSpy({"articles": [], "images": [], "ads": [], "pages": []})
+    _derived_metrics(payload)
+
+    # In the optimized version, each key should be accessed exactly once
+    assert payload.access_counts["articles"] == 1
+    assert payload.access_counts["images"] == 1
+    assert payload.access_counts["ads"] == 1
+    assert payload.access_counts["pages"] == 1
