@@ -555,3 +555,28 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
+
+
+def test_parse_endpoint_rejects_excessively_long_form_fields(monkeypatch):
+    from fastapi.testclient import TestClient
+    from newsdom_api.main import app
+
+    monkeypatch.setenv("NEWSDOM_AUTH_MODE", "disabled")
+    monkeypatch.setenv("NEWSDOM_RUNTIME_PROFILE", "development")
+    client = TestClient(app)
+
+    long_string = "a" * 100
+
+    response_lang = client.post(
+        "/parse",
+        files={"file": ("test.pdf", b"%PDF-1.4\n...", "application/pdf")},
+        data={"language": long_string, "mode": "auto"},
+    )
+    assert response_lang.status_code == 422
+
+    response_mode = client.post(
+        "/parse",
+        files={"file": ("test.pdf", b"%PDF-1.4\n...", "application/pdf")},
+        data={"language": "ch", "mode": long_string},
+    )
+    assert response_mode.status_code == 422
