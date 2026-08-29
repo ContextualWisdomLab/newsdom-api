@@ -43,8 +43,8 @@ def test_default_configuration_without_token_blocks_parser_before_work(
         application, raise_server_exceptions=False
     ).post("/parse", files=_PDF_FILES)
 
-    assert response.status_code == 503
-    assert response.json() == {"detail": "Service Unavailable"}
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Unauthorized"}
     assert parser_called is False
 
 
