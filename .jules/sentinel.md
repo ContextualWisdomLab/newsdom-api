@@ -60,7 +60,7 @@
 ## 2024-10-24 - Fix DoS vulnerability in file uploads
 **Vulnerability:** Asynchronous file uploads created temporary files before entering a try/finally block. If the client disconnects or an error occurs during `await file.read()`, the temporary file is left orphaned on the filesystem, leading to disk exhaustion (DoS).
 **Learning:** File instantiation and the subsequent read loop must be entirely enclosed within a unified `try...finally` block.
-**Prevention:** Always initialize `tmp_path = None` before a `try` block, instantiate the file and perform network reads inside the `try` block, and handle cleanup in `finally` by checking `if tmp_path and tmp_path.exists()`.
+**Prevention:** Always initialize `tmp_path = None` before a `try` block, instantiate the file and perform network reads inside the `try` block, and handle cleanup in `finally` by checking `if tmp_path and tmp_path.exists(): tmp_path.unlink(missing_ok=True)`.
 
 ## 2025-03-01 - Prevent Disk Exhaustion DoS via Orphaned Temp Files
 **Vulnerability:** The `/parse` API streamed large uploaded files into a `NamedTemporaryFile(delete=False)`. If a read error or client disconnect occurred (e.g. an exception during `await file.read(8192)`), the execution flow would jump past the explicit `try...finally` cleanup block that was located *after* the read loop. This resulted in orphaned temporary files left on disk, creating a Disk Exhaustion DoS vulnerability when under attack.
@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2025-05-18 - [CRITICAL] 파일 구조 검증 시 예외 처리를 통한 DoS 취약점 해결
+**Vulnerability:** 파일 파싱 라이브러리(`PdfReader` 등)에서 예상치 못한 예외(예: `MemoryError`, `TypeError`)가 발생하면 애플리케이션 레벨에서 처리되지 않아 HTTP 500 에러를 반환하게 되며, 악의적인 사용자가 이를 이용해 DoS 공격을 유발할 수 있습니다.
+**Learning:** 외부 데이터를 처리하는 라이브러리 호출 시 특정 예외뿐만 아니라 광범위한 예외(`except Exception`)도 함께 잡아내어 안전한 클라이언트 에러(예: 415 Unsupported Media Type)로 변환해야 시스템의 안정을 보장할 수 있습니다.
+**Prevention:** 파일 검증 및 파싱 호출부를 `try...except Exception` 블록으로 감싸고, 실제 예외 원인을 분석할 수 있도록 로그(예: `LOGGER.error(...)`)를 남긴 후 클라이언트에게는 안전한 HTTP 상태 코드(415 등)를 응답합니다.
