@@ -53,13 +53,11 @@ class ImageNode(BaseModel):
     media_type: str = Field(
         default="image",
         description="Media type label for the extracted image node.",
+        json_schema_extra={"example": "image"},
     )
     bbox: Optional[BoundingBox] = Field(
         default=None,
         description="Bounding box of the image when parser coordinates are available.",
-        json_schema_extra={
-            "example": {"x0": 10.5, "y0": 100.0, "x1": 500.5, "y1": 800.0}
-        },
     )
     captions: List[CaptionNode] = Field(
         default_factory=list,
@@ -96,9 +94,6 @@ class ArticleNode(BaseModel):
         description=(
             "Bounding box enclosing the article when parser coordinates are available."
         ),
-        json_schema_extra={
-            "example": {"x0": 10.5, "y0": 100.0, "x1": 500.5, "y1": 800.0}
-        },
     )
     body_blocks: List[str] = Field(
         default_factory=list,
@@ -139,11 +134,6 @@ class PageNode(BaseModel):
     articles: List[ArticleNode] = Field(
         default_factory=list,
         description="Articles extracted from this page.",
-        json_schema_extra={
-            "example": [
-                {"article_id": "section-20231015-001", "headline": "Quarterly results"}
-            ]
-        },
     )
     ads: List[str] = Field(
         default_factory=list,

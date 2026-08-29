@@ -201,22 +201,14 @@ def _validate_pdf_structure(file_path: Path) -> None:
 
 
 async def parse(
-    file: Annotated[
-        UploadFile,
-        File(
-            ...,
-            description="The PDF file to parse.",
-            json_schema_extra={"example": "sample.pdf"},
-        ),
-    ],
+    file: Annotated[UploadFile, File(..., description="The PDF file to parse.")],
     language: Annotated[
         str,
         Form(
             description=(
                 "MinerU language family or compatibility alias (e.g. `ch`, "
                 "`en`, `japan`, `korean`, `arabic`, `devanagari`)."
-            ),
-            json_schema_extra={"example": "ch"},
+            )
         ),
     ] = DEFAULT_LANGUAGE,
     mode: Annotated[
@@ -225,8 +217,7 @@ async def parse(
             description=(
                 "MinerU parsing mode: `auto` (born-digital text PDFs skip forced "
                 "OCR), `ocr` (force OCR), or `txt` (embedded text layer only)."
-            ),
-            json_schema_extra={"example": "auto"},
+            )
         ),
     ] = DEFAULT_MODE,
 ) -> ParseResponse:
@@ -346,7 +337,6 @@ def create_app(
         summary="Health Check",
         description="Returns liveness without evaluating traffic readiness.",
         tags=["System"],
-        responses={503: {"description": SERVICE_UNAVAILABLE_DETAIL}},
     )
     application.add_api_route(
         "/ready",
