@@ -94,3 +94,7 @@
  **Vulnerability:** N/A (Infrastructure Failure)
  **Learning:** The `strix` CI check failed with an exit code of 2 and reported `LLM_API_BASE must be an https URL when configured.`. This is a tooling misconfiguration within the CI environment itself, not a vulnerability in the codebase.
  **Prevention:** Rely on memory to safely ignore this infrastructural failure and retry by calling submit.
+## 2026-08-29 - OpenCode Review Infrastructure Delay
+ **Vulnerability:** N/A (Infrastructure Delay)
+ **Learning:** The `opencode-review` CI check failed with the message `No APPROVED or CHANGES_REQUESTED from opencode-agent on the current head.`. This represents a delay or failure of the asynchronous review agent rather than a codebase issue.
+ **Prevention:** Rely on memory to safely ignore this infrastructural failure and retry by calling submit.
