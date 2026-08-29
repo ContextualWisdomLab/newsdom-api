@@ -5,7 +5,6 @@ from fastapi.testclient import TestClient
 
 from newsdom_api.config import AuthenticationMode, RuntimeProfile, RuntimeSettings
 from newsdom_api.main import _validate_pdf_structure, create_app
-from fastapi import HTTPException
 
 
 def _write_pdf(path: Path) -> Path:
@@ -36,11 +35,8 @@ def test_pdf_validation_propagates_unexpected_parser_fault(monkeypatch, tmp_path
 
     monkeypatch.setattr("newsdom_api.main.PdfReader", fail_reader)
 
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(MemoryError, match="synthetic parser resource failure"):
         _validate_pdf_structure(_write_pdf(tmp_path / "fixture.pdf"))
-
-    assert exc_info.value.status_code == 415
-    assert exc_info.value.detail == "Unsupported Media Type"
 
 
 def test_parse_endpoint_sanitizes_unexpected_parser_fault_as_500(monkeypatch):
@@ -58,7 +54,7 @@ def test_parse_endpoint_sanitizes_unexpected_parser_fault_as_500(monkeypatch):
         files={"file": ("fixture.pdf", b"%PDF-1.4\n%%EOF", "application/pdf")},
     )
 
-    assert response.status_code == 415
-    assert response.json() == {"detail": "Unsupported Media Type"}
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Internal Server Error"}
     assert response.headers["X-Content-Type-Options"] == "nosniff"
     assert response.headers["X-Frame-Options"] == "DENY"
