@@ -100,3 +100,42 @@ def test_ready_converts_probe_exception_to_fixed_unavailable_response() -> None:
     assert response.json() == {"detail": "Service Unavailable"}
     assert "private" not in response.text.lower()
     assert "operating-system" not in response.text.lower()
+
+def test_required_mode_rejects_credentials_of_different_length(
+    parser_spy: dict[str, int],
+) -> None:
+    """Credentials of different length must be rejected safely using constant-time comparison."""
+
+    application = create_app(
+        RuntimeSettings(api_token="s3cret-token-1234"),
+        runtime_readiness_probe=lambda: True,
+    )
+
+    response = TestClient(application).post(
+        "/parse",
+        files=_PDF_FILES,
+        headers={"Authorization": "Bearer too-short"},
+    )
+
+    assert response.status_code == 401
+    assert parser_spy["count"] == 0
+
+
+def test_required_mode_rejects_credentials_of_same_length_but_invalid(
+    parser_spy: dict[str, int],
+) -> None:
+    """Credentials of the same length but invalid content must be rejected."""
+
+    application = create_app(
+        RuntimeSettings(api_token="s3cret-token-1234"),
+        runtime_readiness_probe=lambda: True,
+    )
+
+    response = TestClient(application).post(
+        "/parse",
+        files=_PDF_FILES,
+        headers={"Authorization": "Bearer w3rong-token-1234"},
+    )
+
+    assert response.status_code == 401
+    assert parser_spy["count"] == 0
