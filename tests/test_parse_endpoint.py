@@ -557,12 +557,7 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
 
 
-def test_parse_endpoint_rejects_excessively_long_form_fields(monkeypatch):
-    from fastapi.testclient import TestClient
-    from newsdom_api.main import app
-
-    monkeypatch.setenv("NEWSDOM_AUTH_MODE", "disabled")
-    monkeypatch.setenv("NEWSDOM_RUNTIME_PROFILE", "development")
+def test_parse_endpoint_rejects_excessively_long_form_fields():
     client = TestClient(app)
 
     long_string = "a" * 100
