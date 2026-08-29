@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from newsdom_api.config import AuthenticationMode, RuntimeProfile, RuntimeSettings
 from newsdom_api.main import _validate_pdf_structure, create_app
+from fastapi import HTTPException
 
 
 def _write_pdf(path: Path) -> Path:
@@ -24,9 +25,6 @@ def _development_app():
         ),
         runtime_readiness_probe=lambda: True,
     )
-
-
-from fastapi import HTTPException
 
 
 def test_pdf_validation_propagates_unexpected_parser_fault(monkeypatch, tmp_path):
