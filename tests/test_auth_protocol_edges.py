@@ -137,6 +137,42 @@ def test_required_mode_compares_fixed_width_fingerprints_for_wrong_credentials(
     assert parser_spy["count"] == 0
 
 
+def test_required_mode_uses_keyed_fingerprints_for_secret_and_candidate(
+    parser_spy: dict[str, int],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Token fingerprints must be keyed so they are not reusable password hashes."""
+
+    original_digest = hmac.digest
+    digest_calls: list[tuple[bytes, bytes, str]] = []
+
+    def digest_spy(key: bytes, message: bytes, digest: str) -> bytes:
+        digest_calls.append((key, message, digest))
+        return original_digest(key, message, digest)
+
+    monkeypatch.setattr("newsdom_api.main.hmac.digest", digest_spy)
+    application = create_app(
+        RuntimeSettings(api_token="s3cret-token"),
+        runtime_readiness_probe=lambda: True,
+    )
+
+    response = TestClient(application).post(
+        "/parse",
+        files=_PDF_FILES,
+        headers={"Authorization": "Bearer wrong-token"},
+    )
+
+    assert response.status_code == 401
+    assert len(digest_calls) == 2
+    expected_call, provided_call = digest_calls
+    assert expected_call[0] == provided_call[0]
+    assert len(expected_call[0]) == hashlib.sha256().digest_size
+    assert expected_call[1] == b"s3cret-token"
+    assert provided_call[1] == b"wrong-token"
+    assert expected_call[2] == provided_call[2] == "sha256"
+    assert parser_spy["count"] == 0
+
+
 def test_required_mode_fails_closed_if_token_fingerprint_state_is_unavailable(
     parser_spy: dict[str, int],
 ) -> None:
