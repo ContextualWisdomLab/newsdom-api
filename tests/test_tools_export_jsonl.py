@@ -1,5 +1,4 @@
 import json
-import sys
 from pathlib import Path
 from unittest.mock import patch
 import pytest
@@ -69,7 +68,7 @@ def test_export_jsonl_invalid_json(tmp_path: Path) -> None:
 
 @patch("sys.argv", ["export_jsonl.py", "input.json", "output.jsonl"])
 @patch("tools.export_jsonl.export_jsonl")
-def test_main_success(mock_export, tmp_path: Path, capsys) -> None:
+def test_main_success(mock_export, capsys) -> None:
     main()
     mock_export.assert_called_once()
     captured = capsys.readouterr()
@@ -78,7 +77,7 @@ def test_main_success(mock_export, tmp_path: Path, capsys) -> None:
 
 @patch("sys.argv", ["export_jsonl.py", "input.txt", "output.jsonl"])
 @patch("tools.export_jsonl.export_jsonl")
-def test_main_error(mock_export, tmp_path: Path, capsys) -> None:
+def test_main_error(mock_export, capsys) -> None:
     mock_export.side_effect = ValueError("Test error")
     with pytest.raises(SystemExit) as excinfo:
         main()
