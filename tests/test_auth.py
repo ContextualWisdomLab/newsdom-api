@@ -119,9 +119,9 @@ def test_missing_required_token_is_service_configuration_failure(
     )
     response = TestClient(application).post("/parse", files=_PDF_FILES)
 
-    assert response.status_code == 401
-    assert response.json() == {"detail": "Unauthorized"}
-    assert response.headers["WWW-Authenticate"] == "Bearer"
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Service Unavailable"}
+    assert "WWW-Authenticate" not in response.headers
     assert parser_spy["count"] == 0
 
 
@@ -337,7 +337,7 @@ def test_authentication_middleware_rejects_before_reading_request_body() -> None
 
     response = asyncio.run(security_boundary_middleware(request, call_next))
 
-    assert response.status_code == 401
+    assert response.status_code == 503
     assert body_read is False
 
 
