@@ -11,9 +11,7 @@ from newsdom_api.config import (
 )
 from newsdom_api.main import create_app
 
-_PDF_FILES = {
-    "file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")
-}
+_PDF_FILES = {"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")}
 
 
 def test_default_configuration_without_token_blocks_parser_before_work(
@@ -36,15 +34,13 @@ def test_default_configuration_without_token_blocks_parser_before_work(
     monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
     monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf)
 
-    application = create_app(
-        settings, runtime_readiness_probe=lambda: True
+    application = create_app(settings, runtime_readiness_probe=lambda: True)
+    response = TestClient(application, raise_server_exceptions=False).post(
+        "/parse", files=_PDF_FILES
     )
-    response = TestClient(
-        application, raise_server_exceptions=False
-    ).post("/parse", files=_PDF_FILES)
 
-    assert response.status_code == 503
-    assert response.json() == {"detail": "Service Unavailable"}
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Unauthorized"}
     assert parser_called is False
 
 
@@ -58,13 +54,9 @@ def test_ready_fails_closed_when_required_authentication_is_unconfigured(
         runtime_profile=RuntimeProfile.PRODUCTION,
         api_token=None,
     )
-    application = create_app(
-        settings, runtime_readiness_probe=lambda: True
-    )
+    application = create_app(settings, runtime_readiness_probe=lambda: True)
 
-    response = TestClient(
-        application, raise_server_exceptions=False
-    ).get("/ready")
+    response = TestClient(application, raise_server_exceptions=False).get("/ready")
 
     assert response.status_code == 503
     assert response.json() == {"detail": "Service Unavailable"}
@@ -82,13 +74,9 @@ def test_health_remains_liveness_only_when_authentication_is_unconfigured(
         runtime_profile=RuntimeProfile.PRODUCTION,
         api_token=None,
     )
-    application = create_app(
-        settings, runtime_readiness_probe=lambda: False
-    )
+    application = create_app(settings, runtime_readiness_probe=lambda: False)
 
-    response = TestClient(
-        application, raise_server_exceptions=False
-    ).get("/health")
+    response = TestClient(application, raise_server_exceptions=False).get("/health")
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}

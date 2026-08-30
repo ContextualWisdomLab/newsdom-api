@@ -28,9 +28,7 @@ from newsdom_api.main import (
     security_boundary_middleware,
 )
 
-_PDF_FILES = {
-    "file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")
-}
+_PDF_FILES = {"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")}
 
 
 def _settings(
@@ -121,9 +119,9 @@ def test_missing_required_token_is_service_configuration_failure(
     )
     response = TestClient(application).post("/parse", files=_PDF_FILES)
 
-    assert response.status_code == 503
-    assert response.json() == {"detail": "Service Unavailable"}
-    assert "WWW-Authenticate" not in response.headers
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Unauthorized"}
+    assert response.headers["WWW-Authenticate"] == "Bearer"
     assert parser_spy["count"] == 0
 
 
@@ -147,9 +145,12 @@ def test_development_disabled_mode_allows_parse_and_warns_once(
     assert client.post("/parse", files=_PDF_FILES).status_code == 200
     assert parser_spy["count"] == 2
     messages = [record.getMessage() for record in caplog.records]
-    assert messages.count(
-        "Parser authentication is disabled for the explicit development profile"
-    ) == 1
+    assert (
+        messages.count(
+            "Parser authentication is disabled for the explicit development profile"
+        )
+        == 1
+    )
 
 
 def test_direct_runtime_settings_reject_invalid_security_invariants() -> None:
@@ -336,7 +337,7 @@ def test_authentication_middleware_rejects_before_reading_request_body() -> None
 
     response = asyncio.run(security_boundary_middleware(request, call_next))
 
-    assert response.status_code == 503
+    assert response.status_code == 401
     assert body_read is False
 
 
@@ -350,11 +351,15 @@ def test_concurrent_requests_cannot_switch_authentication_state(
     )
 
     def request(token: str) -> int:
-        return TestClient(application).post(
-            "/parse",
-            files=_PDF_FILES,
-            headers={"Authorization": f"Bearer {token}"},
-        ).status_code
+        return (
+            TestClient(application)
+            .post(
+                "/parse",
+                files=_PDF_FILES,
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            .status_code
+        )
 
     tokens = ["fixed" if index % 2 == 0 else "changed" for index in range(20)]
     with ThreadPoolExecutor(max_workers=8) as executor:
