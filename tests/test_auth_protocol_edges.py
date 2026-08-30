@@ -160,16 +160,18 @@ def test_required_mode_precomputes_length_bound_fixed_width_verifier() -> None:
     )
 
 
-def test_required_mode_fails_closed_if_token_verifier_state_is_unavailable(
+@pytest.mark.parametrize("corrupted_verifier", [None, b"short"])
+def test_required_mode_fails_closed_if_token_verifier_state_is_invalid(
     parser_spy: dict[str, int],
+    corrupted_verifier: bytes | None,
 ) -> None:
-    """A missing derived token verifier must never weaken authentication."""
+    """Missing or malformed verifier state must never weaken authentication."""
 
     application = create_app(
         RuntimeSettings(api_token="s3cret-token"),
         runtime_readiness_probe=lambda: True,
     )
-    application.state.api_token_verifier = None
+    application.state.api_token_verifier = corrupted_verifier
 
     response = TestClient(application).post(
         "/parse",
