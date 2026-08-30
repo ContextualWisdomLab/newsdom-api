@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
+import hmac
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -101,41 +104,34 @@ def test_ready_converts_probe_exception_to_fixed_unavailable_response() -> None:
     assert "private" not in response.text.lower()
     assert "operating-system" not in response.text.lower()
 
-def test_required_mode_rejects_credentials_of_different_length(
-    parser_spy: dict[str, int],
-) -> None:
-    """Credentials of different length must be rejected safely using constant-time comparison."""
 
+def test_required_mode_compares_fixed_width_fingerprints_for_wrong_credentials(
+    parser_spy: dict[str, int],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Wrong credential lengths must not change the secret-comparison width."""
+
+    original_compare_digest = hmac.compare_digest
+    comparison_widths: list[tuple[int, int]] = []
+
+    def compare_digest_spy(left: bytes, right: bytes) -> bool:
+        comparison_widths.append((len(left), len(right)))
+        return original_compare_digest(left, right)
+
+    monkeypatch.setattr("newsdom_api.main.hmac.compare_digest", compare_digest_spy)
     application = create_app(
         RuntimeSettings(api_token="s3cret-token-1234"),
         runtime_readiness_probe=lambda: True,
     )
 
-    response = TestClient(application).post(
-        "/parse",
-        files=_PDF_FILES,
-        headers={"Authorization": "Bearer too-short"},
-    )
+    for credential in ("too-short", "w3rong-token-1234"):
+        response = TestClient(application).post(
+            "/parse",
+            files=_PDF_FILES,
+            headers={"Authorization": f"Bearer {credential}"},
+        )
+        assert response.status_code == 401
 
-    assert response.status_code == 401
-    assert parser_spy["count"] == 0
-
-
-def test_required_mode_rejects_credentials_of_same_length_but_invalid(
-    parser_spy: dict[str, int],
-) -> None:
-    """Credentials of the same length but invalid content must be rejected."""
-
-    application = create_app(
-        RuntimeSettings(api_token="s3cret-token-1234"),
-        runtime_readiness_probe=lambda: True,
-    )
-
-    response = TestClient(application).post(
-        "/parse",
-        files=_PDF_FILES,
-        headers={"Authorization": "Bearer w3rong-token-1234"},
-    )
-
-    assert response.status_code == 401
+    digest_width = hashlib.sha256().digest_size
+    assert comparison_widths == [(digest_width, digest_width)] * 2
     assert parser_spy["count"] == 0
