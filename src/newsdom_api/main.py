@@ -116,7 +116,10 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
         return None
     token = settings.api_token
     if token is None:
-        return _unauthorized_response()
+        return JSONResponse(
+            status_code=503,
+            content={"detail": SERVICE_UNAVAILABLE_DETAIL},
+        )
 
     authorization_values = _authorization_values(request)
     if len(authorization_values) != 1:

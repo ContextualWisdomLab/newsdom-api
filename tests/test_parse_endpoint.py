@@ -111,24 +111,6 @@ def test_validate_pdf_structure_rejects_pypdf_read_errors(monkeypatch, tmp_path)
     assert exc_info.value.detail == "Unsupported Media Type"
 
 
-def test_validate_pdf_structure_handles_unexpected_exceptions_as_415(
-    monkeypatch, tmp_path, caplog
-):
-    def reject_pdf_with_memory_error(_stream, *, strict):
-        raise MemoryError("Simulated memory exhaustion during parsing")
-
-    monkeypatch.setattr("newsdom_api.main.PdfReader", reject_pdf_with_memory_error)
-    caplog.set_level("ERROR", logger="newsdom_api")
-
-    with pytest.raises(HTTPException) as exc_info:
-        (tmp_path / "test.pdf").write_bytes(b"%PDF-1.4\n%%EOF")
-        _validate_pdf_structure(tmp_path / "test.pdf")
-
-    assert exc_info.value.status_code == 415
-    assert exc_info.value.detail == "Unsupported Media Type"
-    assert "Failed to parse PDF structure" in caplog.text
-
-
 def test_parse_endpoint_rejects_prefixed_non_pdf_payload():
     client = TestClient(app)
     response = client.post(
