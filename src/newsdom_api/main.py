@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import hmac
 import logging
 import tempfile
@@ -132,14 +133,14 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     if separator != b" " or scheme.lower() != b"bearer" or not credentials:
         return _unauthorized_response()
 
-    token_bytes = token.encode("utf-8")
-    is_valid = len(credentials) == len(token_bytes)
-    if not is_valid:
-        hmac.compare_digest(credentials, credentials)
-    elif not hmac.compare_digest(credentials, token_bytes):
-        is_valid = False
-
-    if not is_valid:
+    expected_digest = request.app.state.api_token_digest
+    if not isinstance(expected_digest, bytes):
+        return JSONResponse(
+            status_code=503,
+            content={"detail": SERVICE_UNAVAILABLE_DETAIL},
+        )
+    provided_digest = hashlib.sha256(credentials).digest()
+    if not hmac.compare_digest(provided_digest, expected_digest):
         return _unauthorized_response()
     return None
 
@@ -332,6 +333,11 @@ def create_app(
         },
     )
     application.state.runtime_settings = application_settings
+    application.state.api_token_digest = (
+        hashlib.sha256(application_settings.api_token.encode("utf-8")).digest()
+        if application_settings.api_token is not None
+        else None
+    )
     application.state.runtime_readiness_probe = (
         runtime_readiness_probe or mineru_runtime_available
     )
