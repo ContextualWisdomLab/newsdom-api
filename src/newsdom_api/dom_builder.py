@@ -386,8 +386,7 @@ def _build_pages_without_page_idx(
             "Some blocks are missing page_idx; content was assigned to page_idx 0 while preserving model-declared page count."
         )
         pages = []
-        for page_idx in sorted(page_info_by_idx):
-            page_info = page_info_by_idx.get(page_idx, {})
+        for page_idx, page_info in sorted(page_info_by_idx.items()):
             pages.append(
                 _build_page_dom(
                     content_list if page_idx == 0 else [],
@@ -425,11 +424,11 @@ def _build_pages_with_page_idx(
 
     pages = []
     article_seq = count(1)
-    for page_idx in sorted(blocks_by_page_idx):
+    for page_idx, blocks in sorted(blocks_by_page_idx.items()):
         page_info = page_info_by_idx.get(page_idx, {})
         pages.append(
             _build_page_dom(
-                blocks_by_page_idx[page_idx],
+                blocks,
                 page_number=_page_number_from_info(page_info, page_idx + 1),
                 article_seq=article_seq,
                 width=page_info.get("width"),
