@@ -135,3 +135,25 @@ def test_required_mode_compares_fixed_width_fingerprints_for_wrong_credentials(
     digest_width = hashlib.sha256().digest_size
     assert comparison_widths == [(digest_width, digest_width)] * 2
     assert parser_spy["count"] == 0
+
+
+def test_required_mode_fails_closed_if_token_fingerprint_state_is_unavailable(
+    parser_spy: dict[str, int],
+) -> None:
+    """A missing derived token fingerprint must never weaken authentication."""
+
+    application = create_app(
+        RuntimeSettings(api_token="s3cret-token"),
+        runtime_readiness_probe=lambda: True,
+    )
+    application.state.api_token_digest = None
+
+    response = TestClient(application).post(
+        "/parse",
+        files=_PDF_FILES,
+        headers={"Authorization": "Bearer s3cret-token"},
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Service Unavailable"}
+    assert parser_spy["count"] == 0
