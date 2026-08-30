@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import hmac
 import logging
+import secrets
 import tempfile
 from pathlib import Path
 from typing import Annotated, Callable
@@ -139,7 +139,8 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
             status_code=503,
             content={"detail": SERVICE_UNAVAILABLE_DETAIL},
         )
-    provided_digest = hashlib.sha256(credentials).digest()
+    comparison_key = request.app.state.api_token_comparison_key
+    provided_digest = hmac.digest(comparison_key, credentials, "sha256")
     if not hmac.compare_digest(provided_digest, expected_digest):
         return _unauthorized_response()
     return None
@@ -333,11 +334,18 @@ def create_app(
         },
     )
     application.state.runtime_settings = application_settings
-    application.state.api_token_digest = (
-        hashlib.sha256(application_settings.api_token.encode("utf-8")).digest()
-        if application_settings.api_token is not None
-        else None
-    )
+    api_token = application_settings.api_token
+    if api_token is None:
+        application.state.api_token_comparison_key = None
+        application.state.api_token_digest = None
+    else:
+        comparison_key = secrets.token_bytes(32)
+        application.state.api_token_comparison_key = comparison_key
+        application.state.api_token_digest = hmac.digest(
+            comparison_key,
+            api_token.encode("utf-8"),
+            "sha256",
+        )
     application.state.runtime_readiness_probe = (
         runtime_readiness_probe or mineru_runtime_available
     )
