@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > image placeholder until package, OpenAPI, image, provenance, and release
 > acceptance are aligned for an actual 0.3.0 publication.
 
+### Added
+- [CLI] 파싱된 NewsDOM JSON 데이터를 JSONL 형식으로 추출하여 LLM 학습 및 RAG 구축 등에 활용할 수 있도록 지원하는 `tools/export_jsonl.py` 도구를 추가했습니다.
+
 ### Changed
 - `/parse`를 언어 선택형 파서로 일반화: MinerU `-l japan`/`-m ocr` 하드코딩을 제거하고 optional form 필드 `language`(MinerU 3.4.4 공식 기본 `ch`, 공개 언어군/alias 검증)와 `mode`(`auto`/`ocr`/`txt`, 기본 `auto`)로 파라미터화. `mode=auto`는 born-digital PDF가 강제 OCR을 건너뛰도록 함. 기존 입력 `language=japan&mode=ocr`는 공식 규약대로 `ch`/`ocr`로 정규화됨.
 - OpenAPI 제목/설명, README, `ArticleNode.headline` 문서를 일반 문서용 (section heading) 표현으로 재구성하여 특정 언어/신문 가정을 소비자에게 노출하지 않도록 함. 응답 스키마 필드는 하위 호환을 위해 변경하지 않음.
