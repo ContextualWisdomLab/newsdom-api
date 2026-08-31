@@ -94,3 +94,16 @@ def test_extract_text_wrong_ext(tmp_path, capsys):
         extract_text.main([str(txt)])
     assert e.value.code == 1
     assert "must be a .json file" in capsys.readouterr().err
+
+
+def test_module_main() -> None:
+    import runpy
+    import sys
+    from unittest.mock import patch
+
+    sys.modules.pop("tools.extract_text", None)
+    with patch("sys.argv", ["tools/extract_text.py", "-h"]):
+        try:
+            runpy.run_module("tools.extract_text", run_name="__main__")
+        except SystemExit as excinfo:
+            assert excinfo.code == 0

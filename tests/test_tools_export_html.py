@@ -176,3 +176,16 @@ def test_main_file_output_error(
 
     assert excinfo.value.code == 1
     assert "Error exporting HTML" in capsys.readouterr().err
+
+
+def test_module_main() -> None:
+    import runpy
+    import sys
+    from unittest.mock import patch
+
+    sys.modules.pop("tools.export_html", None)
+    with patch("sys.argv", ["tools/export_html.py", "-h"]):
+        try:
+            runpy.run_module("tools.export_html", run_name="__main__")
+        except SystemExit as excinfo:
+            assert excinfo.code == 0

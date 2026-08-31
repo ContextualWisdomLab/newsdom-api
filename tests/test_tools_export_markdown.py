@@ -146,3 +146,16 @@ def test_main_file_output_error(tmp_path, sample_json_data, capsys):
 
     assert excinfo.value.code == 1
     assert "Error exporting Markdown" in capsys.readouterr().err
+
+
+def test_module_main() -> None:
+    import runpy
+    import sys
+    from unittest.mock import patch
+
+    sys.modules.pop("tools.export_markdown", None)
+    with patch("sys.argv", ["tools/export_markdown.py", "-h"]):
+        try:
+            runpy.run_module("tools.export_markdown", run_name="__main__")
+        except SystemExit as excinfo:
+            assert excinfo.code == 0
