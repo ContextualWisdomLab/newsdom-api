@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2025-05-18 - [CRITICAL] Prevent DoS via Unhandled PdfReader Exceptions
+**Vulnerability:** 악의적인 페이로드 업로드 시 `PdfReader`에서 발생하는 `TypeError` 또는 `MemoryError` 등 처리되지 않은 예외로 인해 500 상태 코드 및 서버 리소스 소진 유발 가능성 발견.
+**Learning:** `PdfReader`는 손상되거나 특수하게 조작된 PDF 파일 파싱 시 다양한 형태의 내장 예외(built-in exceptions)를 던질 수 있으며, 이를 특정 예외로만 잡을 경우 예상치 못한 시스템 장애(DoS)로 이어질 수 있음.
+**Prevention:** `_validate_pdf_structure` 내부에서 `Exception`을 포괄적으로 잡아내어 415 상태 코드로 안전하게 처리(fail securely)하고, 로거(logger)를 통해 예외 정보를 남겨 추적성을 유지함.
