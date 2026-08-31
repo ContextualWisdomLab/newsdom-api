@@ -16,7 +16,7 @@ from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 
 # ⚡ Bolt: Use a pre-compiled regex to push pattern matching to C,
 # avoiding the Python-level overhead of `any()` and generator comprehensions
-_UNSAFE_CHARS_PATTERN = re.compile(r"[\0&;|`$<\>\n\r]")
+_UNSAFE_CHARS_PATTERN = re.compile(r"[\0&;|`$<>\\n\\r]")
 
 # MinerU 3.4.4's public CLI defaults to ``ch``. That model covers Chinese,
 # English, Japanese, Traditional Chinese, and Latin; callers can select another
