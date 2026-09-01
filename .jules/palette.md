@@ -9,5 +9,5 @@
 **Action:** 향후 백엔드 API 중심의 프로젝트에서는 Pydantic 스키마 정의에 풍부한 문서화와 예제 데이터가 포함되어 있는지 확인하여 개발자 경험을 개선할 것입니다.
 
 ## 2026-09-01 - Review Payload Limits and File Scoping
-**학습:** `schemas.py`나 `main.py`와 같이 큰 파일들을 변경하면 `noema-review` (contextual_orchestrator_review_sidecar) CI 도구에서 `413 request_too_large`와 `TimeoutError` 오류가 발생할 수 있습니다.
-**실행:** 이러한 CI 실패를 우회하기 위해 관련된 큰 파일의 변경을 원래 상태로 되돌리고, 해당 이슈가 발생하지 않는 작은 파일이나 다른 방식으로 접근하십시오.
+**학습:** `schemas.py`나 `main.py`와 같이 큰 파일들을 변경하면 `noema-review` (contextual_orchestrator_review_sidecar) CI 도구에서 `413 request_too_large`와 `TimeoutError` 오류가 발생할 수 있습니다. `opencode-review`에서 보류 상태가 유지되는 것도 이와 연관될 수 있습니다.
+**실행:** 이러한 CI 실패를 피하기 위해, 개발자 경험(DX) 개선 시 관련 파일을 수정하되, 변경 범위를 작게 유지하고 필요한 최소한의 수정만 수행하십시오.
