@@ -321,7 +321,6 @@ def create_app(
             "displayRequestDuration": True,
             "syntaxHighlight.theme": "monokai",
             "tryItOutEnabled": True,
-            "persistAuthorization": True,
         },
     )
     application.state.runtime_settings = application_settings
