@@ -1,4 +1,7 @@
-"""Synthetic newspaper fixture generation for redistributable repository tests."""
+"""Synthetic newspaper fixture generation for redistributable repository tests.
+
+Provides programmatic tools to generate reliable deterministic fixture images, pdfs and truth files.
+"""
 
 from __future__ import annotations
 
@@ -16,7 +19,10 @@ PAGE_HEIGHT = 2600
 
 
 def _font_candidates() -> list[str]:
-    """Return preferred macOS Japanese font candidates for fixture rendering."""
+    """Return preferred macOS Japanese font candidates for fixture rendering.
+
+    These fonts are used as fallback options to support rendering Japanese text correctly in synthetic images.
+    """
 
     return [
         "/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc",
@@ -26,7 +32,10 @@ def _font_candidates() -> list[str]:
 
 
 def _load_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
-    """Load the first available Japanese-capable font at the requested size."""
+    """Load the first available Japanese-capable font at the requested size.
+
+    Checks availability of the fonts from the candidates list, and loads the first found font. Defaults to standard font.
+    """
 
     for candidate in _font_candidates():
         if Path(candidate).exists():
@@ -41,7 +50,10 @@ def _safe_draw_text(
     font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
     fill: int | str = "black",
 ) -> None:
-    """Draw text with a fallback mechanism to prevent UnicodeEncodeError on default fonts."""
+    """Draw text with a fallback mechanism to prevent UnicodeEncodeError on default fonts.
+
+    Falls back to replacing unsupported unicode characters with question marks if standard drawing fails.
+    """
     try:
         draw.text(xy, text, fill=fill, font=font)
     except UnicodeEncodeError:
@@ -58,7 +70,10 @@ def _draw_vertical_text(
     font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
     line_height: int,
 ) -> None:
-    """Render a string as simple top-to-bottom vertical glyph placement."""
+    """Render a string as simple top-to-bottom vertical glyph placement.
+
+    Draws characters one by one with a vertical offset calculated by line_height.
+    """
 
     cursor_y = y
     for char in text:
@@ -67,7 +82,10 @@ def _draw_vertical_text(
 
 
 def _split_vertical(text: str, max_chars: int) -> list[str]:
-    """Split text into vertical columns constrained by the page height budget."""
+    """Split text into vertical columns constrained by the page height budget.
+
+    The output list of strings can be mapped to individual vertical columns to fit within a given height limit.
+    """
 
     return [text[idx : idx + max_chars] for idx in range(0, len(text), max_chars)]
 
@@ -78,7 +96,10 @@ def _draw_vertical_columns(
     text: str,
     font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
 ) -> None:
-    """Render multiple vertical columns of text inside the supplied bounding box."""
+    """Render multiple vertical columns of text inside the supplied bounding box.
+
+    The text content is first split into fitting columns, and each column is sequentially rendered.
+    """
 
     x0, y0, x1, y1 = bbox
     font_size = int(getattr(font, "size", 24))
@@ -101,7 +122,10 @@ def _article_block(
     vertical: bool = True,
     page_number: int = 1,
 ) -> dict:
-    """Create one synthetic article descriptor for the fixture ground truth."""
+    """Create one synthetic article descriptor for the fixture ground truth.
+
+    The synthetic descriptor is primarily used to build validation metrics for parsing tasks.
+    """
 
     return {
         "headline": headline,
@@ -113,7 +137,10 @@ def _article_block(
 
 
 def _ground_truth() -> dict:
-    """Return the deterministic article/image/ad structure used for the fixture."""
+    """Return the deterministic article/image/ad structure used for the fixture.
+
+    The output includes predefined structure configuration blocks such as texts, layouts, and page parameters.
+    """
 
     return {
         "page_size": [PAGE_WIDTH, PAGE_HEIGHT],
@@ -160,7 +187,10 @@ def _ground_truth() -> dict:
 
 
 def generate_fixture(output_dir: Path, seed: int = 7) -> tuple[Path, Path]:
-    """Generate a synthetic scanned-newspaper PDF fixture and ground-truth JSON."""
+    """Generate a synthetic scanned-newspaper PDF fixture and ground-truth JSON.
+
+    A deterministic PDF and JSON structure configuration will be stored inside the target `output_dir` parameter.
+    """
 
     resolved_dir = output_dir.resolve()
     try:
