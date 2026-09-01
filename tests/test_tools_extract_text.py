@@ -96,14 +96,14 @@ def test_extract_text_wrong_ext(tmp_path, capsys):
     assert "must be a .json file" in capsys.readouterr().err
 
 
-def test_module_main() -> None:
+def test_module_main(monkeypatch: pytest.MonkeyPatch) -> None:
     import runpy
     import sys
     from unittest.mock import patch
 
-    sys.modules.pop("tools.extract_text", None)
+    monkeypatch.delitem(sys.modules, "tools.extract_text", raising=False)
     with patch("sys.argv", ["tools/extract_text.py", "-h"]):
-        try:
+        with pytest.raises(SystemExit) as excinfo:
             runpy.run_module("tools.extract_text", run_name="__main__")
-        except SystemExit as excinfo:
-            assert excinfo.code == 0
+
+    assert excinfo.value.code == 0
