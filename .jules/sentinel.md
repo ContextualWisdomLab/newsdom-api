@@ -94,6 +94,7 @@
 **Vulnerability:** Comparing `hmac.compare_digest` with inputs of different lengths fails immediately, leaking the exact length of the valid token. This exposes a timing side-channel that attackers can use to guess the length of the secret authentication token.
 **Learning:** `hmac.compare_digest` stops early if the lengths don't match. When validating sensitive API tokens, comparing different length strings creates a timing discrepancy.
 **Prevention:** Verify length first and use a dummy comparison (`hmac.compare_digest(credentials, credentials)`) when lengths don't match, keeping the overall validation time constant regardless of the input length.
+
 ## 2026-08-30 - Fix Insecure Password Hashing Warning by Avoiding Token Bytes Recomputation
 **Vulnerability:** Converting strings to bytes within the hot path of an authentication check can trigger false positive alerts (e.g. from CodeQL) about insecure password hashing if the length normalizations simulate weak hashes or the code otherwise mimics bad hash practices. While not a true vulnerability if just encoding, it is better to avoid it entirely on every request to pass security tools cleanly and improve performance.
 **Learning:** Pre-computing derived cryptographic material like bytes-encoded secrets during application startup allows for safe, fast validation without triggering false positives in static analysis tools monitoring the authentication hot path.
