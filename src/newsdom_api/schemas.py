@@ -53,7 +53,6 @@ class ImageNode(BaseModel):
     media_type: str = Field(
         default="image",
         description="Media type label for the extracted image node.",
-        json_schema_extra={"example": "image"},
     )
     bbox: Optional[BoundingBox] = Field(
         default=None,
@@ -169,7 +168,12 @@ class ParseQuality(BaseModel):
     warnings: List[str] = Field(
         default_factory=list,
         description="Non-fatal warnings encountered during the parsing process.",
-        json_schema_extra={"example": ["Image extraction failed on page 1."]},
+        json_schema_extra={
+            "example": [
+                "Image extraction failed on page 1.",
+                "Some blocks are missing page_idx.",
+            ]
+        },
     )
 
 
