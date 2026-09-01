@@ -1,4 +1,8 @@
-"""Synthetic newspaper fixture generation for redistributable repository tests."""
+"""Generate deterministic newspaper fixtures for redistributable tests.
+
+The helpers build a synthetic scanned page together with ground-truth JSON so
+parser behavior can be exercised without redistributing third-party news media.
+"""
 
 from __future__ import annotations
 
@@ -16,7 +20,11 @@ PAGE_HEIGHT = 2600
 
 
 def _font_candidates() -> list[str]:
-    """Return preferred macOS Japanese font candidates for fixture rendering."""
+    """Return preferred macOS fonts that can render Japanese fixture text.
+
+    Candidate order is deterministic so a host with multiple suitable fonts
+    produces the same choice on every run.
+    """
 
     return [
         "/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc",
@@ -26,7 +34,11 @@ def _font_candidates() -> list[str]:
 
 
 def _load_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
-    """Load the first available Japanese-capable font at the requested size."""
+    """Load the first available Japanese-capable font at the requested size.
+
+    Hosts without one of the preferred fonts fall back to Pillow's bundled
+    default font; callers therefore must tolerate its smaller character set.
+    """
 
     for candidate in _font_candidates():
         if Path(candidate).exists():
@@ -41,7 +53,13 @@ def _safe_draw_text(
     font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
     fill: int | str = "black",
 ) -> None:
-    """Draw text with a fallback mechanism to prevent UnicodeEncodeError on default fonts."""
+    """Draw fixture text while tolerating a limited fallback font.
+
+    Pillow's default font may raise ``UnicodeEncodeError`` for Japanese text.
+    In that fallback-only case unsupported glyphs are replaced with ``?`` so
+    fixture generation remains deterministic instead of aborting.
+    """
+
     try:
         draw.text(xy, text, fill=fill, font=font)
     except UnicodeEncodeError:
@@ -58,7 +76,11 @@ def _draw_vertical_text(
     font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
     line_height: int,
 ) -> None:
-    """Render a string as simple top-to-bottom vertical glyph placement."""
+    """Render one string as top-to-bottom glyphs at a fixed x coordinate.
+
+    The helper intentionally implements only the simple vertical placement
+    needed by the synthetic fixture; it is not a general Japanese typesetter.
+    """
 
     cursor_y = y
     for char in text:
@@ -67,7 +89,11 @@ def _draw_vertical_text(
 
 
 def _split_vertical(text: str, max_chars: int) -> list[str]:
-    """Split text into vertical columns constrained by the page height budget."""
+    """Split text into page-height-bounded chunks for vertical columns.
+
+    Each returned chunk contains at most ``max_chars`` characters and keeps the
+    original character order so column generation is deterministic.
+    """
 
     return [text[idx : idx + max_chars] for idx in range(0, len(text), max_chars)]
 
@@ -78,7 +104,12 @@ def _draw_vertical_columns(
     text: str,
     font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
 ) -> None:
-    """Render multiple vertical columns of text inside the supplied bounding box."""
+    """Render right-to-left vertical text columns inside a bounding box.
+
+    Column height derives from the font size and box height. Rendering stops
+    when the next column would cross the left edge, preserving the fixture's
+    bounded page layout.
+    """
 
     x0, y0, x1, y1 = bbox
     font_size = int(getattr(font, "size", 24))
@@ -101,7 +132,11 @@ def _article_block(
     vertical: bool = True,
     page_number: int = 1,
 ) -> dict:
-    """Create one synthetic article descriptor for the fixture ground truth."""
+    """Create one article descriptor used as fixture ground truth.
+
+    Bounding boxes are converted to JSON-friendly lists while orientation and
+    page identity remain explicit for downstream parser-equivalence assertions.
+    """
 
     return {
         "headline": headline,
@@ -113,7 +148,11 @@ def _article_block(
 
 
 def _ground_truth() -> dict:
-    """Return the deterministic article/image/ad structure used for the fixture."""
+    """Build the deterministic article, image, and advertisement truth model.
+
+    The returned structure is the oracle paired with the generated PDF; tests
+    use it to verify page counts, layout blocks, and vertical-article metadata.
+    """
 
     return {
         "page_size": [PAGE_WIDTH, PAGE_HEIGHT],
@@ -160,7 +199,12 @@ def _ground_truth() -> dict:
 
 
 def generate_fixture(output_dir: Path, seed: int = 7) -> tuple[Path, Path]:
-    """Generate a synthetic scanned-newspaper PDF fixture and ground-truth JSON."""
+    """Generate a scanned-newspaper PDF and matching ground-truth JSON.
+
+    Output is restricted to the repository tree or the platform temporary
+    directory to prevent path traversal. The returned paths identify the PDF
+    and JSON artifacts; the intermediate PNG remains beside them for inspection.
+    """
 
     resolved_dir = output_dir.resolve()
     try:
