@@ -556,6 +556,7 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
 
+
 def test_parse_endpoint_rejects_overly_long_language_and_mode():
     client = TestClient(app)
     # The limit is 64 characters
