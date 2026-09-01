@@ -27,6 +27,7 @@ from pypdf.errors import PdfReadError
 from .config import (
     AuthenticationMode,
     MAX_BEARER_HEADER_BYTES,
+    RuntimeProfile,
     RuntimeSettings,
     load_runtime_settings,
 )
@@ -303,18 +304,24 @@ def create_app(
     elif not application_settings.authentication_ready:
         LOGGER.error("Parser authentication configuration is unavailable")
 
-    is_development = application_settings.runtime_profile.value == "development"
+    is_development = application_settings.runtime_profile is RuntimeProfile.DEVELOPMENT
 
     base_description = (
         "Language-agnostic PDF-to-DOM parser API. Converts a PDF into a "
         "canonical JSON document tree using MinerU. Authentication is "
-        "required by default; "
+        "required by default."
     )
 
     if is_development:
-        description = base_description + "an explicit development-only bypass is available. (explicit development profile)"
+        description = (
+            base_description
+            + " An explicit development-only bypass is available in the explicit development profile."
+        )
     else:
-        description = base_description + "Re-enter your Bearer token after refreshing this page."
+        description = (
+            base_description
+            + " Re-enter your Bearer token after refreshing this page."
+        )
 
     application = FastAPI(
         title="NewsDOM API",
