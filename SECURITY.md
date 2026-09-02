@@ -2,13 +2,17 @@
 
 ## Reporting a vulnerability
 
-Please report a vulnerability privately by opening a GitHub Security
-Advisory draft for this repository:
+Please report a vulnerability privately through this repository's GitHub
+Security Advisory workflow when it is available:
 
-- [GitHub Security Advisory draft](https://github.com/Seongho-Bae/newsdom-api/security/advisories/new)
-- [Maintainer profile](https://github.com/seonghobae)
+- [GitHub Security Advisory draft](https://github.com/ContextualWisdomLab/newsdom-api/security/advisories/new)
 
-Do not open a public issue for an unpatched vulnerability.
+If that private repository feature is unavailable to you, contact the
+ContextualWisdomLab repository maintainers through an established private
+channel rather than disclosing the issue publicly.
+
+Do not open a public issue, pull-request comment, or discussion for an
+unpatched vulnerability.
 
 When reporting, include:
 
