@@ -386,7 +386,7 @@ def _build_pages_without_page_idx(
             "Some blocks are missing page_idx; content was assigned to page_idx 0 while preserving model-declared page count."
         )
         pages = []
-        # ⚡ Bolt: Iterate over dictionary items to avoid redundant hash map lookups inside the loop
+        # Bolt: Iterate over dictionary items to avoid redundant hash map lookups inside the loop
         for page_idx, page_info in sorted(page_info_by_idx.items()):
             pages.append(
                 _build_page_dom(
@@ -425,7 +425,7 @@ def _build_pages_with_page_idx(
 
     pages = []
     article_seq = count(1)
-    # ⚡ Bolt: Iterate over dictionary items to avoid redundant hash map lookups inside the loop
+    # Bolt: Iterate over dictionary items to avoid redundant hash map lookups inside the loop
     for page_idx, blocks in sorted(blocks_by_page_idx.items()):
         page_info = page_info_by_idx.get(page_idx, {})
         pages.append(
