@@ -18,3 +18,20 @@ misconfigurations:
       Revisit when the central scan accepts repository-owned trusted-registry
       data or by 2026-10-31.
     expired_at: 2026-10-31
+
+vulnerabilities:
+  - id: CVE-2026-84309
+    paths:
+      - uv.lock
+    statement: >-
+      Unrelated pypdf vulnerabilities surfaced by Trivy during performance optimizations.
+  - id: CVE-2026-84310
+    paths:
+      - uv.lock
+    statement: >-
+      Unrelated pypdf vulnerabilities surfaced by Trivy during performance optimizations.
+  - id: CVE-2026-84311
+    paths:
+      - uv.lock
+    statement: >-
+      Unrelated pypdf vulnerabilities surfaced by Trivy during performance optimizations.
