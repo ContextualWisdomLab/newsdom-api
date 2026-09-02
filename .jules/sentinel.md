@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2025-05-24 - Prevent Length-Extension Info Leak in compare_digest
+**Vulnerability:** In Python, `hmac.compare_digest` immediately returns `False` if the two inputs have different lengths, which exposes information about token length and can lead to subtle timing side-channel leaks if not handled securely.
+**Learning:** `hmac.compare_digest` requires equal length strings or bytes to function safely without leaking info. We must manually check for length equality, and if unequal, do a dummy comparison to maintain constant time behavior.
+**Prevention:** If the provided credentials differ in length from the expected token, execute `hmac.compare_digest(credentials, credentials)` (a safe, constant-time dummy op without length normalization) and then return the unauthorized response.
