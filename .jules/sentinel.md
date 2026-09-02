@@ -91,7 +91,7 @@
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
 
-## 2024-05-24 - [CRITICAL] Fix DoS vulnerability in PDF validation
-**Vulnerability:** 구조적 검증 라이브러리(`PdfReader`)가 잘못된 파일에 대해 `MemoryError`나 `TypeError`와 같은 처리되지 않은 예외를 던질 때, 이를 포착하지 못해 500 오류를 발생시키며 DoS 취약점으로 작용함.
-**Learning:** 파일 파싱 엔드포인트에서 외부 라이브러리를 사용할 때는 예상치 못한 예외로 인한 자원 고갈 및 서비스 거부를 방지하기 위해 광범위한 예외 처리(`except Exception:`)가 필요하며, 실제 문제를 가리지 않기 위해 항상 적절한 에러 로그를 남겨야 함.
-**Prevention:** 검증 호출부를 포괄적인 예외 블록으로 감싸 안전한 클라이언트 오류(예: 415)로 변환하고, 변경 사항 검증 시 `TypeError`나 `MemoryError`를 발생시키는 테스트를 추가하여 방어 로직을 확실히 검증해야 함.
+## 2024-05-24 - CRITICAL Fix DoS vulnerability in PDF validation
+**Vulnerability:** 구조적 검증 라이브러리가 잘못된 파일에 대해 처리되지 않은 예외를 던질 때 이를 포착하지 못해 500 오류를 발생시키며 DoS 취약점으로 작용함.
+**Learning:** 파일 파싱 엔드포인트에서 외부 라이브러리를 사용할 때는 예상치 못한 예외로 인한 자원 고갈 및 서비스 거부를 방지하기 위해 광범위한 예외 처리가 필요하며 실제 문제를 가리지 않기 위해 항상 적절한 에러 로그를 남겨야 함.
+**Prevention:** 검증 호출부를 포괄적인 예외 블록으로 감싸 안전한 클라이언트 오류로 변환하고 방어 로직을 확실히 검증해야 함.
