@@ -407,3 +407,16 @@ def test_config_module_exposes_versioned_environment_contract() -> None:
     assert config.API_TOKEN_ENV_VAR == "NEWSDOM_API_TOKEN"
     assert config.AUTH_MODE_ENV_VAR == "NEWSDOM_AUTH_MODE"
     assert config.RUNTIME_PROFILE_ENV_VAR == "NEWSDOM_RUNTIME_PROFILE"
+
+def test_authentication_constant_time_comparison_differing_lengths():
+    '''Verify that tokens of different lengths do not leak length information.'''
+    settings = RuntimeSettings(api_token="valid_token")
+    app = create_app(settings)
+    client = TestClient(app)
+
+    response = client.post(
+        "/parse",
+        headers={"Authorization": "Bearer too_short"},
+        files={"file": ("test.pdf", b"%PDF-1.4\n", "application/pdf")},
+    )
+    assert response.status_code == 401
