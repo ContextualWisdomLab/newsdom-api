@@ -1,0 +1,277 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ContextualWisdomLab/newsdom-api/blob/develop/docs/benchmarks/upload-ingestion-result.schema.json",
+  "title": "NewsDOM upload ingestion benchmark result",
+  "description": "Raw, reproducible evidence for issue #534 chunk-size and concurrency candidates.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "schema_path",
+    "generated_at",
+    "benchmark_environment",
+    "fixtures",
+    "cases"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.1.0"
+    },
+    "schema_path": {
+      "const": "docs/benchmarks/upload-ingestion-result.schema.json"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "benchmark_environment": {
+      "$ref": "#/$defs/benchmark_environment"
+    },
+    "fixtures": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/fixture_record"
+      }
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/benchmark_case"
+      }
+    }
+  },
+  "$defs": {
+    "benchmark_environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "python_version",
+        "python_implementation",
+        "executable",
+        "platform",
+        "machine",
+        "processor_count",
+        "rss_provider"
+      ],
+      "properties": {
+        "python_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "python_implementation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "executable": {
+          "type": "string",
+          "minLength": 1
+        },
+        "platform": {
+          "type": "string",
+          "minLength": 1
+        },
+        "machine": {
+          "type": "string"
+        },
+        "processor_count": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "rss_provider": {
+          "const": "linux_proc_status_vmrss"
+        }
+      }
+    },
+    "fixture_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fixture_name", "size_bytes", "sha256"],
+      "properties": {
+        "fixture_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20971520
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "benchmark_case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fixture_name",
+        "candidate",
+        "chunk_bytes",
+        "concurrency",
+        "repetitions",
+        "metrics",
+        "cohort_observations",
+        "samples"
+      ],
+      "properties": {
+        "fixture_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "candidate": {
+          "enum": ["8kib", "64kib", "256kib", "1mib", "adaptive"]
+        },
+        "chunk_bytes": {
+          "type": "integer",
+          "minimum": 8192,
+          "maximum": 1048576
+        },
+        "concurrency": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "repetitions": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "p50_latency_seconds",
+            "p95_latency_seconds",
+            "throughput_bytes_per_second",
+            "read_calls",
+            "cpu_seconds",
+            "peak_rss_bytes",
+            "peak_rss_delta_bytes",
+            "temporary_disk_bytes",
+            "event_loop_p95_delay_seconds",
+            "event_loop_max_delay_seconds"
+          ],
+          "properties": {
+            "p50_latency_seconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "p95_latency_seconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "throughput_bytes_per_second": {
+              "type": "number",
+              "minimum": 0
+            },
+            "read_calls": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "cpu_seconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "peak_rss_bytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "peak_rss_delta_bytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "temporary_disk_bytes": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "event_loop_p95_delay_seconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "event_loop_max_delay_seconds": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "cohort_observations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/cohort_observation"
+          }
+        },
+        "samples": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/sample_record"
+          }
+        }
+      }
+    },
+    "cohort_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "wall_seconds",
+        "cpu_seconds",
+        "rss_baseline_bytes",
+        "peak_rss_bytes",
+        "peak_rss_delta_bytes",
+        "event_loop_delay_samples_seconds"
+      ],
+      "properties": {
+        "wall_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "cpu_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "rss_baseline_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "peak_rss_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "peak_rss_delta_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "event_loop_delay_samples_seconds": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "sample_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["duration_seconds", "read_calls", "bytes_copied"],
+      "properties": {
+        "duration_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "read_calls": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "bytes_copied": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20971520
+        }
+      }
+    }
+  }
+}

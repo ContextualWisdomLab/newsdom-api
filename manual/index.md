@@ -1,40 +1,51 @@
-# NewsDOM API 개요 및 아키텍처
+# NewsDOM API
 
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/Seongho-Bae/newsdom-api/badge)](https://securityscorecards.dev/viewer/?uri=github.com/Seongho-Bae/newsdom-api)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/ContextualWisdomLab/newsdom-api/badge)](https://securityscorecards.dev/viewer/?uri=github.com/ContextualWisdomLab/newsdom-api)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ContextualWisdomLab/newsdom-api)
 
-**NewsDOM API**는 스캔된 일본어 신문 PDF 문서를 분석하여, 웹 브라우저의 DOM(Document Object Model)과 유사한 기사(Article) 단위의 트리 구조로 파싱해주는 API 서비스입니다.
+**NewsDOM API**는 PDF를 페이지·섹션·제목·본문 블록·이미지·캡션·바운딩 박스가 있는 안정적인 DOM형 JSON으로 정규화하는 API boundary입니다. 호출자는 특정 parser 내부 구조를 해석하는 대신 NewsDOM의 HTTP·schema·안전 계약을 사용합니다.
 
-과거의 신문 이미지는 단순 텍스트 추출(OCR)만으로는 다단 레이아웃이나 이미지/캡션, 기사별 흐름을 파악하기 매우 어렵습니다. 본 프로젝트는 딥러닝 기반 레이아웃 분석 도구인 **MinerU**를 백엔드로 사용하여 이 문제를 해결합니다.
+일본어 신문 OCR은 지원해 온 사례 중 하나이지만 제품 범위는 특정 언어 또는 강제 OCR에 한정되지 않습니다. 현재 API 계약은 `language` 선택과 `mode=auto | ocr | txt`를 구분하고, `/parse`의 fail-closed 인증과 `/health`·`/ready`의 서로 다른 의미를 유지합니다.
 
----
+## 현재 commercial parser 상태
 
-## ⚙️ 시스템 내부 아키텍처 (Under the Hood)
+NewsDOM 자체 소스는 MIT입니다. 그러나 현재 소스의 legacy MinerU adapter가 사용하는 MinerU 3.x는 Apache-2.0에 추가 commercial 조건을 둔 MinerU Open Source License를 사용하므로 ContextualWisdomLab의 unrestricted commercial-inbound 정책과 호환되지 않습니다.
 
-사용자가 API를 통해 PDF 파일을 업로드하면, NewsDOM 내부에서는 다음의 세 단계를 거쳐 데이터를 처리합니다:
+따라서 MinerU package 설치, customer-supplied MinerU binary, `Dockerfile.nvidia` 기반 번들 배포를 **승인된 상업 경로로 안내하지 않습니다**. 대체 parser boundary와 검증 기준은 [#671](https://github.com/ContextualWisdomLab/newsdom-api/issues/671)에서 관리합니다. 승인된 parser가 없을 때 `/ready`가 fail-closed인 것은 정상입니다.
 
-### 1. 서비스 래퍼 레이어 (`src/newsdom_api/service.py`)
-FastAPI 엔드포인트(`/parse`)가 `UploadFile`로 전달받은 바이너리 데이터를 임시 디렉토리(Temporary Directory)에 저장한 후, 파이프라인 러너를 호출합니다.
+## 제품 경계
 
-### 2. MinerU 파이프라인 러너 (`src/newsdom_api/mineru_runner.py`)
-저장된 PDF를 대상으로 Python `subprocess` 모듈을 이용해 **MinerU CLI**를 백그라운드에서 실행합니다. 실제 내부적으로 실행되는 명령어는 다음과 같습니다:
+- `POST /parse`는 PDF 업로드와 canonical NewsDOM response 계약을 소유합니다.
+- `language`과 `mode`는 request compatibility surface이며 parser implementation detail과 분리되어야 합니다.
+- `/parse`는 production profile에서 fail-closed Bearer 인증을 요구합니다.
+- `GET /health`는 process liveness, `GET /ready`는 실제 traffic readiness입니다.
+- parser admission은 process별 bounded non-waiting lease를 사용하며 포화 시 body 처리 전에 `429`로 거부합니다.
+- 임시 workspace, parser failure 분류, schema validation, fixture provenance는 NewsDOM이 소유합니다.
 
-```bash
-mineru -p <업로드된_PDF> -o <임시출력경로> -b pipeline -m ocr -l japan
+## 요청 흐름
+
+```text
+client
+  -> FastAPI request/auth boundary
+  -> bounded parser admission
+  -> request-scoped temporary PDF workspace
+  -> approved parser adapter port
+  -> NewsDOM normalization + schema validation
+  -> canonical JSON response
 ```
-> *참고: 일본어 신문 처리에 최적화하기 위해 `-l japan` (Language: Japanese) 옵션과 OCR 파이프라인 모드가 하드코딩되어 있습니다.*
 
-명령어 실행이 완료되면 러너는 생성된 출력 폴더(OCR 하위 폴더)를 뒤져 `*_content_list.json` 파일과 `*_model.json` 결과물을 메모리로 로드합니다.
+현재 legacy adapter는 교체 대상입니다. downstream consumer는 parser-specific type이나 model identity가 아니라 NewsDOM contract에 의존해야 합니다.
 
-### 3. DOM 빌더 (`src/newsdom_api/dom_builder.py`)
-MinerU가 뱉어낸 선형적인(Linear) 블록 리스트(`content_list.json`)를 순회하면서 논리적인 트리 형태의 **`ParseResponse` (Canonical JSON)**로 재구성합니다.
-- `role == "header"` 이면 상단 머릿말로(`PageNode.headers`) 분류
-- `type == "ad"` 또는 `role == "ad"` 이면 지면 광고(`PageNode.ads`)로 분류
-- `text_level == 1` 이거나 `role == "section_headings"`인 경우 새로운 기사의 시작(Headline)으로 인식하여 새 `ArticleNode`를 생성
-- 이후 등장하는 일반 텍스트는 해당 기사의 `body_blocks` 배열에 추가
-- `type == "image"` 이면 `ImageNode`를 생성하고 포함된 캡션 배열을 파싱하여 기사에 종속시킴
+## 시작하기
 
-이러한 세밀한 내부 변환 과정을 통해 단순한 OCR 텍스트 덤프가 아닌, 프론트엔드에서 즉시 렌더링이 가능한 **구조화된 DOM 데이터**가 최종 반환됩니다.
+- [설치 가이드](installation.md) — NewsDOM 자체의 lockfile 기반 개발/검증 환경과 parser license boundary.
+- [사용 방법 및 API](api-reference.md) — `/parse`, language/mode, 인증, 응답과 오류 계약.
+- [개발 및 기여](development.md) — 로컬 검증과 기여 흐름.
+- [GitHub 저장소](https://github.com/ContextualWisdomLab/newsdom-api) — README, architecture, security, releases, source history.
+- [Commercial parser replacement #671](https://github.com/ContextualWisdomLab/newsdom-api/issues/671) — 현재 상업 라이선스 차단과 replacement acceptance.
 
----
+## 릴리스와 공개 문서
 
-👉 **[설치 가이드](installation.md)**를 읽고 직접 환경을 구성해 보세요.
+`pyproject.toml`의 version은 source metadata이며 그 자체로 immutable release evidence가 아닙니다. 실제 릴리스는 [GitHub Releases](https://github.com/ContextualWisdomLab/newsdom-api/releases)와 해당 exact-head artifact/provenance evidence로 확인합니다.
+
+이 `manual/` source가 병합되었다는 사실만으로 공개 사이트 배포가 완료된 것은 아닙니다. GitHub Pages workflow 성공과 live HTTPS content 재확인이 필요합니다.
