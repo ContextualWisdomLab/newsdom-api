@@ -52,12 +52,21 @@ SERVICE_UNAVAILABLE_DETAIL = "Service Unavailable"
 LOGGER = logging.getLogger("newsdom_api")
 BEARER_SCHEME = HTTPBearer(auto_error=False, scheme_name="BearerAuth")
 LOCKED_DOWN_CSP = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
-DEVELOPMENT_DOCS_CSP = (
+SWAGGER_DOCS_CSP = (
     "default-src 'none'; "
     "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
     "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
     "img-src 'self' data: https://fastapi.tiangolo.com; "
     "font-src 'self' data: https://cdn.jsdelivr.net; "
+    "connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; "
+    "form-action 'self'"
+)
+REDOC_DOCS_CSP = (
+    "default-src 'none'; "
+    "script-src 'self' https://cdn.jsdelivr.net; "
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+    "font-src 'self' https://fonts.gstatic.com; "
+    "img-src 'self' data: https://fastapi.tiangolo.com; "
     "connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; "
     "form-action 'self'"
 )
@@ -76,15 +85,14 @@ def _apply_security_headers(response: Response, request: Request) -> Response:
 
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
-    runtime_settings = getattr(request.app.state, "runtime_settings", None)
-    development_docs = (
-        isinstance(runtime_settings, RuntimeSettings)
-        and runtime_settings.runtime_profile is RuntimeProfile.DEVELOPMENT
-        and request.scope.get("path") in {"/docs", "/docs/oauth2-redirect"}
-    )
-    response.headers["Content-Security-Policy"] = (
-        DEVELOPMENT_DOCS_CSP if development_docs else LOCKED_DOWN_CSP
-    )
+    path = request.scope.get("path")
+    if path in {"/docs", "/docs/oauth2-redirect"}:
+        csp = SWAGGER_DOCS_CSP
+    elif path == "/redoc":
+        csp = REDOC_DOCS_CSP
+    else:
+        csp = LOCKED_DOWN_CSP
+    response.headers["Content-Security-Policy"] = csp
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Cache-Control"] = "no-store, no-cache, max-age=0"
     forwarded_proto = request.headers.get("x-forwarded-proto", "")
