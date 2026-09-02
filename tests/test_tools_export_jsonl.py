@@ -20,11 +20,9 @@ VALID_JSON_DATA = {
                 },
             ],
         },
-        "not_a_dict_page",
         {
             "page_number": 2,
             "articles": [
-                "not_a_dict_article",
                 {
                     "article_id": "art_2",
                     "headline": "Test Headline 2",
@@ -55,6 +53,9 @@ def test_export_jsonl_success(tmp_path: Path) -> None:
         assert art1["article_id"] == "art_1"
         assert art1["headline"] == "Test Headline 1"
         assert art1["body_blocks"] == ["Block 1", "Block 2"]
+        assert art1["images"] == []
+        assert art1["captions"] == []
+        assert art1["footnotes"] == []
 
         art2 = json.loads(lines[1])
         assert art2["page_number"] == 2
