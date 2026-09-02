@@ -1,6 +1,6 @@
 from pathlib import Path
 
-CENTRAL_DEPENDENCY_REVIEW_WORKFLOW_SHA = "0bcd22d8bb07650aafb0a8f116e4c2bbb8744f03"
+CENTRAL_DEPENDENCY_REVIEW_WORKFLOW_SHA = "5f8e5b2a79e709c4ab1a4179a605d34c458b13a1"
 
 
 def test_readme_points_to_user_and_maintainer_docs():
