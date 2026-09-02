@@ -1,4 +1,4 @@
-"""Regression tests for the Swagger UI authentication and CSP boundary."""
+"""Regression tests for the interactive API documentation security boundary."""
 
 from fastapi.testclient import TestClient
 
@@ -34,7 +34,7 @@ def test_swagger_authorization_persistence_is_development_only() -> None:
     assert '"validatorUrl": null' in development_docs.text
 
 
-def test_development_docs_csp_allows_only_required_swagger_origins() -> None:
+def test_development_swagger_csp_allows_only_required_origins() -> None:
     """Development Swagger UI can execute while retaining a narrow CSP."""
 
     client = TestClient(create_app(_settings(RuntimeProfile.DEVELOPMENT)))
@@ -45,6 +45,25 @@ def test_development_docs_csp_allows_only_required_swagger_origins() -> None:
     assert "default-src 'none'" in csp
     assert "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net" in csp
     assert "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net" in csp
+    assert "img-src 'self' data: https://fastapi.tiangolo.com" in csp
+    assert "connect-src 'self'" in csp
+    assert "frame-ancestors 'none'" in csp
+    assert "base-uri 'none'" in csp
+    assert "form-action 'self'" in csp
+
+
+def test_development_redoc_csp_allows_only_required_origins() -> None:
+    """Development ReDoc can load its script, fonts, schema and favicon."""
+
+    client = TestClient(create_app(_settings(RuntimeProfile.DEVELOPMENT)))
+    response = client.get("/redoc")
+
+    assert response.status_code == 200
+    csp = response.headers["Content-Security-Policy"]
+    assert "default-src 'none'" in csp
+    assert "script-src 'self' https://cdn.jsdelivr.net" in csp
+    assert "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com" in csp
+    assert "font-src 'self' https://fonts.gstatic.com" in csp
     assert "img-src 'self' data: https://fastapi.tiangolo.com" in csp
     assert "connect-src 'self'" in csp
     assert "frame-ancestors 'none'" in csp
