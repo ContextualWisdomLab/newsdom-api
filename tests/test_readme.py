@@ -1,5 +1,7 @@
 from pathlib import Path
 
+CENTRAL_DEPENDENCY_REVIEW_WORKFLOW_SHA = "0bcd22d8bb07650aafb0a8f116e4c2bbb8744f03"
+
 
 def test_readme_points_to_user_and_maintainer_docs():
     text = Path("README.md").read_text(encoding="utf-8")
@@ -62,6 +64,19 @@ def test_security_workflows_exist():
     assert Path(".github/workflows/scorecards.yml").exists()
     assert Path(".github/workflows/codeql.yml").exists()
     assert Path(".github/workflows/dependency-review.yml").exists()
+
+
+def test_dependency_review_uses_immutable_central_workflow():
+    workflow = Path(".github/workflows/dependency-review.yml").read_text(encoding="utf-8")
+    expected = (
+        "ContextualWisdomLab/.github/.github/workflows/dependency-review.yml@"
+        f"{CENTRAL_DEPENDENCY_REVIEW_WORKFLOW_SHA}"
+    )
+
+    assert expected in workflow
+    assert "dependency-review.yml@main" not in workflow
+    assert "fail_on_severity: low" in workflow
+    assert 'allow_ghsas: "GHSA-69w3-r845-3855"' in workflow
 
 
 def test_quality_gate_workflow_exists():
