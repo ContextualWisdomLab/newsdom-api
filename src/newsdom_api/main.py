@@ -27,6 +27,7 @@ from pypdf.errors import PdfReadError
 from .config import (
     AuthenticationMode,
     MAX_BEARER_HEADER_BYTES,
+    RuntimeProfile,
     RuntimeSettings,
     load_runtime_settings,
 )
@@ -50,6 +51,16 @@ UNAUTHORIZED_DETAIL = "Unauthorized"
 SERVICE_UNAVAILABLE_DETAIL = "Service Unavailable"
 LOGGER = logging.getLogger("newsdom_api")
 BEARER_SCHEME = HTTPBearer(auto_error=False, scheme_name="BearerAuth")
+LOCKED_DOWN_CSP = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+DEVELOPMENT_DOCS_CSP = (
+    "default-src 'none'; "
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+    "img-src 'self' data: https://fastapi.tiangolo.com; "
+    "font-src 'self' data: https://cdn.jsdelivr.net; "
+    "connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; "
+    "form-action 'self'"
+)
 
 tags_metadata = [
     {"name": "Parser", "description": "Core PDF parsing endpoints."},
@@ -65,8 +76,14 @@ def _apply_security_headers(response: Response, request: Request) -> Response:
 
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
+    runtime_settings = getattr(request.app.state, "runtime_settings", None)
+    development_docs = (
+        isinstance(runtime_settings, RuntimeSettings)
+        and runtime_settings.runtime_profile is RuntimeProfile.DEVELOPMENT
+        and request.scope.get("path") in {"/docs", "/docs/oauth2-redirect"}
+    )
     response.headers["Content-Security-Policy"] = (
-        "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+        DEVELOPMENT_DOCS_CSP if development_docs else LOCKED_DOWN_CSP
     )
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Cache-Control"] = "no-store, no-cache, max-age=0"
@@ -321,7 +338,10 @@ def create_app(
             "displayRequestDuration": True,
             "syntaxHighlight.theme": "monokai",
             "tryItOutEnabled": True,
-            "persistAuthorization": True,
+            "persistAuthorization": (
+                application_settings.runtime_profile is RuntimeProfile.DEVELOPMENT
+            ),
+            "validatorUrl": None,
         },
     )
     application.state.runtime_settings = application_settings
