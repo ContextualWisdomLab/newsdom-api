@@ -50,20 +50,23 @@ def test_development_doc_adds_blank_line_after_branch_rules_heading() -> None:
     assert _has_blank_line_after_heading(text, "### 🌿 브랜치 규칙")
 
 
-def test_installation_doc_uses_quoted_extras_and_clear_python_wording():
+def test_installation_doc_uses_locked_repo_setup_and_blocks_restricted_parser_install():
     text = Path("manual/installation.md").read_text(encoding="utf-8")
     assert "Required: `>=3.10, <3.14`" in text
     for token in ("python3.10", "지원 범위", "인터프리터"):
         assert token in text
     assert "python3.10 -m venv .venv" in text
     assert 'pip install -e ".[dev]"' in text
-    assert 'pip install "mineru[pipeline]==3.4.4"' in text
+    assert "uv sync --frozen --all-extras" in text
+    assert 'pip install "mineru[pipeline]==3.4.4"' not in text
+    assert "#671" in text
+    assert "상업 배포 승인 경로가 아닙니다" in text
 
 
 def test_installation_doc_includes_manual_api_healthcheck_commands():
     text = Path("manual/installation.md").read_text(encoding="utf-8")
     for token in [
-        "python -m uvicorn",
+        "uv run uvicorn",
         "--app-dir src",
         "newsdom_api.main:app",
         "--host 0.0.0.0",
