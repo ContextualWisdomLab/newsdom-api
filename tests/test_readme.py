@@ -75,6 +75,7 @@ def test_dependency_review_uses_immutable_central_workflow():
 
     assert expected in workflow
     assert "dependency-review.yml@main" not in workflow
+    assert "permissions:\n  contents: read\n  pull-requests: read" in workflow
     assert "fail_on_severity: low" in workflow
     assert 'allow_ghsas: "GHSA-69w3-r845-3855"' in workflow
 
