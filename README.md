@@ -1,49 +1,42 @@
 # NewsDOM API
 
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/Seongho-Bae/newsdom-api/badge)](https://securityscorecards.dev/viewer/?uri=github.com/Seongho-Bae/newsdom-api)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/ContextualWisdomLab/newsdom-api/badge)](https://securityscorecards.dev/viewer/?uri=github.com/ContextualWisdomLab/newsdom-api)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ContextualWisdomLab/newsdom-api)
 
-NewsDOM API is a language-agnostic PDF-to-DOM sidecar. It converts any PDF
-into a canonical JSON document tree — pages, sections, headings, body
-blocks, images, captions, and bounding boxes — using MinerU. It runs as a
-standalone FastAPI service and is designed to be embedded as a git
-submodule / sidecar in a larger system.
+**Turn PDFs into a stable, structured document tree that downstream systems can inspect instead of reverse-engineering parser output.**
 
-## Features
+NewsDOM API owns the HTTP, safety, normalization, and evidence boundary for PDF-to-DOM processing. It accepts a PDF, applies bounded admission and fail-closed request controls, and returns canonical JSON for pages, sections, headings, body blocks, images, captions, bounding boxes, and quality metadata.
 
-- Primary engine: `MinerU` pipeline backend
-- Service wrapper: FastAPI
-- Output: canonical JSON with pages, sections, section headings, body
-  blocks, images, captions, bounding boxes, and quality metadata
-- Language-selectable: `language` defaults to MinerU's multilingual `ch` model;
-  official language families and compatibility aliases such as `japan` remain
-  available
-- Parsing `mode` defaults to `auto` so born-digital text PDFs skip forced OCR
-- Fail-closed bearer authentication on `/parse`; separate unauthenticated `/health` liveness and `/ready` traffic-readiness probes
-- Bounded, non-waiting parser admission with a conservative one-parse default per process and an explicit `429 Too Many Requests` overload contract
+The service is intentionally usable as a standalone FastAPI sidecar. A host application does not need to adopt NewsDOM's internal parser process, storage layout, or deployment model; it consumes the published HTTP/schema contract.
 
-## Quickstart
+> **Commercial parser status:** the current source still contains a legacy MinerU adapter, but MinerU 3.x uses the MinerU Open Source License—Apache-2.0 plus additional commercial conditions. That runtime is **not an approved ContextualWisdomLab commercial dependency**. Do not treat MinerU installation, a customer-supplied MinerU binary, or `Dockerfile.nvidia` as an approved commercial deployment path. Issue [#671](https://github.com/ContextualWisdomLab/newsdom-api/issues/671) owns replacement with an unrestricted commercial-use parser boundary. NewsDOM's own source remains MIT-licensed.
 
-### Install
+## What NewsDOM owns
 
-Install `uv` first if it is not already available in your `PATH`, then sync the
-repository-managed virtual environment:
+- A stable `POST /parse` contract for PDF input and normalized document-tree output.
+- Language and parse-mode request validation, including `mode=auto`, `ocr`, and `txt` compatibility semantics while the legacy adapter remains present.
+- Fail-closed bearer authentication for `/parse` in the production profile.
+- Separate unauthenticated `/health` liveness and `/ready` traffic-readiness semantics.
+- Bounded, non-waiting parser admission with `NEWSDOM_MAX_CONCURRENT_PARSES` and an explicit `429 Too Many Requests` overload response.
+- Request-scoped temporary workspace handling, sanitized parser failures, schema validation, and synthetic fixture provenance.
+
+NewsDOM does **not** make a third-party parser's license, model weights, OCR accuracy, or runtime availability part of its own MIT grant. It also does not turn `/health` into proof that parsing is ready.
+
+## Quick start
+
+### Install the repository-managed environment
+
+NewsDOM source metadata currently requires Python `>=3.10,<3.14`.
 
 ```bash
 uv sync --frozen --all-extras
 ```
 
-To enable real parsing with MinerU, install the MinerU CLI separately in the
-same `.venv` that `uv sync` created:
+`uv` creates the repository environment under `.venv`. On Windows the interpreter path is `.venv\Scripts\python.exe`; on macOS/Linux it is `.venv/bin/python`.
 
-```bash
-uv pip install --python .venv/bin/python "mineru[pipeline]==3.4.4"
-```
+This command installs NewsDOM and its declared project dependencies only. It does **not** install the commercially restricted legacy MinerU runtime.
 
-On Windows, replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
-
-### Run
-
-Configure the fail-closed production contract before starting the service:
+### Run the API shell
 
 ```bash
 export NEWSDOM_AUTH_MODE=required
@@ -53,7 +46,54 @@ export NEWSDOM_MAX_CONCURRENT_PARSES=1
 uv run uvicorn --app-dir src newsdom_api.main:app --reload
 ```
 
-### Docker
+Check the two health levels independently:
+
+```bash
+curl -sS http://127.0.0.1:8000/health
+curl -sS http://127.0.0.1:8000/ready
+```
+
+`/health` answers for process liveness. `/ready` is the routing gate and must remain unavailable when the configured parser runtime or required authentication state cannot accept traffic.
+
+### Parse contract
+
+Once an **organization-approved parser backend** is configured, the public request shape remains:
+
+```bash
+curl -F "file=@sample.pdf" \
+  -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
+  http://127.0.0.1:8000/parse
+```
+
+Optional compatibility fields are `language` and `mode`:
+
+```bash
+curl -F "file=@sample.pdf" -F "language=ch" -F "mode=auto" \
+  -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
+  http://127.0.0.1:8000/parse
+```
+
+An explicit OCR-mode request uses the same authenticated boundary:
+
+```bash
+curl -F "file=@sample.pdf" -F "language=korean" -F "mode=ocr" \
+  -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
+  http://127.0.0.1:8000/parse
+```
+
+The current source's legacy adapter may return `503 Service Unavailable` when no parser runtime is available. That is preferable to silently treating an unapproved runtime as production-ready.
+
+## Capacity and failure behavior
+
+`NEWSDOM_MAX_CONCURRENT_PARSES` is an integer from `1` through `128` and defaults to `1` per process. Authentication runs before admission. When all parser leases are occupied, the service returns `429 Too Many Requests` with `Retry-After: 1` and `Cache-Control: no-store` before multipart body processing, temporary-file allocation, PDF validation, or parser execution.
+
+This is a last-resort per-process availability boundary, not a replacement for tenant-aware gateway limits or cluster resource quotas. Start with the conservative default, measure representative workloads, and scale replicas before raising per-process concurrency.
+
+Expected malformed-document/parser failures are translated into bounded client-facing responses; unexpected server faults remain observable through the server-error path rather than being mislabeled as caller input.
+
+## Containers
+
+The default container is the supported repository image surface:
 
 ```bash
 docker build -t newsdom-api .
@@ -65,157 +105,37 @@ docker run -p 8000:8000 \
   newsdom-api
 ```
 
-The default image exposes the REST API on port `8000` as a multi-arch service
-image. It is suitable for `linux/amd64` and `linux/arm64`, including Apple
-Silicon hosts running the API service inside Docker.
+The default image **ships the API service only** and **does not bundle the MinerU runtime**. It supports the repository's multi-architecture API shell, including Apple Silicon hosts running Linux containers, but `/ready` must stay fail-closed until an approved parser backend exists.
 
-The default image ships the API service only and does not bundle the MinerU runtime.
-`/parse` requires a compatible MinerU runtime to be available inside the container image or exposed through `NEWSDOM_MINERU_BIN`.
+`Dockerfile.nvidia` is retained in current source history and tests as the existing NVIDIA/MinerU distribution path, but it is **commercially blocked under organization policy** and must not be built, published, recommended, or treated as a supported release profile until #671 replaces the restricted parser stack. The same restriction applies even on an NVIDIA host; moving the component into another image or process does not cure its license terms.
 
-> `GET /health` reports process liveness only. `GET /ready` reports traffic
-> readiness and remains unavailable until both fail-closed authentication and
-> the MinerU runtime are configured. Orchestrators must route traffic by
-> `/ready`, not by `/health`.
+## Architecture and integration boundary
 
-#### docker compose
-
-A production-oriented `docker-compose.yml` is provided for standalone/sidecar
-use. It requires `NEWSDOM_API_TOKEN` before startup, sets the explicit
-one-parse process budget, and its healthcheck targets `/ready`:
-
-```bash
-docker compose up --build
+```text
+client
+  -> FastAPI request/auth boundary
+  -> non-waiting parser admission
+  -> bounded temporary PDF workspace
+  -> parser adapter port
+  -> NewsDOM normalization + schema validation
+  -> canonical JSON response
 ```
 
-Export `NEWSDOM_API_TOKEN` from a secret store before running Compose. Mount or
-bundle MinerU and set `NEWSDOM_MINERU_BIN` when using the API-only image. The
-service remains live but not ready until both dependencies are valid.
+The parser adapter is an implementation dependency. The stable product responsibility is the request, safety, evidence, and normalized-output contract around it. The replacement work in #671 should preserve that boundary rather than make downstream callers depend on another parser's internal types.
 
-#### Building a MinerU-bundled image
+For deeper design and current-vs-target maturity, see [ARCHITECTURE.md](ARCHITECTURE.md), the [ADR index](docs/adr/README.md), and the canonical documentation under [`docs/`](docs/).
 
-To ship an image where `/parse` works behind a green `/health`, bundle a MinerU
-runtime. Either build the NVIDIA variant below, or extend the default image and
-install MinerU into the same virtualenv, for example:
+## Verification
 
-```dockerfile
-FROM newsdom-api:latest
-USER root
-RUN uv pip install --python /app/.venv/bin/python "mineru[pipeline]==3.4.4"
-USER newsdom
-```
-
-Alternatively mount a MinerU executable and point `NEWSDOM_MINERU_BIN` at it, so
-`/parse` no longer returns `503` behind a healthy `/health`.
-
-For heavier parsing deployments, build the optional NVIDIA-oriented variant:
-
-```bash
-docker build -f Dockerfile.nvidia -t newsdom-api:nvidia .
-docker run --gpus all -p 8000:8000 newsdom-api:nvidia
-```
-
-`Dockerfile.nvidia` is intended for Linux/NVIDIA environments and is
-`linux/amd64`-only. Apple Silicon can run the lean API image, but Docker
-Desktop does not expose Apple GPU acceleration to Linux containers, so real
-GPU-accelerated parsing should stay on a native Apple Silicon path instead of
-the containerized runtime.
-
-The NVIDIA variant is `linux/amd64`-only and is meant for hosts that can
-provide the CUDA user-space/runtime stack required by MinerU.
-
-### Parse a PDF
-
-```bash
-curl -F "file=@sample.pdf" \
-  -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
-  http://127.0.0.1:8000/parse
-```
-
-`/parse` accepts `multipart/form-data` with a required `file` part
-(`application/pdf`) and two optional form fields:
-
-| Field | Default | Values | Maps to |
-| ----- | ------- | ------ | ------- |
-| `language` | `ch` | MinerU 3.4.4 public family or alias (`ch`, `en`, `japan`, `korean`, `arabic`, `east_slavic`, `cyrillic`, `devanagari`, …) | MinerU `-l` |
-| `mode` | `auto` | `auto`, `ocr`, `txt` | MinerU `-m` |
-
-`mode=auto` lets born-digital (text-layer) PDFs skip forced OCR; `ocr` forces
-optical recognition and `txt` extracts only the embedded text layer. Invalid
-values return `422`. The previous Japanese-newspaper behavior is still available
-explicitly:
-
-```bash
-curl -F "file=@sample.pdf" -F "language=japan" -F "mode=ocr" \
-  -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
-  http://127.0.0.1:8000/parse
-```
-
-The accepted language contract follows the official
-[MinerU 3.4.4 CLI implementation](https://github.com/opendatalab/MinerU/blob/mineru-3.4.4-released/mineru/utils/ocr_language.py).
-MinerU canonicalizes `en`, `japan`, `chinese_cht`, and `latin` to `ch`; this
-sidecar performs the same normalization before launching the subprocess.
-
-#### Authentication, readiness, and parser capacity
-
-Parser authentication is required by default. This replaces the previous
-default-open behavior. Configure the explicit production contract and supply the
-secret from the deployment secret store:
-
-```bash
-export NEWSDOM_AUTH_MODE=required
-export NEWSDOM_RUNTIME_PROFILE=production
-export NEWSDOM_API_TOKEN=$(openssl rand -hex 32)
-export NEWSDOM_MAX_CONCURRENT_PARSES=1
-uv run uvicorn --app-dir src newsdom_api.main:app
-curl -F "file=@sample.pdf" -H "Authorization: Bearer $NEWSDOM_API_TOKEN" \
-  http://127.0.0.1:8000/parse
-```
-
-Missing or invalid caller credentials receive a fixed `401`; a missing required
-server token returns a fixed `503` before the upload body is processed. `GET
-/health` remains unauthenticated liveness. `GET /ready` succeeds only when the
-authentication configuration and MinerU runtime can accept traffic.
-
-`NEWSDOM_MAX_CONCURRENT_PARSES` is an immutable integer from `1` through `128`
-and defaults to `1`. It controls active MinerU work **per process**. Authentication
-runs first. An authenticated request then obtains one non-waiting lease before the
-multipart body is parsed or copied. When every lease is in use, the service returns
-`429 Too Many Requests` with `Retry-After: 1` and `Cache-Control: no-store` before
-the multipart body, temporary-file allocation, PDF validation, or MinerU execution.
-The service deliberately does not create an unbounded in-process queue.
-
-Total nominal capacity is the process budget multiplied by the number of serving
-processes and each replica. Start with one lease, measure peak RSS/VRAM and parser
-latency on representative PDFs, and scale replicas before increasing per-process
-capacity. Clients should apply bounded, jittered retries and honor `Retry-After: 1`.
-The limit is availability protection rather than a substitute for gateway-level
-per-tenant rate limits or cluster resource quotas.
-
-An isolated local development-only bypass is available only with the explicit
-pair below:
-
-```bash
-NEWSDOM_AUTH_MODE=disabled \
-NEWSDOM_RUNTIME_PROFILE=development \
-  uv run uvicorn --app-dir src newsdom_api.main:app --reload
-```
-
-Do not use the development-only bypass as a production rollback. Restore a
-working secret or the previous release instead.
-
-Each request is written to a request-scoped temporary directory before MinerU
-runs, and those temporary files are removed after the response completes.
-Sanitized parse failures return `503 Service Unavailable` when the
-runtime cannot be executed and `502 Bad Gateway` when MinerU
-finishes without the required output artifacts.
-
-### Run tests
+Run the repository suite:
 
 ```bash
 uv run pytest
 ```
 
-### Fuzzing smoke
+The repository quality gate requires 100% configured source coverage and docstring audit coverage. Security, dependency, image, fuzzing, and package checks run independently in CI.
+
+A local fuzzing smoke remains available against committed synthetic fixtures:
 
 ```bash
 uv run python fuzzers/dom_builder_fuzzer.py --smoke tests/fixtures/mineru_sample.json
@@ -223,42 +143,29 @@ uv run python fuzzers/schema_response_fuzzer.py --smoke fuzzers/corpus/schema_re
 uv run python fuzzers/equivalence_metrics_fuzzer.py --smoke fuzzers/corpus/equivalence_metrics_fuzzer/structural_metrics.json
 ```
 
-Every `fuzzers/*_fuzzer.py` target is coverage-guided under Atheris and is
-picked up automatically by the ClusterFuzzLite workflow, which runs a bounded
-budget on each pull request. Targets cover the untrusted-input boundaries: the
-MinerU DOM normalizer (`build_dom`), the `ParseResponse` schema validator, and
-the equivalence metrics normalizer. See `docs/papers/` for background.
+The historical `mineru_sample.json` fixture name records parser provenance; it is not an instruction to install the MinerU runtime.
 
-The repository also enforces a `quality-gate` workflow with 100% source
-coverage and docstring audit coverage.
+## Documentation
 
-## Fixtures and provenance
+- [Public manual](manual/index.md) — product and integration entry point.
+- [Architecture](ARCHITECTURE.md) — system ownership and current/target boundaries.
+- [Security](SECURITY.md) — vulnerability reporting and security posture.
+- [Contributing](CONTRIBUTING.md) — development and validation workflow.
+- [Fixtures and provenance](tests/fixtures/README.md) — synthetic fixture source and regeneration rules.
+- [Git flow](docs/workflow/git-flow.md) — repository branch workflow.
+- [Changelog](CHANGELOG.md) — source change history; not release evidence by itself.
+- [Commercial parser replacement #671](https://github.com/ContextualWisdomLab/newsdom-api/issues/671) — current parser-license blocker and acceptance contract.
 
-This repository ships only synthetic test fixtures and derived structural
-baselines. For fixture provenance and regeneration notes, see
-`tests/fixtures/README.md`.
+GitHub Pages source lives under `manual/`. A source commit is not proof that the public site deployed; publication requires the Pages workflow to finish and the live HTTPS content to be re-read.
 
-## Development
+## Status
 
-Development setup, fixture handling rules, and local-only baseline
-maintenance are documented in `CONTRIBUTING.md`.
+`pyproject.toml` currently records NewsDOM source version `0.2.0`. Source metadata, an open PR, or a passing check is not by itself a published-release or commercial-readiness claim. Consult [GitHub Releases](https://github.com/ContextualWisdomLab/newsdom-api/releases) for immutable published release evidence.
 
-Mechanical branch updates and merges are attributed to `github-actions[bot]`.
-Scratch PoC files are not committed. Failed GitHub Checks are not reviewed as URL lists.
-OpenCode Review, Strix Security Scan, and PR Review Merge Scheduler are
-provided by the organization-level required workflows in
-`ContextualWisdomLab/.github`, not copied into this repository.
+The current parser-license blocker means the repository must not be represented as commercially complete even when NewsDOM-owned tests are green.
 
-Security reporting guidance is documented in `SECURITY.md`.
-Version tags trigger a GitHub-native release workflow that builds
-distribution artifacts, checksums, and provenance attestations.
+## License
 
-Project history is tracked in `CHANGELOG.md`.
+NewsDOM API original source and documentation are licensed under the [MIT License](LICENSE). Third-party packages, parser runtimes, model weights, container bases, fonts, datasets, and other external assets retain their own licenses and distribution terms.
 
-Repository branch workflow is documented in `docs/workflow/git-flow.md`.
-
-## Repository layout
-
-- `src/newsdom_api/`: API, MinerU wrapper, admission control, DOM builder, synthetic fixture generator
-- `tests/`: unit tests and committed synthetic fixtures
-- `tools/`: local maintenance utilities
+The MIT grant does not relicense the legacy MinerU runtime. Under current ContextualWisdomLab policy, that runtime is outside the approved commercial inbound baseline and remains blocked by #671.
