@@ -34,51 +34,51 @@ def test_swagger_authorization_persistence_is_development_only() -> None:
     assert '"validatorUrl": null' in development_docs.text
 
 
-def test_development_swagger_csp_allows_only_required_origins() -> None:
-    """Development Swagger UI can execute while retaining a narrow CSP."""
+def test_swagger_csp_allows_only_required_origins_in_each_profile() -> None:
+    """Swagger UI can execute in each runtime profile with a route-scoped CSP."""
 
-    client = TestClient(create_app(_settings(RuntimeProfile.DEVELOPMENT)))
-    response = client.get("/docs")
+    for profile in (RuntimeProfile.PRODUCTION, RuntimeProfile.DEVELOPMENT):
+        client = TestClient(create_app(_settings(profile)))
+        response = client.get("/docs")
 
-    assert response.status_code == 200
-    csp = response.headers["Content-Security-Policy"]
-    assert "default-src 'none'" in csp
-    assert "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net" in csp
-    assert "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net" in csp
-    assert "img-src 'self' data: https://fastapi.tiangolo.com" in csp
-    assert "connect-src 'self'" in csp
-    assert "frame-ancestors 'none'" in csp
-    assert "base-uri 'none'" in csp
-    assert "form-action 'self'" in csp
+        assert response.status_code == 200
+        csp = response.headers["Content-Security-Policy"]
+        assert "default-src 'none'" in csp
+        assert "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net" in csp
+        assert "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net" in csp
+        assert "img-src 'self' data: https://fastapi.tiangolo.com" in csp
+        assert "connect-src 'self'" in csp
+        assert "frame-ancestors 'none'" in csp
+        assert "base-uri 'none'" in csp
+        assert "form-action 'self'" in csp
 
 
-def test_development_redoc_csp_allows_only_required_origins() -> None:
-    """Development ReDoc can load its script, fonts, schema and favicon."""
+def test_redoc_csp_allows_only_required_origins_in_each_profile() -> None:
+    """ReDoc can load its script, fonts, schema and favicon in each profile."""
 
-    client = TestClient(create_app(_settings(RuntimeProfile.DEVELOPMENT)))
-    response = client.get("/redoc")
+    for profile in (RuntimeProfile.PRODUCTION, RuntimeProfile.DEVELOPMENT):
+        client = TestClient(create_app(_settings(profile)))
+        response = client.get("/redoc")
 
-    assert response.status_code == 200
-    csp = response.headers["Content-Security-Policy"]
-    assert "default-src 'none'" in csp
-    assert "script-src 'self' https://cdn.jsdelivr.net" in csp
-    assert "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com" in csp
-    assert "font-src 'self' https://fonts.gstatic.com" in csp
-    assert "img-src 'self' data: https://fastapi.tiangolo.com" in csp
-    assert "connect-src 'self'" in csp
-    assert "frame-ancestors 'none'" in csp
-    assert "base-uri 'none'" in csp
-    assert "form-action 'self'" in csp
+        assert response.status_code == 200
+        csp = response.headers["Content-Security-Policy"]
+        assert "default-src 'none'" in csp
+        assert "script-src 'self' https://cdn.jsdelivr.net" in csp
+        assert "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com" in csp
+        assert "font-src 'self' https://fonts.gstatic.com" in csp
+        assert "img-src 'self' data: https://fastapi.tiangolo.com" in csp
+        assert "connect-src 'self'" in csp
+        assert "frame-ancestors 'none'" in csp
+        assert "base-uri 'none'" in csp
+        assert "form-action 'self'" in csp
 
 
 def test_non_docs_responses_keep_the_locked_down_csp() -> None:
     """The docs exception must not weaken the API response security boundary."""
 
-    client = TestClient(
-        create_app(_settings(RuntimeProfile.DEVELOPMENT)),
-        base_url="https://testserver",
-    )
-    response = client.get("/health")
+    for profile in (RuntimeProfile.PRODUCTION, RuntimeProfile.DEVELOPMENT):
+        client = TestClient(create_app(_settings(profile)), base_url="https://testserver")
+        response = client.get("/health")
 
-    assert response.status_code == 200
-    assert response.headers["Content-Security-Policy"] == LOCKED_DOWN_CSP
+        assert response.status_code == 200
+        assert response.headers["Content-Security-Policy"] == LOCKED_DOWN_CSP
