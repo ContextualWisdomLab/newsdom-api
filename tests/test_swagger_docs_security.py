@@ -31,6 +31,7 @@ def test_swagger_authorization_persistence_is_development_only() -> None:
     assert development_docs.status_code == 200
     assert '"persistAuthorization": false' in production_docs.text
     assert '"persistAuthorization": true' in development_docs.text
+    assert '"validatorUrl": null' in development_docs.text
 
 
 def test_development_docs_csp_allows_only_required_swagger_origins() -> None:
@@ -43,7 +44,7 @@ def test_development_docs_csp_allows_only_required_swagger_origins() -> None:
     csp = response.headers["Content-Security-Policy"]
     assert "default-src 'none'" in csp
     assert "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net" in csp
-    assert "style-src 'self' https://cdn.jsdelivr.net" in csp
+    assert "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net" in csp
     assert "img-src 'self' data: https://fastapi.tiangolo.com" in csp
     assert "connect-src 'self'" in csp
     assert "frame-ancestors 'none'" in csp
