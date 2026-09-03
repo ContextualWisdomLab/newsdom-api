@@ -4,13 +4,10 @@ on:
   pull_request:
     paths-ignore:
       - "docs/**"
-      - "*.md"
+      - "**.md"
   push:
     tags:
       - 'v*'
-    paths-ignore:
-      - "docs/**"
-      - "*.md"
   workflow_dispatch:
     inputs:
       publish_nvidia:
