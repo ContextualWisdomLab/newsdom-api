@@ -10,12 +10,31 @@ from pydantic import ValidationError
 from newsdom_api.schemas import ParseResponse
 
 
+def _same_file_target(source_path: Path, target_path: Path) -> bool:
+    """Return whether two paths resolve to the same filesystem object.
+
+    Resolve path aliases first, then use inode identity for an existing target so
+    hard-link aliases cannot turn an export into a destructive in-place rewrite.
+    """
+    if source_path.resolve() == target_path.resolve():
+        return True
+    if not target_path.exists():
+        return False
+    return source_path.samefile(target_path)
+
+
 def export_jsonl(json_path: Path, output_path: Path) -> None:
-    """Export canonical NewsDOM sections to JSONL without dropping provenance fields."""
+    """Export canonical NewsDOM sections without dropping provenance.
+
+    The export is rejected before reading or writing when the destination aliases
+    the source path, including an existing hard link to the source file.
+    """
     if not json_path.is_file():
         raise FileNotFoundError(f"File not found or is not a file: {json_path}")
     if json_path.suffix.lower() != ".json":
         raise ValueError("Input file must be a .json file.")
+    if _same_file_target(json_path, output_path):
+        raise ValueError("Output path must differ from input path.")
 
     try:
         data = json.loads(json_path.read_text(encoding="utf-8"))
@@ -39,7 +58,10 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
 
 
 def main(argv: list[str] | None = None) -> None:
-    """Run the canonical NewsDOM JSON-to-JSONL export CLI."""
+    """Run the canonical NewsDOM JSON-to-JSONL export CLI.
+
+    Export failures are reported on stderr and mapped to a non-zero process exit.
+    """
     parser = argparse.ArgumentParser(
         description="Export canonical NewsDOM JSON sections to JSONL."
     )
