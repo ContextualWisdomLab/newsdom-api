@@ -38,12 +38,10 @@ from .mineru_runner import (
     normalize_language,
     normalize_mode,
 )
-from .request_body_limit import ParseRequestBodyLimitMiddleware
 from .schemas import HealthResponse, ParseResponse, ReadinessResponse
 from .service import parse_pdf
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
-MAX_PARSE_REQUEST_BYTES = MAX_PARSE_UPLOAD_BYTES + 1024 * 1024
 MAX_AUTHORIZATION_HEADER_BYTES = MAX_BEARER_HEADER_BYTES
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
 PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
@@ -296,9 +294,8 @@ def create_app(
     settings: RuntimeSettings | None = None,
     *,
     runtime_readiness_probe: Callable[[], bool] | None = None,
-    max_request_body_bytes: int = MAX_PARSE_REQUEST_BYTES,
 ) -> FastAPI:
-    """Create a NewsDOM application with immutable settings and request budgets."""
+    """Create a NewsDOM application with immutable settings and injected readiness."""
 
     application_settings = settings or load_runtime_settings()
     if application_settings.authentication_mode is AuthenticationMode.DISABLED:
@@ -331,11 +328,6 @@ def create_app(
     application.state.runtime_settings = application_settings
     application.state.runtime_readiness_probe = (
         runtime_readiness_probe or mineru_runtime_available
-    )
-    application.add_middleware(
-        ParseRequestBodyLimitMiddleware,
-        max_body_size=max_request_body_bytes,
-        detail=PAYLOAD_TOO_LARGE_DETAIL,
     )
     application.middleware("http")(security_boundary_middleware)
     application.add_exception_handler(Exception, global_exception_handler)

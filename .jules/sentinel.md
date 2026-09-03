@@ -73,7 +73,7 @@
 **Prevention:** 임시 파일 경로를 할당하거나 파일을 여는 즉시 자원 정리(cleanup) 로직이 보장되도록 `try...finally` 블록으로 감싼다.
 
 ## 2025-03-09 - Prevent Command/Log Injection via Newlines in Filenames
-**Vulnerability:** The blocklist regex `_UNSAFE_CHARS_PATTERN` for CLI arguments did not explicitly filter newline (`\n`) or carriage return (`\r`) characters. This can allow command or log injection even when `shell=False` is used, by passing arguments containing newlines.
+**Vulnerability:** The blocklist regex `_UNSAFE_CHARS_PATTERN` for CLI arguments did not explicitly filter newline (\n) or carriage return (\r) characters. This can allow command or log injection even when `shell=False` is used, by passing arguments containing newlines.
 **Learning:** Shell metacharacter blocklists must include whitespace metacharacters like newlines and carriage returns, as these can bypass checks and manipulate logs or downstream argument parsing.
 **Prevention:** Explicitly add \n and \r to the `_UNSAFE_CHARS_PATTERN` blocklist for CLI arguments.
 
@@ -91,7 +91,7 @@
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
 
-## 2026-09-03 - Separate Form Value Validation from Multipart Body Limits
-**Boundary:** `Form(max_length=50)` constrains the parsed `language` and `mode` values and documents that API contract; it is not a pre-parser or total-request memory limit.
-**Learning:** Starlette's multipart parser has its own security limits for form parsing, including a per-part size limit for non-file fields. A complete request-body budget, including uploads and multipart overhead, must be enforced at the Starlette application/router/middleware boundary rather than inferred from FastAPI value validation.
-**Prevention:** Keep narrow `max_length` validation for product input semantics. Treat multipart parser limits and total request-body limits as separate resource controls, with route-appropriate real upload tests before claiming DoS prevention.
+## 2026-09-01 - Prevent Memory Exhaustion DoS via Unbounded Form Fields
+**Vulnerability:** FastAPIs `Form` fields process multipart payloads entirely in memory before route-level size limits or payload bounds are evaluated. An attacker can exhaust server memory by submitting excessively large strings in these textual fields, leading to a Denial of Service (DoS).
+**Learning:** `python-multipart` parses and stores form data in memory. To mitigate DoS risks related to memory exhaustion, all text-based form fields must be explicitly bounded using parameter constraints.
+**Prevention:** Always add a `max_length` parameter (e.g. `Form(max_length=50)`) to `Form` fields to enforce strict memory bounds before request validation completes.
