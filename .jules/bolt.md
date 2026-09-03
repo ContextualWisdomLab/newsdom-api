@@ -66,3 +66,6 @@
 ## 2026-09-02 - Increase chunk size for asynchronous file uploads
 **Learning:** Using a small chunk size (e.g., 8192 bytes) with `await file.read()` for asynchronous file uploads in FastAPI/Starlette creates massive threadpool and context-switching overhead, negatively impacting performance.
 **Action:** Define a larger chunk size as a named constant (e.g., `UPLOAD_READ_CHUNK_SIZE_BYTES = 1024 * 1024`) and use it in `await file.read()` calls to significantly reduce context switches and threadpool exhaustion.
+## 2026-09-02 - Increase chunk size for asynchronous file uploads
+**Learning:** Using a small chunk size (e.g., 8192 bytes) with `await file.read()` for asynchronous file uploads in FastAPI/Starlette creates massive threadpool and context-switching overhead, negatively impacting performance.
+**Action:** Define a larger chunk size as a named constant (e.g., `UPLOAD_READ_CHUNK_SIZE_BYTES = 1024 * 1024`) and use it in `await file.read()` calls to significantly reduce context switches and threadpool exhaustion.

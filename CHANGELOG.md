@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > acceptance are aligned for an actual 0.3.0 publication.
 
 ### Changed
+- 비동기 파일 업로드 스트리밍 청크 크기를 8KB에서 1MB(`UPLOAD_READ_CHUNK_SIZE_BYTES`)로 증가시켜 컨텍스트 스위칭 오버헤드를 감소하고 서버 리소스 사용량을 개선함.
 - `/parse`를 언어 선택형 파서로 일반화: MinerU `-l japan`/`-m ocr` 하드코딩을 제거하고 optional form 필드 `language`(MinerU 3.4.4 공식 기본 `ch`, 공개 언어군/alias 검증)와 `mode`(`auto`/`ocr`/`txt`, 기본 `auto`)로 파라미터화. `mode=auto`는 born-digital PDF가 강제 OCR을 건너뛰도록 함. 기존 입력 `language=japan&mode=ocr`는 공식 규약대로 `ch`/`ocr`로 정규화됨.
 - OpenAPI 제목/설명, README, `ArticleNode.headline` 문서를 일반 문서용 (section heading) 표현으로 재구성하여 특정 언어/신문 가정을 소비자에게 노출하지 않도록 함. 응답 스키마 필드는 하위 호환을 위해 변경하지 않음.
 
@@ -63,6 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tools/benchmark_ocr.py` 및 `tools/derive_private_baseline.py`의 `if __name__ == "__main__":` 구문에 커버리지 측정 예외 마커(`pragma: no cover`) 추가
 
 ### Changed
+- 비동기 파일 업로드 스트리밍 청크 크기를 8KB에서 1MB(`UPLOAD_READ_CHUNK_SIZE_BYTES`)로 증가시켜 컨텍스트 스위칭 오버헤드를 감소하고 서버 리소스 사용량을 개선함.
 
 - Improved OpenAPI metadata for the `/parse` endpoint by documenting 415, 502, and 503 error responses.
 
@@ -74,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deployed a GHCR prebuilt CI container image (`ghcr.io/seongho-bae/newsdom-api/ci-env`) to stabilize test environments and resolve timeout/dependency installation issues.
 
 ### Changed
+- 비동기 파일 업로드 스트리밍 청크 크기를 8KB에서 1MB(`UPLOAD_READ_CHUNK_SIZE_BYTES`)로 증가시켜 컨텍스트 스위칭 오버헤드를 감소하고 서버 리소스 사용량을 개선함.
 
 - Updated `dom_builder.py` to preserve multi-page MinerU structure instead of collapsing multi-page outputs into a single page.
 - Adjusted the `/parse` endpoint to return specific HTTP error codes (`502` and `503`) mapped to `MineruIncompleteOutputError` and `MineruRuntimeUnavailableError` rather than raw `500` errors.
@@ -92,6 +95,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Verified `/docs` and `/redoc` manual screenshots plus canonical engineering policy docs that describe the live repository workflow
 
 ### Changed
+- 비동기 파일 업로드 스트리밍 청크 크기를 8KB에서 1MB(`UPLOAD_READ_CHUNK_SIZE_BYTES`)로 증가시켜 컨텍스트 스위칭 오버헤드를 감소하고 서버 리소스 사용량을 개선함.
 
 - Protected-branch governance documentation now reflects the current single-maintainer exception while preserving required checks and history protections
 - Public setup guidance, docs-toolchain policy, and markdownlint scope now match the merged `develop` / `main` delivery paths
