@@ -6,7 +6,6 @@ from fastapi import HTTPException
 import pytest
 
 import newsdom_api.main as main_module
-from newsdom_api.main import UNSUPPORTED_MEDIA_DETAIL, _validate_pdf_structure
 
 
 def _pdf_fixture(tmp_path):
@@ -30,10 +29,10 @@ def test_pdf_validation_maps_known_parser_resource_failure_to_415(
     monkeypatch.setattr(main_module, "PdfReader", reject_pdf)
 
     with pytest.raises(HTTPException) as exc_info:
-        _validate_pdf_structure(_pdf_fixture(tmp_path))
+        main_module._validate_pdf_structure(_pdf_fixture(tmp_path))
 
     assert exc_info.value.status_code == 415
-    assert exc_info.value.detail == UNSUPPORTED_MEDIA_DETAIL
+    assert exc_info.value.detail == main_module.UNSUPPORTED_MEDIA_DETAIL
 
 
 def test_pdf_validation_does_not_mask_unexpected_runtime_defects(
@@ -49,4 +48,4 @@ def test_pdf_validation_does_not_mask_unexpected_runtime_defects(
     monkeypatch.setattr(main_module, "PdfReader", fail_unexpectedly)
 
     with pytest.raises(RuntimeError, match="unexpected validator defect"):
-        _validate_pdf_structure(_pdf_fixture(tmp_path))
+        main_module._validate_pdf_structure(_pdf_fixture(tmp_path))
