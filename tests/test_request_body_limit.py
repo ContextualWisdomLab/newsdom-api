@@ -268,3 +268,133 @@ def test_request_body_limit_invalid_content_length() -> None:
     assert receive_count == 1
     assert completed is True
     assert responses[0]["status"] == 204
+
+def test_request_body_limit_other_methods() -> None:
+    completed = False
+
+    async def downstream(_scope: Scope, receive: Receive, send: Send) -> None:
+        nonlocal completed
+        while True:
+            message = await receive()
+            if not message.get("more_body", False):
+                break
+        completed = True
+        await send({"type": "http.response.start", "status": 204, "headers": []})
+        await send({"type": "http.response.body", "body": b""})
+
+    middleware = RequestBodyLimitMiddleware(
+        downstream,
+        max_body_bytes=10,
+        path="/parse",
+    )
+
+    responses, receive_count = _run_asgi(
+        middleware,
+        {
+            "type": "http",
+            "asgi": {"version": "3.0"},
+            "http_version": "1.1",
+            "method": "GET",
+            "scheme": "http",
+            "path": "/parse",
+            "raw_path": b"/parse",
+            "query_string": b"",
+            "headers": [],
+            "client": ("127.0.0.1", 12345),
+            "server": ("testserver", 80),
+            "root_path": "",
+        },
+        [
+            {"type": "http.request", "body": b"123456789012345", "more_body": False},
+        ],
+    )
+
+    assert receive_count == 1
+    assert completed is True
+    assert responses[0]["status"] == 204
+
+def test_request_body_limit_other_path() -> None:
+    completed = False
+
+    async def downstream(_scope: Scope, receive: Receive, send: Send) -> None:
+        nonlocal completed
+        while True:
+            message = await receive()
+            if not message.get("more_body", False):
+                break
+        completed = True
+        await send({"type": "http.response.start", "status": 204, "headers": []})
+        await send({"type": "http.response.body", "body": b""})
+
+    middleware = RequestBodyLimitMiddleware(
+        downstream,
+        max_body_bytes=10,
+        path="/parse",
+    )
+
+    responses, receive_count = _run_asgi(
+        middleware,
+        {
+            "type": "http",
+            "asgi": {"version": "3.0"},
+            "http_version": "1.1",
+            "method": "POST",
+            "scheme": "http",
+            "path": "/health",
+            "raw_path": b"/health",
+            "query_string": b"",
+            "headers": [],
+            "client": ("127.0.0.1", 12345),
+            "server": ("testserver", 80),
+            "root_path": "",
+        },
+        [
+            {"type": "http.request", "body": b"123456789012345", "more_body": False},
+        ],
+    )
+
+    assert receive_count == 1
+    assert completed is True
+    assert responses[0]["status"] == 204
+
+def test_request_body_limit_other_type() -> None:
+    completed = False
+
+    async def downstream(_scope: Scope, receive: Receive, send: Send) -> None:
+        nonlocal completed
+        while True:
+            message = await receive()
+            if message["type"] == "websocket.receive":
+                break
+        completed = True
+        await send({"type": "websocket.accept"})
+
+    middleware = RequestBodyLimitMiddleware(
+        downstream,
+        max_body_bytes=10,
+        path="/parse",
+    )
+
+    responses, receive_count = _run_asgi(
+        middleware,
+        {
+            "type": "websocket",
+            "asgi": {"version": "3.0"},
+            "scheme": "ws",
+            "path": "/parse",
+            "raw_path": b"/parse",
+            "query_string": b"",
+            "headers": [],
+            "client": ("127.0.0.1", 12345),
+            "server": ("testserver", 80),
+            "root_path": "",
+        },
+        [
+            {"type": "websocket.connect"},
+            {"type": "websocket.receive", "bytes": b"123456789012345"},
+        ],
+    )
+
+    assert receive_count == 2
+    assert completed is True
+    assert responses[0]["type"] == "websocket.accept"
