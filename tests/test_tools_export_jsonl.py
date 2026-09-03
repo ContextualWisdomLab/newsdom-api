@@ -25,11 +25,9 @@ VALID_JSON_DATA = {
                 },
             ],
         },
-        "not_a_dict_page",
         {
             "page_number": 2,
             "articles": [
-                "not_a_dict_article",
                 {
                     "article_id": "art_3",
                     "headline": "Test Headline 3",
@@ -88,6 +86,50 @@ def test_export_jsonl_invalid_file(tmp_path: Path) -> None:
     invalid_json.write_text("{invalid_json:", encoding="utf-8")
     with pytest.raises(ValueError, match="Invalid JSON file"):
         export_jsonl(invalid_json, output_file)
+
+
+@pytest.mark.parametrize(
+    ("payload", "message"),
+    [
+        ([], "top-level JSON value must be an object"),
+        ({"pages": {}}, "pages must be a list"),
+        ({"pages": ["bad-page"]}, "page at index 0 must be an object"),
+        (
+            {"pages": [{"articles": "bad-articles"}]},
+            "articles for page index 0 must be a list",
+        ),
+        (
+            {"pages": [{"articles": ["bad-article"]}]},
+            "article at page index 0, index 0 must be an object",
+        ),
+    ],
+)
+def test_export_jsonl_rejects_malformed_newsdom_structure(
+    tmp_path: Path, payload: object, message: str
+) -> None:
+    input_file = tmp_path / "input.json"
+    input_file.write_text(json.dumps(payload), encoding="utf-8")
+    output_file = tmp_path / "output.jsonl"
+
+    with pytest.raises(ValueError, match=message):
+        export_jsonl(input_file, output_file)
+
+    assert not output_file.exists()
+
+
+def test_export_jsonl_validation_failure_preserves_existing_output(tmp_path: Path) -> None:
+    input_file = tmp_path / "input.json"
+    input_file.write_text(
+        json.dumps({"pages": [{"articles": ["bad-article"]}]}),
+        encoding="utf-8",
+    )
+    output_file = tmp_path / "output.jsonl"
+    output_file.write_text("previous-good-output\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="article at page index 0, index 0"):
+        export_jsonl(input_file, output_file)
+
+    assert output_file.read_text(encoding="utf-8") == "previous-good-output\n"
 
 
 def test_export_jsonl_cli_success(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
