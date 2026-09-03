@@ -14,12 +14,12 @@ The adopted floors are:
 
 - `setuptools>=83` for the build backend;
 - `Pillow>=12.3,<13.0` for image parsing on the untrusted document-ingestion path;
-- `pypdf>=6.15.0,<7.0` for PDF parsing;
+- `pypdf>=6.16.2,<7.0` for PDF parsing;
 - `mkdocs-material>=9.7,<9.8`, allowing `pymdown-extensions>=11` while the MkDocs
   core remains on the supported 1.x line.
 
 The generated lock additionally resolves Click 8.4.2, setuptools 83.0.0,
-Pillow 12.3.0, pypdf 6.15.0, mkdocs-material 9.7.7, and
+Pillow 12.3.0, pypdf 6.16.2, mkdocs-material 9.7.7, and
 pymdown-extensions 11.0.1. Direct floors prevent a later lock refresh from
 silently selecting known-vulnerable ranges again.
 
@@ -27,14 +27,16 @@ silently selecting known-vulnerable ranges again.
 
 NewsDOM accepts untrusted PDF uploads. A parser denial of service is therefore a
 runtime availability risk rather than an abstract transitive-dependency finding.
-The earlier baseline raised pypdf to 6.14.2 for CVE-2026-59935. On August 8,
-2026, the repository's current Trivy filesystem gate began reporting two
-additional MEDIUM findings, CVE-2026-71852 and CVE-2026-71870, against the locked
-6.14.2 artifact. The same repository had already produced a hash-locked 6.15.0
-resolution on an isolated branch; that exact head completed the Security Scan
-successfully without suppressing either finding. The shared direct floor and lock
-therefore move together to 6.15.0 rather than hiding the findings in
-`.trivyignore`.
+The earlier baseline raised pypdf to 6.15.0 after the repository's Trivy
+filesystem gate reported CVE-2026-71852 and CVE-2026-71870 against 6.14.2.
+Upstream subsequently published additional pypdf advisories: the
+`TreeObject.insert_child` infinite-loop issue is fixed in 6.16.0, while outline
+retrieval and XForm extraction resource-consumption issues are fixed in 6.16.1.
+The current declaration and lock use 6.16.2, which is newer than each of those
+patched floors. This record does not claim that every upstream advisory is
+reachable through NewsDOM's current strict `PdfReader` validation path; the floor
+keeps the shipped parser dependency outside the upstream affected ranges while
+repository tests and scanners determine product-specific acceptance.
 
 CVE-2026-59890 affects setuptools versions before 83.0.0. On
 normalization-preserving macOS filesystems, specially named files could bypass
@@ -43,11 +45,12 @@ is a build-time rather than request-time issue, it can compromise release
 contents, so the build-system floor is raised to 83.0.0.
 
 Pillow 12.3.0 and pypdf release artifacts are distributed through PyPI with
-published cryptographic file digests. Those artifacts and digests provide
+published cryptographic file digests. PyPI records pypdf 6.16.2 as released on
+August 23, 2026; its source and wheel artifacts were uploaded through Trusted
+Publishing and have published hashes. Those artifacts and digests provide
 provenance inputs; they do not by themselves establish that a package is safe.
 Repository scans, hash-locked resolution, current-head tests, and independent
-review remain mandatory. PyPI's official JSON metadata confirms the 6.15.0
-release and the artifact hashes recorded in this repository's generated lock.
+review remain mandatory.
 
 ## Secure-development and provenance controls
 
@@ -129,14 +132,28 @@ Open Source Vulnerabilities. (2026c). *CVE-2026-71852*. Retrieved August 9,
 Open Source Vulnerabilities. (2026d). *CVE-2026-71870*. Retrieved August 9,
     2026, from https://osv.dev/vulnerability/CVE-2026-71870
 
+py-pdf. (2026a). *Possible infinite loop for TreeObject.insert_child*
+    (GHSA-jp53-mhqp-8xcg). GitHub Security Advisory. Retrieved September 3,
+    2026, from https://github.com/py-pdf/pypdf/security/advisories/GHSA-jp53-mhqp-8xcg
+
+py-pdf. (2026b). *Possible long runtimes/large memory usage when retrieving
+    outlines* (GHSA-23w6-3w8w-8484). GitHub Security Advisory. Retrieved
+    September 3, 2026, from
+    https://github.com/py-pdf/pypdf/security/advisories/GHSA-23w6-3w8w-8484
+
+py-pdf. (2026c). *Possible long runtimes/large memory usage when extracting
+    XForm objects* (GHSA-763m-79hh-57f2). GitHub Security Advisory. Retrieved
+    September 3, 2026, from
+    https://github.com/py-pdf/pypdf/security/advisories/GHSA-763m-79hh-57f2
+
 Python Packaging Authority. (2026a). *Digital attestations*. PyPI Docs.
     Retrieved August 4, 2026, from https://docs.pypi.org/attestations/
 
 Python Packaging Authority. (2026b). *Pillow 12.3.0*. Python Package Index.
     Retrieved August 4, 2026, from https://pypi.org/project/pillow/12.3.0/
 
-Python Packaging Authority. (2026c). *pypdf 6.15.0*. Python Package Index.
-    Retrieved August 9, 2026, from https://pypi.org/project/pypdf/6.15.0/
+Python Packaging Authority. (2026c). *pypdf 6.16.2*. Python Package Index.
+    Retrieved September 3, 2026, from https://pypi.org/project/pypdf/6.16.2/
 
 Python Packaging Authority. (2026d). *setuptools 83.0.0*. Python Package Index.
     Retrieved August 4, 2026, from https://pypi.org/project/setuptools/83.0.0/
