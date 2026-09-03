@@ -90,12 +90,3 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
-## 2026-08-30 - Fix Timing Attack in Authentication Checks
-**Vulnerability:** Comparing `hmac.compare_digest` with inputs of different lengths fails immediately, leaking the exact length of the valid token. This exposes a timing side-channel that attackers can use to guess the length of the secret authentication token.
-**Learning:** `hmac.compare_digest` stops early if the lengths don't match. When validating sensitive API tokens, comparing different length strings creates a timing discrepancy.
-**Prevention:** Verify length first and use a dummy comparison (`hmac.compare_digest(credentials, credentials)`) when lengths don't match, keeping the overall validation time constant regardless of the input length.
-
-## 2026-08-30 - Fix Insecure Password Hashing Warning by Avoiding Token Bytes Recomputation
-**Vulnerability:** Converting strings to bytes within the hot path of an authentication check can trigger false positive alerts (e.g. from CodeQL) about insecure password hashing if the length normalizations simulate weak hashes or the code otherwise mimics bad hash practices. While not a true vulnerability if just encoding, it is better to avoid it entirely on every request to pass security tools cleanly and improve performance.
-**Learning:** Pre-computing derived cryptographic material like bytes-encoded secrets during application startup allows for safe, fast validation without triggering false positives in static analysis tools monitoring the authentication hot path.
-**Prevention:** Compute the `api_token_verifier` bytes string once during app initialization and store it in `application.state` to be used for constant-time comparisons in the authentication middleware. Also ensure the middleware fails securely (503) if the verifier state is missing or corrupted.
