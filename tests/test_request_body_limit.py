@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Awaitable, Callable
-from typing import Any
 
 from fastapi.testclient import TestClient
 from starlette.types import Message, Receive, Scope, Send
