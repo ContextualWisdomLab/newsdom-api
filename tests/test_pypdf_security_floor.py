@@ -61,7 +61,7 @@ def test_current_pypdf_advisories_and_floor_are_documented() -> None:
 
     for cve_id in _CURRENT_PYPDF_CVES:
         assert f"https://osv.dev/vulnerability/{cve_id}" in baseline
-    assert "`pypdf>=6.15.0,<7.0`" in changelog
+    assert "`pypdf>=6.16.2,<7.0`" in changelog
 
 
 def test_trivy_registry_exception_is_scoped_to_the_example_manifest() -> None:

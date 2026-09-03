@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import pytest
 from collections.abc import Awaitable, Callable
 
 from fastapi.testclient import TestClient
@@ -147,3 +148,123 @@ def test_production_parse_limit_runs_inside_security_headers() -> None:
     assert response.json() == {"detail": PAYLOAD_TOO_LARGE_DETAIL}
     assert response.headers["x-content-type-options"] == "nosniff"
     assert "default-src 'none'" in response.headers["content-security-policy"]
+
+def test_request_body_limit_invalid_init() -> None:
+    async def downstream(_scope, _receive, _send):
+        pass
+
+    with pytest.raises(ValueError, match="max_body_bytes must be positive"):
+        RequestBodyLimitMiddleware(downstream, max_body_bytes=0, path="/parse")
+
+    with pytest.raises(ValueError, match="path must be absolute"):
+        RequestBodyLimitMiddleware(downstream, max_body_bytes=10, path="parse")
+
+
+def test_request_body_limit_allows_short_body() -> None:
+    completed = False
+
+    async def downstream(_scope: Scope, receive: Receive, send: Send) -> None:
+        nonlocal completed
+        while True:
+            message = await receive()
+            if not message.get("more_body", False):
+                break
+        completed = True
+        await send({"type": "http.response.start", "status": 204, "headers": []})
+        await send({"type": "http.response.body", "body": b""})
+
+    middleware = RequestBodyLimitMiddleware(
+        downstream,
+        max_body_bytes=10,
+        path="/parse",
+    )
+    responses, receive_count = _run_asgi(
+        middleware,
+        _parse_scope(),
+        [
+            {"type": "http.request", "body": b"12", "more_body": True},
+            {"type": "http.request", "body": b"34", "more_body": False},
+        ],
+    )
+
+    assert receive_count == 2
+    assert completed is True
+    assert responses[0]["status"] == 204
+
+
+def test_request_body_limit_allows_short_body_other_event() -> None:
+    completed = False
+
+    async def downstream(_scope: Scope, receive: Receive, send: Send) -> None:
+        nonlocal completed
+        while True:
+            message = await receive()
+            if message["type"] == "http.disconnect":
+                break
+            if not message.get("more_body", False):
+                break
+        completed = True
+        await send({"type": "http.response.start", "status": 204, "headers": []})
+        await send({"type": "http.response.body", "body": b""})
+
+    middleware = RequestBodyLimitMiddleware(
+        downstream,
+        max_body_bytes=10,
+        path="/parse",
+    )
+    responses, receive_count = _run_asgi(
+        middleware,
+        _parse_scope(),
+        [
+            {"type": "http.request", "body": b"12", "more_body": True},
+            {"type": "http.disconnect"},
+        ],
+    )
+
+    assert receive_count == 2
+    assert completed is True
+
+
+def test_request_body_limit_invalid_content_length() -> None:
+    completed = False
+
+    async def downstream(_scope: Scope, receive: Receive, send: Send) -> None:
+        nonlocal completed
+        while True:
+            message = await receive()
+            if not message.get("more_body", False):
+                break
+        completed = True
+        await send({"type": "http.response.start", "status": 204, "headers": []})
+        await send({"type": "http.response.body", "body": b""})
+
+    middleware = RequestBodyLimitMiddleware(
+        downstream,
+        max_body_bytes=10,
+        path="/parse",
+    )
+
+    # non-digit
+    responses, receive_count = _run_asgi(
+        middleware,
+        _parse_scope(headers=[(b"content-length", b"abc")]),
+        [
+            {"type": "http.request", "body": b"12", "more_body": False},
+        ],
+    )
+    assert receive_count == 1
+    assert completed is True
+    assert responses[0]["status"] == 204
+
+    # more than 20 chars
+    completed = False
+    responses, receive_count = _run_asgi(
+        middleware,
+        _parse_scope(headers=[(b"content-length", b"1" * 21)]),
+        [
+            {"type": "http.request", "body": b"12", "more_body": False},
+        ],
+    )
+    assert receive_count == 1
+    assert completed is True
+    assert responses[0]["status"] == 204

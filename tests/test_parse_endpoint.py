@@ -562,9 +562,13 @@ def test_parse_form_field_max_length_exceeded(monkeypatch):
     from newsdom_api.config import AuthenticationMode, RuntimeSettings, RuntimeProfile
     from newsdom_api.main import _runtime_settings
 
-    app.dependency_overrides[_runtime_settings] = lambda request: RuntimeSettings(
-        authentication_mode=AuthenticationMode.DISABLED,
-        runtime_profile=RuntimeProfile.DEVELOPMENT
+    monkeypatch.setitem(
+        app.dependency_overrides,
+        _runtime_settings,
+        lambda request: RuntimeSettings(
+            authentication_mode=AuthenticationMode.DISABLED,
+            runtime_profile=RuntimeProfile.DEVELOPMENT
+        )
     )
 
     # We must patch the access failure validation to bypass authentication during test
@@ -572,23 +576,20 @@ def test_parse_form_field_max_length_exceeded(monkeypatch):
 
     client = TestClient(app, raise_server_exceptions=False)
 
-    try:
-        long_string = "a" * 51
+    long_string = "a" * 51
 
-        response = client.post(
-            "/parse",
-            files={"file": ("dummy.pdf", b"%PDF-dummy", "application/pdf")},
-            data={"language": long_string, "mode": "auto"},
-        )
-        assert response.status_code == 422
-        assert "language" in response.text
+    response = client.post(
+        "/parse",
+        files={"file": ("dummy.pdf", b"%PDF-dummy", "application/pdf")},
+        data={"language": long_string, "mode": "auto"},
+    )
+    assert response.status_code == 422
+    assert "language" in response.text
 
-        response = client.post(
-            "/parse",
-            files={"file": ("dummy.pdf", b"%PDF-dummy", "application/pdf")},
-            data={"language": "ch", "mode": long_string},
-        )
-        assert response.status_code == 422
-        assert "mode" in response.text
-    finally:
-        app.dependency_overrides.clear()
+    response = client.post(
+        "/parse",
+        files={"file": ("dummy.pdf", b"%PDF-dummy", "application/pdf")},
+        data={"language": "ch", "mode": long_string},
+    )
+    assert response.status_code == 422
+    assert "mode" in response.text
