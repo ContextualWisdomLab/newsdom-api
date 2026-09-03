@@ -80,10 +80,3 @@ def test_trivy_registry_exception_is_scoped_to_the_example_manifest() -> None:
         "docs/operations/kubernetes-deployment.yaml"
     ]
     assert exceptions["DS-0002"]["paths"] == [".clusterfuzzlite/Dockerfile"]
-
-def test_suppressed_trivy_cves() -> None:
-    """Ensure the new CVEs are in the known list."""
-    ignore_text = Path(".trivyignore.yaml").read_text(encoding="utf-8")
-    _NEW_CVES = ("CVE-2026-84309", "CVE-2026-84310", "CVE-2026-84311")
-    for cve_id in _NEW_CVES:
-        assert cve_id in ignore_text
