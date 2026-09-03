@@ -127,6 +127,7 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     provided = authorization_values[0]
     if len(provided) > MAX_BEARER_HEADER_BYTES:
         return _unauthorized_response()
+
     scheme, separator, credentials = provided.partition(b" ")
     if separator != b" " or scheme.lower() != b"bearer" or not credentials:
         return _unauthorized_response()
@@ -192,15 +193,7 @@ def _validate_pdf_structure(file_path: Path) -> None:
         reader = PdfReader(file_path, strict=True)
         if len(reader.pages) < 1:
             raise ValueError("PDF has no pages")
-    except (
-        PdfReadError,
-        RecursionError,
-        ValueError,
-        OverflowError,
-        TypeError,
-        MemoryError,
-    ):
-        LOGGER.warning("PdfReader rejected an invalid or resource-exhausting PDF")
+    except (PdfReadError, RecursionError, ValueError, OverflowError):
         raise HTTPException(
             status_code=415,
             detail=UNSUPPORTED_MEDIA_DETAIL,
