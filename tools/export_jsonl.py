@@ -4,35 +4,56 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Any
+
+
+def _validate_export_shape(data: Any) -> dict[str, Any]:
+    """Validate the structural NewsDOM boundary before creating output."""
+    if not isinstance(data, dict):
+        raise ValueError("NewsDOM top-level JSON value must be an object.")
+
+    pages = data.get("pages", [])
+    if not isinstance(pages, list):
+        raise ValueError("NewsDOM pages must be a list.")
+
+    for page_index, page in enumerate(pages):
+        if not isinstance(page, dict):
+            raise ValueError(f"NewsDOM page at index {page_index} must be an object.")
+        articles = page.get("articles", [])
+        if not isinstance(articles, list):
+            raise ValueError(
+                f"NewsDOM articles for page index {page_index} must be a list."
+            )
+        for article_index, article in enumerate(articles):
+            if not isinstance(article, dict):
+                raise ValueError(
+                    "NewsDOM article at page index "
+                    f"{page_index}, index {article_index} must be an object."
+                )
+
+    return data
 
 
 def export_jsonl(json_path: Path, output_path: Path) -> None:
-    """Export NewsDOM JSON to a JSONL file where each line is an article."""
+    """Export structurally valid NewsDOM JSON as one article per JSONL line."""
     if not json_path.is_file():
         raise FileNotFoundError(f"File not found or is not a file: {json_path}")
     if json_path.suffix.lower() != ".json":
         raise ValueError("Input file must be a .json file.")
 
     try:
-        data = json.loads(json_path.read_text(encoding="utf-8"))
+        decoded = json.loads(json_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise ValueError(f"Invalid JSON file: {exc}") from exc
 
+    data = _validate_export_shape(decoded)
     pages = data.get("pages", [])
+    document_id = data.get("document_id", "Unknown Document")
 
     with output_path.open("w", encoding="utf-8") as jsonlfile:
-        document_id = data.get("document_id", "Unknown Document")
-
         for page in pages:
-            if not isinstance(page, dict):
-                continue
             page_number = page.get("page_number", "Unknown")
-
-            articles = page.get("articles", [])
-            for article in articles:
-                if not isinstance(article, dict):
-                    continue
-
+            for article in page.get("articles", []):
                 article_data = {
                     "document_id": document_id,
                     "page_number": page_number,
@@ -40,7 +61,6 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
                     "headline": article.get("headline", ""),
                     "body_blocks": article.get("body_blocks", []),
                 }
-
                 jsonlfile.write(json.dumps(article_data, ensure_ascii=False) + "\n")
 
 
@@ -55,7 +75,7 @@ def main(argv: list[str] | None = None) -> None:
     try:
         export_jsonl(args.input, args.output)
         print(f"JSONL successfully written to {args.output}")
-    except Exception as exc:
+    except (FileNotFoundError, OSError, UnicodeError, ValueError) as exc:
         print(f"Error exporting JSONL: {exc}", file=sys.stderr)
         sys.exit(1)
 
