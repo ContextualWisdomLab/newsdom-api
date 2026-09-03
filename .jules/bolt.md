@@ -63,3 +63,7 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2024-08-10 - 딕셔너리 순회 시 items()를 사용하여 중복 조회(Lookup) 제거
+**Learning:** 성능이 중요한 반복문 내에서 딕셔너리의 키를 순회하며 `dict.get(key)` 또는 `dict[key]`로 값을 다시 조회하는 것은 불필요한 해시맵 조회를 발생시킵니다. 딕셔너리의 키는 고유하므로, `sorted(dict.items())`를 사용하면 추가 조회 없이도 키-값 쌍에 바로 접근할 수 있으며 기존의 키 정렬과 동일한 순서를 유지합니다.
+**Action:** 딕셔너리를 순회하며 키와 값을 모두 사용해야 할 때는, 루프 내부에서 조회하는 대신 `for key, value in dict.items():` 또는 `sorted(dict.items())`를 사용하여 불필요한 해시맵 조회를 제거합니다.
