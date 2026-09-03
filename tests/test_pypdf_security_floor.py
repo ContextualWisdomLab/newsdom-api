@@ -6,9 +6,13 @@ import re
 import yaml
 
 
-_REQUIRED_PYPDF_VERSION = (6, 15, 0)
-_CURRENT_PYPDF_CVES = ("CVE-2026-71852", "CVE-2026-71870")
-_LOCKED_PYPDF_REQUIREMENT = '{ name = "pypdf", specifier = ">=6.15.0,<7.0" },'
+_REQUIRED_PYPDF_VERSION = (6, 16, 1)
+_CURRENT_PYPDF_CVES = ("CVE-2026-84309", "CVE-2026-84310", "CVE-2026-84311")
+_LOCKED_PYPDF_REQUIREMENT = '{ name = "pypdf", specifier = ">=6.16.1,<7.0" },'
+_CURRENT_PYPDF_PROVENANCE = (
+    "PyPI's official JSON metadata confirms the 6.16.2 release and the artifact "
+    "hashes recorded in this repository's generated lock."
+)
 
 
 def _locked_pypdf_version() -> tuple[int, ...]:
@@ -24,10 +28,10 @@ def _locked_pypdf_version() -> tuple[int, ...]:
 
 
 def test_project_declares_current_pypdf_security_floor() -> None:
-    """Prevent future lock refreshes from selecting the vulnerable 6.14.x line."""
+    """Prevent lock refreshes from selecting pypdf below the current floor."""
 
     project_text = Path("pyproject.toml").read_text(encoding="utf-8")
-    assert '"pypdf>=6.15.0,<7.0"' in project_text
+    assert '"pypdf>=6.16.1,<7.0"' in project_text
 
 
 def test_lock_uses_current_pypdf_security_release() -> None:
@@ -61,7 +65,8 @@ def test_current_pypdf_advisories_and_floor_are_documented() -> None:
 
     for cve_id in _CURRENT_PYPDF_CVES:
         assert f"https://osv.dev/vulnerability/{cve_id}" in baseline
-    assert "`pypdf>=6.15.0,<7.0`" in changelog
+    assert "`pypdf>=6.16.1,<7.0`" in changelog
+    assert _CURRENT_PYPDF_PROVENANCE in baseline
 
 
 def test_trivy_registry_exception_is_scoped_to_the_example_manifest() -> None:
