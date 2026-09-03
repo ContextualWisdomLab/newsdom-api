@@ -60,7 +60,7 @@ Pillow 12.3.0 and pypdf release artifacts are distributed through PyPI with
 published cryptographic file digests. Those artifacts and digests provide
 provenance inputs; they do not by themselves establish that a package is safe.
 Repository scans, hash-locked resolution, current-head tests, and independent
-review remain mandatory. PyPI's official JSON metadata confirms the 6.15.0
+review remain mandatory. PyPI's official JSON metadata confirms the 6.16.2
 release and the artifact hashes recorded in this repository's generated lock.
 
 ## Secure-development and provenance controls
