@@ -3,9 +3,19 @@ name: codeql
 on:
   push:
     branches: [main, develop]
-  pull_request:
   schedule:
     - cron: '43 5 * * 1'
+  # Deliberately no pull_request trigger: ContextualWisdomLab organization
+  # ruleset "CWL Central required workflows" (id 18156473) already requires
+  # the central .github/workflows/codeql-pr.yml on every PR to this repo's
+  # inherited branches, uploading merge-preview SARIF on the real merge
+  # commit SHA. Keeping a repository-local pull_request trigger here would
+  # duplicate that scan on every push and consume runner admission twice
+  # for the same PR head, without adding coverage -- see
+  # ContextualWisdomLab/.github's docs/org-required-workflow-rollout.md
+  # "Code scanning required workflow posture" section. This workflow stays
+  # for push/schedule branch-history scanning, which the central PR gate
+  # does not cover.
 
 permissions:
   actions: read
