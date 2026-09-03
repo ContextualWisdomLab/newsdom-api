@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -89,5 +90,18 @@ def test_export_rejects_output_that_would_overwrite_input(tmp_path: Path) -> Non
 
     with pytest.raises(ValueError, match="Output path must differ from input path"):
         export_jsonl(input_file, input_file)
+
+    assert input_file.read_text(encoding="utf-8") == original
+
+
+def test_export_rejects_hardlink_alias_of_input(tmp_path: Path) -> None:
+    input_file = tmp_path / "document.json"
+    alias_file = tmp_path / "alias.jsonl"
+    original = json.dumps(_canonical_document(), ensure_ascii=False)
+    input_file.write_text(original, encoding="utf-8")
+    os.link(input_file, alias_file)
+
+    with pytest.raises(ValueError, match="Output path must differ from input path"):
+        export_jsonl(input_file, alias_file)
 
     assert input_file.read_text(encoding="utf-8") == original
