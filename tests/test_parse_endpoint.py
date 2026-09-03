@@ -555,3 +555,31 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
+
+
+def test_parse_rejects_unbounded_form_fields() -> None:
+    """Form fields must have max_length limits to prevent memory exhaustion DoS."""
+    import logging
+
+    from newsdom_api.config import AuthenticationMode, RuntimeProfile, RuntimeSettings
+    from newsdom_api.main import _runtime_settings
+
+    _PDF_FILES = {"file": ("fixture.pdf", b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n", "application/pdf")}
+
+    app.dependency_overrides[_runtime_settings] = lambda request: RuntimeSettings(
+        authentication_mode=AuthenticationMode.DISABLED, runtime_profile=RuntimeProfile.DEVELOPMENT
+    )
+    import newsdom_api.main as mn
+    original_parse = mn._parse_access_failure
+    mn._parse_access_failure = lambda request: None
+
+    response = TestClient(app).post(
+        "/parse",
+        files=_PDF_FILES,
+        data={"language": "x" * 100, "mode": "x" * 100}
+    )
+
+    mn._parse_access_failure = original_parse
+    app.dependency_overrides.clear()
+    assert response.status_code == 422
+    assert 'detail' in response.json()
