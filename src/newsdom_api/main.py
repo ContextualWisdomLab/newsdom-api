@@ -127,7 +127,6 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     provided = authorization_values[0]
     if len(provided) > MAX_BEARER_HEADER_BYTES:
         return _unauthorized_response()
-
     scheme, separator, credentials = provided.partition(b" ")
     if separator != b" " or scheme.lower() != b"bearer" or not credentials:
         return _unauthorized_response()
@@ -274,7 +273,7 @@ async def parse(
                 temporary_file.write(chunk)
 
         LOGGER.debug("Wrote %s upload bytes to %s", bytes_read, tmp_path)
-        _validate_pdf_structure(tmp_path)
+        await asyncio.to_thread(_validate_pdf_structure, tmp_path)
         return await asyncio.to_thread(
             parse_pdf,
             tmp_path,
