@@ -91,14 +91,7 @@
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
 
-
-
-## 2026-09-03 - Trivy Scanner Suppressions
-**Vulnerability:** New pypdf CVEs caused CI trivy-fs scan failure.
-**Learning:** Security scanner failures in a clean commit may stem from underlying dependencies in `uv.lock`. Since this is a test/CI repo we can suppress the CVEs to allow the build to pass.
-**Prevention:** Use `.trivyignore.yaml` to suppress known or expected vulnerabilities that should not block the build, specifying `expired_at` to revisit them.
-
-## 2026-09-03 - [HIGH] 동기적 파일 파싱으로 인한 이벤트 루프 블로킹 수정
-**Vulnerability:** 파일 업로드 시 구조 검증을 위한 `_validate_pdf_structure`와 같이 CPU 연산이 필요한 동기 함수를 그대로 호출하면, 메인 ASGI 이벤트 루프 스레드가 차단되어 다른 요청을 처리하지 못하는 DoS 취약점이 발생할 수 있음.
-**Learning:** 비동기 환경(FastAPI)에서는 파일 I/O나 CPU 집약적인 동기 작업을 직접 호출하면 안 되며, 이벤트 루프를 블로킹하지 않도록 주의해야 함. 예외 처리를 지나치게 포괄적으로 잡는 것(`except Exception:`)은 실제 결함을 마스킹하므로 리뷰어에 의해 거부될 수 있음.
-**Prevention:** `await asyncio.to_thread(_validate_pdf_structure, tmp_path)`와 같이 CPU 바운드 또는 동기 I/O 작업을 별도의 스레드로 오프로드하여 이벤트 루프를 보호해야 함.
+## 2024-05-25 - Bound PdfReader failures without masking server defects
+**Vulnerability:** Structurally malformed or resource-exhausting PDFs can make `PdfReader` raise parser/input/resource exceptions. Treating every exception as invalid media, however, also hides unrelated implementation defects behind a 415 response.
+**Learning:** Input-validation boundaries need an explicit exception taxonomy. Known parser and resource failures may be translated to a fixed client response, while unexpected runtime defects must continue to the application's sanitized 500 handler. CPU-heavy structural parsing must also stay off the ASGI event-loop thread.
+**Prevention:** Catch only the reviewed parser/input/resource exception set (`PdfReadError`, `RecursionError`, `ValueError`, `OverflowError`, `TypeError`, `MemoryError`), suppress internal causes at the public boundary, and run `_validate_pdf_structure` via `asyncio.to_thread`. Do not use `except Exception` or scanner suppressions as a substitute for root-cause handling. Thread offload prevents event-loop blocking but is not a hard process-level CPU or memory deadline.
