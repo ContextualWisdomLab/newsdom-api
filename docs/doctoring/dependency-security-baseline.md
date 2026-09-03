@@ -14,12 +14,12 @@ The adopted floors are:
 
 - `setuptools>=83` for the build backend;
 - `Pillow>=12.3,<13.0` for image parsing on the untrusted document-ingestion path;
-- `pypdf>=6.15.0,<7.0` for PDF parsing;
+- `pypdf>=6.16.2,<7.0` for PDF parsing;
 - `mkdocs-material>=9.7,<9.8`, allowing `pymdown-extensions>=11` while the MkDocs
   core remains on the supported 1.x line.
 
 The generated lock additionally resolves Click 8.4.2, setuptools 83.0.0,
-Pillow 12.3.0, pypdf 6.15.0, mkdocs-material 9.7.7, and
+Pillow 12.3.0, pypdf 6.16.2, mkdocs-material 9.7.7, and
 pymdown-extensions 11.0.1. Direct floors prevent a later lock refresh from
 silently selecting known-vulnerable ranges again.
 
@@ -34,7 +34,7 @@ additional MEDIUM findings, CVE-2026-71852 and CVE-2026-71870, against the locke
 resolution on an isolated branch; that exact head completed the Security Scan
 successfully without suppressing either finding. The shared direct floor and lock
 therefore move together to 6.15.0 rather than hiding the findings in
-`.trivyignore`.
+`.trivyignore`. The version was subsequently bumped to 6.16.2 to resolve further Trivy scan findings.
 
 CVE-2026-59890 affects setuptools versions before 83.0.0. On
 normalization-preserving macOS filesystems, specially named files could bypass
@@ -46,7 +46,7 @@ Pillow 12.3.0 and pypdf release artifacts are distributed through PyPI with
 published cryptographic file digests. Those artifacts and digests provide
 provenance inputs; they do not by themselves establish that a package is safe.
 Repository scans, hash-locked resolution, current-head tests, and independent
-review remain mandatory. PyPI's official JSON metadata confirms the 6.15.0
+review remain mandatory. PyPI's official JSON metadata confirms the 6.16.2
 release and the artifact hashes recorded in this repository's generated lock.
 
 ## Secure-development and provenance controls
@@ -135,8 +135,8 @@ Python Packaging Authority. (2026a). *Digital attestations*. PyPI Docs.
 Python Packaging Authority. (2026b). *Pillow 12.3.0*. Python Package Index.
     Retrieved August 4, 2026, from https://pypi.org/project/pillow/12.3.0/
 
-Python Packaging Authority. (2026c). *pypdf 6.15.0*. Python Package Index.
-    Retrieved August 9, 2026, from https://pypi.org/project/pypdf/6.15.0/
+Python Packaging Authority. (2026c). *pypdf 6.16.2*. Python Package Index.
+    Retrieved August 9, 2026, from https://pypi.org/project/pypdf/6.16.2/
 
 Python Packaging Authority. (2026d). *setuptools 83.0.0*. Python Package Index.
     Retrieved August 4, 2026, from https://pypi.org/project/setuptools/83.0.0/
