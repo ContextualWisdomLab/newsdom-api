@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hmac
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -16,6 +18,8 @@ _PDF_FILES = {
     "file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")
 }
 _BEARER_PREFIX = "Bearer "
+_MAX_BEARER_TOKEN_BYTES = MAX_BEARER_HEADER_BYTES - len(_BEARER_PREFIX)
+_FIXED_VERIFIER_BYTES = 2 + _MAX_BEARER_TOKEN_BYTES
 
 
 @pytest.fixture
@@ -100,3 +104,81 @@ def test_ready_converts_probe_exception_to_fixed_unavailable_response() -> None:
     assert response.json() == {"detail": "Service Unavailable"}
     assert "private" not in response.text.lower()
     assert "operating-system" not in response.text.lower()
+
+
+def test_required_mode_compares_fixed_width_verifiers_for_wrong_credentials(
+    parser_spy: dict[str, int],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Wrong credential lengths must not change the secret-comparison width."""
+
+    original_compare_digest = hmac.compare_digest
+    comparison_widths: list[tuple[int, int]] = []
+
+    def compare_digest_spy(left: bytes, right: bytes) -> bool:
+        comparison_widths.append((len(left), len(right)))
+        return original_compare_digest(left, right)
+
+    monkeypatch.setattr("newsdom_api.main.hmac.compare_digest", compare_digest_spy)
+    application = create_app(
+        RuntimeSettings(api_token="s3cret-token-1234"),
+        runtime_readiness_probe=lambda: True,
+    )
+
+    for credential in ("too-short", "w3rong-token-1234"):
+        response = TestClient(application).post(
+            "/parse",
+            files=_PDF_FILES,
+            headers={"Authorization": f"Bearer {credential}"},
+        )
+        assert response.status_code == 401
+
+    assert comparison_widths == [
+        (_FIXED_VERIFIER_BYTES, _FIXED_VERIFIER_BYTES),
+        (_FIXED_VERIFIER_BYTES, _FIXED_VERIFIER_BYTES),
+    ]
+    assert parser_spy["count"] == 0
+
+
+def test_required_mode_precomputes_length_bound_fixed_width_verifier() -> None:
+    """Configured secrets must use a collision-safe fixed-width equality verifier."""
+
+    token = b"s3cret-token"
+    application = create_app(
+        RuntimeSettings(api_token=token.decode("ascii")),
+        runtime_readiness_probe=lambda: True,
+    )
+
+    verifier = application.state.api_token_verifier
+
+    assert isinstance(verifier, bytes)
+    assert len(verifier) == _FIXED_VERIFIER_BYTES
+    assert verifier[:2] == len(token).to_bytes(2, "big")
+    assert verifier[2 : 2 + len(token)] == token
+    assert verifier[2 + len(token) :] == b"\x00" * (
+        _MAX_BEARER_TOKEN_BYTES - len(token)
+    )
+
+
+@pytest.mark.parametrize("corrupted_verifier", [None, b"short"])
+def test_required_mode_fails_closed_if_token_verifier_state_is_invalid(
+    parser_spy: dict[str, int],
+    corrupted_verifier: bytes | None,
+) -> None:
+    """Missing or malformed verifier state must never weaken authentication."""
+
+    application = create_app(
+        RuntimeSettings(api_token="s3cret-token"),
+        runtime_readiness_probe=lambda: True,
+    )
+    application.state.api_token_verifier = corrupted_verifier
+
+    response = TestClient(application).post(
+        "/parse",
+        files=_PDF_FILES,
+        headers={"Authorization": "Bearer s3cret-token"},
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Service Unavailable"}
+    assert parser_spy["count"] == 0
