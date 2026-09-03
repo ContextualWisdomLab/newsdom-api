@@ -17,3 +17,11 @@ jobs:
     with:
       fail_on_severity: low
       allow_ghsas: "GHSA-69w3-r845-3855"
+      # The central workflow's default comment_summary_in_pr ("on-failure")
+      # forwards to dependency-review-action's comment-summary-in-pr, which
+      # needs pull-requests: write to post a PR comment. This caller only
+      # grants pull-requests: read, so an actual failure would try to comment
+      # without permission (CodeRabbit). No PR summary comment is needed here
+      # -- the job's own pass/fail status is the signal -- so this opts out
+      # explicitly rather than escalating to write.
+      comment_summary_in_pr: never
