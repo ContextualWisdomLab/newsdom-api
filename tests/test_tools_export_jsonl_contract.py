@@ -80,3 +80,14 @@ def test_export_rejects_noncanonical_page_shape_instead_of_silently_dropping_it(
         export_jsonl(input_file, output_file)
 
     assert not output_file.exists()
+
+
+def test_export_rejects_output_that_would_overwrite_input(tmp_path: Path) -> None:
+    input_file = tmp_path / "document.json"
+    original = json.dumps(_canonical_document(), ensure_ascii=False)
+    input_file.write_text(original, encoding="utf-8")
+
+    with pytest.raises(ValueError, match="Output path must differ from input path"):
+        export_jsonl(input_file, input_file)
+
+    assert input_file.read_text(encoding="utf-8") == original
