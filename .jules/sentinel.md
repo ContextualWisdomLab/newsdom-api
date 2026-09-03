@@ -95,3 +95,8 @@
 **Vulnerability:** Textual `Form` fields in FastAPI (`language`, `mode`) lacked `max_length` limits, which could allow memory exhaustion via large payloads since `python-multipart` loads form data into memory before routing.
 **Learning:** Even though payload size limits might exist for uploaded files, missing constraints on simple form fields allow attackers to send massive strings in multipart payloads, causing memory bloat (DoS).
 **Prevention:** Always set explicit `max_length` attributes on `Form()` fields in FastAPI endpoints.
+
+## 2026-09-03 - Upgrade pypdf to 6.16.2 to resolve CVEs
+**Vulnerability:** pypdf versions below 6.16.2 contain security vulnerabilities flagged by trivy-fs (CVE-2026-84309, CVE-2026-84310, CVE-2026-84311).
+**Learning:** When updating the `pypdf` dependency to address security vulnerabilities from `trivy-fs` CI failures, version assertions in `tests/test_project_metadata.py` and the specific constants (`_REQUIRED_PYPDF_VERSION`, `_LOCKED_PYPDF_REQUIREMENT`) in `tests/test_pypdf_security_floor.py` must be updated to match the new version to prevent test failures.
+**Prevention:** Regularly scan dependencies with trivy and upgrade vulnerable packages, updating hardcoded test assertions accordingly.
