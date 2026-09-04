@@ -44,3 +44,30 @@ def test_production_profile_rejects_persist_authorization():
             api_token="test_token",
             persist_authorization=True,
         )
+
+from newsdom_api.config import load_runtime_settings
+
+def test_load_settings_parses_persist_authorization_env_var():
+    """Verify persist_authorization is loaded from NEWSDOM_SWAGGER_PERSIST_AUTHORIZATION."""
+    env = {
+        "NEWSDOM_AUTH_MODE": "disabled",
+        "NEWSDOM_RUNTIME_PROFILE": "development",
+        "NEWSDOM_SWAGGER_PERSIST_AUTHORIZATION": "true"
+    }
+    settings = load_runtime_settings(env)
+    assert settings.persist_authorization is True
+
+def test_production_profile_auth_readiness_is_unchanged():
+    """Verify unchanged production auth readiness."""
+    settings = RuntimeSettings(
+        authentication_mode=AuthenticationMode.REQUIRED,
+        runtime_profile=RuntimeProfile.PRODUCTION,
+        api_token="test_token"
+    )
+    assert settings.authentication_ready is True
+
+    settings_missing_token = RuntimeSettings(
+        authentication_mode=AuthenticationMode.REQUIRED,
+        runtime_profile=RuntimeProfile.PRODUCTION,
+    )
+    assert settings_missing_token.authentication_ready is False
