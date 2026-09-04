@@ -1,3 +1,4 @@
-sed -i 's/>=6.16.2/>=6.16.0/' pyproject.toml
-sed -i 's/>=6.16.2/>=6.16.0/' tests/test_project_metadata.py
-sed -i 's/>=6.16.2/>=6.16.0/' tests/test_pypdf_security_floor.py
+# We don't actually push to remote directly, we just make a commit locally
+# since `submit` handles the commit message logic and branch name.
+
+git checkout -b bolt/defaultdict-optimization || git checkout bolt/defaultdict-optimization
