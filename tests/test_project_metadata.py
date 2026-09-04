@@ -96,7 +96,7 @@ def test_security_dependency_floors_exclude_known_vulnerable_ranges():
     dependencies_section = _dependencies_section(text)
 
     assert '"Pillow>=12.3,<13.0"' in dependencies_section
-    assert '"pypdf>=6.15.0,<7.0"' in dependencies_section
+    assert '"pypdf>=6.16.2,<7.0"' in dependencies_section
     assert 'requires = ["setuptools>=83", "wheel"]' in text
 
 
@@ -202,4 +202,4 @@ def test_uv_lock_does_not_track_external_mineru_pipeline_runtime_stack():
 
 
 def test_uv_lock_pins_pypdf_at_patched_release():
-    assert _locked_package_version("pypdf") >= (6, 15, 0)
+    assert _locked_package_version("pypdf") >= (6, 16, 2)
