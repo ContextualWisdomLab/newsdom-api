@@ -148,7 +148,7 @@ async def security_boundary_middleware(
     request: Request,
     call_next: Callable,
 ) -> Response:
-    """Enforce parser authorization before multipart upload parsing begins."""
+    """Enforce parser authorization before reading the request body and add headers."""
 
     if request.method == "POST" and request.scope.get("path") == "/parse":
         failure = _parse_access_failure(request)
