@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > acceptance are aligned for an actual 0.3.0 publication.
 
 ### Security
-- 폼 파라미터 DoS 보호: `language` 및 `mode` 입력 필드에 `max_length` 제한을 추가하여 메모리 고갈 공격을 방지함.
+- 폼 파라미터 방어층 추가: `language` 및 `mode` 입력 필드에 `max_length=50` 제한을 추가하여 애플리케이션 수준의 유효성 검증 강화 (사전 파서 크기 제한 21 MiB와 결합하여 심층 방어 구성).
 
 ### Changed
 - `/parse`를 언어 선택형 파서로 일반화: MinerU `-l japan`/`-m ocr` 하드코딩을 제거하고 optional form 필드 `language`(MinerU 3.4.4 공식 기본 `ch`, 공개 언어군/alias 검증)와 `mode`(`auto`/`ocr`/`txt`, 기본 `auto`)로 파라미터화. `mode=auto`는 born-digital PDF가 강제 OCR을 건너뛰도록 함. 기존 입력 `language=japan&mode=ocr`는 공식 규약대로 `ch`/`ocr`로 정규화됨.
