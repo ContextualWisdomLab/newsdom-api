@@ -29,3 +29,7 @@
 ## 2026-07-07 - [Improve Swagger UX with Pydantic V2 Examples]
 **Learning:** Using json_schema_extra={'example': ...} instead of example=... in Pydantic V2 schemas ensures OpenAPI compatibility and prevents deprecation warnings, significantly improving Developer Experience (DX) for API consumers.
 **Action:** Apply json_schema_extra to Pydantic Field definitions to automatically generate rich, self-documenting OpenAPI schemas for headless APIs.
+
+## 2026-09-04 - [Developer Experience: Persist Authorization in Swagger]
+**Learning:** For backend-only services without a frontend UI, Developer Experience (DX) is the primary user experience. Preserving authorization credentials across Swagger UI refreshes significantly improves DX and developer efficiency when interacting with the API in development environments.
+**Action:** Always conditionally configure `swagger_ui_parameters` with `"persistAuthorization": True` when `runtime_profile` is "development" to enhance Developer Experience (DX) while maintaining security in production.
