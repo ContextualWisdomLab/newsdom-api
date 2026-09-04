@@ -114,8 +114,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
-
-## [Unreleased]
-### Security
-- 🛡️ Sentinel: `/parse` API의 `language` 및 `mode` Form 필드에 `max_length=50` 제한을 추가하여 악의적인 대용량 페이로드 전송으로 인한 메모리 고갈(DoS) 위험을 방지했습니다.
-- 🛡️ Sentinel: pypdf vulnerability fixes with `pypdf>=6.16.2,<7.0` floor.
