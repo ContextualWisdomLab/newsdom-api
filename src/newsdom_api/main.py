@@ -321,6 +321,11 @@ def create_app(
             "displayRequestDuration": True,
             "syntaxHighlight.theme": "monokai",
             "tryItOutEnabled": True,
+            **(
+                {"persistAuthorization": True}
+                if application_settings.runtime_profile.value == "development"
+                else {}
+            ),
         },
     )
     application.state.runtime_settings = application_settings
