@@ -73,7 +73,7 @@
 **Prevention:** 임시 파일 경로를 할당하거나 파일을 여는 즉시 자원 정리(cleanup) 로직이 보장되도록 `try...finally` 블록으로 감싼다.
 
 ## 2025-03-09 - Prevent Command/Log Injection via Newlines in Filenames
-**Vulnerability:** The blocklist regex `_UNSAFE_CHARS_PATTERN` for CLI arguments did not explicitly filter newline (\n) or carriage return (\r) characters. This can allow command or log injection even when `shell=False` is used, by passing arguments containing newlines.
+**Vulnerability:** The blocklist regex `_UNSAFE_CHARS_PATTERN` for CLI arguments did not explicitly filter newline (\n) or carriage return (`\r`) characters. This can allow command or log injection even when `shell=False` is used, by passing arguments containing newlines.
 **Learning:** Shell metacharacter blocklists must include whitespace metacharacters like newlines and carriage returns, as these can bypass checks and manipulate logs or downstream argument parsing.
 **Prevention:** Explicitly add \n and \r to the `_UNSAFE_CHARS_PATTERN` blocklist for CLI arguments.
 
@@ -90,8 +90,3 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
-
-## 2025-05-18 - Fix timing attack vulnerability in credentials comparison
-**Vulnerability:** Comparing `hmac.compare_digest(credentials, token.encode("utf-8"))` directly allows a timing attack since the length of the tokens is leaked. This can be exploited by an attacker to incrementally discover the correct token by measuring the time it takes to process the request.
-**Learning:** `hmac.compare_digest` returns immediately if the lengths of the two inputs are not equal. This leaks the length of the expected token. When dealing with variable-length credentials, the length should be checked first, and a constant-time comparison (like `hmac.compare_digest(credentials, credentials)`) should be executed even if the lengths don't match, to avoid exposing execution time differences based on token length.
-**Prevention:** Always compare lengths explicitly, and perform a dummy `compare_digest` operation with identical lengths to ensure execution time remains constant regardless of the incoming token length before doing the actual token comparison.
