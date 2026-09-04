@@ -70,15 +70,14 @@ def test_openapi_swagger_ui_parameters_in_production():
     assert params.get("persistAuthorization") is None
 
 
-def test_openapi_swagger_ui_parameters_in_development():
+def test_openapi_swagger_ui_persists_authorization_only_in_authenticated_development():
+    from newsdom_api.config import RuntimeProfile, RuntimeSettings
     from newsdom_api.main import create_app
-    from newsdom_api.config import RuntimeSettings, RuntimeProfile, AuthenticationMode
 
     app_dev = create_app(
         RuntimeSettings(
             runtime_profile=RuntimeProfile.DEVELOPMENT,
-            authentication_mode=AuthenticationMode.DISABLED,
-            api_token=None,
+            api_token="development-secret",
         )
     )
     params = app_dev.swagger_ui_parameters
