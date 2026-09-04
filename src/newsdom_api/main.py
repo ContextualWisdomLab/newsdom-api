@@ -121,8 +121,8 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     settings = _runtime_settings(request)
     if settings.authentication_mode is AuthenticationMode.DISABLED:
         return None
-    token = settings.api_token
-    if token is None:
+    expected_digest = settings.api_token_digest
+    if expected_digest is None:
         return JSONResponse(
             status_code=503,
             content={"detail": SERVICE_UNAVAILABLE_DETAIL},
@@ -139,11 +139,7 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     if separator != b" " or scheme.lower() != b"bearer" or not credentials:
         return _unauthorized_response()
 
-    expected_token = token.encode("utf-8")
-    if not hmac.compare_digest(
-        _credential_digest(credentials),
-        _credential_digest(expected_token),
-    ):
+    if not hmac.compare_digest(_credential_digest(credentials), expected_digest):
         return _unauthorized_response()
     return None
 
@@ -152,7 +148,7 @@ async def security_boundary_middleware(
     request: Request,
     call_next: Callable,
 ) -> Response:
-    """Enforce parser authorization before reading the request body and add headers."""
+    """Enforce parser authorization before multipart upload parsing begins."""
 
     if request.method == "POST" and request.scope.get("path") == "/parse":
         failure = _parse_access_failure(request)
