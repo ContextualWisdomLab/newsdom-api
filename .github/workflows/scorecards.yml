@@ -3,7 +3,6 @@ name: scorecards
 on:
   push:
     branches: [develop]
-  pull_request:
   schedule:
     - cron: '31 5 * * 1'
 
