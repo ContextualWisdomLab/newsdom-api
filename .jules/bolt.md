@@ -63,7 +63,3 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
-
-## 2024-07-31 - Replace chained string .replace() calls with .translate()
-**Learning:** Using chained `.replace(a, b)` calls to sanitize characters in a string requires multiple intermediate string allocations. However, when refactoring to use `.translate(str.maketrans(...))`, the translation table must be pre-compiled at the module level. Instantiating `str.maketrans()` inline within a function creates the dictionary on every execution, which completely negates the optimization and degrades performance.
-**Action:** Replace multiple chained `.replace()` calls with `.translate()` for hot-path string sanitization, but always ensure the translation table is instantiated at the module or class level, not inside the function body.
