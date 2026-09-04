@@ -308,7 +308,7 @@ def create_app(
         "syntaxHighlight.theme": "monokai",
         "tryItOutEnabled": True,
     }
-    if application_settings.runtime_profile.value == "development":
+    if application_settings.persist_authorization:
         swagger_ui_params["persistAuthorization"] = True
 
     application = FastAPI(
