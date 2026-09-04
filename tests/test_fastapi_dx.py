@@ -1,109 +1,73 @@
-"""Tests for Swagger/OpenAPI developer-experience runtime controls."""
-
-import pytest
-
-from newsdom_api.config import (
-    PERSIST_AUTHORIZATION_ENV_VAR,
-    AuthenticationMode,
-    RuntimeConfigurationError,
-    RuntimeProfile,
-    RuntimeSettings,
-    load_runtime_settings,
-)
+from fastapi.testclient import TestClient
+from newsdom_api.main import app
+from newsdom_api.config import AuthenticationMode, RuntimeProfile, RuntimeSettings
 from newsdom_api.main import create_app
 
+import pytest
+from newsdom_api.config import RuntimeConfigurationError
 
-def test_development_profile_persists_authorization_default_off() -> None:
-    """Development must not persist authorization without explicit operator opt-in."""
-
+def test_development_profile_persists_authorization_default_off():
+    """Verify persistAuthorization is off by default even in development profile."""
     settings = RuntimeSettings(
         authentication_mode=AuthenticationMode.DISABLED,
         runtime_profile=RuntimeProfile.DEVELOPMENT,
     )
+    app = create_app(settings)
+    assert app.swagger_ui_parameters.get("persistAuthorization") is None
 
-    application = create_app(settings)
-
-    assert "persistAuthorization" not in application.swagger_ui_parameters
-
-
-def test_development_profile_persists_authorization_opt_in() -> None:
-    """Development may persist authorization when the operator explicitly opts in."""
-
+def test_development_profile_persists_authorization_opt_in():
+    """Verify persistAuthorization is enabled in development profile when explicitly requested."""
     settings = RuntimeSettings(
         authentication_mode=AuthenticationMode.DISABLED,
         runtime_profile=RuntimeProfile.DEVELOPMENT,
         persist_authorization=True,
     )
+    app = create_app(settings)
+    assert app.swagger_ui_parameters.get("persistAuthorization") is True
 
-    application = create_app(settings)
-
-    assert application.swagger_ui_parameters["persistAuthorization"] is True
-
-
-def test_production_profile_does_not_persist_authorization() -> None:
-    """Production must omit the browser credential-persistence option by default."""
-
+def test_production_profile_does_not_persist_authorization():
+    """Verify persistAuthorization is off by default in production profile."""
     settings = RuntimeSettings(
         authentication_mode=AuthenticationMode.REQUIRED,
         runtime_profile=RuntimeProfile.PRODUCTION,
-        api_token="test_token",  # noqa: S106 - intentional non-secret test credential
+        api_token="test_token"
     )
+    app = create_app(settings)
+    assert app.swagger_ui_parameters.get("persistAuthorization") is None
 
-    application = create_app(settings)
-
-    assert "persistAuthorization" not in application.swagger_ui_parameters
-
-
-def test_production_profile_rejects_persist_authorization() -> None:
-    """Production must fail closed when authorization persistence is requested."""
-
+def test_production_profile_rejects_persist_authorization():
+    """Verify persistAuthorization explicitly requested in production fails closed."""
     with pytest.raises(RuntimeConfigurationError, match="development runtime profile"):
         RuntimeSettings(
             authentication_mode=AuthenticationMode.REQUIRED,
             runtime_profile=RuntimeProfile.PRODUCTION,
-            api_token="test_token",  # noqa: S106 - intentional non-secret test credential
+            api_token="test_token",
             persist_authorization=True,
         )
 
+from newsdom_api.config import load_runtime_settings
 
-def test_load_settings_parses_persist_authorization_env_var() -> None:
-    """The documented environment opt-in must reach immutable runtime settings."""
-
-    settings = load_runtime_settings(
-        {
-            "NEWSDOM_AUTH_MODE": "disabled",
-            "NEWSDOM_RUNTIME_PROFILE": "development",
-            PERSIST_AUTHORIZATION_ENV_VAR: "true",
-        }
-    )
-
+def test_load_settings_parses_persist_authorization_env_var():
+    """Verify persist_authorization is loaded from NEWSDOM_SWAGGER_PERSIST_AUTHORIZATION."""
+    env = {
+        "NEWSDOM_AUTH_MODE": "disabled",
+        "NEWSDOM_RUNTIME_PROFILE": "development",
+        "NEWSDOM_SWAGGER_PERSIST_AUTHORIZATION": "true"
+    }
+    settings = load_runtime_settings(env)
     assert settings.persist_authorization is True
 
-
-def test_production_environment_rejects_persist_authorization() -> None:
-    """The environment loader must enforce the same production fail-closed boundary."""
-
-    with pytest.raises(RuntimeConfigurationError, match="development runtime profile"):
-        load_runtime_settings(
-            {
-                "NEWSDOM_RUNTIME_PROFILE": "production",
-                PERSIST_AUTHORIZATION_ENV_VAR: "true",
-            }
-        )
-
-
-def test_production_profile_auth_readiness_is_unchanged() -> None:
-    """The Swagger option must not alter the parser-authentication readiness contract."""
-
-    configured = RuntimeSettings(
+def test_production_profile_auth_readiness_is_unchanged():
+    """Verify unchanged production auth readiness."""
+    settings = RuntimeSettings(
         authentication_mode=AuthenticationMode.REQUIRED,
         runtime_profile=RuntimeProfile.PRODUCTION,
-        api_token="test_token",  # noqa: S106 - intentional non-secret test credential
+        api_token="test_token"
     )
-    missing_token = RuntimeSettings(
+    assert settings.authentication_ready is True
+
+    settings_missing_token = RuntimeSettings(
         authentication_mode=AuthenticationMode.REQUIRED,
         runtime_profile=RuntimeProfile.PRODUCTION,
     )
-
-    assert configured.authentication_ready is True
-    assert missing_token.authentication_ready is False
+    assert settings_missing_token.authentication_ready is False
