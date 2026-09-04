@@ -103,66 +103,57 @@ runtime controls or a corpus-based parser accuracy and resilience program.
 ## References
 
 National Institute of Standards and Technology. (2022). *Secure software
-development framework (SSDF) version 1.1: Recommendations for mitigating the
-risk of software vulnerabilities* (NIST Special Publication 800-218).
-https://doi.org/10.6028/NIST.SP.800-218
+    development framework (SSDF) version 1.1: Recommendations for mitigating the
+    risk of software vulnerabilities* (NIST Special Publication 800-218).
+    https://doi.org/10.6028/NIST.SP.800-218
 
 National Institute of Standards and Technology. (2025). *Secure software
-development framework (SSDF) version 1.2: Recommendations for mitigating the
-risk of software vulnerabilities* (NIST Special Publication 800-218 Rev. 1,
-Initial Public Draft). https://doi.org/10.6028/NIST.SP.800-218r1.ipd
+    development framework (SSDF) version 1.2: Recommendations for mitigating the
+    risk of software vulnerabilities* (NIST Special Publication 800-218 Rev. 1,
+    Initial Public Draft). https://doi.org/10.6028/NIST.SP.800-218r1.ipd
 
 National Institute of Standards and Technology. (2026a). *CVE-2026-59935*.
-National Vulnerability Database. Retrieved August 4, 2026, from
-https://nvd.nist.gov/vuln/detail/CVE-2026-59935
+    National Vulnerability Database. Retrieved August 4, 2026, from
+    https://nvd.nist.gov/vuln/detail/CVE-2026-59935
 
 National Institute of Standards and Technology. (2026b). *CVE-2026-59890*.
-National Vulnerability Database. Retrieved August 4, 2026, from
-https://nvd.nist.gov/vuln/detail/CVE-2026-59890
+    National Vulnerability Database. Retrieved August 4, 2026, from
+    https://nvd.nist.gov/vuln/detail/CVE-2026-59890
 
 Open Source Vulnerabilities. (2026a). *CVE-2026-59935*. Retrieved August 4,
-2026, from https://osv.dev/vulnerability/CVE-2026-59935
+    2026, from https://osv.dev/vulnerability/CVE-2026-59935
 
 Open Source Vulnerabilities. (2026b). *CVE-2026-59890*. Retrieved August 4,
-2026, from https://osv.dev/vulnerability/CVE-2026-59890
+    2026, from https://osv.dev/vulnerability/CVE-2026-59890
 
 Open Source Vulnerabilities. (2026c). *CVE-2026-71852*. Retrieved August 9,
-2026, from https://osv.dev/vulnerability/CVE-2026-71852
+    2026, from https://osv.dev/vulnerability/CVE-2026-71852
 
 Open Source Vulnerabilities. (2026d). *CVE-2026-71870*. Retrieved August 9,
-2026, from https://osv.dev/vulnerability/CVE-2026-71870
-
-Open Source Vulnerabilities. (2026e). *CVE-2026-84309*. Retrieved September 5,
-2026, from https://osv.dev/vulnerability/CVE-2026-84309
-
-Open Source Vulnerabilities. (2026f). *CVE-2026-84310*. Retrieved September 5,
-2026, from https://osv.dev/vulnerability/CVE-2026-84310
-
-Open Source Vulnerabilities. (2026g). *CVE-2026-84311*. Retrieved September 5,
-2026, from https://osv.dev/vulnerability/CVE-2026-84311
+    2026, from https://osv.dev/vulnerability/CVE-2026-71870
 
 py-pdf. (2026a). *Possible infinite loop for TreeObject.insert_child*
-(GHSA-jp53-mhqp-8xcg). GitHub Security Advisory. Retrieved September 3,
-2026, from https://github.com/py-pdf/pypdf/security/advisories/GHSA-jp53-mhqp-8xcg
+    (GHSA-jp53-mhqp-8xcg). GitHub Security Advisory. Retrieved September 3,
+    2026, from https://github.com/py-pdf/pypdf/security/advisories/GHSA-jp53-mhqp-8xcg
 
 py-pdf. (2026b). *Possible long runtimes/large memory usage when retrieving
-outlines* (GHSA-23w6-3w8w-8484). GitHub Security Advisory. Retrieved
-September 3, 2026, from
-https://github.com/py-pdf/pypdf/security/advisories/GHSA-23w6-3w8w-8484
+    outlines* (GHSA-23w6-3w8w-8484). GitHub Security Advisory. Retrieved
+    September 3, 2026, from
+    https://github.com/py-pdf/pypdf/security/advisories/GHSA-23w6-3w8w-8484
 
 py-pdf. (2026c). *Possible long runtimes/large memory usage when extracting
-XForm objects* (GHSA-763m-79hh-57f2). GitHub Security Advisory. Retrieved
-September 3, 2026, from
-https://github.com/py-pdf/pypdf/security/advisories/GHSA-763m-79hh-57f2
+    XForm objects* (GHSA-763m-79hh-57f2). GitHub Security Advisory. Retrieved
+    September 3, 2026, from
+    https://github.com/py-pdf/pypdf/security/advisories/GHSA-763m-79hh-57f2
 
 Python Packaging Authority. (2026a). *Digital attestations*. PyPI Docs.
-Retrieved August 4, 2026, from https://docs.pypi.org/attestations/
+    Retrieved August 4, 2026, from https://docs.pypi.org/attestations/
 
 Python Packaging Authority. (2026b). *Pillow 12.3.0*. Python Package Index.
-Retrieved August 4, 2026, from https://pypi.org/project/pillow/12.3.0/
+    Retrieved August 4, 2026, from https://pypi.org/project/pillow/12.3.0/
 
 Python Packaging Authority. (2026c). *pypdf 6.16.2*. Python Package Index.
-Retrieved September 3, 2026, from https://pypi.org/project/pypdf/6.16.2/
+    Retrieved September 3, 2026, from https://pypi.org/project/pypdf/6.16.2/
 
 Python Packaging Authority. (2026d). *setuptools 83.0.0*. Python Package Index.
-Retrieved August 4, 2026, from https://pypi.org/project/setuptools/83.0.0/
+    Retrieved August 4, 2026, from https://pypi.org/project/setuptools/83.0.0/
