@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 from dataclasses import dataclass, field
 from enum import Enum
@@ -38,6 +39,7 @@ class RuntimeSettings:
     authentication_mode: AuthenticationMode = AuthenticationMode.REQUIRED
     runtime_profile: RuntimeProfile = RuntimeProfile.PRODUCTION
     api_token: str | None = field(default=None, repr=False)
+    api_token_digest: bytes | None = field(default=None, init=False, repr=False)
 
     def __post_init__(self) -> None:
         """Normalize secrets once and reject unsafe direct construction."""
@@ -59,24 +61,24 @@ class RuntimeSettings:
                 "The configured parser authentication token must not be blank"
             )
         try:
-            bearer_value = f"Bearer {normalized_token}".encode("utf-8")
+            token_bytes = normalized_token.encode("utf-8")
         except UnicodeEncodeError as exc:
             raise RuntimeConfigurationError(
                 "The configured parser authentication token must be valid UTF-8"
             ) from exc
-        if len(bearer_value) > MAX_BEARER_HEADER_BYTES:
+        if len(b"Bearer ") + len(token_bytes) > MAX_BEARER_HEADER_BYTES:
             raise RuntimeConfigurationError(
                 "The configured parser authentication token is too long"
             )
         object.__setattr__(self, "api_token", normalized_token)
+        object.__setattr__(self, "api_token_digest", hashlib.sha256(token_bytes).digest())
 
     @property
     def authentication_ready(self) -> bool:
         """Return whether the authentication configuration can serve traffic safely."""
 
-        return (
-            self.authentication_mode is AuthenticationMode.DISABLED
-            or self.api_token is not None
+        return self.authentication_mode is AuthenticationMode.DISABLED or (
+            self.api_token is not None and self.api_token_digest is not None
         )
 
 
