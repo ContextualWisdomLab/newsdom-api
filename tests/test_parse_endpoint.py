@@ -555,16 +555,3 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
-
-def test_validate_pdf_structure_catches_broad_exceptions_for_dos_mitigation(monkeypatch, tmp_path):
-    def reject_pdf_with_memory_error(_stream, *, strict):
-        raise MemoryError("simulated memory exhaustion during parse")
-
-    monkeypatch.setattr("newsdom_api.main.PdfReader", reject_pdf_with_memory_error)
-
-    with pytest.raises(HTTPException) as exc_info:
-        (tmp_path / "test.pdf").write_bytes(b"%PDF-1.4\n%%EOF")
-        _validate_pdf_structure(tmp_path / "test.pdf")
-
-    assert exc_info.value.status_code == 415
-    assert exc_info.value.detail == "Unsupported Media Type"

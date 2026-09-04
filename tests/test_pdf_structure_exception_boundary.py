@@ -8,6 +8,7 @@ import pytest
 import newsdom_api.main as main_module
 
 
+
 def _pdf_fixture(tmp_path):
     """Create the smallest header-bearing file needed to enter PdfReader validation."""
 

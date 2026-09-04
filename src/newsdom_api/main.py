@@ -127,6 +127,7 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     provided = authorization_values[0]
     if len(provided) > MAX_BEARER_HEADER_BYTES:
         return _unauthorized_response()
+
     scheme, separator, credentials = provided.partition(b" ")
     if separator != b" " or scheme.lower() != b"bearer" or not credentials:
         return _unauthorized_response()
