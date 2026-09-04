@@ -58,11 +58,17 @@ def test_pull_request_template_exists():
     assert Path(".github/pull_request_template.md").exists()
 
 
-def test_security_workflows_exist():
-    assert Path(".github/workflows/scorecards.yml").exists()
+def test_central_required_pr_workflows_are_not_duplicated_locally():
+    for workflow_name in [
+        "dependency-review.yml",
+        "quality-gate.yml",
+    ]:
+        assert not Path(".github/workflows", workflow_name).exists()
+
     assert Path(".github/workflows/codeql.yml").exists()
-    assert Path(".github/workflows/dependency-review.yml").exists()
+    assert Path(".github/workflows/scorecards.yml").exists()
 
-
-def test_quality_gate_workflow_exists():
-    assert Path(".github/workflows/quality-gate.yml").exists()
+    text = Path("README.md").read_text(encoding="utf-8")
+    normalized_text = " ".join(text.split())
+    assert "769691526f8c73cf714de8fe8ba51ae6cfa2901a" in text
+    assert "`pytest` is the sole repository-local required check" in normalized_text

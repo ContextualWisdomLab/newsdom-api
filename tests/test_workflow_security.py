@@ -57,20 +57,15 @@ def test_workflow_actions_are_pinned_by_sha():
 
 
 def test_ci_workflows_do_not_use_pip_install_commands():
-    for workflow_name in ["tests.yml", "quality-gate.yml"]:
-        text = Path(f".github/workflows/{workflow_name}").read_text(encoding="utf-8")
-        assert not re.search(r"\b(?:python\s+-m\s+)?pip3?\s+install\b", text)
+    text = Path(".github/workflows/tests.yml").read_text(encoding="utf-8")
+    assert not re.search(r"\b(?:python\s+-m\s+)?pip3?\s+install\b", text)
 
 
 def test_ci_workflows_run_pytest_through_uv():
     tests_text = Path(".github/workflows/tests.yml").read_text(encoding="utf-8")
-    quality_text = Path(".github/workflows/quality-gate.yml").read_text(
-        encoding="utf-8"
-    )
-    assert "uv run pytest" in tests_text
     assert (
         "uv run pytest --cov=src/newsdom_api --cov-branch --cov-report=term-missing --cov-fail-under=100"
-        in quality_text
+        in tests_text
     )
 
 
@@ -98,7 +93,7 @@ def test_docs_workflow_uses_least_privilege_pages_permissions():
     assert "id-token: write" in text
 
 
-def test_codeql_workflow_scopes_security_events_write_to_job_level():
+def test_codeql_backstop_scopes_security_events_write_to_job_level():
     text = Path(".github/workflows/codeql.yml").read_text(encoding="utf-8")
     assert "actions: read" in text.split("jobs:", 1)[0]
     assert "contents: read" in text.split("jobs:", 1)[0]
@@ -139,12 +134,6 @@ def test_local_pages_artifact_action_uses_node24_upload_artifact():
         encoding="utf-8"
     )
     assert "actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f" in text
-
-
-def test_quality_gate_workflow_pins_uv_version():
-    text = Path(".github/workflows/quality-gate.yml").read_text(encoding="utf-8")
-    assert "astral-sh/setup-uv@" in text
-    assert "version: '0.11.3'" in text
 
 
 def test_tests_workflow_pins_uv_version():
