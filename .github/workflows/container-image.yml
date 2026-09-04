@@ -2,6 +2,10 @@ name: container-image
 
 on:
   pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "manual/**"
+      - "**.md"
   push:
     tags:
       - 'v*'
@@ -11,6 +15,10 @@ on:
         description: Publish the linux/amd64 NVIDIA parsing image
         required: false
         default: 'false'
+
+concurrency:
+  group: container-image-${{ github.repository }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read

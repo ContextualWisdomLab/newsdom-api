@@ -15,18 +15,6 @@ def test_each_workflow_job_forces_javascript_actions_to_node24():
         for job_name, job_data in data["jobs"].items():
             if workflow_path.name in {"scorecards.yml", "gh-pages.yml"}:
                 continue
-            if "uses" in job_data:
-                # A reusable-workflow-call job (`uses: owner/repo/.github/
-                # workflows/x.yml@sha`) does not run any steps of its own --
-                # GitHub Actions' schema for this job shape supports only
-                # name/needs/if/permissions/secrets/strategy/uses/with, not
-                # env, so it cannot even be given this key. The JavaScript
-                # actions this convention protects against run inside the
-                # CALLED workflow's own job, which is that workflow's own
-                # test's responsibility, not this caller's -- confirmed here
-                # that .github's dependency-review.yml's own `dependency-
-                # review` job sets FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true.
-                continue
             assert job_data["env"]["FORCE_JAVASCRIPT_ACTIONS_TO_NODE24"] is True, (
                 workflow_path,
                 job_name,

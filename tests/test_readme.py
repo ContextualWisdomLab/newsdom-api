@@ -1,7 +1,5 @@
 from pathlib import Path
 
-CENTRAL_DEPENDENCY_REVIEW_WORKFLOW_SHA = "5f8e5b2a79e709c4ab1a4179a605d34c458b13a1"
-
 
 def test_readme_points_to_user_and_maintainer_docs():
     text = Path("README.md").read_text(encoding="utf-8")
@@ -60,25 +58,17 @@ def test_pull_request_template_exists():
     assert Path(".github/pull_request_template.md").exists()
 
 
-def test_security_workflows_exist():
-    assert Path(".github/workflows/scorecards.yml").exists()
+def test_central_required_pr_workflows_are_not_duplicated_locally():
+    for workflow_name in [
+        "dependency-review.yml",
+        "quality-gate.yml",
+    ]:
+        assert not Path(".github/workflows", workflow_name).exists()
+
     assert Path(".github/workflows/codeql.yml").exists()
-    assert Path(".github/workflows/dependency-review.yml").exists()
+    assert Path(".github/workflows/scorecards.yml").exists()
 
-
-def test_dependency_review_uses_immutable_central_workflow():
-    workflow = Path(".github/workflows/dependency-review.yml").read_text(encoding="utf-8")
-    expected = (
-        "ContextualWisdomLab/.github/.github/workflows/dependency-review.yml@"
-        f"{CENTRAL_DEPENDENCY_REVIEW_WORKFLOW_SHA}"
-    )
-
-    assert expected in workflow
-    assert "dependency-review.yml@main" not in workflow
-    assert "permissions:\n  contents: read\n  pull-requests: read" in workflow
-    assert "fail_on_severity: low" in workflow
-    assert 'allow_ghsas: "GHSA-69w3-r845-3855"' in workflow
-
-
-def test_quality_gate_workflow_exists():
-    assert Path(".github/workflows/quality-gate.yml").exists()
+    text = Path("README.md").read_text(encoding="utf-8")
+    normalized_text = " ".join(text.split())
+    assert "769691526f8c73cf714de8fe8ba51ae6cfa2901a" in text
+    assert "`pytest` is the sole repository-local required check" in normalized_text

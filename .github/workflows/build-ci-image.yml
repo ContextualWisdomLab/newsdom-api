@@ -11,6 +11,10 @@ on:
       - 'Dockerfile.test'
       - '.github/workflows/build-ci-image.yml'
 
+concurrency:
+  group: build-ci-environment-image-${{ github.repository }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
 # Least-privilege default: read-only GITHUB_TOKEN at the top level.
 # packages:write is granted only to the job that pushes to GHCR (Scorecard TokenPermissions, alert #39).
 permissions:
@@ -42,7 +46,7 @@ jobs:
       - name: Lowercase repository owner
         id: lowercase_owner
         run: |
-          echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
+          echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
 
       - name: Extract metadata for Docker
         id: meta

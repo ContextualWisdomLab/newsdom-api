@@ -3,9 +3,12 @@ name: codeql
 on:
   push:
     branches: [main, develop]
-  pull_request:
   schedule:
     - cron: '43 5 * * 1'
+
+concurrency:
+  group: codeql-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   actions: read
