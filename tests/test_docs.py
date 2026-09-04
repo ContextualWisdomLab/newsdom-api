@@ -5,7 +5,7 @@ from newsdom_api.config import RuntimeSettings, AuthenticationMode, RuntimeProfi
 def test_docs_csp_loosened():
     client = TestClient(app)
     response = client.get("/docs")
-    assert "cdn.jsdelivr.net" in response.headers["Content-Security-Policy"]
+    assert " cdn.jsdelivr.net; " in response.headers["Content-Security-Policy"]
 
 def test_persist_auth_dev_only():
     dev_settings = RuntimeSettings(runtime_profile=RuntimeProfile.DEVELOPMENT)
