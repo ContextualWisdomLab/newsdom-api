@@ -55,8 +55,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CLI] PDF 파일을 파싱하여 DOM 구조를 JSON으로 추출하는 `tools/parse_pdf.py` 도구 추가
 - [CLI] 합성 신문 PDF와 정답 데이터를 대량으로 생성하는 `tools/generate_synthetic.py` 도구 추가
 - `tools/benchmark_ocr.py`에 `--recursive` 인자를 추가하여 하위 디렉토리의 PDF 파일도 재귀적으로 탐색할 수 있도록 기능 보강.
-- `tools/benchmark_ocr.py`에 `--format` 인자를 추가하여 벤치마크 결과를 `json` 및 `csv` 포맷으로 내보낼 수 있도록 기능 추가.
-- `tools/derive_private_baseline.py`에 `--recursive` 인자를 추가하여 하위 디렉터리의 PDF 파일 재귀 탐색 기능 추가.
+- `tools/benchmark_ocr.py`에 `--format` 인자를 추가하여 벤치마크 결과를 `json` 및 `csv` 포맷으로 내보낼 수 있는 기능 추가.
+- `tools/derive_private_baseline.py`에 `--recursive` 인자를 추가하여 하위 디렉토리의 PDF 파일 재귀 탐색 기능 추가.
 - `tools/derive_private_baseline.py`에 `--strict` / `--no-strict` 인자를 추가하여 일부 PDF 파일 파싱 실패 시 진행을 계속할 수 있는 장애 허용성 옵션 추가.
 - 관련된 코드의 단위 테스트 작성 및 코드 커버리지 100% 달성.
 - `tools` 패키지에 대한 단위 테스트 커버리지를 100%로 향상
