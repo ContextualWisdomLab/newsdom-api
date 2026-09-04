@@ -201,7 +201,7 @@ def _validate_pdf_structure(file_path: Path) -> None:
 
 
 async def parse(
-    file: Annotated[UploadFile, File(..., description="The PDF file to parse.")],
+    file: Annotated[UploadFile, File(..., description="The PDF file to parse.", json_schema_extra={"example": "sample.pdf"})],
     language: Annotated[
         str,
         Form(
