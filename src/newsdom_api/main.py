@@ -204,7 +204,7 @@ async def parse(
     file: Annotated[UploadFile, File(..., description="The PDF file to parse.")],
     language: Annotated[
         str,
-        Form(
+        Form(max_length=50,
             description=(
                 "MinerU language family or compatibility alias (e.g. `ch`, "
                 "`en`, `japan`, `korean`, `arabic`, `devanagari`)."
@@ -213,7 +213,7 @@ async def parse(
     ] = DEFAULT_LANGUAGE,
     mode: Annotated[
         str,
-        Form(
+        Form(max_length=50,
             description=(
                 "MinerU parsing mode: `auto` (born-digital text PDFs skip forced "
                 "OCR), `ocr` (force OCR), or `txt` (embedded text layer only)."
