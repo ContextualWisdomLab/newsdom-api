@@ -70,7 +70,7 @@ def test_openapi_swagger_ui_parameters_in_production():
     assert params.get("persistAuthorization") is None
 
 
-def test_openapi_swagger_ui_persists_authorization_only_in_authenticated_development():
+def test_openapi_swagger_ui_persists_authorization_in_authenticated_development():
     from newsdom_api.config import RuntimeProfile, RuntimeSettings
     from newsdom_api.main import create_app
 
