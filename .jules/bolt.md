@@ -63,13 +63,3 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
-## 2026-09-02 - Increase chunk size for asynchronous file uploads
-**Learning:** Using a small chunk size (e.g., 8192 bytes) with `await file.read()` for asynchronous file uploads in FastAPI/Starlette creates massive threadpool and context-switching overhead, negatively impacting performance.
-**Action:** Define a larger chunk size as a named constant (e.g., `UPLOAD_READ_CHUNK_SIZE_BYTES = 1024 * 1024`) and use it in `await file.read()` calls to significantly reduce context switches and threadpool exhaustion.
-## 2026-09-02 - Increase chunk size for asynchronous file uploads
-**Learning:** Using a small chunk size (e.g., 8192 bytes) with `await file.read()` for asynchronous file uploads in FastAPI/Starlette creates massive threadpool and context-switching overhead, negatively impacting performance.
-**Action:** Define a larger chunk size as a named constant (e.g., `UPLOAD_READ_CHUNK_SIZE_BYTES = 1024 * 1024`) and use it in `await file.read()` calls to significantly reduce context switches and threadpool exhaustion.
-
-## 2026-09-04 - Noema CI false positives on transient generation
-**Learning:** The Noema CI reviewer LLM output can fail local validation randomly (e.g. citing wrong sides or hallucinating line numbers) due to transient inference glitches.
-**Action:** When a Noema CI step fails strictly due to validation parsing errors and not a test failure or static analysis fault, the repository state is correct and pushing an empty/amended commit will safely re-trigger the check.

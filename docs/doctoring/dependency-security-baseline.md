@@ -140,9 +140,3 @@ Python Packaging Authority. (2026c). *pypdf 6.15.0*. Python Package Index.
 
 Python Packaging Authority. (2026d). *setuptools 83.0.0*. Python Package Index.
     Retrieved August 4, 2026, from https://pypi.org/project/setuptools/83.0.0/
-
-
-### pypdf updates
-- https://osv.dev/vulnerability/CVE-2026-84309
-- https://osv.dev/vulnerability/CVE-2026-84310
-- https://osv.dev/vulnerability/CVE-2026-84311
