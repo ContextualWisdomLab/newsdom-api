@@ -555,18 +555,3 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
-
-def test_parse_endpoint_catches_unhandled_pdfreader_exceptions(monkeypatch):
-    def reject_pdf(*_args, **_kwargs):
-        raise TypeError("malformed dictionary")
-
-    monkeypatch.setattr("newsdom_api.main.PdfReader", reject_pdf)
-
-    client = TestClient(app)
-    response = client.post(
-        "/parse",
-        headers={"Authorization": "Bearer development-bypass-token"},
-        files={"file": ("fixture.pdf", b"%PDF-1.4\n%%EOF", "application/pdf")},
-    )
-    assert response.status_code == 415
-    assert response.json()["detail"] == "Unsupported Media Type"

@@ -90,13 +90,3 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
-
-## 2025-05-18 - [CRITICAL] Prevent DoS via Unhandled PdfReader Exceptions
-**Vulnerability:** 악의적인 페이로드 업로드 시 `PdfReader`에서 발생하는 `TypeError` 또는 `MemoryError` 등 처리되지 않은 예외로 인해 500 상태 코드 및 서버 리소스 소진 유발 가능성 발견.
-**Learning:** `PdfReader`는 손상되거나 특수하게 조작된 PDF 파일 파싱 시 다양한 형태의 내장 예외(built-in exceptions)를 던질 수 있으며, 이를 특정 예외로만 잡을 경우 예상치 못한 시스템 장애(DoS)로 이어질 수 있음.
-**Prevention:** `_validate_pdf_structure` 내부에서 `Exception`을 포괄적으로 잡아내어 415 상태 코드로 안전하게 처리(fail securely)하고, 로거(logger)를 통해 예외 정보를 남겨 추적성을 유지함.
-
-## 2026-08-31 - Fix Regex Escape Sequence for Newlines in MinerU Argv Blocklist
-**Vulnerability:** 셸 인젝션 방지 정규식 `_UNSAFE_CHARS_PATTERN`에서 개행 문자를 필터링하기 위해 사용된 `\n`과 `\r`가 정규식 내에서 이스케이프되지 않고 `\n`과 `\r`라는 문자 그 자체로 인식되어, 개행 문자를 통한 인젝션 방지가 제대로 동작하지 않는 버그 발견.
-**Learning:** Python 정규식(`re.compile()`)에서 raw string(`r""`)을 사용할 때 `\n` 등 특수 제어 문자를 문자 클래스(`[]`) 내에 작성하더라도 의도한 대로 이스케이프되지 않는 경우가 발생할 수 있음. 명시적인 백슬래시 이스케이프(`\n`, `\r`)를 제공하거나 raw string을 쓰지 않아야 함.
-**Prevention:** `[\0&;|`$<>\n\r]`를 올바르게 이스케이프하기 위해 정규식 내 제어 문자에 대해 안전한 이스케이프 처리를 유지해야 함.
