@@ -172,10 +172,12 @@ def test_project_declares_python_compatible_locked_fuzz_extra():
 
     assert "fuzz = [" in text
     assert (
-        "\"atheris==3.0.0 ; platform_system == 'Linux' and python_version == '3.11'\""
+        '"atheris==3.0.0 ; platform_system == \'Linux\' and '
+        'python_version == \'3.11\'"'
     ) in text
     assert (
-        "\"atheris==3.1.0 ; platform_system == 'Linux' and python_version >= '3.12'\""
+        '"atheris==3.1.0 ; platform_system == \'Linux\' and '
+        'python_version >= \'3.12\'"'
     ) in text
     assert _locked_package_versions("atheris") == {(3, 0, 0), (3, 1, 0)}
     assert '"pyinstaller==6.21.0"' in text
