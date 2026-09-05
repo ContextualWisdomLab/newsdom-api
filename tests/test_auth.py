@@ -407,3 +407,39 @@ def test_config_module_exposes_versioned_environment_contract() -> None:
     assert config.API_TOKEN_ENV_VAR == "NEWSDOM_API_TOKEN"
     assert config.AUTH_MODE_ENV_VAR == "NEWSDOM_AUTH_MODE"
     assert config.RUNTIME_PROFILE_ENV_VAR == "NEWSDOM_RUNTIME_PROFILE"
+
+def test_parse_access_failure_length_mismatch():
+    """Verify that credentials with mismatched length are rejected safely."""
+    from unittest.mock import patch
+
+    from fastapi import Request
+    from src.newsdom_api.main import _parse_access_failure
+
+    class MockApp:
+        pass
+
+    class MockState:
+        pass
+
+    class MockSettings:
+        authentication_mode = "ENABLED"
+        api_token = "correct-token"
+
+    mock_app = MockApp()
+    mock_app.state = MockState()
+    mock_app.state.runtime_settings = MockSettings()
+
+    request = Request(
+        scope={
+            "type": "http",
+            "method": "POST",
+            "headers": [(b"authorization", b"Bearer wrong-len")],
+            "app": mock_app
+        }
+    )
+
+    with patch('src.newsdom_api.main._runtime_settings', return_value=MockSettings()):
+        response = _parse_access_failure(request)
+
+    assert response is not None
+    assert response.status_code == 401
