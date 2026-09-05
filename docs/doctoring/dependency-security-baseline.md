@@ -29,7 +29,7 @@ NewsDOM accepts untrusted PDF uploads. A parser denial of service is therefore a
 runtime availability risk rather than an abstract transitive-dependency finding.
 The earlier baseline raised pypdf to 6.14.2 for CVE-2026-59935. On August 8,
 2026, the repository's current Trivy filesystem gate began reporting two
-additional MEDIUM findings, CVE-2026-71852 and CVE-2026-71870, against the locked
+additional MEDIUM findings, CVE-2026-84309 and CVE-2026-84310, against the locked
 6.14.2 artifact. The same repository had already produced a hash-locked 6.15.0
 resolution on an isolated branch; that exact head completed the Security Scan
 successfully without suppressing either finding. The shared direct floor and lock
@@ -123,11 +123,14 @@ Open Source Vulnerabilities. (2026a). *CVE-2026-59935*. Retrieved August 4,
 Open Source Vulnerabilities. (2026b). *CVE-2026-59890*. Retrieved August 4,
     2026, from https://osv.dev/vulnerability/CVE-2026-59890
 
-Open Source Vulnerabilities. (2026c). *CVE-2026-71852*. Retrieved August 9,
-    2026, from https://osv.dev/vulnerability/CVE-2026-71852
+Open Source Vulnerabilities. (2026c). *CVE-2026-84309*. Retrieved August 9,
+    2026, from https://osv.dev/vulnerability/CVE-2026-84309
 
-Open Source Vulnerabilities. (2026d). *CVE-2026-71870*. Retrieved August 9,
-    2026, from https://osv.dev/vulnerability/CVE-2026-71870
+Open Source Vulnerabilities. (2026d). *CVE-2026-84310*. Retrieved August 9,
+    2026, from https://osv.dev/vulnerability/CVE-2026-84310
+
+Open Source Vulnerabilities. (2026e). *CVE-2026-84311*. Retrieved September 3,
+    2026, from https://osv.dev/vulnerability/CVE-2026-84311
 
 Python Packaging Authority. (2026a). *Digital attestations*. PyPI Docs.
     Retrieved August 4, 2026, from https://docs.pypi.org/attestations/
