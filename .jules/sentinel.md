@@ -53,7 +53,7 @@
  **Prevention:** Explicitly include newline (`\n`) and carriage return (`\r`) characters in blocklists for subprocess arguments, ensuring inputs are restricted strictly to safe paths and alphanumeric characters.
 
 ## 2025-03-02 - Prevent Disk Exhaustion via Interrupted Uploads
-**Vulnerability:** FastAPIs `UploadFile` payloads were streamed to a `NamedTemporaryFile` within a `with` block that did not cover the file initialization or have a global `finally` block for that path. If a network disconnect or client abort exception interrupted `await file.read()` inside this block, the temporary file path on disk was not properly unlinked, leading to disk space exhaustion over time.
+**Vulnerability:** FastAPIs `UploadFile` payloads were streamed to a `NamedTemporaryFile(delete=False)` within a `with` block that did not cover the file initialization or have a global `finally` block for that path. If a network disconnect or client abort exception interrupted `await file.read()` inside this block, the temporary file path on disk was not properly unlinked, leading to disk space exhaustion over time.
 **Learning:** Context managers alone are insufficient when dealing with manual temporary file persistence (`delete=False`) in async HTTP streams because exceptions inside the stream reading loop can bypass cleanup blocks that are positioned further down the control flow.
 **Prevention:** Wrap the temporary file creation, stream reading, and processing stages in a single overarching `try...finally` block that guarantees explicit cleanup of the temporary file path regardless of when a network or application exception occurs.
 
@@ -90,8 +90,3 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
-
-## 2026-09-05 - Prevent Memory Exhaustion via Unbounded Form Fields
-**Vulnerability:** FastAPIs `Form` fields were unbounded. `python-multipart` loads form data into memory before route execution, making unbounded textual fields vulnerable to memory exhaustion (DoS) attacks if an attacker submits extremely long strings.
-**Learning:** `UploadFile` endpoints that also accept `Form` fields need explicit `max_length` constraints on the string fields.
-**Prevention:** Explicitly define `max_length` limits (e.g., `Form(max_length=50)`) on all textual `Form` fields in multipart endpoints.
