@@ -1,4 +1,4 @@
-"""Regression tests for bounded `/parse` form values and sanitized validation errors."""
+"""Regression tests for bounded `/parse` form values."""
 
 import pytest
 from fastapi.testclient import TestClient
@@ -29,13 +29,16 @@ def no_auth_client():
 
 
 @pytest.mark.parametrize(
-    ("language", "mode"),
-    (("a" * 51, "auto"), ("ch", "b" * 51)),
+    ("bounded_field", "language", "mode"),
+    (("language", "a" * 51, "auto"), ("mode", "ch", "b" * 51)),
 )
 def test_parse_endpoint_rejects_overlong_form_values(
-    no_auth_client: TestClient, language: str, mode: str
+    no_auth_client: TestClient,
+    bounded_field: str,
+    language: str,
+    mode: str,
 ) -> None:
-    """Reject each bounded form field without leaking framework validation detail."""
+    """Reject each overlong field through FastAPI's declared form-value contract."""
     response = no_auth_client.post(
         "/parse",
         files={"file": ("fixture.pdf", _MINIMAL_PDF, "application/pdf")},
@@ -43,4 +46,9 @@ def test_parse_endpoint_rejects_overlong_form_values(
     )
 
     assert response.status_code == 422
-    assert response.json() == {"detail": "Invalid parse parameters"}
+    detail = response.json()["detail"]
+    assert any(
+        error.get("loc") == ["body", bounded_field]
+        and error.get("type") == "string_too_long"
+        for error in detail
+    )
