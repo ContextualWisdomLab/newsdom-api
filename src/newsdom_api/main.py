@@ -41,7 +41,9 @@ from .mineru_runner import (
 from .schemas import HealthResponse, ParseResponse, ReadinessResponse
 from .service import parse_pdf
 
-MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
+# Keep the sidecar contract aligned with naruon's signed email-import
+# transport ceiling so large customer PDFs reach deferred DOM recognition.
+MAX_PARSE_UPLOAD_BYTES = 64 * 1024 * 1024
 MAX_AUTHORIZATION_HEADER_BYTES = MAX_BEARER_HEADER_BYTES
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
 PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"

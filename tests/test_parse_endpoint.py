@@ -345,10 +345,12 @@ def test_parse_endpoint_rejects_large_files(monkeypatch):
         return {"document_id": "fixture", "pages": []}
 
     monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
+    synthetic_limit = 64
+    monkeypatch.setattr("newsdom_api.main.MAX_PARSE_UPLOAD_BYTES", synthetic_limit)
 
     client = TestClient(app)
 
-    large_payload = b"%PDF-" + (b"x" * (MAX_PARSE_UPLOAD_BYTES - 5 + 1))
+    large_payload = b"%PDF-" + (b"x" * (synthetic_limit - 5 + 1))
     response = client.post(
         "/parse",
         files={"file": ("fixture.pdf", large_payload, "application/pdf")},
@@ -359,8 +361,10 @@ def test_parse_endpoint_rejects_large_files(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_parse_endpoint_rejects_large_file_without_size_metadata():
-    upload = _ReadTrackingUpload(b"%PDF-" + (b"x" * MAX_PARSE_UPLOAD_BYTES))
+async def test_parse_endpoint_rejects_large_file_without_size_metadata(monkeypatch):
+    synthetic_limit = 64
+    monkeypatch.setattr("newsdom_api.main.MAX_PARSE_UPLOAD_BYTES", synthetic_limit)
+    upload = _ReadTrackingUpload(b"%PDF-" + (b"x" * synthetic_limit))
     upload.size = None
 
     with pytest.raises(HTTPException) as exc_info:
@@ -368,7 +372,11 @@ async def test_parse_endpoint_rejects_large_file_without_size_metadata():
 
     assert exc_info.value.status_code == 413
     assert exc_info.value.detail == "Payload Too Large"
-    assert sum(upload.read_sizes) > MAX_PARSE_UPLOAD_BYTES
+    assert upload._offset > synthetic_limit
+
+
+def test_parse_endpoint_budget_is_larger_than_the_previous_20_mib_limit():
+    assert MAX_PARSE_UPLOAD_BYTES == 64 * 1024 * 1024
 
 
 def test_parse_endpoint_rejects_missing_magic_bytes():
