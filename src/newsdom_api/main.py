@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import hmac
 import logging
 import tempfile
@@ -108,14 +109,20 @@ def _unauthorized_response() -> JSONResponse:
     )
 
 
+def _credential_digest(value: bytes) -> bytes:
+    """Normalize credential material to one fixed-size comparison value."""
+
+    return hashlib.sha256(value).digest()
+
+
 def _parse_access_failure(request: Request) -> JSONResponse | None:
     """Validate `/parse` authorization before multipart upload parsing begins."""
 
     settings = _runtime_settings(request)
     if settings.authentication_mode is AuthenticationMode.DISABLED:
         return None
-    token = settings.api_token
-    if token is None:
+    expected_digest = settings.api_token_digest
+    if expected_digest is None:
         return JSONResponse(
             status_code=503,
             content={"detail": SERVICE_UNAVAILABLE_DETAIL},
@@ -132,12 +139,7 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     if separator != b" " or scheme.lower() != b"bearer" or not credentials:
         return _unauthorized_response()
 
-    expected_token = token.encode("utf-8")
-    if len(credentials) != len(expected_token):
-        hmac.compare_digest(credentials, credentials)
-        return _unauthorized_response()
-
-    if not hmac.compare_digest(credentials, expected_token):
+    if not hmac.compare_digest(_credential_digest(credentials), expected_digest):
         return _unauthorized_response()
     return None
 
