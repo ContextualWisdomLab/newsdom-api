@@ -24,6 +24,7 @@ from fastapi.security import HTTPBearer
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
+from .body_limit import RequestBodyLimitMiddleware
 from .config import (
     AuthenticationMode,
     MAX_BEARER_HEADER_BYTES,
@@ -42,6 +43,7 @@ from .schemas import HealthResponse, ParseResponse, ReadinessResponse
 from .service import parse_pdf
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
+MAX_PARSE_REQUEST_BYTES = MAX_PARSE_UPLOAD_BYTES + (1024 * 1024)
 MAX_AUTHORIZATION_HEADER_BYTES = MAX_BEARER_HEADER_BYTES
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
 PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
@@ -328,6 +330,14 @@ def create_app(
     application.state.runtime_settings = application_settings
     application.state.runtime_readiness_probe = (
         runtime_readiness_probe or mineru_runtime_available
+    )
+    # Register the body limiter first so the subsequently registered authentication
+    # middleware remains the outer boundary and rejects unauthorized uploads before
+    # either the limiter or FastAPI's multipart parser consumes request bytes.
+    application.add_middleware(
+        RequestBodyLimitMiddleware,
+        max_body_size=MAX_PARSE_REQUEST_BYTES,
+        path="/parse",
     )
     application.middleware("http")(security_boundary_middleware)
     application.add_exception_handler(Exception, global_exception_handler)
