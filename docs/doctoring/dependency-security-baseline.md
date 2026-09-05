@@ -30,13 +30,14 @@ runtime availability risk rather than an abstract transitive-dependency finding.
 The earlier baseline raised pypdf to 6.15.0 after the repository's Trivy
 filesystem gate reported CVE-2026-71852 and CVE-2026-71870 against 6.14.2.
 Upstream subsequently published additional pypdf advisories: the
-`TreeObject.insert_child` infinite-loop issue is fixed in 6.16.0, while outline
-retrieval and XForm extraction resource-consumption issues are fixed in 6.16.1.
-The current declaration and lock use 6.16.2, which is newer than each of those
-patched floors. This record does not claim that every upstream advisory is
-reachable through NewsDOM's current strict `PdfReader` validation path; the floor
-keeps the shipped parser dependency outside the upstream affected ranges while
-repository tests and scanners determine product-specific acceptance.
+`TreeObject.insert_child` infinite-loop issue (CVE-2026-84309) is fixed in
+6.16.0, while outline retrieval (CVE-2026-84310) and XForm extraction
+(CVE-2026-84311) resource-consumption issues are fixed in 6.16.1. The current
+declaration and lock use 6.16.2, which is newer than each of those patched
+floors. This record does not claim that every upstream advisory is reachable
+through NewsDOM's current strict `PdfReader` validation path; the floor keeps the
+shipped parser dependency outside the upstream affected ranges while repository
+tests and scanners determine product-specific acceptance.
 
 CVE-2026-59890 affects setuptools versions before 83.0.0. On
 normalization-preserving macOS filesystems, specially named files could bypass
@@ -46,11 +47,11 @@ contents, so the build-system floor is raised to 83.0.0.
 
 Pillow 12.3.0 and pypdf release artifacts are distributed through PyPI with
 published cryptographic file digests. PyPI records pypdf 6.16.2 as released on
-August 23, 2026; its source and wheel artifacts were uploaded through Trusted
-Publishing and have published hashes. Those artifacts and digests provide
-provenance inputs; they do not by themselves establish that a package is safe.
-Repository scans, hash-locked resolution, current-head tests, and independent
-review remain mandatory.
+August 23, 2026 and, as checked on September 5, 2026, as the latest release; its
+source and wheel artifacts were uploaded through Trusted Publishing and have
+published hashes. Those artifacts and digests provide provenance inputs; they do
+not by themselves establish that a package is safe. Repository scans, hash-locked
+resolution, current-head tests, and independent review remain mandatory.
 
 ## Secure-development and provenance controls
 
@@ -133,17 +134,18 @@ Open Source Vulnerabilities. (2026d). *CVE-2026-71870*. Retrieved August 9,
     2026, from https://osv.dev/vulnerability/CVE-2026-71870
 
 py-pdf. (2026a). *Possible infinite loop for TreeObject.insert_child*
-    (GHSA-jp53-mhqp-8xcg). GitHub Security Advisory. Retrieved September 3,
-    2026, from https://github.com/py-pdf/pypdf/security/advisories/GHSA-jp53-mhqp-8xcg
+    (GHSA-jp53-mhqp-8xcg; CVE-2026-84309). GitHub Security Advisory. Retrieved
+    September 5, 2026, from
+    https://github.com/py-pdf/pypdf/security/advisories/GHSA-jp53-mhqp-8xcg
 
 py-pdf. (2026b). *Possible long runtimes/large memory usage when retrieving
-    outlines* (GHSA-23w6-3w8w-8484). GitHub Security Advisory. Retrieved
-    September 3, 2026, from
+    outlines* (GHSA-23w6-3w8w-8484; CVE-2026-84310). GitHub Security Advisory.
+    Retrieved September 5, 2026, from
     https://github.com/py-pdf/pypdf/security/advisories/GHSA-23w6-3w8w-8484
 
 py-pdf. (2026c). *Possible long runtimes/large memory usage when extracting
-    XForm objects* (GHSA-763m-79hh-57f2). GitHub Security Advisory. Retrieved
-    September 3, 2026, from
+    XForm objects* (GHSA-763m-79hh-57f2; CVE-2026-84311). GitHub Security
+    Advisory. Retrieved September 5, 2026, from
     https://github.com/py-pdf/pypdf/security/advisories/GHSA-763m-79hh-57f2
 
 Python Packaging Authority. (2026a). *Digital attestations*. PyPI Docs.
@@ -153,7 +155,7 @@ Python Packaging Authority. (2026b). *Pillow 12.3.0*. Python Package Index.
     Retrieved August 4, 2026, from https://pypi.org/project/pillow/12.3.0/
 
 Python Packaging Authority. (2026c). *pypdf 6.16.2*. Python Package Index.
-    Retrieved September 3, 2026, from https://pypi.org/project/pypdf/6.16.2/
+    Retrieved September 5, 2026, from https://pypi.org/project/pypdf/6.16.2/
 
 Python Packaging Authority. (2026d). *setuptools 83.0.0*. Python Package Index.
     Retrieved August 4, 2026, from https://pypi.org/project/setuptools/83.0.0/
