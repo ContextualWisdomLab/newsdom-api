@@ -67,9 +67,9 @@ def _apply_security_headers(response: Response, request: Request) -> Response:
     response.headers["X-Frame-Options"] = "DENY"
     if request.url.path in ("/docs", "/redoc", "/openapi.json"):
         response.headers["Content-Security-Policy"] = (
-            "default-src 'none'; img-src 'self' data: fastapitiangolo.tiangolo.com; "
-            "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
-            "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
+            "default-src 'none'; img-src 'self' data: https://fastapitiangolo.tiangolo.com; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
             "connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"
         )
     else:
