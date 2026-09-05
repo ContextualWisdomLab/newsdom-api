@@ -1,18 +1,7 @@
-from pathlib import Path
-
-import pytest
 from fastapi.testclient import TestClient
 
 from newsdom_api.config import AuthenticationMode, RuntimeProfile, RuntimeSettings
-from newsdom_api.main import _validate_pdf_structure, create_app
-from fastapi import HTTPException
-
-
-def _write_pdf(path: Path) -> Path:
-    """Write the smallest magic-bearing fixture needed to reach PdfReader."""
-
-    path.write_bytes(b"%PDF-1.4\n%%EOF")
-    return path
+from newsdom_api.main import create_app
 
 
 def _development_app():
@@ -27,24 +16,8 @@ def _development_app():
     )
 
 
-def test_pdf_validation_propagates_unexpected_parser_fault(monkeypatch, tmp_path):
-    """Unexpected parser/runtime failures must not masquerade as invalid input."""
-
-    def fail_reader(_stream, *, strict):
-        assert strict is True
-        raise MemoryError("synthetic parser resource failure")
-
-    monkeypatch.setattr("newsdom_api.main.PdfReader", fail_reader)
-
-    with pytest.raises(HTTPException) as exc_info:
-        _validate_pdf_structure(_write_pdf(tmp_path / "fixture.pdf"))
-
-    assert exc_info.value.status_code == 415
-    assert exc_info.value.detail == "Unsupported Media Type"
-
-
 def test_parse_endpoint_sanitizes_unexpected_parser_fault_as_500(monkeypatch):
-    """The application error boundary must sanitize unexpected PDF failures."""
+    """Keep unexpected parser defects on the sanitized server-fault boundary."""
 
     def fail_reader(_stream, *, strict):
         assert strict is True
@@ -52,11 +25,11 @@ def test_parse_endpoint_sanitizes_unexpected_parser_fault_as_500(monkeypatch):
 
     monkeypatch.setattr("newsdom_api.main.PdfReader", fail_reader)
 
-    client = TestClient(_development_app(), raise_server_exceptions=False)
-    response = client.post(
-        "/parse",
-        files={"file": ("fixture.pdf", b"%PDF-1.4\n%%EOF", "application/pdf")},
-    )
+    with TestClient(_development_app(), raise_server_exceptions=False) as client:
+        response = client.post(
+            "/parse",
+            files={"file": ("fixture.pdf", b"%PDF-1.4\n%%EOF", "application/pdf")},
+        )
 
     assert response.status_code == 500
     assert response.json() == {"detail": "Internal Server Error"}
