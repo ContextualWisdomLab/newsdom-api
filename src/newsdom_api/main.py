@@ -23,6 +23,7 @@ from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from .config import (
     AuthenticationMode,
@@ -42,6 +43,7 @@ from .schemas import HealthResponse, ParseResponse, ReadinessResponse
 from .service import parse_pdf
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
+MAX_PARSE_REQUEST_BYTES = MAX_PARSE_UPLOAD_BYTES + (1024 * 1024)
 MAX_AUTHORIZATION_HEADER_BYTES = MAX_BEARER_HEADER_BYTES
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
 PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
@@ -58,6 +60,92 @@ tags_metadata = [
         "description": "Health and deployment diagnostic endpoints.",
     },
 ]
+
+
+class _RequestBodyTooLarge(Exception):
+    """Signal that a streamed request crossed its pre-parser byte budget."""
+
+
+class RequestBodyLimitMiddleware:
+    """Bound one HTTP request path before multipart or endpoint parsing begins."""
+
+    def __init__(
+        self,
+        app: ASGIApp,
+        *,
+        max_body_bytes: int,
+        path: str,
+    ) -> None:
+        """Configure an exact positive body budget for one request path."""
+
+        if max_body_bytes < 1:
+            raise ValueError("max_body_bytes must be positive")
+        if not path.startswith("/"):
+            raise ValueError("path must be absolute")
+        self.app = app
+        self.max_body_bytes = max_body_bytes
+        self.path = path
+
+    @staticmethod
+    def _declared_content_length(scope: Scope) -> int | None:
+        """Return one trustworthy non-negative Content-Length, if present."""
+
+        values = [
+            value
+            for name, value in scope.get("headers", [])
+            if name.lower() == b"content-length"
+        ]
+        if len(values) != 1:
+            return None
+        value = values[0]
+        if not value.isdigit() or len(value) > 20:
+            return None
+        return int(value)
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Reject declared or streamed oversized bodies before downstream parsing."""
+
+        if (
+            scope["type"] != "http"
+            or scope.get("method") != "POST"
+            or scope.get("path") != self.path
+        ):
+            await self.app(scope, receive, send)
+            return
+
+        declared_length = self._declared_content_length(scope)
+        if (
+            declared_length is not None
+            and declared_length > self.max_body_bytes
+        ):
+            response = JSONResponse(
+                status_code=413,
+                content={"detail": PAYLOAD_TOO_LARGE_DETAIL},
+            )
+            await response(scope, receive, send)
+            return
+
+        bytes_received = 0
+
+        async def limited_receive() -> Message:
+            """Count streamed request bytes before exposing them downstream."""
+
+            nonlocal bytes_received
+            message = await receive()
+            if message["type"] == "http.request":
+                bytes_received += len(message.get("body", b""))
+                if bytes_received > self.max_body_bytes:
+                    raise _RequestBodyTooLarge
+            return message
+
+        try:
+            await self.app(scope, limited_receive, send)
+        except _RequestBodyTooLarge:
+            response = JSONResponse(
+                status_code=413,
+                content={"detail": PAYLOAD_TOO_LARGE_DETAIL},
+            )
+            await response(scope, receive, send)
 
 
 def _apply_security_headers(response: Response, request: Request) -> Response:
@@ -205,6 +293,7 @@ async def parse(
     language: Annotated[
         str,
         Form(
+            max_length=50,
             description=(
                 "MinerU language family or compatibility alias (e.g. `ch`, "
                 "`en`, `japan`, `korean`, `arabic`, `devanagari`)."
@@ -214,6 +303,7 @@ async def parse(
     mode: Annotated[
         str,
         Form(
+            max_length=50,
             description=(
                 "MinerU parsing mode: `auto` (born-digital text PDFs skip forced "
                 "OCR), `ocr` (force OCR), or `txt` (embedded text layer only)."
@@ -326,6 +416,11 @@ def create_app(
     application.state.runtime_settings = application_settings
     application.state.runtime_readiness_probe = (
         runtime_readiness_probe or mineru_runtime_available
+    )
+    application.add_middleware(
+        RequestBodyLimitMiddleware,
+        max_body_bytes=MAX_PARSE_REQUEST_BYTES,
+        path="/parse",
     )
     application.middleware("http")(security_boundary_middleware)
     application.add_exception_handler(Exception, global_exception_handler)

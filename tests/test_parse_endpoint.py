@@ -555,3 +555,41 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
+
+def test_parse_form_field_max_length_exceeded(monkeypatch):
+    """Test that Form fields reject inputs longer than max_length=50."""
+    # Temporarily override runtime settings to bypass authentication in tests
+    from newsdom_api.config import AuthenticationMode, RuntimeSettings, RuntimeProfile
+    from newsdom_api.main import _runtime_settings
+
+    monkeypatch.setitem(
+        app.dependency_overrides,
+        _runtime_settings,
+        lambda request: RuntimeSettings(
+            authentication_mode=AuthenticationMode.DISABLED,
+            runtime_profile=RuntimeProfile.DEVELOPMENT
+        )
+    )
+
+    # We must patch the access failure validation to bypass authentication during test
+    monkeypatch.setattr("newsdom_api.main._parse_access_failure", lambda request: None)
+
+    client = TestClient(app, raise_server_exceptions=False)
+
+    long_string = "a" * 51
+
+    response = client.post(
+        "/parse",
+        files={"file": ("dummy.pdf", b"%PDF-dummy", "application/pdf")},
+        data={"language": long_string, "mode": "auto"},
+    )
+    assert response.status_code == 422
+    assert "language" in response.text
+
+    response = client.post(
+        "/parse",
+        files={"file": ("dummy.pdf", b"%PDF-dummy", "application/pdf")},
+        data={"language": "ch", "mode": long_string},
+    )
+    assert response.status_code == 422
+    assert "mode" in response.text
