@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 from newsdom_api.main import app
-from newsdom_api.config import AuthenticationMode, RuntimeProfile, RuntimeSettings
+from newsdom_api.config import AuthenticationMode, RuntimeProfile, RuntimeSettings, load_runtime_settings
 from newsdom_api.main import create_app
 
 import pytest
@@ -44,8 +44,6 @@ def test_production_profile_rejects_persist_authorization():
             api_token="test_token",
             persist_authorization=True,
         )
-
-from newsdom_api.config import load_runtime_settings
 
 def test_load_settings_parses_persist_authorization_env_var():
     """Verify persist_authorization is loaded from NEWSDOM_SWAGGER_PERSIST_AUTHORIZATION."""
