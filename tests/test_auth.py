@@ -410,7 +410,6 @@ def test_config_module_exposes_versioned_environment_contract() -> None:
 
 def test_parse_access_failure_length_mismatch():
     """Verify that credentials with mismatched length are rejected safely."""
-    import hmac
     from unittest.mock import patch
 
     from fastapi import Request

@@ -134,6 +134,9 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
 
     expected_token = token.encode("utf-8")
     if len(credentials) != len(expected_token):
+        # 🛡️ Sentinel: Prevent timing attacks that leak the token length.
+        # compare_digest returns early on length mismatch. We run a dummy
+        # comparison against the same string to ensure constant execution time.
         hmac.compare_digest(credentials, credentials)
         return _unauthorized_response()
 
