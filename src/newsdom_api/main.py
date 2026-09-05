@@ -303,6 +303,14 @@ def create_app(
     elif not application_settings.authentication_ready:
         LOGGER.error("Parser authentication configuration is unavailable")
 
+    swagger_ui_params = {
+        "displayRequestDuration": True,
+        "syntaxHighlight.theme": "monokai",
+        "tryItOutEnabled": True,
+    }
+    if application_settings.persist_authorization:
+        swagger_ui_params["persistAuthorization"] = True
+
     application = FastAPI(
         title="NewsDOM API",
         description=(
@@ -317,11 +325,7 @@ def create_app(
         },
         license_info={"name": "MIT License", "identifier": "MIT"},
         openapi_tags=tags_metadata,
-        swagger_ui_parameters={
-            "displayRequestDuration": True,
-            "syntaxHighlight.theme": "monokai",
-            "tryItOutEnabled": True,
-        },
+        swagger_ui_parameters=swagger_ui_params,
     )
     application.state.runtime_settings = application_settings
     application.state.runtime_readiness_probe = (

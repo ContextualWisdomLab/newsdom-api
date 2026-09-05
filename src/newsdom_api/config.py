@@ -11,6 +11,7 @@ API_TOKEN_ENV_VAR = "NEWSDOM_API_TOKEN"
 AUTH_MODE_ENV_VAR = "NEWSDOM_AUTH_MODE"
 RUNTIME_PROFILE_ENV_VAR = "NEWSDOM_RUNTIME_PROFILE"
 MAX_BEARER_HEADER_BYTES = 4096
+PERSIST_AUTHORIZATION_ENV_VAR = "NEWSDOM_SWAGGER_PERSIST_AUTHORIZATION"
 
 
 class RuntimeConfigurationError(ValueError):
@@ -38,6 +39,7 @@ class RuntimeSettings:
     authentication_mode: AuthenticationMode = AuthenticationMode.REQUIRED
     runtime_profile: RuntimeProfile = RuntimeProfile.PRODUCTION
     api_token: str | None = field(default=None, repr=False)
+    persist_authorization: bool = False
 
     def __post_init__(self) -> None:
         """Normalize secrets once and reject unsafe direct construction."""
@@ -48,6 +50,11 @@ class RuntimeSettings:
         ):
             raise RuntimeConfigurationError(
                 "Authentication can be disabled only in the development runtime profile"
+            )
+
+        if self.persist_authorization and self.runtime_profile is not RuntimeProfile.DEVELOPMENT:
+            raise RuntimeConfigurationError(
+                "Authorization persistence can be enabled only in the development runtime profile"
             )
 
         if self.api_token is None:
@@ -132,8 +139,10 @@ def load_runtime_settings(
         )
     )
 
+    persist_authorization = values.get(PERSIST_AUTHORIZATION_ENV_VAR, "false").strip().lower() == "true"
     return RuntimeSettings(
         authentication_mode=authentication_mode,
         runtime_profile=runtime_profile,
         api_token=get_api_token(values),
+        persist_authorization=persist_authorization,
     )
