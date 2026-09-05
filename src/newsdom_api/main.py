@@ -27,6 +27,7 @@ from pypdf.errors import PdfReadError
 from .config import (
     AuthenticationMode,
     MAX_BEARER_HEADER_BYTES,
+    RuntimeProfile,
     RuntimeSettings,
     load_runtime_settings,
 )
@@ -303,6 +304,14 @@ def create_app(
     elif not application_settings.authentication_ready:
         LOGGER.error("Parser authentication configuration is unavailable")
 
+    swagger_ui_parameters = {
+        "displayRequestDuration": True,
+        "syntaxHighlight.theme": "monokai",
+        "tryItOutEnabled": True,
+    }
+    if application_settings.runtime_profile is RuntimeProfile.DEVELOPMENT:
+        swagger_ui_parameters["persistAuthorization"] = True
+
     application = FastAPI(
         title="NewsDOM API",
         description=(
@@ -317,11 +326,7 @@ def create_app(
         },
         license_info={"name": "MIT License", "identifier": "MIT"},
         openapi_tags=tags_metadata,
-        swagger_ui_parameters={
-            "displayRequestDuration": True,
-            "syntaxHighlight.theme": "monokai",
-            "tryItOutEnabled": True,
-        },
+        swagger_ui_parameters=swagger_ui_parameters,
     )
     application.state.runtime_settings = application_settings
     application.state.runtime_readiness_probe = (

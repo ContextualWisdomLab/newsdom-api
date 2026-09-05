@@ -81,7 +81,6 @@ class ArticleNode(BaseModel):
         json_schema_extra={"example": "section-20231015-001"},
     )
     headline: str = Field(
-        ...,
         description=(
             "Primary section heading text. This is a generic section heading, "
             "not tied to any newspaper or language-specific concept."
@@ -97,7 +96,9 @@ class ArticleNode(BaseModel):
     body_blocks: List[str] = Field(
         default_factory=list,
         description="Ordered text blocks that make up the article body.",
-        json_schema_extra={"example": ["First paragraph of the article.", "Second paragraph."]},
+        json_schema_extra={
+            "example": ["First paragraph of the article.", "Second paragraph."]
+        },
     )
     images: List[ImageNode] = Field(
         default_factory=list,

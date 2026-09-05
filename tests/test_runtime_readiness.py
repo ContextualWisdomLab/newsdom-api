@@ -71,3 +71,26 @@ def test_mineru_runtime_available_checks_path_commands(
 
     monkeypatch.setattr(mineru_runner, "_cached_which", lambda _command: None)
     assert mineru_runner.mineru_runtime_available() is False
+
+def test_create_app_swagger_ui_parameters_development():
+    from newsdom_api.config import RuntimeSettings, AuthenticationMode, RuntimeProfile
+    from newsdom_api.main import create_app
+    settings = RuntimeSettings(
+        authentication_mode=AuthenticationMode.DISABLED,
+        runtime_profile=RuntimeProfile.DEVELOPMENT
+    )
+    app = create_app(settings)
+    assert app.swagger_ui_parameters is not None
+    assert app.swagger_ui_parameters.get("persistAuthorization") is True
+
+def test_create_app_swagger_ui_parameters_production():
+    from newsdom_api.config import RuntimeSettings, AuthenticationMode, RuntimeProfile
+    from newsdom_api.main import create_app
+    settings = RuntimeSettings(
+        authentication_mode=AuthenticationMode.REQUIRED,
+        runtime_profile=RuntimeProfile.PRODUCTION,
+        api_token="test"
+    )
+    app = create_app(settings)
+    assert app.swagger_ui_parameters is not None
+    assert app.swagger_ui_parameters.get("persistAuthorization") is None
