@@ -100,3 +100,8 @@
 **Vulnerability:** When attempting to normalize variable-length tokens for comparison to avoid timing attacks by using `hashlib.sha256()`, CodeQL mistakenly identifies this as an insecure password hashing implementation (because SHA256 is not computationally expensive enough for passwords).
 **Learning:** For length-hiding string comparisons in authorization paths, never hash sensitive variables with fast algorithms like `hashlib.sha256` or even `hmac.new(..., digestmod='sha256')`, even just for length normalization. CodeQL's aggressive heuristics will flag this as a vulnerability.
 **Prevention:** Instead of hashing the credentials to normalize their length, directly execute a dummy constant-time comparison on the identical length variable (e.g., `hmac.compare_digest(credentials, credentials)`) when the lengths differ, to balance the execution time without triggering weak hashing rules.
+
+## 2025-05-18 - Fix mock attribute error in testing unexposed properties
+**Vulnerability:** When using `unittest.mock.patch` to mock functions or attributes that might not actually exist on the target module object (e.g., when they are imported as aliases or don't explicitly exist but are resolved dynamically), it can cause tests to crash with `AttributeError`.
+**Learning:** `unittest.mock.patch` requires the target to exist unless `create=True` is provided. If mocking an attribute that isn't cleanly resolved on the module level statically, failing to use `create=True` leads to test failures that block CI.
+**Prevention:** If there is any doubt about the static existence of an attribute when mocking, or if mocking dynamic attributes, always include `create=True` in the `patch` call to ensure robust test execution.

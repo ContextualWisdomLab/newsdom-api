@@ -438,7 +438,7 @@ def test_parse_access_failure_length_mismatch():
         }
     )
 
-    with patch('src.newsdom_api.main._runtime_settings', return_value=MockSettings()):
+    with patch('src.newsdom_api.main._runtime_settings', return_value=MockSettings(), create=True):
         response = _parse_access_failure(request)
 
     assert response is not None
