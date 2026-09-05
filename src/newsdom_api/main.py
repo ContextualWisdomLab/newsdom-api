@@ -193,7 +193,9 @@ def _validate_pdf_structure(file_path: Path) -> None:
         reader = PdfReader(file_path, strict=True)
         if len(reader.pages) < 1:
             raise ValueError("PDF has no pages")
-    except (PdfReadError, RecursionError, ValueError, OverflowError):
+    # 🛡️ Sentinel: Mitigate DoS / log exhaustion by catching all PyPDF parsing exceptions
+    # instead of a narrow subset, safely returning 415 on malformed payloads.
+    except Exception:
         raise HTTPException(
             status_code=415,
             detail=UNSUPPORTED_MEDIA_DETAIL,
