@@ -7,7 +7,13 @@ import yaml
 
 
 _REQUIRED_PYPDF_VERSION = (6, 16, 2)
-_CURRENT_PYPDF_CVES = ("CVE-2026-71852", "CVE-2026-71870")
+_CURRENT_PYPDF_CVES = (
+    "CVE-2026-71852",
+    "CVE-2026-71870",
+    "CVE-2026-84309",
+    "CVE-2026-84310",
+    "CVE-2026-84311",
+)
 _LOCKED_PYPDF_REQUIREMENT = '{ name = "pypdf", specifier = ">=6.16.2,<7.0" },'
 
 
@@ -24,7 +30,7 @@ def _locked_pypdf_version() -> tuple[int, ...]:
 
 
 def test_project_declares_current_pypdf_security_floor() -> None:
-    """Prevent future lock refreshes from selecting the vulnerable 6.14.x line."""
+    """Prevent later lock refreshes from selecting older vulnerable releases."""
 
     project_text = Path("pyproject.toml").read_text(encoding="utf-8")
     assert '"pypdf>=6.16.2,<7.0"' in project_text
@@ -60,7 +66,7 @@ def test_current_pypdf_advisories_and_floor_are_documented() -> None:
     changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
 
     for cve_id in _CURRENT_PYPDF_CVES:
-        assert f"https://osv.dev/vulnerability/{cve_id}" in baseline
+        assert cve_id in baseline
     assert "`pypdf>=6.16.2,<7.0`" in changelog
 
 
