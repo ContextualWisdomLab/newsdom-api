@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from tools.export_jsonl import export_jsonl, main
 
@@ -25,11 +26,9 @@ VALID_JSON_DATA = {
                 },
             ],
         },
-        "not_a_dict_page",
         {
             "page_number": 2,
             "articles": [
-                "not_a_dict_article",
                 {
                     "article_id": "art_3",
                     "headline": "Test Headline 3",
@@ -76,6 +75,41 @@ def test_export_jsonl_success(tmp_path: Path) -> None:
         assert row3["article_id"] == "art_3"
         assert row3["body_block_index"] == 0
         assert row3["body_block_text"] == "Block 3"
+
+
+@pytest.mark.parametrize(
+    "invalid_pages",
+    [
+        ["not_a_dict_page"],
+        [{"page_number": 1, "articles": ["not_a_dict_article"]}],
+        [
+            {
+                "page_number": 1,
+                "articles": [
+                    {
+                        "article_id": "art_1",
+                        "headline": "Headline",
+                        "body_blocks": "not-a-list",
+                    }
+                ],
+            }
+        ],
+    ],
+)
+def test_export_jsonl_rejects_schema_invalid_dom_before_output(
+    tmp_path: Path, invalid_pages: list[object]
+) -> None:
+    input_file = tmp_path / "input.json"
+    input_file.write_text(
+        json.dumps({"document_id": "test_doc", "pages": invalid_pages}),
+        encoding="utf-8",
+    )
+    output_file = tmp_path / "output.jsonl"
+
+    with pytest.raises(ValidationError):
+        export_jsonl(input_file, output_file)
+
+    assert not output_file.exists()
 
 
 def test_export_jsonl_invalid_file(tmp_path: Path) -> None:
