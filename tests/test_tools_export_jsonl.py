@@ -80,6 +80,31 @@ def test_export_jsonl_rejects_noncanonical_newsdom(tmp_path: Path) -> None:
         export_jsonl(input_file, tmp_path / "output.jsonl")
 
 
+@pytest.mark.parametrize(
+    "malformed",
+    [
+        [],
+        "not-an-object",
+        {**VALID_JSON_DATA, "pages": None},
+        {**VALID_JSON_DATA, "pages": [{"page_number": 1, "articles": None}]},
+        {
+            **VALID_JSON_DATA,
+            "pages": [
+                {"page_number": 1, "articles": {"unexpected": "container"}}
+            ],
+        },
+    ],
+)
+def test_export_jsonl_rejects_invalid_container_shapes(
+    tmp_path: Path, malformed: object
+) -> None:
+    input_file = tmp_path / "input.json"
+    input_file.write_text(json.dumps(malformed), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="does not match ParseResponse schema"):
+        export_jsonl(input_file, tmp_path / "output.jsonl")
+
+
 def test_export_jsonl_rejects_input_as_output_without_modifying_source(
     tmp_path: Path,
 ) -> None:
