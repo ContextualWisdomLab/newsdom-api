@@ -5,9 +5,16 @@ import json
 import sys
 from pathlib import Path
 
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+_SRC_ROOT = _REPO_ROOT / "src"
+if str(_SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(_SRC_ROOT))
+
+from newsdom_api.schemas import ParseResponse  # noqa: E402
+
 
 def export_jsonl(json_path: Path, output_path: Path) -> None:
-    """Export NewsDOM JSON to a JSONL file containing article metadata and body blocks."""
+    """Export schema-valid NewsDOM JSON as article/body-block JSONL records."""
     if not json_path.is_file():
         raise FileNotFoundError(f"File not found or is not a file: {json_path}")
     if json_path.suffix.lower() != ".json":
@@ -18,33 +25,19 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
     except json.JSONDecodeError as exc:
         raise ValueError(f"Invalid JSON file: {exc}") from exc
 
-    pages = data.get("pages", [])
+    document = ParseResponse.model_validate(data)
 
     with output_path.open("w", encoding="utf-8") as jsonlfile:
-        document_id = data.get("document_id", "Unknown Document")
-
-        for page in pages:
-            if not isinstance(page, dict):
-                continue
-            page_number = page.get("page_number", "Unknown")
-
-            articles = page.get("articles", [])
-            for article in articles:
-                if not isinstance(article, dict):
-                    continue
-                article_id = article.get("article_id", "Unknown Article ID")
-                headline = article.get("headline", "")
-
-                body_blocks = article.get("body_blocks", [])
-
-                if not body_blocks:
+        for page in document.pages:
+            for article in page.articles:
+                if not article.body_blocks:
                     jsonlfile.write(
                         json.dumps(
                             {
-                                "document_id": document_id,
-                                "page_number": page_number,
-                                "article_id": article_id,
-                                "headline": headline,
+                                "document_id": document.document_id,
+                                "page_number": page.page_number,
+                                "article_id": article.article_id,
+                                "headline": article.headline,
                                 "body_block_index": None,
                                 "body_block_text": "",
                             },
@@ -53,14 +46,14 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
                         + "\n"
                     )
 
-                for idx, block in enumerate(body_blocks):
+                for idx, block in enumerate(article.body_blocks):
                     jsonlfile.write(
                         json.dumps(
                             {
-                                "document_id": document_id,
-                                "page_number": page_number,
-                                "article_id": article_id,
-                                "headline": headline,
+                                "document_id": document.document_id,
+                                "page_number": page.page_number,
+                                "article_id": article.article_id,
+                                "headline": article.headline,
                                 "body_block_index": idx,
                                 "body_block_text": block,
                             },
