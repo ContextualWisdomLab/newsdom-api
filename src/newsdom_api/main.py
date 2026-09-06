@@ -22,6 +22,7 @@ from fastapi import (
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from pypdf import PdfReader
+from pypdf.errors import PdfReadError
 
 from .config import (
     AuthenticationMode,
@@ -192,10 +193,7 @@ def _validate_pdf_structure(file_path: Path) -> None:
         reader = PdfReader(file_path, strict=True)
         if len(reader.pages) < 1:
             raise ValueError("PDF has no pages")
-    # Sentinel: Mitigate DoS / log exhaustion by catching all PyPDF parsing exceptions
-    # instead of a narrow subset, safely returning 415 on malformed payloads.
-    except Exception as exc:
-        LOGGER.warning("Rejecting unparseable PDF: %s", exc)
+    except (PdfReadError, RecursionError, ValueError, OverflowError):
         raise HTTPException(
             status_code=415,
             detail=UNSUPPORTED_MEDIA_DETAIL,
