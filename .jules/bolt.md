@@ -63,3 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2024-09-06 - 딕셔너리 순회 성능 최적화
+**Learning:** Python에서 성능이 중요한 상황에 딕셔너리의 키와 값을 모두 접근할 때, `sorted(dict.items())`를 사용하여 딕셔너리를 순회하면 내부 구조상 튜플 비교 시 첫 번째 원소(키)에서 이미 유일성이 보장되어 숏서킷(short-circuit)이 발생하므로 성능 상의 불이익 없이 중복된 키 조회(lookup) 연산을 제거할 수 있음을 확인했습니다.
+**Action:** 앞으로 딕셔너리를 순회하며 값에 접근해야 하는 핫 패스 루프(hot path loop)에서는 단순히 키를 가져와 다시 조회하는 대신 `.items()`를 적극 활용할 것입니다.
