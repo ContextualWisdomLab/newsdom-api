@@ -8,11 +8,11 @@ import yaml
 
 _REQUIRED_PYPDF_VERSION = (6, 16, 1)
 _CURRENT_PYPDF_CVES = ("CVE-2026-84309", "CVE-2026-84310", "CVE-2026-84311")
-_LOCKED_PYPDF_REQUIREMENT = '{ name = "pypdf", specifier = ">=6.16.1,<7.0" },'
-_CURRENT_PYPDF_PROVENANCE = (
-    "PyPI's official JSON metadata confirms the 6.16.2 release and the artifact "
-    "hashes recorded in this repository's generated lock."
-)
+# Every literal below derives from the tuple above, so a future floor bump has
+# exactly one place to change and the documentation checks cannot keep
+# matching a superseded floor by accident.
+_PYPDF_SPECIFIER = ">=" + ".".join(str(part) for part in _REQUIRED_PYPDF_VERSION) + ",<7.0"
+_LOCKED_PYPDF_REQUIREMENT = f'{{ name = "pypdf", specifier = "{_PYPDF_SPECIFIER}" }},'
 
 
 def _locked_pypdf_version() -> tuple[int, ...]:
@@ -31,7 +31,7 @@ def test_project_declares_current_pypdf_security_floor() -> None:
     """Prevent lock refreshes from selecting pypdf below the current floor."""
 
     project_text = Path("pyproject.toml").read_text(encoding="utf-8")
-    assert '"pypdf>=6.16.1,<7.0"' in project_text
+    assert f'"pypdf{_PYPDF_SPECIFIER}"' in project_text
 
 
 def test_lock_uses_current_pypdf_security_release() -> None:
@@ -65,8 +65,25 @@ def test_current_pypdf_advisories_and_floor_are_documented() -> None:
 
     for cve_id in _CURRENT_PYPDF_CVES:
         assert f"https://osv.dev/vulnerability/{cve_id}" in baseline
-    assert "`pypdf>=6.16.1,<7.0`" in changelog
-    assert _CURRENT_PYPDF_PROVENANCE in baseline
+
+    # The CHANGELOG entry writes the package and its specifier as separate
+    # inline-code spans; require both, plus the release the lock resolved,
+    # on one entry line rather than a single fused code span.
+    locked_release = ".".join(str(part) for part in _locked_pypdf_version())
+    changelog_entry = re.compile(
+        r"`pypdf`[^\n]*`" + re.escape(_PYPDF_SPECIFIER) + r"`[^\n]*" + re.escape(locked_release)
+    )
+    assert changelog_entry.search(changelog), (
+        f"CHANGELOG.md lacks an entry naming `pypdf`, `{_PYPDF_SPECIFIER}` and lock {locked_release}"
+    )
+
+    # Markdown wraps the provenance sentence across lines; compare on
+    # whitespace-normalized text, and tie the release to the lock file.
+    provenance = (
+        f"PyPI's official JSON metadata confirms the {locked_release} release and the "
+        "artifact hashes recorded in this repository's generated lock."
+    )
+    assert provenance in re.sub(r"\s+", " ", baseline)
 
 
 def test_trivy_registry_exception_is_scoped_to_the_example_manifest() -> None:
