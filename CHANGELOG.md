@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- 알려진 취약점을 해결하기 위해 패키지 업데이트
+
+
 
 ### Added
 - NewsDOM JSON을 JSONL 형식으로 변환하는 `tools/export_jsonl.py` 도구 추가.
