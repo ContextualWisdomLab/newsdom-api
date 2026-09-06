@@ -73,6 +73,7 @@ def test_mineru_runtime_available_checks_path_commands(
     assert mineru_runner.mineru_runtime_available() is False
 
 def test_create_app_swagger_ui_parameters_development():
+    from fastapi.testclient import TestClient
     from newsdom_api.config import RuntimeSettings, AuthenticationMode, RuntimeProfile
     from newsdom_api.main import create_app
     settings = RuntimeSettings(
@@ -80,10 +81,13 @@ def test_create_app_swagger_ui_parameters_development():
         runtime_profile=RuntimeProfile.DEVELOPMENT
     )
     app = create_app(settings)
-    assert app.swagger_ui_parameters is not None
-    assert app.swagger_ui_parameters.get("persistAuthorization") is True
+    client = TestClient(app)
+    response = client.get("/docs")
+    assert response.status_code == 200
+    assert "\"persistAuthorization\": true" in response.text
 
 def test_create_app_swagger_ui_parameters_production():
+    from fastapi.testclient import TestClient
     from newsdom_api.config import RuntimeSettings, AuthenticationMode, RuntimeProfile
     from newsdom_api.main import create_app
     settings = RuntimeSettings(
@@ -92,5 +96,7 @@ def test_create_app_swagger_ui_parameters_production():
         api_token="test"
     )
     app = create_app(settings)
-    assert app.swagger_ui_parameters is not None
-    assert app.swagger_ui_parameters.get("persistAuthorization") is None
+    client = TestClient(app)
+    response = client.get("/docs")
+    assert response.status_code == 200
+    assert "persistAuthorization" not in response.text
