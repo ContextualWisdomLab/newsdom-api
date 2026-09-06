@@ -90,7 +90,7 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
-## 2024-11-20 - [PDF 파싱 DoS 취약점 완화]
-**Vulnerability:** 악의적인 PDF 파일로 인해 발생하는 PyPDF의 처리되지 않은 예외로 인한 DoS 및 로그 고갈 위험.
-**Learning:** PyPDF는 잘못된 형식이거나 악의적인 PDF를 파싱할 때 좁은 예외 블록을 우회하는 다양한 미기록 예외를 발생시킬 수 있습니다.
-**Prevention:** 신뢰할 수 없는 임의의 파일 형식을 다룰 때는 `except BaseException:`을 피해 시스템 종료 예외를 보존하면서, `except Exception:`을 통한 광범위한 예외 처리를 사용하여 DoS 취약점을 완화해야 합니다.
+## 2024-11-20 - PDF Parsing DoS Mitigation
+**Vulnerability:** Unhandled exceptions in PyPDF leading to potential DoS and log exhaustion.
+**Learning:** PyPDF can raise many different undocumented exceptions when parsing malformed or malicious PDFs, bypassing narrow exception blocks.
+**Prevention:** Use broad exception catching via except Exception when dealing with arbitrary untrusted file formats, avoiding except BaseException to preserve system exits.
