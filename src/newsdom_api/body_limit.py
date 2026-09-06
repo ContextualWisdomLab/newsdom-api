@@ -81,6 +81,7 @@ class RequestBodyLimitMiddleware:
         response_started = False
 
         async def limited_receive() -> Message:
+            """Wrap receive to enforce the maximum body size limit."""
             nonlocal received_bytes
             message = await receive()
             if message["type"] == "http.request":
@@ -90,6 +91,7 @@ class RequestBodyLimitMiddleware:
             return message
 
         async def tracking_send(message: Message) -> None:
+            """Wrap send to track if a response has already started."""
             nonlocal response_started
             if message["type"] == "http.response.start":
                 response_started = True
