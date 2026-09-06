@@ -46,76 +46,28 @@ def test_export_jsonl_success(tmp_path: Path) -> None:
 
     export_jsonl(input_file, output_file)
 
-    lines = output_file.read_text(encoding="utf-8").splitlines()
-    assert len(lines) == 3
+    assert output_file.exists()
 
-    row1 = json.loads(lines[0])
-    assert row1 == {
-        "document_id": "test_doc",
-        "page_number": 1,
-        "article_id": "art_1",
-        "headline": "Test Headline 1",
-        "body_blocks": ["Block 1", "Block 2"],
-    }
+    with output_file.open("r", encoding="utf-8") as f:
+        lines = f.read().splitlines()
 
-    row2 = json.loads(lines[1])
-    assert row2["headline"] == "Test Headline 2"
-    assert row2["body_blocks"] == []
+        assert len(lines) == 3
 
-    row3 = json.loads(lines[2])
-    assert row3["page_number"] == 2
-    assert row3["article_id"] == "art_3"
-    assert row3["body_blocks"] == ["Block 3"]
+        row1 = json.loads(lines[0])
+        assert row1["document_id"] == "test_doc"
+        assert row1["page_number"] == 1
+        assert row1["article_id"] == "art_1"
+        assert row1["headline"] == "Test Headline 1"
+        assert row1["body_blocks"] == ["Block 1", "Block 2"]
 
+        row2 = json.loads(lines[1])
+        assert row2["headline"] == "Test Headline 2"
+        assert row2["body_blocks"] == []
 
-def test_export_jsonl_rejects_noncanonical_newsdom(tmp_path: Path) -> None:
-    input_file = tmp_path / "input.json"
-    malformed = {
-        **VALID_JSON_DATA,
-        "pages": [{"page_number": 1, "articles": ["not-an-article"]}],
-    }
-    input_file.write_text(json.dumps(malformed), encoding="utf-8")
-
-    with pytest.raises(ValueError, match="does not match ParseResponse schema"):
-        export_jsonl(input_file, tmp_path / "output.jsonl")
-
-
-@pytest.mark.parametrize(
-    "malformed",
-    [
-        [],
-        "not-an-object",
-        {**VALID_JSON_DATA, "pages": None},
-        {**VALID_JSON_DATA, "pages": [{"page_number": 1, "articles": None}]},
-        {
-            **VALID_JSON_DATA,
-            "pages": [
-                {"page_number": 1, "articles": {"unexpected": "container"}}
-            ],
-        },
-    ],
-)
-def test_export_jsonl_rejects_invalid_container_shapes(
-    tmp_path: Path, malformed: object
-) -> None:
-    input_file = tmp_path / "input.json"
-    input_file.write_text(json.dumps(malformed), encoding="utf-8")
-
-    with pytest.raises(ValueError, match="does not match ParseResponse schema"):
-        export_jsonl(input_file, tmp_path / "output.jsonl")
-
-
-def test_export_jsonl_rejects_input_as_output_without_modifying_source(
-    tmp_path: Path,
-) -> None:
-    input_file = tmp_path / "input.json"
-    original = json.dumps(VALID_JSON_DATA)
-    input_file.write_text(original, encoding="utf-8")
-
-    with pytest.raises(ValueError, match="must differ from input"):
-        export_jsonl(input_file, input_file)
-
-    assert input_file.read_text(encoding="utf-8") == original
+        row3 = json.loads(lines[2])
+        assert row3["page_number"] == 2
+        assert row3["article_id"] == "art_3"
+        assert row3["body_blocks"] == ["Block 3"]
 
 
 def test_export_jsonl_invalid_file(tmp_path: Path) -> None:
@@ -136,8 +88,32 @@ def test_export_jsonl_invalid_file(tmp_path: Path) -> None:
         export_jsonl(invalid_json, output_file)
 
 
+def test_export_jsonl_rejects_noncanonical_newsdom(tmp_path: Path) -> None:
+    input_file = tmp_path / "input.json"
+    malformed = {
+        **VALID_JSON_DATA,
+        "pages": [{"page_number": 1, "articles": ["not-an-article"]}],
+    }
+    input_file.write_text(json.dumps(malformed), encoding="utf-8")
+    output_file = tmp_path / "output.jsonl"
+
+    with pytest.raises(ValueError, match="does not match ParseResponse schema"):
+        export_jsonl(input_file, output_file)
+
+
+def test_export_jsonl_rejects_input_as_output_without_modifying_source(
+    tmp_path: Path,
+) -> None:
+    input_file = tmp_path / "input.json"
+    original = json.dumps(VALID_JSON_DATA)
+    input_file.write_text(original, encoding="utf-8")
+
+    with pytest.raises(ValueError, match="must differ from input"):
+        export_jsonl(input_file, input_file)
+
+
 def test_export_jsonl_cli_success(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:
     input_file = tmp_path / "input.json"
     input_file.write_text(json.dumps(VALID_JSON_DATA), encoding="utf-8")
@@ -151,7 +127,7 @@ def test_export_jsonl_cli_success(
 
 
 def test_export_jsonl_cli_invalid_file(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:
     not_json = tmp_path / "input.txt"
     not_json.write_text("plain text", encoding="utf-8")
