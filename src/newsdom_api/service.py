@@ -14,13 +14,17 @@ from .schemas import ParseResponse
 
 MAX_UPLOAD_FILENAME_LENGTH = 240
 
+# ⚡ Bolt: Pre-compile translation table for hot path file normalization
+_FILENAME_TRANSLATION_TABLE = str.maketrans({"\\": "/", "\0": None})
+
 
 def _safe_upload_filename(filename: str) -> str:
     """Return a basename for client-supplied upload filenames."""
 
     # Bound the input to prevent performance degradation/DoS on path parsing and regex
     filename = filename[-512:]
-    normalized = filename.replace("\0", "").replace("\\", "/")
+    # ⚡ Bolt: Use .translate() with a pre-compiled table to avoid multiple allocations from chained .replace()
+    normalized = filename.translate(_FILENAME_TRANSLATION_TABLE)
     name = PurePosixPath(normalized).name
     name = re.sub(r"[^a-zA-Z0-9_.-]", "_", name)
     # ⚡ Bolt: Use .strip("_.") instead of chained .replace() to avoid multiple intermediate string allocations
