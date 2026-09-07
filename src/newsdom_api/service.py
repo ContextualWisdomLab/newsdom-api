@@ -23,6 +23,7 @@ def _safe_upload_filename(filename: str) -> str:
     filename = filename[-512:]
     normalized = filename.replace("\0", "").replace("\\", "/")
     name = PurePosixPath(normalized).name
+    # ⚡ Bolt: Pre-compile regex for performance
     name = _UNSAFE_UPLOAD_CHARS_PATTERN.sub("_", name)
     # ⚡ Bolt: Use .strip("_.") instead of chained .replace() to avoid multiple intermediate string allocations
     if name in ("", ".", "..") or not name.strip("_."):
