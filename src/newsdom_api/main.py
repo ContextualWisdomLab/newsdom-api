@@ -27,6 +27,7 @@ from pypdf.errors import PdfReadError
 from .config import (
     AuthenticationMode,
     MAX_BEARER_HEADER_BYTES,
+    RuntimeProfile,
     RuntimeSettings,
     load_runtime_settings,
 )
@@ -323,7 +324,7 @@ def create_app(
             "tryItOutEnabled": True,
             **(
                 {"persistAuthorization": True}
-                if application_settings.swagger_persist_authorization
+                if application_settings.runtime_profile is RuntimeProfile.DEVELOPMENT
                 else {}
             ),
         },

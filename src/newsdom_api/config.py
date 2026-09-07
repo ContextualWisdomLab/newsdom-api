@@ -10,7 +10,6 @@ from typing import Mapping
 API_TOKEN_ENV_VAR = "NEWSDOM_API_TOKEN"
 AUTH_MODE_ENV_VAR = "NEWSDOM_AUTH_MODE"
 RUNTIME_PROFILE_ENV_VAR = "NEWSDOM_RUNTIME_PROFILE"
-SWAGGER_PERSIST_AUTHORIZATION_ENV_VAR = "NEWSDOM_SWAGGER_PERSIST_AUTHORIZATION"
 MAX_BEARER_HEADER_BYTES = 4096
 
 
@@ -39,7 +38,6 @@ class RuntimeSettings:
     authentication_mode: AuthenticationMode = AuthenticationMode.REQUIRED
     runtime_profile: RuntimeProfile = RuntimeProfile.PRODUCTION
     api_token: str | None = field(default=None, repr=False)
-    swagger_persist_authorization: bool = False
 
     def __post_init__(self) -> None:
         """Normalize secrets once and reject unsafe direct construction."""
@@ -50,13 +48,6 @@ class RuntimeSettings:
         ):
             raise RuntimeConfigurationError(
                 "Authentication can be disabled only in the development runtime profile"
-            )
-        if (
-            self.swagger_persist_authorization
-            and self.runtime_profile is not RuntimeProfile.DEVELOPMENT
-        ):
-            raise RuntimeConfigurationError(
-                "Swagger authorization persistence can be enabled only in the development runtime profile"
             )
 
         if self.api_token is None:
@@ -107,21 +98,6 @@ def _parse_enum_value(
     return raw
 
 
-def _parse_bool_value(
-    source: Mapping[str, str], variable: str, *, default: bool = False
-) -> bool:
-    """Parse one strict boolean runtime setting without permissive coercion."""
-
-    raw = source.get(variable, "true" if default else "false").strip().lower()
-    if raw == "true":
-        return True
-    if raw == "false":
-        return False
-    raise RuntimeConfigurationError(
-        f"Invalid value for {variable}; use true or false"
-    )
-
-
 def get_api_token(source: Mapping[str, str] | None = None) -> str | None:
     """Return a normalized bootstrap token without logging or exposing it."""
 
@@ -160,7 +136,4 @@ def load_runtime_settings(
         authentication_mode=authentication_mode,
         runtime_profile=runtime_profile,
         api_token=get_api_token(values),
-        swagger_persist_authorization=_parse_bool_value(
-            values, SWAGGER_PERSIST_AUTHORIZATION_ENV_VAR
-        ),
     )
