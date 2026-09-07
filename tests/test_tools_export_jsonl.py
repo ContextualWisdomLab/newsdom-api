@@ -152,6 +152,21 @@ def test_export_jsonl_preserves_published_output_when_encoding_fails(
     assert {path.name for path in tmp_path.iterdir()} == {"input.json", "output.jsonl"}
 
 
+def test_export_jsonl_missing_output_parent_leaves_no_temporary_artifact(
+    tmp_path: Path,
+) -> None:
+    input_file = tmp_path / "input.json"
+    input_file.write_text(json.dumps(VALID_JSON_DATA), encoding="utf-8")
+    missing_parent = tmp_path / "missing"
+    output_file = missing_parent / "output.jsonl"
+
+    with pytest.raises(FileNotFoundError):
+        export_jsonl(input_file, output_file)
+
+    assert not missing_parent.exists()
+    assert {path.name for path in tmp_path.iterdir()} == {"input.json"}
+
+
 def test_export_jsonl_invalid_file(tmp_path: Path) -> None:
     output_file = tmp_path / "output.jsonl"
 
