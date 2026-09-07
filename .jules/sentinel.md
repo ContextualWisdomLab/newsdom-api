@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2025-03-09 - Add max_length to FastAPI Form Fields
+**Vulnerability:** The `/parse` endpoint handled `language` and `mode` `multipart/form-data` arguments as unbounded text fields. Because `python-multipart` loads all form data into memory before route execution, an attacker could send multi-gigabyte text values for these string fields to trigger a Denial-of-Service (DoS) via memory exhaustion (OOM), bypassing the structural length limits intended for files.
+**Learning:** In FastAPI (and Pydantic more broadly), generic string variables in Form or Body without `max_length` provide an implicit unbounded memory sink. The application size limits on `UploadFile` (e.g., via `file.read()`) do not protect standard form fields read asynchronously by the framework layer.
+**Prevention:** Always enforce explicit `max_length` attributes on `Form` string variables (e.g., `Form(max_length=50)`) within FastAPI route signatures to prevent resource exhaustion prior to handler execution.
