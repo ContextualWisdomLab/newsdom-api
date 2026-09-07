@@ -112,6 +112,46 @@ def test_export_jsonl_rejects_schema_invalid_dom_before_output(
     assert not output_file.exists()
 
 
+def test_export_jsonl_preserves_published_output_when_encoding_fails(
+    tmp_path: Path,
+) -> None:
+    input_file = tmp_path / "input.json"
+    input_file.write_text(
+        json.dumps(
+            {
+                "document_id": "test_doc",
+                "pages": [
+                    {
+                        "page_number": 1,
+                        "articles": [
+                            {
+                                "article_id": "good",
+                                "headline": "Good",
+                                "body_blocks": ["first row"],
+                            },
+                            {
+                                "article_id": "bad",
+                                "headline": "Bad",
+                                "body_blocks": ["\ud800"],
+                            },
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    output_file = tmp_path / "output.jsonl"
+    published = '{"existing": true}\n'
+    output_file.write_text(published, encoding="utf-8")
+
+    with pytest.raises(UnicodeEncodeError):
+        export_jsonl(input_file, output_file)
+
+    assert output_file.read_text(encoding="utf-8") == published
+    assert {path.name for path in tmp_path.iterdir()} == {"input.json", "output.jsonl"}
+
+
 def test_export_jsonl_invalid_file(tmp_path: Path) -> None:
     output_file = tmp_path / "output.jsonl"
 
