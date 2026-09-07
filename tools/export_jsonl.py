@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _SRC_ROOT = _REPO_ROOT / "src"
@@ -14,7 +15,7 @@ from newsdom_api.schemas import ParseResponse  # noqa: E402
 
 
 def export_jsonl(json_path: Path, output_path: Path) -> None:
-    """Export schema-valid NewsDOM JSON as article/body-block JSONL records."""
+    """Export schema-valid NewsDOM JSON and atomically publish the JSONL file."""
     if not json_path.is_file():
         raise FileNotFoundError(f"File not found or is not a file: {json_path}")
     if json_path.suffix.lower() != ".json":
@@ -27,40 +28,56 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
 
     document = ParseResponse.model_validate(data)
 
-    with output_path.open("w", encoding="utf-8") as jsonlfile:
-        for page in document.pages:
-            for article in page.articles:
-                if not article.body_blocks:
-                    jsonlfile.write(
-                        json.dumps(
-                            {
-                                "document_id": document.document_id,
-                                "page_number": page.page_number,
-                                "article_id": article.article_id,
-                                "headline": article.headline,
-                                "body_block_index": None,
-                                "body_block_text": "",
-                            },
-                            ensure_ascii=False,
+    temporary_path: Path | None = None
+    try:
+        with NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            dir=output_path.parent,
+            prefix=f".{output_path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as jsonlfile:
+            temporary_path = Path(jsonlfile.name)
+            for page in document.pages:
+                for article in page.articles:
+                    if not article.body_blocks:
+                        jsonlfile.write(
+                            json.dumps(
+                                {
+                                    "document_id": document.document_id,
+                                    "page_number": page.page_number,
+                                    "article_id": article.article_id,
+                                    "headline": article.headline,
+                                    "body_block_index": None,
+                                    "body_block_text": "",
+                                },
+                                ensure_ascii=False,
+                            )
+                            + "\n"
                         )
-                        + "\n"
-                    )
 
-                for idx, block in enumerate(article.body_blocks):
-                    jsonlfile.write(
-                        json.dumps(
-                            {
-                                "document_id": document.document_id,
-                                "page_number": page.page_number,
-                                "article_id": article.article_id,
-                                "headline": article.headline,
-                                "body_block_index": idx,
-                                "body_block_text": block,
-                            },
-                            ensure_ascii=False,
+                    for idx, block in enumerate(article.body_blocks):
+                        jsonlfile.write(
+                            json.dumps(
+                                {
+                                    "document_id": document.document_id,
+                                    "page_number": page.page_number,
+                                    "article_id": article.article_id,
+                                    "headline": article.headline,
+                                    "body_block_index": idx,
+                                    "body_block_text": block,
+                                },
+                                ensure_ascii=False,
+                            )
+                            + "\n"
                         )
-                        + "\n"
-                    )
+
+        temporary_path.replace(output_path)
+    except Exception:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+        raise
 
 
 def main(argv: list[str] | None = None) -> None:
