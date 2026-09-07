@@ -63,3 +63,8 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+
+## 2024-06-25 - Avoid redundant regex compilation in hot paths
+**Learning:** Using `re.sub()` directly inside a frequently called function recompiles the regex on every call or relies on the regex cache, adding overhead. Compiling the regex pattern once at the module level avoids this.
+**Action:** Pre-compile regex patterns using `re.compile()` at the module level instead of calling `re.sub()` directly inside functions like `_safe_upload_filename`.

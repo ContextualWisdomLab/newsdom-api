@@ -1,6 +1,6 @@
+from typing import Any
 import json
 from pathlib import Path
-from typing import Any
 
 from newsdom_api.schemas import ParseResponse
 from newsdom_api.service import _safe_upload_filename, parse_pdf_bytes
@@ -221,7 +221,6 @@ def test_parse_pdf_bytes_forwards_language_and_mode(monkeypatch):
     assert observed["language"] == "japan"
     assert observed["mode"] == "ocr"
     assert result.document_id == "fixture"
-
 
 def test_parse_pdf_isolates_caller_file_from_parser_mutation(
     tmp_path: Path, monkeypatch: Any
