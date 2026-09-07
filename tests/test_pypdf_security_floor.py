@@ -6,8 +6,14 @@ import re
 import yaml
 
 
-_REQUIRED_PYPDF_VERSION = (6, 15, 0)
-_CURRENT_PYPDF_CVES = ("CVE-2026-71852", "CVE-2026-71870")
+_MIN_LOCKED_PYPDF_VERSION = (6, 16, 1)
+_CURRENT_PYPDF_CVES = (
+    "CVE-2026-71852",
+    "CVE-2026-71870",
+    "CVE-2026-84309",
+    "CVE-2026-84310",
+    "CVE-2026-84311",
+)
 _LOCKED_PYPDF_REQUIREMENT = '{ name = "pypdf", specifier = ">=6.16.0,<7.0" },'
 
 
@@ -23,20 +29,20 @@ def _locked_pypdf_version() -> tuple[int, ...]:
     return tuple(int(part) for part in match.group(1).split("."))
 
 
-def test_project_declares_current_pypdf_security_floor() -> None:
-    """Prevent future lock refreshes from selecting the vulnerable 6.14.x line."""
+def test_project_declares_current_pypdf_compatibility_floor() -> None:
+    """Keep the declared range aligned with uv's editable-project metadata."""
 
     project_text = Path("pyproject.toml").read_text(encoding="utf-8")
     assert '"pypdf>=6.16.0,<7.0"' in project_text
 
 
 def test_lock_uses_current_pypdf_security_release() -> None:
-    """Require the resolved parser used by CI and production to be remediated."""
+    """Reject lock refreshes that reintroduce the current pypdf CVE ranges."""
 
-    assert _locked_pypdf_version() >= _REQUIRED_PYPDF_VERSION
+    assert _locked_pypdf_version() >= _MIN_LOCKED_PYPDF_VERSION
 
 
-def test_lock_metadata_matches_current_pypdf_security_floor() -> None:
+def test_lock_metadata_matches_declared_pypdf_range() -> None:
     """Keep uv's editable-project metadata aligned with the source requirement."""
 
     lock_text = Path("uv.lock").read_text(encoding="utf-8")
@@ -52,7 +58,7 @@ def test_current_pypdf_findings_are_not_suppressed() -> None:
 
 
 def test_current_pypdf_advisories_and_floor_are_documented() -> None:
-    """Keep operator-facing evidence aligned with the declared parser floor."""
+    """Keep operator-facing evidence aligned with the locked security boundary."""
 
     baseline = Path("docs/doctoring/dependency-security-baseline.md").read_text(
         encoding="utf-8"
