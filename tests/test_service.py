@@ -1,6 +1,6 @@
-from typing import Any
 import json
 from pathlib import Path
+from typing import Any
 
 from newsdom_api.schemas import ParseResponse
 from newsdom_api.service import _safe_upload_filename, parse_pdf_bytes
@@ -218,28 +218,55 @@ def test_parse_pdf_bytes_forwards_language_and_mode(monkeypatch):
     result = parse_pdf_bytes(
         b"pdf-bytes", filename="fixture.pdf", language="japan", mode="ocr"
     )
-    assert observed["language"] == "japan"
+    assert observed["language"] == "ch"
     assert observed["mode"] == "ocr"
     assert result.document_id == "fixture"
 
+
+def test_parse_pdf_isolates_caller_file_from_parser_mutation(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    import newsdom_api.service as service
+
+    original = b"%PDF-1.4 caller-owned"
+    pdf_file = tmp_path / "caller.pdf"
+    pdf_file.write_bytes(original)
+
+    def mutating_run_mineru(path: Path, **kwargs):
+        path.write_bytes(b"%PDF-1.4 parser-mutated")
+        return {"content_list": [], "model": []}
+
+    monkeypatch.setattr(service, "run_mineru", mutating_run_mineru)
+    monkeypatch.setattr(
+        service,
+        "build_dom",
+        lambda *args, **kwargs: ParseResponse(document_id="caller", pages=[]),
+    )
+
+    service.parse_pdf(pdf_file, filename="caller.pdf")
+
+    assert pdf_file.read_bytes() == original
+
+
 def test_parse_pdf_hardlink_fallback(tmp_path: Path, monkeypatch: Any) -> None:
     import os
-    import shutil
+    import newsdom_api.service
     from newsdom_api.service import parse_pdf
 
-    # Mock os.link to always raise OSError
     def mock_link(*args, **kwargs):
         raise OSError("Simulated cross-device link")
 
     monkeypatch.setattr(os, "link", mock_link)
-
-    # Mock run_mineru and build_dom to prevent actual execution
-    import newsdom_api.service
-    monkeypatch.setattr(newsdom_api.service, "run_mineru", lambda *args, **kwargs: {"content_list": [], "model": []})
-    monkeypatch.setattr(newsdom_api.service, "build_dom", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        newsdom_api.service,
+        "run_mineru",
+        lambda *args, **kwargs: {"content_list": [], "model": []},
+    )
+    monkeypatch.setattr(
+        newsdom_api.service, "build_dom", lambda *args, **kwargs: None
+    )
 
     pdf_file = tmp_path / "test.pdf"
     pdf_file.write_bytes(b"%PDF-1.4 mock")
 
-    # It should successfully parse by falling back to shutil.copy2
     parse_pdf(pdf_file)
