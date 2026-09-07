@@ -35,4 +35,4 @@ jobs:
         env:
           PYTHONWARNINGS: error
           PYTHONPATH: src
-        run: uv run pytest --cov=src/newsdom_api --cov-branch --cov-report=term-missing --cov-fail-under=100
+        run: uv run pytest --cov --cov-branch --cov-report=term-missing --cov-fail-under=100
