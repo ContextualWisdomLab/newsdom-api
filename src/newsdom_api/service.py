@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-import os
 import shutil
 import tempfile
 from pathlib import Path, PurePosixPath
@@ -54,13 +53,7 @@ def parse_pdf(
     with tempfile.TemporaryDirectory(prefix="newsdom-upload-") as tempdir:
         safe_name = _safe_upload_filename(filename)
         pdf_path = Path(tempdir) / safe_name
-
-        # ⚡ Bolt: Fast path using hardlinks avoids disk I/O and memory overhead
-        # for large PDF files, falling back to copy2 for cross-device moves
-        try:
-            os.link(file_path, pdf_path)
-        except OSError:
-            shutil.copy2(file_path, pdf_path)
+        shutil.copy2(file_path, pdf_path)
         mineru_output = run_mineru(pdf_path, language=language, mode=mode)
         response = build_dom(
             mineru_output["content_list"],
