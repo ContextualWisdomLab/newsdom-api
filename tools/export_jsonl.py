@@ -74,7 +74,7 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
                         )
 
         temporary_path.replace(output_path)
-    except Exception:
+    except BaseException:
         if temporary_path is not None:
             temporary_path.unlink(missing_ok=True)
         raise
