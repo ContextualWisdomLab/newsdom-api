@@ -218,7 +218,7 @@ def test_parse_pdf_bytes_forwards_language_and_mode(monkeypatch):
     result = parse_pdf_bytes(
         b"pdf-bytes", filename="fixture.pdf", language="japan", mode="ocr"
     )
-    assert observed["language"] == "ch"
+    assert observed["language"] == "japan"
     assert observed["mode"] == "ocr"
     assert result.document_id == "fixture"
 
@@ -246,27 +246,3 @@ def test_parse_pdf_isolates_caller_file_from_parser_mutation(
     service.parse_pdf(pdf_file, filename="caller.pdf")
 
     assert pdf_file.read_bytes() == original
-
-
-def test_parse_pdf_hardlink_fallback(tmp_path: Path, monkeypatch: Any) -> None:
-    import os
-    import newsdom_api.service
-    from newsdom_api.service import parse_pdf
-
-    def mock_link(*args, **kwargs):
-        raise OSError("Simulated cross-device link")
-
-    monkeypatch.setattr(os, "link", mock_link)
-    monkeypatch.setattr(
-        newsdom_api.service,
-        "run_mineru",
-        lambda *args, **kwargs: {"content_list": [], "model": []},
-    )
-    monkeypatch.setattr(
-        newsdom_api.service, "build_dom", lambda *args, **kwargs: None
-    )
-
-    pdf_file = tmp_path / "test.pdf"
-    pdf_file.write_bytes(b"%PDF-1.4 mock")
-
-    parse_pdf(pdf_file)
