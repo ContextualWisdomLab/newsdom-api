@@ -1,3 +1,4 @@
+from typing import Any
 import json
 from pathlib import Path
 
@@ -220,3 +221,25 @@ def test_parse_pdf_bytes_forwards_language_and_mode(monkeypatch):
     assert observed["language"] == "japan"
     assert observed["mode"] == "ocr"
     assert result.document_id == "fixture"
+
+def test_parse_pdf_hardlink_fallback(tmp_path: Path, monkeypatch: Any) -> None:
+    import os
+    import shutil
+    from newsdom_api.service import parse_pdf
+
+    # Mock os.link to always raise OSError
+    def mock_link(*args, **kwargs):
+        raise OSError("Simulated cross-device link")
+
+    monkeypatch.setattr(os, "link", mock_link)
+
+    # Mock run_mineru and build_dom to prevent actual execution
+    import newsdom_api.service
+    monkeypatch.setattr(newsdom_api.service, "run_mineru", lambda *args, **kwargs: {"content_list": [], "model": []})
+    monkeypatch.setattr(newsdom_api.service, "build_dom", lambda *args, **kwargs: None)
+
+    pdf_file = tmp_path / "test.pdf"
+    pdf_file.write_bytes(b"%PDF-1.4 mock")
+
+    # It should successfully parse by falling back to shutil.copy2
+    parse_pdf(pdf_file)

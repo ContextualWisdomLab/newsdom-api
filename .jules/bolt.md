@@ -63,3 +63,7 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2024-05-18 - 파일 복사 최적화
+**Learning:** `shutil.copy2`를 사용하여 큰 파일(예: PDF)을 복사할 때 디스크 I/O와 메모리 사용량이 상당합니다. 동일 파일 시스템 내에서는 하드 링크(`os.link`)를 생성하는 것이 훨씬 빠르고 효율적입니다(5MB 파일 기준 약 200배 차이).
+**Action:** 임시 디렉토리로 파일을 복사해야 할 때, 먼저 `os.link`를 시도하고 실패할 경우에만 `shutil.copy2`로 폴백하는 방식을 사용해야 합니다.
