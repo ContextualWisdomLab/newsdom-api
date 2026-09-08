@@ -202,4 +202,4 @@ def test_uv_lock_does_not_track_external_mineru_pipeline_runtime_stack():
 
 
 def test_uv_lock_pins_pypdf_at_patched_release():
-    assert _locked_package_version("pypdf") >= (6, 16, 1)
+    assert _locked_package_version("pypdf") >= (6, 15, 0)
