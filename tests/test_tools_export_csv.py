@@ -18,6 +18,11 @@ VALID_JSON_DATA = {
                     "article_id": "art_1",
                     "headline": "Test Headline 1",
                     "body_blocks": ["Block 1", "Block 2"],
+                    "images": [
+                        {"captions": [{"text": "Image Caption 1"}]},
+                        "not_a_dict_image",
+                    ],
+                    "captions": ["Article Caption 1"],
                 },
                 {
                     "article_id": "art_2",
@@ -55,7 +60,7 @@ def test_export_csv_success(tmp_path: Path) -> None:
         reader = csv.DictReader(f)
         rows = list(reader)
 
-        assert len(rows) == 4
+        assert len(rows) == 6
         assert rows[0]["document_id"] == "test_doc"
         assert rows[0]["page_number"] == "1"
         assert rows[0]["article_id"] == "art_1"
@@ -66,14 +71,18 @@ def test_export_csv_success(tmp_path: Path) -> None:
         assert rows[1]["body_block_index"] == "1"
         assert rows[1]["body_block_text"] == "Block 2"
 
-        assert rows[2]["headline"] == "Test Headline 2"
-        assert rows[2]["body_block_index"] == ""
-        assert rows[2]["body_block_text"] == ""
+        assert rows[2]["caption_text"] == "Image Caption 1"
 
-        assert rows[3]["page_number"] == "2"
-        assert rows[3]["article_id"] == "art_3"
-        assert rows[3]["body_block_index"] == "0"
-        assert rows[3]["body_block_text"] == "Block 3"
+        assert rows[3]["caption_text"] == "Article Caption 1"
+
+        assert rows[4]["headline"] == "Test Headline 2"
+        assert rows[4]["body_block_index"] == ""
+        assert rows[4]["body_block_text"] == ""
+
+        assert rows[5]["page_number"] == "2"
+        assert rows[5]["article_id"] == "art_3"
+        assert rows[5]["body_block_index"] == "0"
+        assert rows[5]["body_block_text"] == "Block 3"
 
 
 def test_export_csv_invalid_file(tmp_path: Path) -> None:
