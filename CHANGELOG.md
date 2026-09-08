@@ -34,14 +34,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MinerU subprocess argv 생성 시 `-`로 시작하는 option-like 인자를 거부하여 argument injection 위험을 낮춤
 - API 에러 응답 생성 시 내부 예외 체인을 억제하여 의존성 오류나 내부 경로가 노출될 가능성을 줄임
 - API 응답 미들웨어에 `Cache-Control: no-store, max-age=0` 헤더를 추가하여 민감한 파싱 데이터의 브라우저 및 중간 캐싱을 방지
-- `uv.lock`의 의존성을 재잠금하여 실제 `pip-audit`/`trivy-fs` CVE를 제거: 런타임 경로의 `pillow` 12.2.0→12.3.0 (PYSEC-2026-3451/3452/3453/3454/3493/3494/3495/3496, 이미지 파서 취약점 8건), `pypdf>=6.16.0,<7.0` (lock 6.15.0; CVE-2026-59935/59936/59937/59938/71852/71870, PDF 파싱 경로), `click` 8.3.2→8.4.2 (PYSEC-2026-2132) — 모두 스캔 PDF/이미지 파싱 런타임에 직접 관련되며 선언 범위와 lock을 함께 고정함. 빌드 도구 `setuptools` 81.0.0→83.0.0 (CVE-2026-59890). 문서 툴체인의 `pymdown-extensions` 10.21.3→11.0.1 (CVE-2026-61632, MEDIUM)은 `mkdocs-material` 9.6.x의 `pymdown-extensions~=10.2`(`<11`) 상한 때문에 막혀 있었으므로, docs extra 핀을 `mkdocs-material>=9.7,<9.8`로 올려(9.7.x는 상한을 `>=10.2`로 완화) 해소함. `uv run mkdocs build --strict` 통과 확인. 조치 후 전체 잠금(런타임+extras) `pip-audit`: 취약점 0건.
+- `uv.lock`의 의존성을 재잠금하여 실제 `pip-audit`/`trivy-fs` CVE를 제거: 런타임 경로의 `pillow` 12.2.0→12.3.0 (PYSEC-2026-3451/3452/3453/3454/3493/3494/3495/3496, 이미지 파서 취약점 8건), `pypdf>=6.16.1,<7.0` (lock 6.18.0; CVE-2026-59935/59936/59937/59938/71852/71870/84309/84310/84311, PDF 파싱 경로). CVE-2026-84309는 6.16.0에서 수정됐지만 CVE-2026-84310/84311은 6.16.1에서 수정되어 세 finding을 함께 막는 direct floor를 6.16.1로 고정함. `click` 8.3.2→8.4.2 (PYSEC-2026-2132), 빌드 도구 `setuptools` 81.0.0→83.0.0 (CVE-2026-59890)도 함께 갱신. 문서 툴체인의 `pymdown-extensions` 10.21.3→11.0.1 (CVE-2026-61632, MEDIUM)은 `mkdocs-material` 9.6.x의 `pymdown-extensions~=10.2`(`<11`) 상한 때문에 막혀 있었으므로 docs extra 핀을 `mkdocs-material>=9.7,<9.8`로 올림. scanner suppression 없이 current-head security gate에서 검증함.
 
 ### Performance
 - `newsdom_api.dom_builder._html_safe_text` 함수에 early return과 타입 체크를 도입하여 불필요한 `str()` 캐스팅을 제거함으로써 처리 속도를 개선했습니다.
 
 ### Added
 - [CLI] 여러 개의 분할된 NewsDOM JSON 파일을 하나의 문서로 병합하는 `tools/merge_dom.py` 도구를 추가했습니다.
-- [CLI] 파싱된 NewsDOM JSON 데이터를 CSV 형식으로 추출하는 `tools/export_csv.py` 도구를 추가했습니다.
+- [CLI] 파싱된 NewsDOM JSON 파일을 CSV 형식으로 추출하는 `tools/export_csv.py` 도구를 추가했습니다.
 - [CLI] 파싱된 NewsDOM JSON을 HTML 포맷으로 변환하여 웹 브라우저에서 보기 쉽게 만들어주는 `tools/export_html.py` 도구를 추가했습니다.
 - [CLI] 파싱된 NewsDOM JSON이 Pydantic 스키마(`ParseResponse`)와 일치하는지 엄격하게 검증하는 `tools/validate_dom.py` 도구 추가
 - [CLI] 파싱된 NewsDOM JSON의 기사 제목(headline)과 본문(body_blocks)에서 텍스트를 검색하여 위치를 반환하는 `tools/search_dom.py` 도구 추가
