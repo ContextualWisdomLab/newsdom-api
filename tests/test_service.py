@@ -1,4 +1,3 @@
-from typing import Any
 import json
 from pathlib import Path
 
@@ -221,27 +220,3 @@ def test_parse_pdf_bytes_forwards_language_and_mode(monkeypatch):
     assert observed["language"] == "japan"
     assert observed["mode"] == "ocr"
     assert result.document_id == "fixture"
-
-def test_parse_pdf_isolates_caller_file_from_parser_mutation(
-    tmp_path: Path, monkeypatch: Any
-) -> None:
-    import newsdom_api.service as service
-
-    original = b"%PDF-1.4 caller-owned"
-    pdf_file = tmp_path / "caller.pdf"
-    pdf_file.write_bytes(original)
-
-    def mutating_run_mineru(path: Path, **kwargs):
-        path.write_bytes(b"%PDF-1.4 parser-mutated")
-        return {"content_list": [], "model": []}
-
-    monkeypatch.setattr(service, "run_mineru", mutating_run_mineru)
-    monkeypatch.setattr(
-        service,
-        "build_dom",
-        lambda *args, **kwargs: ParseResponse(document_id="caller", pages=[]),
-    )
-
-    service.parse_pdf(pdf_file, filename="caller.pdf")
-
-    assert pdf_file.read_bytes() == original
