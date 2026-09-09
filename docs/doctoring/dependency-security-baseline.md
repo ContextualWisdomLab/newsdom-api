@@ -14,12 +14,12 @@ The adopted floors are:
 
 - `setuptools>=83` for the build backend;
 - `Pillow>=12.3,<13.0` for image parsing on the untrusted document-ingestion path;
-- `pypdf>=6.15.0,<7.0` for PDF parsing;
+- `pypdf>=6.18.0,<7.0` for PDF parsing;
 - `mkdocs-material>=9.7,<9.8`, allowing `pymdown-extensions>=11` while the MkDocs
   core remains on the supported 1.x line.
 
 The generated lock additionally resolves Click 8.4.2, setuptools 83.0.0,
-Pillow 12.3.0, pypdf 6.15.0, mkdocs-material 9.7.7, and
+Pillow 12.3.0, pypdf 6.18.0, mkdocs-material 9.7.7, and
 pymdown-extensions 11.0.1. Direct floors prevent a later lock refresh from
 silently selecting known-vulnerable ranges again.
 
@@ -135,7 +135,7 @@ Python Packaging Authority. (2026a). *Digital attestations*. PyPI Docs.
 Python Packaging Authority. (2026b). *Pillow 12.3.0*. Python Package Index.
     Retrieved August 4, 2026, from https://pypi.org/project/pillow/12.3.0/
 
-Python Packaging Authority. (2026c). *pypdf 6.15.0*. Python Package Index.
+Python Packaging Authority. (2026c). *pypdf 6.18.0*. Python Package Index.
     Retrieved August 9, 2026, from https://pypi.org/project/pypdf/6.15.0/
 
 Python Packaging Authority. (2026d). *setuptools 83.0.0*. Python Package Index.

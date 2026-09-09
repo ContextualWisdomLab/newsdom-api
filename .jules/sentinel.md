@@ -95,3 +95,8 @@
 **Vulnerability:** A strict Content-Security-Policy (CSP) of `default-src 'none'` blocks FastAPI's auto-generated Swagger UI and ReDoc pages from loading necessary external assets like scripts and styles from `cdn.jsdelivr.net`.
 **Learning:** Security middleware that applies strict default headers globally must provide specific relaxation routes for built-in developer tools and documentation. Without these exceptions, the tools break and developers may be tempted to disable the security headers entirely.
 **Prevention:** Conditionally check the request path (e.g., `/docs`, `/redoc`, `/openapi.json`) and apply a more permissive CSP that explicitly allows only the required external origins (like `cdn.jsdelivr.net` and `fastapi.tiangolo.com`) while keeping the strict policy for all other API endpoints.
+
+## 2026-09-09 - Update pypdf for CVE Fixes
+**Vulnerability:** The project `pypdf` dependency (locked at 6.15.0) had known security vulnerabilities (e.g., CVE-2026-84309, CVE-2026-84310, CVE-2026-84311) flagged by the `trivy-fs` CI scanner.
+**Learning:** When bumping security floors for dependencies like `pypdf`, updating just `uv.lock` and `pyproject.toml` is insufficient. Many projects (like this one) contain explicit tests (`tests/test_pypdf_security_floor.py`, `tests/test_project_metadata.py`) and documentation (`docs/doctoring/dependency-security-baseline.md`, `CHANGELOG.md`) that verify and declare these versions.
+**Prevention:** Always locate and synchronously update corresponding version assertions, docstrings, and changelog records when bumping core dependency security floors to ensure the test suite and repository governance remain aligned.
