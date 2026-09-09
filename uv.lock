@@ -650,7 +650,7 @@ requires-dist = [
     { name = "httpcore2", specifier = ">=2.4.1" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.28,<1.0" },
     { name = "httpx2", specifier = ">=2.4.1" },
-    { name = "httpx2", marker = "extra == 'dev'", specifier = ">=2.4.0" },
+    { name = "httpx2", marker = "extra == 'dev'", specifier = ">=2.4.1" },
     { name = "mkdocs", marker = "extra == 'docs'", specifier = ">=1.6,<2.0" },
     { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=9.7,<9.8" },
     { name = "pillow", specifier = ">=12.3,<13.0" },
