@@ -7,11 +7,33 @@ import sys
 from pathlib import Path
 
 
+_SPREADSHEET_FORMULA_PREFIXES = (
+    "=",
+    "+",
+    "-",
+    "@",
+    "\t",
+    "\r",
+    "\n",
+    "＝",
+    "＋",
+    "－",
+    "＠",
+)
+
+
 def _caption_text(caption: dict | str) -> str:
-    """Helper to safely extract caption text."""
+    """Extract caption text from the accepted legacy and structured forms."""
     if isinstance(caption, dict):
         return str(caption.get("text", ""))
     return str(caption)
+
+
+def _spreadsheet_literal(value: object) -> object:
+    """Prevent leading spreadsheet formula markers from becoming active cells."""
+    if isinstance(value, str) and value.startswith(_SPREADSHEET_FORMULA_PREFIXES):
+        return f"'{value}"
+    return value
 
 
 def export_csv(json_path: Path, output_path: Path) -> None:
@@ -36,7 +58,7 @@ def export_csv(json_path: Path, output_path: Path) -> None:
             "headline",
             "body_block_index",
             "body_block_text",
-            "caption_text",  # Added caption text field
+            "caption_text",
         ]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
@@ -57,7 +79,6 @@ def export_csv(json_path: Path, output_path: Path) -> None:
 
                 body_blocks = article.get("body_blocks", [])
 
-                # Collect captions
                 captions_list = []
                 for image in article.get("images", []):
                     if not isinstance(image, dict):
@@ -68,13 +89,17 @@ def export_csv(json_path: Path, output_path: Path) -> None:
                 for caption in article.get("captions", []):
                     captions_list.append(_caption_text(caption))
 
+                row_identity = {
+                    "document_id": _spreadsheet_literal(document_id),
+                    "page_number": _spreadsheet_literal(page_number),
+                    "article_id": _spreadsheet_literal(article_id),
+                    "headline": _spreadsheet_literal(headline),
+                }
+
                 if not body_blocks and not captions_list:
                     writer.writerow(
                         {
-                            "document_id": document_id,
-                            "page_number": page_number,
-                            "article_id": article_id,
-                            "headline": headline,
+                            **row_identity,
                             "body_block_index": "",
                             "body_block_text": "",
                             "caption_text": "",
@@ -84,25 +109,19 @@ def export_csv(json_path: Path, output_path: Path) -> None:
                     for idx, block in enumerate(body_blocks):
                         writer.writerow(
                             {
-                                "document_id": document_id,
-                                "page_number": page_number,
-                                "article_id": article_id,
-                                "headline": headline,
+                                **row_identity,
                                 "body_block_index": idx,
-                                "body_block_text": block,
+                                "body_block_text": _spreadsheet_literal(block),
                                 "caption_text": "",
                             }
                         )
-                    for idx, caption in enumerate(captions_list):
+                    for caption in captions_list:
                         writer.writerow(
                             {
-                                "document_id": document_id,
-                                "page_number": page_number,
-                                "article_id": article_id,
-                                "headline": headline,
+                                **row_identity,
                                 "body_block_index": "",
                                 "body_block_text": "",
-                                "caption_text": caption,
+                                "caption_text": _spreadsheet_literal(caption),
                             }
                         )
 
