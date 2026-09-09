@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-09-09 - Relax CSP for API Documentation Routes
+**Vulnerability:** A strict Content-Security-Policy (CSP) of `default-src 'none'` blocks FastAPI's auto-generated Swagger UI and ReDoc pages from loading necessary external assets like scripts and styles from `cdn.jsdelivr.net`.
+**Learning:** Security middleware that applies strict default headers globally must provide specific relaxation routes for built-in developer tools and documentation. Without these exceptions, the tools break and developers may be tempted to disable the security headers entirely.
+**Prevention:** Conditionally check the request path (e.g., `/docs`, `/redoc`, `/openapi.json`) and apply a more permissive CSP that explicitly allows only the required external origins (like `cdn.jsdelivr.net` and `fastapi.tiangolo.com`) while keeping the strict policy for all other API endpoints.

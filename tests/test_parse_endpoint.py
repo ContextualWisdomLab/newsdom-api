@@ -555,3 +555,19 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
+
+def test_docs_csp_relaxation():
+    client = TestClient(app, raise_server_exceptions=False)
+    response = client.get("/docs")
+    assert response.status_code in (200, 404, 307)
+    csp = response.headers.get("Content-Security-Policy")
+    assert "cdn.jsdelivr.net" in csp
+    assert "fastapi.tiangolo.com" in csp
+    assert "unsafe-inline" in csp
+
+def test_health_csp_strict():
+    client = TestClient(app, raise_server_exceptions=False)
+    response = client.get("/health")
+    assert response.status_code == 200
+    csp = response.headers.get("Content-Security-Policy")
+    assert csp == "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
