@@ -63,7 +63,3 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
-
-## 2024-08-01 - Avoid redundant hash lookups in sorted iterations
-**Learning:** `for key in sorted(dict):` 패턴을 사용하여 루프 내부에서 `dict[key]`나 `dict.get(key)`로 값을 가져오면, 불필요한 해시 맵 조회가 반복되어 성능이 저하됩니다.
-**Action:** `for key, value in sorted(dict.items()):`를 사용하여 딕셔너리 순회 시 키와 값을 동시에 가져오도록 수정합니다. 파이썬의 튜플 비교 특성 덕분에 기존과 완벽히 동일한 정렬 순서를 유지하면서도 중복 조회를 방지할 수 있습니다.
