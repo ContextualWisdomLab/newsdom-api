@@ -57,3 +57,32 @@ def test_openapi_metadata_includes_contact_and_license():
         "name": "MIT License",
         "identifier": "MIT",
     }
+
+def test_openapi_docs_relaxed_csp():
+    client = TestClient(app)
+    # Test docs endpoint CSP
+    response = client.get("/docs")
+    assert response.status_code == 200
+    csp = response.headers.get("Content-Security-Policy")
+    assert csp is not None
+    assert "cdn.jsdelivr.net" in csp
+
+    # Test redoc endpoint CSP
+    response = client.get("/redoc")
+    assert response.status_code == 200
+    csp = response.headers.get("Content-Security-Policy")
+    assert csp is not None
+    assert "cdn.jsdelivr.net" in csp
+
+def test_development_swagger_ui_persist_authorization():
+    from newsdom_api.config import RuntimeSettings, AuthenticationMode, RuntimeProfile
+    from newsdom_api.main import create_app
+
+    dev_settings = RuntimeSettings(
+        authentication_mode=AuthenticationMode.DISABLED,
+        runtime_profile=RuntimeProfile.DEVELOPMENT
+    )
+    dev_app = create_app(settings=dev_settings)
+
+    assert dev_app.swagger_ui_parameters is not None
+    assert dev_app.swagger_ui_parameters.get("persistAuthorization") is True
