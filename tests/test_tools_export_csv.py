@@ -100,7 +100,13 @@ def test_export_csv_neutralizes_spreadsheet_formula_prefixes(tmp_path: Path) -> 
                                 "headline": "-1+1",
                                 "body_blocks": ["@SUM(1,1)"],
                                 "images": [
-                                    {"captions": [{"text": "=HYPERLINK(\"https://example.invalid\")"}]}
+                                    {
+                                        "captions": [
+                                            {
+                                                "text": '=HYPERLINK("https://example.invalid")'
+                                            }
+                                        ]
+                                    }
                                 ],
                                 "captions": [{"text": "＝1+1"}],
                             }
@@ -122,7 +128,7 @@ def test_export_csv_neutralizes_spreadsheet_formula_prefixes(tmp_path: Path) -> 
     assert rows[0]["article_id"] == "'+1+1"
     assert rows[0]["headline"] == "'-1+1"
     assert rows[0]["body_block_text"] == "'@SUM(1,1)"
-    assert rows[1]["caption_text"] == "'=HYPERLINK(\"https://example.invalid\")"
+    assert rows[1]["caption_text"] == '\'=HYPERLINK("https://example.invalid")'
     assert rows[2]["caption_text"] == "'＝1+1"
 
 

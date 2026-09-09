@@ -7,33 +7,17 @@ import sys
 from pathlib import Path
 
 
-_SPREADSHEET_FORMULA_PREFIXES = (
-    "=",
-    "+",
-    "-",
-    "@",
-    "\t",
-    "\r",
-    "\n",
-    "＝",
-    "＋",
-    "－",
-    "＠",
-)
+def _neutralize_formula(text: str) -> str:
+    if text.startswith(("=", "+", "-", "@", "\t", "\r", "＝")):
+        return "'" + text
+    return text
 
 
 def _caption_text(caption: dict | str) -> str:
-    """Extract caption text from the accepted legacy and structured forms."""
+    """Helper to safely extract caption text."""
     if isinstance(caption, dict):
         return str(caption.get("text", ""))
     return str(caption)
-
-
-def _spreadsheet_literal(value: object) -> object:
-    """Prevent leading spreadsheet formula markers from becoming active cells."""
-    if isinstance(value, str) and value.startswith(_SPREADSHEET_FORMULA_PREFIXES):
-        return f"'{value}"
-    return value
 
 
 def export_csv(json_path: Path, output_path: Path) -> None:
@@ -58,12 +42,14 @@ def export_csv(json_path: Path, output_path: Path) -> None:
             "headline",
             "body_block_index",
             "body_block_text",
-            "caption_text",
+            "caption_text",  # Added caption text field
         ]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
 
-        document_id = data.get("document_id", "Unknown Document")
+        document_id = _neutralize_formula(
+            str(data.get("document_id", "Unknown Document"))
+        )
 
         for page in pages:
             if not isinstance(page, dict):
@@ -74,32 +60,33 @@ def export_csv(json_path: Path, output_path: Path) -> None:
             for article in articles:
                 if not isinstance(article, dict):
                     continue
-                article_id = article.get("article_id", "Unknown Article ID")
-                headline = article.get("headline", "")
+                article_id = _neutralize_formula(
+                    str(article.get("article_id", "Unknown Article ID"))
+                )
+                headline = _neutralize_formula(str(article.get("headline", "")))
 
                 body_blocks = article.get("body_blocks", [])
 
+                # Collect captions
                 captions_list = []
                 for image in article.get("images", []):
                     if not isinstance(image, dict):
                         continue
                     for caption in image.get("captions", []):
-                        captions_list.append(_caption_text(caption))
+                        captions_list.append(
+                            _neutralize_formula(_caption_text(caption))
+                        )
 
                 for caption in article.get("captions", []):
-                    captions_list.append(_caption_text(caption))
-
-                row_identity = {
-                    "document_id": _spreadsheet_literal(document_id),
-                    "page_number": _spreadsheet_literal(page_number),
-                    "article_id": _spreadsheet_literal(article_id),
-                    "headline": _spreadsheet_literal(headline),
-                }
+                    captions_list.append(_neutralize_formula(_caption_text(caption)))
 
                 if not body_blocks and not captions_list:
                     writer.writerow(
                         {
-                            **row_identity,
+                            "document_id": document_id,
+                            "page_number": page_number,
+                            "article_id": article_id,
+                            "headline": headline,
                             "body_block_index": "",
                             "body_block_text": "",
                             "caption_text": "",
@@ -109,19 +96,25 @@ def export_csv(json_path: Path, output_path: Path) -> None:
                     for idx, block in enumerate(body_blocks):
                         writer.writerow(
                             {
-                                **row_identity,
+                                "document_id": document_id,
+                                "page_number": page_number,
+                                "article_id": article_id,
+                                "headline": headline,
                                 "body_block_index": idx,
-                                "body_block_text": _spreadsheet_literal(block),
+                                "body_block_text": _neutralize_formula(str(block)),
                                 "caption_text": "",
                             }
                         )
-                    for caption in captions_list:
+                    for idx, caption in enumerate(captions_list):
                         writer.writerow(
                             {
-                                **row_identity,
+                                "document_id": document_id,
+                                "page_number": page_number,
+                                "article_id": article_id,
+                                "headline": headline,
                                 "body_block_index": "",
                                 "body_block_text": "",
-                                "caption_text": _spreadsheet_literal(caption),
+                                "caption_text": caption,
                             }
                         )
 
