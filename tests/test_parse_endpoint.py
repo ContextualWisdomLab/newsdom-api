@@ -561,9 +561,17 @@ def test_docs_csp_relaxation():
     response = client.get("/docs")
     assert response.status_code in (200, 404, 307)
     csp = response.headers.get("Content-Security-Policy")
-    assert "cdn.jsdelivr.net" in csp
-    assert "fastapi.tiangolo.com" in csp
-    assert "unsafe-inline" in csp
+    expected_csp = (
+        "default-src 'none'; "
+        "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; "
+        "img-src 'self' data: cdn.jsdelivr.net fastapi.tiangolo.com; "
+        "font-src 'self' fonts.gstatic.com; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none'; "
+        "base-uri 'none'"
+    )
+    assert csp == expected_csp
 
 def test_health_csp_strict():
     client = TestClient(app, raise_server_exceptions=False)
