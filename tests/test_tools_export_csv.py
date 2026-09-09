@@ -85,6 +85,47 @@ def test_export_csv_success(tmp_path: Path) -> None:
         assert rows[5]["body_block_text"] == "Block 3"
 
 
+def test_export_csv_neutralizes_spreadsheet_formula_prefixes(tmp_path: Path) -> None:
+    input_file = tmp_path / "formula-like.json"
+    input_file.write_text(
+        json.dumps(
+            {
+                "document_id": "=1+1",
+                "pages": [
+                    {
+                        "page_number": 1,
+                        "articles": [
+                            {
+                                "article_id": "+1+1",
+                                "headline": "-1+1",
+                                "body_blocks": ["@SUM(1,1)"],
+                                "images": [
+                                    {"captions": [{"text": "=HYPERLINK(\"https://example.invalid\")"}]}
+                                ],
+                                "captions": [{"text": "＝1+1"}],
+                            }
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    output_file = tmp_path / "formula-like.csv"
+
+    export_csv(input_file, output_file)
+
+    with output_file.open("r", encoding="utf-8", newline="") as csvfile:
+        rows = list(csv.DictReader(csvfile))
+
+    assert rows[0]["document_id"] == "'=1+1"
+    assert rows[0]["article_id"] == "'+1+1"
+    assert rows[0]["headline"] == "'-1+1"
+    assert rows[0]["body_block_text"] == "'@SUM(1,1)"
+    assert rows[1]["caption_text"] == "'=HYPERLINK(\"https://example.invalid\")"
+    assert rows[2]["caption_text"] == "'＝1+1"
+
+
 def test_export_csv_invalid_file(tmp_path: Path) -> None:
     output_file = tmp_path / "output.csv"
 
