@@ -27,6 +27,7 @@ from pypdf.errors import PdfReadError
 from .config import (
     AuthenticationMode,
     MAX_BEARER_HEADER_BYTES,
+    RuntimeProfile,
     RuntimeSettings,
     load_runtime_settings,
 )
@@ -65,9 +66,20 @@ def _apply_security_headers(response: Response, request: Request) -> Response:
 
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
-    )
+    path = request.scope.get("path", "")
+    if path in {"/docs", "/redoc", "/openapi.json", "/docs/oauth2-redirect"}:
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'none'; "
+            "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; "
+            "font-src 'self' fonts.gstatic.com; "
+            "img-src 'self' data: fastapi.tiangolo.com; "
+            "connect-src 'self'"
+        )
+    else:
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+        )
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Cache-Control"] = "no-store, no-cache, max-age=0"
     forwarded_proto = request.headers.get("x-forwarded-proto", "")
@@ -303,6 +315,14 @@ def create_app(
     elif not application_settings.authentication_ready:
         LOGGER.error("Parser authentication configuration is unavailable")
 
+    swagger_ui_parameters: dict[str, bool | str] = {
+        "displayRequestDuration": True,
+        "syntaxHighlight.theme": "monokai",
+        "tryItOutEnabled": True,
+    }
+    if application_settings.runtime_profile is RuntimeProfile.DEVELOPMENT:
+        swagger_ui_parameters["persistAuthorization"] = True
+
     application = FastAPI(
         title="NewsDOM API",
         description=(
@@ -317,11 +337,7 @@ def create_app(
         },
         license_info={"name": "MIT License", "identifier": "MIT"},
         openapi_tags=tags_metadata,
-        swagger_ui_parameters={
-            "displayRequestDuration": True,
-            "syntaxHighlight.theme": "monokai",
-            "tryItOutEnabled": True,
-        },
+        swagger_ui_parameters=swagger_ui_parameters,
     )
     application.state.runtime_settings = application_settings
     application.state.runtime_readiness_probe = (
