@@ -26,11 +26,9 @@ VALID_JSON_DATA = {
                 },
             ],
         },
-        "not_a_dict_page",
         {
             "page_number": 2,
             "articles": [
-                "not_a_dict_article",
                 {
                     "article_id": "art_3",
                     "headline": "Test Headline 3",
@@ -59,16 +57,16 @@ def test_export_jsonl_success(tmp_path: Path) -> None:
         row0 = json.loads(lines[0])
         assert row0["document_id"] == "test_doc"
         assert row0["page_number"] == 1
-        assert row0["article_id"] == "art_1"
-        assert row0["headline"] == "Test Headline 1"
+        assert row0["article"]["article_id"] == "art_1"
+        assert row0["article"]["headline"] == "Test Headline 1"
 
         row1 = json.loads(lines[1])
-        assert row1["article_id"] == "art_2"
-        assert row1["headline"] == "Test Headline 2"
+        assert row1["article"]["article_id"] == "art_2"
+        assert row1["article"]["headline"] == "Test Headline 2"
 
         row2 = json.loads(lines[2])
         assert row2["page_number"] == 2
-        assert row2["article_id"] == "art_3"
+        assert row2["article"]["article_id"] == "art_3"
 
 
 def test_export_jsonl_invalid_file(tmp_path: Path) -> None:
@@ -87,6 +85,13 @@ def test_export_jsonl_invalid_file(tmp_path: Path) -> None:
     invalid_json.write_text("{invalid_json:", encoding="utf-8")
     with pytest.raises(ValueError, match="Invalid JSON file"):
         export_jsonl(invalid_json, output_file)
+
+    invalid_schema = tmp_path / "invalid_schema.json"
+    invalid_schema.write_text(
+        json.dumps({"pages": ["not_a_dict_page"]}), encoding="utf-8"
+    )
+    with pytest.raises(ValueError, match="Invalid JSON schema"):
+        export_jsonl(invalid_schema, output_file)
 
 
 def test_export_jsonl_cli_success(

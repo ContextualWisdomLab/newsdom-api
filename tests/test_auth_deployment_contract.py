@@ -27,7 +27,7 @@ def _project_version(pyproject_text: str) -> str:
     )
     match = (
         re.search(
-            r"""^version\s*=\s*(["'])([^"']+)\1\s*(?:#.*)?$""",
+            r'''^version\s*=\s*(["'])([^"']+)\1\s*(?:#.*)?$''',
             project_table.group("body"),
             re.MULTILINE,
         )

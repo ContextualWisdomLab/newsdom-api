@@ -7,6 +7,10 @@ import sys
 import tempfile
 from pathlib import Path
 
+from pydantic import ValidationError
+
+from newsdom_api.schemas import ParseResponse
+
 
 def export_jsonl(json_path: Path, output_path: Path) -> None:
     """Export NewsDOM JSON to a JSONL file containing articles."""
@@ -20,29 +24,26 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
     except json.JSONDecodeError as exc:
         raise ValueError(f"Invalid JSON file: {exc}") from exc
 
-    pages = data.get("pages", [])
-    document_id = data.get("document_id", "Unknown Document")
+    try:
+        parsed_data = ParseResponse.model_validate(data)
+    except ValidationError as exc:
+        raise ValueError(f"Invalid JSON schema: {exc}") from exc
 
-    # Atomic write pattern
+    document_id = parsed_data.document_id
+
     temp_fd, temp_path = tempfile.mkstemp(
         dir=output_path.parent, prefix="export_", suffix=".tmp", text=True
     )
     try:
         with os.fdopen(temp_fd, "w", encoding="utf-8") as f:
-            for page in pages:
-                if not isinstance(page, dict):
-                    continue
-                page_number = page.get("page_number", "Unknown")
-                articles = page.get("articles", [])
-                for article in articles:
-                    if not isinstance(article, dict):
-                        continue
-
+            for page in parsed_data.pages:
+                page_number = page.page_number
+                for article in page.articles:
                     record = {
                         "document_id": document_id,
                         "page_number": page_number,
+                        "article": article.model_dump(exclude_none=True),
                     }
-                    record.update(article)
                     f.write(json.dumps(record, ensure_ascii=False) + "\n")
         os.replace(temp_path, output_path)
     except Exception:
