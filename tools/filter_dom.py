@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+import tempfile
 from pathlib import Path
 
 from pydantic import ValidationError  # noqa: E402
@@ -49,7 +51,7 @@ def filter_dom(
 
 
 def parse_page_ranges(pages_str: str) -> set[int]:
-    """Parse a comma-separated list of pages and ranges into a set of integers."""
+    """Parse one-based page numbers and forward ranges into a set of integers."""
     pages = set()
     for part in pages_str.split(","):
         part = part.strip()
@@ -58,20 +60,44 @@ def parse_page_ranges(pages_str: str) -> set[int]:
         if "-" in part:
             try:
                 start, end = map(int, part.split("-"))
-            except ValueError as e:
-                raise ValueError(f"Invalid page range: {part}") from e
-            if start < 1 or end < 1 or start > end:
-                raise ValueError(f"Invalid positive range: {part}")
+            except ValueError as exc:
+                raise ValueError(f"Invalid page range: {part}") from exc
+            if start < 1 or end < 1:
+                raise ValueError(f"Page numbers must be positive: {part}")
+            if start > end:
+                raise ValueError(f"Invalid page range: {part}")
             pages.update(range(start, end + 1))
         else:
             try:
-                page_num = int(part)
-            except ValueError as e:
-                raise ValueError(f"Invalid page number: {part}") from e
-            if page_num < 1:
-                raise ValueError(f"Invalid positive page number: {part}")
-            pages.add(page_num)
+                page = int(part)
+            except ValueError as exc:
+                raise ValueError(f"Invalid page number: {part}") from exc
+            if page < 1:
+                raise ValueError(f"Page numbers must be positive: {part}")
+            pages.add(page)
     return pages
+
+
+def _write_output(output: Path, data: dict) -> None:
+    """Write JSON through an exclusive same-directory temporary file."""
+    temp_file = tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        dir=output.parent,
+        prefix=f".{output.name}.",
+        suffix=".tmp",
+        delete=False,
+    )
+    temp_output = Path(temp_file.name)
+    try:
+        with temp_file:
+            json.dump(data, temp_file, ensure_ascii=False, indent=2)
+            temp_file.flush()
+            os.fsync(temp_file.fileno())
+        temp_output.replace(output)
+    except Exception:
+        temp_output.unlink(missing_ok=True)
+        raise
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -128,16 +154,9 @@ def main(argv: list[str] | None = None) -> None:
         print(f"Error filtering DOM: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # Use atomic write pattern
-    temp_output = args.output.with_suffix(".tmp")
     try:
-        temp_output.write_text(
-            json.dumps(filtered_data, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
-        temp_output.replace(args.output)
+        _write_output(args.output, filtered_data)
     except Exception as e:
-        if temp_output.exists():
-            temp_output.unlink()  # pragma: no cover
         print(f"Error writing output file: {e}", file=sys.stderr)
         sys.exit(1)
 
