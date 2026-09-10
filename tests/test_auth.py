@@ -409,61 +409,28 @@ def test_config_module_exposes_versioned_environment_contract() -> None:
     assert config.RUNTIME_PROFILE_ENV_VAR == "NEWSDOM_RUNTIME_PROFILE"
 
 
-def test_apply_security_headers_doc_paths():
-    """Test that documentation paths get a relaxed CSP."""
-    from newsdom_api.main import _apply_security_headers
+def test_non_documentation_routes_keep_strict_csp() -> None:
+    """Non-documentation responses retain the fail-closed content policy."""
 
-    class DummyScope:
-        def __init__(self, path):
-            self.path = path
-        def get(self, key, default=""):
-            if key == "path":
-                return self.path
-            return default
+    response = TestClient(create_app(_settings())).get("/health")
 
-    class DummyURL:
-        def __init__(self):
-            self.scheme = "http"
-
-    class DummyRequest:
-        def __init__(self, path):
-            self.scope = DummyScope(path)
-            self.headers = {}
-            self.url = DummyURL()
-
-    class DummyResponse:
-        def __init__(self):
-            self.headers = {}
-
-    # Test a doc path
-    req1 = DummyRequest("/docs")
-    res1 = DummyResponse()
-    _apply_security_headers(res1, req1)
-    assert "cdn.jsdelivr.net" in res1.headers["Content-Security-Policy"]
-
-    # Test a non-doc path
-    req2 = DummyRequest("/api/v1/something")
-    res2 = DummyResponse()
-    _apply_security_headers(res2, req2)
-    assert "cdn.jsdelivr.net" not in res2.headers["Content-Security-Policy"]
-    assert "frame-ancestors 'none'" in res2.headers["Content-Security-Policy"]
-
-def test_create_app_swagger_dev_profile():
-    """Test that development profile enables persistAuthorization."""
-    from newsdom_api.config import RuntimeSettings, AuthenticationMode, RuntimeProfile
-    from newsdom_api.main import create_app
-
-    dev_settings = RuntimeSettings(
-        authentication_mode=AuthenticationMode.DISABLED,
-        runtime_profile=RuntimeProfile.DEVELOPMENT
+    assert response.status_code == 200
+    assert response.headers["Content-Security-Policy"] == (
+        "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
     )
-    app = create_app(dev_settings)
-    assert app.swagger_ui_parameters.get("persistAuthorization") is True
 
-    prod_settings = RuntimeSettings(
-        authentication_mode=AuthenticationMode.REQUIRED,
-        runtime_profile=RuntimeProfile.PRODUCTION,
-        api_token="test"
+
+def test_create_app_swagger_dev_profile() -> None:
+    """Only the development profile should persist Swagger authorization state."""
+
+    dev_app = create_app(
+        _settings(
+            token=None,
+            mode=AuthenticationMode.DISABLED,
+            profile=RuntimeProfile.DEVELOPMENT,
+        )
     )
-    app2 = create_app(prod_settings)
-    assert app2.swagger_ui_parameters.get("persistAuthorization") is None
+    assert dev_app.swagger_ui_parameters.get("persistAuthorization") is True
+
+    prod_app = create_app(_settings(token="test"))
+    assert prod_app.swagger_ui_parameters.get("persistAuthorization") is None
