@@ -63,7 +63,3 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
-
-## 2024-05-24 - Avoid allocating new strings for truthiness checks
-**Learning:** Checking if a string is composed entirely of whitespace using `bool(s.strip())` forces Python to allocate a new stripped string object in memory just to check its length/truthiness. In high-frequency text evaluation paths, this generates unnecessary garbage collection pressure.
-**Action:** Replace `bool(s.strip())` with `not s.isspace()` to check string contents in C without allocating a new string object.
