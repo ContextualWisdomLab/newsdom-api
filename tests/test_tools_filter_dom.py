@@ -22,7 +22,7 @@ def test_parse_page_ranges():
 
 def test_parse_page_ranges_requires_one_based_forward_ranges():
     for value in ("0", "-1", "0-2", "5-3"):
-        with pytest.raises(ValueError, match="positive|range"):
+        with pytest.raises(ValueError, match=r"positive|range"):
             parse_page_ranges(value)
 
 
@@ -129,6 +129,55 @@ def test_main_does_not_follow_predictable_temp_symlink(tmp_path):
 
     assert victim.read_text(encoding="utf-8") == "keep-me"
     assert json.loads(output_file.read_text(encoding="utf-8"))["document_id"] == "doc1"
+
+
+def test_main_preserves_preexisting_fixed_temp_name(tmp_path):
+    input_file = tmp_path / "input.json"
+    output_file = tmp_path / "report.json"
+    fixed_temp = output_file.with_suffix(".tmp")
+    fixed_temp.write_text("unrelated-artifact", encoding="utf-8")
+    input_file.write_text(
+        json.dumps(
+            {
+                "document_id": "doc1",
+                "pages": [],
+                "quality": {"status": "success"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    main([str(input_file), str(output_file)])
+
+    assert fixed_temp.read_text(encoding="utf-8") == "unrelated-artifact"
+    assert json.loads(output_file.read_text(encoding="utf-8"))["document_id"] == "doc1"
+
+
+def test_tmp_output_remains_unchanged_when_publish_fails(tmp_path, monkeypatch):
+    input_file = tmp_path / "input.json"
+    output_file = tmp_path / "report.tmp"
+    output_file.write_text("previous-output", encoding="utf-8")
+    input_file.write_text(
+        json.dumps(
+            {
+                "document_id": "doc1",
+                "pages": [],
+                "quality": {"status": "success"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def fail_replace(*args, **kwargs):
+        raise OSError("replace failed")
+
+    monkeypatch.setattr(Path, "replace", fail_replace)
+
+    with pytest.raises(SystemExit) as excinfo:
+        main([str(input_file), str(output_file)])
+
+    assert excinfo.value.code == 1
+    assert output_file.read_text(encoding="utf-8") == "previous-output"
 
 
 def test_main_file_not_found(capsys, tmp_path):
