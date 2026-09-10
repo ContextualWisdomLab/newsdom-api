@@ -563,10 +563,10 @@ def test_docs_csp_relaxation():
     csp = response.headers.get("Content-Security-Policy")
     expected_csp = (
         "default-src 'none'; "
-        "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
-        "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; "
-        "img-src 'self' data: cdn.jsdelivr.net fastapi.tiangolo.com; "
-        "font-src 'self' fonts.gstatic.com; "
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+        "img-src 'self' data: https://cdn.jsdelivr.net https://fastapi.tiangolo.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
         "connect-src 'self'; "
         "frame-ancestors 'none'; "
         "base-uri 'none'"
