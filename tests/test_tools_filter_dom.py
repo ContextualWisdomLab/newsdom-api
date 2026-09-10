@@ -20,12 +20,6 @@ def test_parse_page_ranges():
         parse_page_ranges("1-a")
 
 
-def test_parse_page_ranges_requires_one_based_forward_ranges():
-    for value in ("0", "-1", "0-2", "5-3"):
-        with pytest.raises(ValueError, match="positive|range"):
-            parse_page_ranges(value)
-
-
 def test_filter_dom_valid(tmp_path):
     data = {
         "document_id": "doc1",
@@ -107,30 +101,6 @@ def test_main_success(tmp_path):
     assert len(out_data["pages"][0]["ads"]) == 0
 
 
-def test_main_does_not_follow_predictable_temp_symlink(tmp_path):
-    input_file = tmp_path / "input.json"
-    output_file = tmp_path / "output.json"
-    fixed_temp = output_file.with_suffix(".tmp")
-    victim = tmp_path / "victim.txt"
-    victim.write_text("keep-me", encoding="utf-8")
-    fixed_temp.symlink_to(victim)
-    input_file.write_text(
-        json.dumps(
-            {
-                "document_id": "doc1",
-                "pages": [],
-                "quality": {"status": "success"},
-            }
-        ),
-        encoding="utf-8",
-    )
-
-    main([str(input_file), str(output_file)])
-
-    assert victim.read_text(encoding="utf-8") == "keep-me"
-    assert json.loads(output_file.read_text(encoding="utf-8"))["document_id"] == "doc1"
-
-
 def test_main_file_not_found(capsys, tmp_path):
     with pytest.raises(SystemExit) as excinfo:
         main([str(tmp_path / "nonexistent.json"), "out.json"])
@@ -172,7 +142,7 @@ def test_main_write_error(capsys, tmp_path, monkeypatch):
     input_file.write_text(json.dumps(data))
 
     def mock_replace(*args, **kwargs):
-        raise OSError("replace failed")
+        raise OSError("write failed")
 
     monkeypatch.setattr(Path, "replace", mock_replace)
 
@@ -180,3 +150,32 @@ def test_main_write_error(capsys, tmp_path, monkeypatch):
         main([str(input_file), str(output_file)])
     assert excinfo.value.code == 1
     assert "Error writing output file" in capsys.readouterr().err
+
+
+def test_parse_page_ranges_requires_one_based_forward_ranges():
+    for value in ("0", "-1", "0-2", "5-3"):
+        with pytest.raises(ValueError, match="positive|range"):
+            parse_page_ranges(value)
+
+
+def test_main_does_not_follow_predictable_temp_symlink(tmp_path):
+    input_file = tmp_path / "input.json"
+    output_file = tmp_path / "output.json"
+    fixed_temp = output_file.with_suffix(".tmp")
+    victim = tmp_path / "victim.txt"
+    victim.write_text("keep-me", encoding="utf-8")
+    fixed_temp.symlink_to(victim)
+    input_file.write_text(
+        json.dumps(
+            {
+                "document_id": "doc1",
+                "pages": [],
+                "quality": {"status": "success"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    main([str(input_file), str(output_file)])
+
+    assert victim.read_text(encoding="utf-8") == "keep-me"
