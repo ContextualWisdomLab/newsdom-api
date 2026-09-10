@@ -20,6 +20,12 @@ def test_parse_page_ranges():
         parse_page_ranges("1-a")
 
 
+def test_parse_page_ranges_requires_one_based_forward_ranges():
+    for value in ("0", "-1", "0-2", "5-3"):
+        with pytest.raises(ValueError, match="positive|range"):
+            parse_page_ranges(value)
+
+
 def test_filter_dom_valid(tmp_path):
     data = {
         "document_id": "doc1",
