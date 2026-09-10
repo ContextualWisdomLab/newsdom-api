@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+import tempfile
 from pathlib import Path
 
 from pydantic import ValidationError  # noqa: E402
@@ -76,6 +78,28 @@ def parse_page_ranges(pages_str: str) -> set[int]:
     return pages
 
 
+def _write_output(output: Path, data: dict) -> None:
+    """Write JSON through an exclusive same-directory temporary file."""
+    temp_file = tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        dir=output.parent,
+        prefix=f".{output.name}.",
+        suffix=".tmp",
+        delete=False,
+    )
+    temp_output = Path(temp_file.name)
+    try:
+        with temp_file:
+            json.dump(data, temp_file, ensure_ascii=False, indent=2)
+            temp_file.flush()
+            os.fsync(temp_file.fileno())
+        temp_output.replace(output)
+    except Exception:
+        temp_output.unlink(missing_ok=True)
+        raise
+
+
 def main(argv: list[str] | None = None) -> None:
     """Run filter_dom main entry point."""
     parser = argparse.ArgumentParser(description="Filter NewsDOM JSON output.")
@@ -130,16 +154,9 @@ def main(argv: list[str] | None = None) -> None:
         print(f"Error filtering DOM: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # Use atomic write pattern
-    temp_output = args.output.with_suffix(".tmp")
     try:
-        temp_output.write_text(
-            json.dumps(filtered_data, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
-        temp_output.replace(args.output)
+        _write_output(args.output, filtered_data)
     except Exception as e:
-        if temp_output.exists():
-            temp_output.unlink()  # pragma: no cover
         print(f"Error writing output file: {e}", file=sys.stderr)
         sys.exit(1)
 
