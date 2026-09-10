@@ -107,6 +107,30 @@ def test_main_success(tmp_path):
     assert len(out_data["pages"][0]["ads"]) == 0
 
 
+def test_main_does_not_follow_predictable_temp_symlink(tmp_path):
+    input_file = tmp_path / "input.json"
+    output_file = tmp_path / "output.json"
+    fixed_temp = output_file.with_suffix(".tmp")
+    victim = tmp_path / "victim.txt"
+    victim.write_text("keep-me", encoding="utf-8")
+    fixed_temp.symlink_to(victim)
+    input_file.write_text(
+        json.dumps(
+            {
+                "document_id": "doc1",
+                "pages": [],
+                "quality": {"status": "success"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    main([str(input_file), str(output_file)])
+
+    assert victim.read_text(encoding="utf-8") == "keep-me"
+    assert json.loads(output_file.read_text(encoding="utf-8"))["document_id"] == "doc1"
+
+
 def test_main_file_not_found(capsys, tmp_path):
     with pytest.raises(SystemExit) as excinfo:
         main([str(tmp_path / "nonexistent.json"), "out.json"])
@@ -147,10 +171,10 @@ def test_main_write_error(capsys, tmp_path, monkeypatch):
     data = {"document_id": "doc1", "pages": [], "quality": {"status": "success"}}
     input_file.write_text(json.dumps(data))
 
-    def mock_write(*args, **kwargs):
-        raise OSError("write failed")
+    def mock_replace(*args, **kwargs):
+        raise OSError("replace failed")
 
-    monkeypatch.setattr(Path, "write_text", mock_write)
+    monkeypatch.setattr(Path, "replace", mock_replace)
 
     with pytest.raises(SystemExit) as excinfo:
         main([str(input_file), str(output_file)])
