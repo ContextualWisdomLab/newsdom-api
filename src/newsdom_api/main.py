@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import hmac
 import logging
+import secrets
 import tempfile
 from pathlib import Path
 from typing import Annotated, Callable
@@ -19,7 +20,8 @@ from fastapi import (
     Response,
     UploadFile,
 )
-from fastapi.responses import JSONResponse
+from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import HTTPBearer
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
@@ -48,6 +50,8 @@ PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
 INVALID_PARSE_PARAMS_DETAIL = "Invalid parse parameters"
 UNAUTHORIZED_DETAIL = "Unauthorized"
 SERVICE_UNAVAILABLE_DETAIL = "Service Unavailable"
+STRICT_CSP = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+DOC_HTML_PATHS = frozenset({"/docs", "/redoc"})
 LOGGER = logging.getLogger("newsdom_api")
 BEARER_SCHEME = HTTPBearer(auto_error=False, scheme_name="BearerAuth")
 
@@ -60,27 +64,56 @@ tags_metadata = [
 ]
 
 
+def _request_csp_nonce(request: Request) -> str | None:
+    """Return the nonce created for one documentation response, if any."""
+
+    nonce = getattr(request.state, "csp_nonce", None)
+    return nonce if isinstance(nonce, str) and nonce else None
+
+
+def _nonce_script_tags(html: str, nonce: str) -> str:
+    """Attach the response nonce to script tags emitted by FastAPI docs helpers."""
+
+    return html.replace("<script src=", f'<script nonce="{nonce}" src=').replace(
+        "<script>", f'<script nonce="{nonce}">'
+    )
+
+
+def _documentation_csp(path: str, nonce: str) -> str:
+    """Return the least-privilege CSP required by the selected docs renderer."""
+
+    if path == "/docs":
+        return (
+            "default-src 'none'; "
+            f"script-src 'nonce-{nonce}'; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "img-src 'self' data: https://fastapi.tiangolo.com; "
+            "connect-src 'self'; "
+            "frame-ancestors 'none'; "
+            "base-uri 'none'"
+        )
+    return (
+        "default-src 'none'; "
+        f"script-src 'nonce-{nonce}'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: https://fastapi.tiangolo.com; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none'; "
+        "base-uri 'none'"
+    )
+
+
 def _apply_security_headers(response: Response, request: Request) -> Response:
     """Inject standard security headers into an API response."""
 
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     path = request.url.path
-    if path in ("/docs", "/redoc", "/openapi.json", "/docs/oauth2-redirect"):
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'none'; "
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
-            "img-src 'self' data: https://cdn.jsdelivr.net https://fastapi.tiangolo.com; "
-            "font-src 'self' https://fonts.gstatic.com; "
-            "connect-src 'self'; "
-            "frame-ancestors 'none'; "
-            "base-uri 'none'"
-        )
+    nonce = _request_csp_nonce(request)
+    if path in DOC_HTML_PATHS and nonce:
+        response.headers["Content-Security-Policy"] = _documentation_csp(path, nonce)
     else:
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
-        )
+        response.headers["Content-Security-Policy"] = STRICT_CSP
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Cache-Control"] = "no-store, no-cache, max-age=0"
     forwarded_proto = request.headers.get("x-forwarded-proto", "")
@@ -155,6 +188,8 @@ async def security_boundary_middleware(
 ) -> Response:
     """Enforce parser authorization before reading the request body and add headers."""
 
+    if request.scope.get("path") in DOC_HTML_PATHS:
+        request.state.csp_nonce = secrets.token_urlsafe(24)
     if request.method == "POST" and request.scope.get("path") == "/parse":
         failure = _parse_access_failure(request)
         if failure is not None:
@@ -316,6 +351,11 @@ def create_app(
     elif not application_settings.authentication_ready:
         LOGGER.error("Parser authentication configuration is unavailable")
 
+    swagger_parameters = {
+        "displayRequestDuration": True,
+        "syntaxHighlight.theme": "monokai",
+        "tryItOutEnabled": True,
+    }
     application = FastAPI(
         title="NewsDOM API",
         description=(
@@ -330,11 +370,9 @@ def create_app(
         },
         license_info={"name": "MIT License", "identifier": "MIT"},
         openapi_tags=tags_metadata,
-        swagger_ui_parameters={
-            "displayRequestDuration": True,
-            "syntaxHighlight.theme": "monokai",
-            "tryItOutEnabled": True,
-        },
+        docs_url=None,
+        redoc_url=None,
+        swagger_ui_oauth2_redirect_url=None,
     )
     application.state.runtime_settings = application_settings
     application.state.runtime_readiness_probe = (
@@ -342,6 +380,49 @@ def create_app(
     )
     application.middleware("http")(security_boundary_middleware)
     application.add_exception_handler(Exception, global_exception_handler)
+
+    async def swagger_docs(request: Request) -> HTMLResponse:
+        """Render Swagger UI with one response-bound script nonce."""
+
+        nonce = _request_csp_nonce(request)
+        if nonce is None:
+            raise RuntimeError("Documentation CSP nonce is unavailable")
+        generated = get_swagger_ui_html(
+            openapi_url=application.openapi_url or "/openapi.json",
+            title=f"{application.title} - Swagger UI",
+            swagger_ui_parameters=swagger_parameters,
+        )
+        return HTMLResponse(
+            _nonce_script_tags(generated.body.decode("utf-8"), nonce)
+        )
+
+    async def redoc_docs(request: Request) -> HTMLResponse:
+        """Render ReDoc without Google Fonts and bind its script to the response nonce."""
+
+        nonce = _request_csp_nonce(request)
+        if nonce is None:
+            raise RuntimeError("Documentation CSP nonce is unavailable")
+        generated = get_redoc_html(
+            openapi_url=application.openapi_url or "/openapi.json",
+            title=f"{application.title} - ReDoc",
+            with_google_fonts=False,
+        )
+        return HTMLResponse(
+            _nonce_script_tags(generated.body.decode("utf-8"), nonce)
+        )
+
+    application.add_api_route(
+        "/docs",
+        swagger_docs,
+        methods=["GET"],
+        include_in_schema=False,
+    )
+    application.add_api_route(
+        "/redoc",
+        redoc_docs,
+        methods=["GET"],
+        include_in_schema=False,
+    )
     application.add_api_route(
         "/health",
         health,
