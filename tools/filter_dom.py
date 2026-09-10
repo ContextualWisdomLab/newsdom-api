@@ -129,7 +129,13 @@ def main(argv: list[str] | None = None) -> None:
         sys.exit(1)
 
     try:
-        data = json.loads(args.input.read_text(encoding="utf-8"))
+        input_text = args.input.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as e:
+        print(f"Error reading input file: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        data = json.loads(input_text)
     except json.JSONDecodeError as e:
         print(f"Error reading JSON: {e}", file=sys.stderr)
         sys.exit(1)
