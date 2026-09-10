@@ -49,7 +49,7 @@ def filter_dom(
 
 
 def parse_page_ranges(pages_str: str) -> set[int]:
-    """Parse a comma-separated list of pages and ranges into a set of integers."""
+    """Parse one-based page numbers and forward ranges into a set of integers."""
     pages = set()
     for part in pages_str.split(","):
         part = part.strip()
@@ -58,14 +58,21 @@ def parse_page_ranges(pages_str: str) -> set[int]:
         if "-" in part:
             try:
                 start, end = map(int, part.split("-"))
-                pages.update(range(start, end + 1))
-            except ValueError:
+            except ValueError as exc:
+                raise ValueError(f"Invalid page range: {part}") from exc
+            if start < 1 or end < 1:
+                raise ValueError(f"Page numbers must be positive: {part}")
+            if start > end:
                 raise ValueError(f"Invalid page range: {part}")
+            pages.update(range(start, end + 1))
         else:
             try:
-                pages.add(int(part))
-            except ValueError:
-                raise ValueError(f"Invalid page number: {part}")
+                page = int(part)
+            except ValueError as exc:
+                raise ValueError(f"Invalid page number: {part}") from exc
+            if page < 1:
+                raise ValueError(f"Page numbers must be positive: {part}")
+            pages.add(page)
     return pages
 
 
