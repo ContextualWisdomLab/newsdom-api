@@ -131,7 +131,13 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     scheme, separator, credentials = provided.partition(b" ")
     if separator != b" " or scheme.lower() != b"bearer" or not credentials:
         return _unauthorized_response()
-    if not hmac.compare_digest(credentials, token.encode("utf-8")):
+
+    expected_token = token.encode("utf-8")
+    if len(credentials) != len(expected_token):
+        hmac.compare_digest(expected_token, expected_token)
+        return _unauthorized_response()
+
+    if not hmac.compare_digest(credentials, expected_token):
         return _unauthorized_response()
     return None
 
@@ -242,13 +248,14 @@ async def parse(
 
     tmp_path: Path | None = None
     try:
-        header = await file.read(5)
-        if header != b"%PDF-":
-            raise HTTPException(status_code=415, detail=UNSUPPORTED_MEDIA_DETAIL)
-
         with tempfile.NamedTemporaryFile(delete=False) as temporary_file:
             tmp_path = Path(temporary_file.name)
             LOGGER.debug("Created temporary upload file %s", tmp_path)
+
+            header = await file.read(5)
+            if header != b"%PDF-":
+                raise HTTPException(status_code=415, detail=UNSUPPORTED_MEDIA_DETAIL)
+
             temporary_file.write(header)
 
             bytes_read = len(header)
