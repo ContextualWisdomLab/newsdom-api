@@ -51,6 +51,12 @@ UNAUTHORIZED_DETAIL = "Unauthorized"
 SERVICE_UNAVAILABLE_DETAIL = "Service Unavailable"
 LOGGER = logging.getLogger("newsdom_api")
 BEARER_SCHEME = HTTPBearer(auto_error=False, scheme_name="BearerAuth")
+STRICT_CONTENT_SECURITY_POLICY = (
+    "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+)
+DOCUMENTATION_PATHS = frozenset(
+    {"/docs", "/redoc", "/openapi.json", "/docs/oauth2-redirect"}
+)
 
 tags_metadata = [
     {"name": "Parser", "description": "Core PDF parsing endpoints."},
@@ -62,14 +68,21 @@ tags_metadata = [
 
 
 def _apply_security_headers(response: Response, request: Request) -> Response:
-    """Inject standard security headers into an API response."""
+    """Inject standard security headers without relaxing production policy."""
 
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
-    path = request.scope.get("path", "")
-    if path in {"/docs", "/redoc", "/openapi.json", "/docs/oauth2-redirect"}:
+    settings = getattr(getattr(request.app, "state", None), "runtime_settings", None)
+    is_development_docs = (
+        isinstance(settings, RuntimeSettings)
+        and settings.runtime_profile is RuntimeProfile.DEVELOPMENT
+        and request.scope.get("path", "") in DOCUMENTATION_PATHS
+    )
+    if is_development_docs:
         response.headers["Content-Security-Policy"] = (
             "default-src 'none'; "
+            "frame-ancestors 'none'; "
+            "base-uri 'none'; "
             "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
             "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; "
             "font-src 'self' fonts.gstatic.com; "
@@ -77,9 +90,7 @@ def _apply_security_headers(response: Response, request: Request) -> Response:
             "connect-src 'self'"
         )
     else:
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
-        )
+        response.headers["Content-Security-Policy"] = STRICT_CONTENT_SECURITY_POLICY
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Cache-Control"] = "no-store, no-cache, max-age=0"
     forwarded_proto = request.headers.get("x-forwarded-proto", "")
