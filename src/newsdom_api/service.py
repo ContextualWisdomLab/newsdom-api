@@ -25,7 +25,7 @@ def _safe_upload_filename(filename: str) -> str:
     normalized = filename.replace("\0", "").replace("\\", "/")
     name = PurePosixPath(normalized).name
     name = _UNSAFE_FILENAME_PATTERN.sub("_", name)
-    # ⚡ Bolt: Use .strip("_.") instead of chained .replace() to avoid multiple intermediate string allocations
+    # ⚡ Bolt: Use pre-compiled regex _UNSAFE_FILENAME_PATTERN to avoid recompiling on every call
     if name in ("", ".", "..") or not name.strip("_."):
         return "upload.pdf"
     if len(name) > MAX_UPLOAD_FILENAME_LENGTH:
