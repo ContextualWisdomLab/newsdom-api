@@ -136,7 +136,6 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     if len(credentials) != len(expected_token):
         hmac.compare_digest(expected_token, expected_token)
         return _unauthorized_response()
-
     if not hmac.compare_digest(credentials, expected_token):
         return _unauthorized_response()
     return None
