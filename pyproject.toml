@@ -17,7 +17,7 @@ dependencies = [
   "python-multipart>=0.0.31,<1.0",
   "reportlab>=4.2,<6.0",
   "Pillow>=12.3,<13.0",
-  "pypdf>=6.15.0,<7.0",
+  "pypdf>=6.18.1,<7.0",
 ]
 
 [project.optional-dependencies]
@@ -79,3 +79,9 @@ module = [
   "reportlab.*",
 ]
 ignore_missing_imports = true
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.5.0",
+    "pypdf>=6.18.1,<7.0",
+]

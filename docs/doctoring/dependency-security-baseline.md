@@ -14,12 +14,12 @@ The adopted floors are:
 
 - `setuptools>=83` for the build backend;
 - `Pillow>=12.3,<13.0` for image parsing on the untrusted document-ingestion path;
-- `pypdf>=6.15.0,<7.0` for PDF parsing;
+- `pypdf>=6.18.1,<7.0` for PDF parsing;
 - `mkdocs-material>=9.7,<9.8`, allowing `pymdown-extensions>=11` while the MkDocs
   core remains on the supported 1.x line.
 
 The generated lock additionally resolves Click 8.4.2, setuptools 83.0.0,
-Pillow 12.3.0, pypdf 6.15.0, mkdocs-material 9.7.7, and
+Pillow 12.3.0, pypdf 6.18.1, mkdocs-material 9.7.7, and
 pymdown-extensions 11.0.1. Direct floors prevent a later lock refresh from
 silently selecting known-vulnerable ranges again.
 
@@ -29,7 +29,7 @@ NewsDOM accepts untrusted PDF uploads. A parser denial of service is therefore a
 runtime availability risk rather than an abstract transitive-dependency finding.
 The earlier baseline raised pypdf to 6.14.2 for CVE-2026-59935. On August 8,
 2026, the repository's current Trivy filesystem gate began reporting two
-additional MEDIUM findings, CVE-2026-71852 and CVE-2026-71870, against the locked
+additional MEDIUM findings, CVE-2026-84309, CVE-2026-84310, and CVE-2026-84311, against the locked
 6.14.2 artifact. The same repository had already produced a hash-locked 6.15.0
 resolution on an isolated branch; that exact head completed the Security Scan
 successfully without suppressing either finding. The shared direct floor and lock
@@ -123,11 +123,14 @@ Open Source Vulnerabilities. (2026a). *CVE-2026-59935*. Retrieved August 4,
 Open Source Vulnerabilities. (2026b). *CVE-2026-59890*. Retrieved August 4,
     2026, from https://osv.dev/vulnerability/CVE-2026-59890
 
-Open Source Vulnerabilities. (2026c). *CVE-2026-71852*. Retrieved August 9,
-    2026, from https://osv.dev/vulnerability/CVE-2026-71852
+Open Source Vulnerabilities. (2026c). *CVE-2026-84309*. Retrieved August 9,
+    2026, from https://osv.dev/vulnerability/CVE-2026-84309
 
-Open Source Vulnerabilities. (2026d). *CVE-2026-71870*. Retrieved August 9,
-    2026, from https://osv.dev/vulnerability/CVE-2026-71870
+Open Source Vulnerabilities. (2026d). *CVE-2026-84310*. Retrieved August 9,
+    2026, from https://osv.dev/vulnerability/CVE-2026-84310
+
+Open Source Vulnerabilities. (2026e). *CVE-2026-84311*. Retrieved August 9,
+    2026, from https://osv.dev/vulnerability/CVE-2026-84311
 
 Python Packaging Authority. (2026a). *Digital attestations*. PyPI Docs.
     Retrieved August 4, 2026, from https://docs.pypi.org/attestations/
@@ -135,7 +138,7 @@ Python Packaging Authority. (2026a). *Digital attestations*. PyPI Docs.
 Python Packaging Authority. (2026b). *Pillow 12.3.0*. Python Package Index.
     Retrieved August 4, 2026, from https://pypi.org/project/pillow/12.3.0/
 
-Python Packaging Authority. (2026c). *pypdf 6.15.0*. Python Package Index.
+Python Packaging Authority. (2026c). *pypdf 6.18.1*. Python Package Index.
     Retrieved August 9, 2026, from https://pypi.org/project/pypdf/6.15.0/
 
 Python Packaging Authority. (2026d). *setuptools 83.0.0*. Python Package Index.
