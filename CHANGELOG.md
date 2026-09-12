@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenAPI 제목/설명, README, `ArticleNode.headline` 문서를 일반 문서용 (section heading) 표현으로 재구성하여 특정 언어/신문 가정을 소비자에게 노출하지 않도록 함. 응답 스키마 필드는 하위 호환을 위해 변경하지 않음.
 
 ### Added
+- [CLI] 파싱된 NewsDOM JSON 데이터에서 불필요한 요소(이미지, 광고, 헤더/푸터 등)를 제거하거나 특정 페이지만 남기는 `tools/filter_dom.py` 도구를 추가했습니다.
 - [CLI] 단일 NewsDOM JSON 파일을 페이지 단위로 분리하는 `tools/split_dom.py` 도구를 추가했습니다.
 - [CLI] NewsDOM JSON 파일의 모든 텍스트 내용을 마스킹하여 익명화하는 `tools/anonymize_dom.py` 도구를 추가했습니다.
 - `/parse`에 기본 필수 bearer 인증 경계를 추가했습니다. `NEWSDOM_AUTH_MODE=required`, `NEWSDOM_RUNTIME_PROFILE=production`, `NEWSDOM_API_TOKEN`을 명시해야 하며, 인증 비활성화는 격리된 development 프로필에서만 허용됩니다. `/health`는 liveness 전용으로 미인증 상태를 유지하고 `/ready`가 인증 설정과 MinerU 가용성을 함께 검증합니다.
@@ -27,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CLI] 파싱된 NewsDOM JSON에서 순수 텍스트 데이터를 추출하여 텍스트 파일 또는 stdout으로 출력하는 `tools/extract_text.py` 도구를 추가했습니다.
 
 ### Security
+- Trivy CI 검사(trivy-fs)에서 보고된 취약점(CVE-2026-84381, CVE-2026-84382, CVE-2026-84379, CVE-2026-84380, CVE-2026-84309, CVE-2026-84310, CVE-2026-84311)을 해결하기 위해 `httpcore2`, `httpx2`, `pypdf` 패키지를 업데이트했습니다.
 - `/parse` authentication is now immutable per application instance and fails closed before multipart body parsing when required configuration is missing. Hostile missing, invalid, Unicode, oversized, and duplicated Authorization headers return one non-sensitive response.
 - Added unauthenticated `/ready` traffic readiness that combines authentication configuration with MinerU executable availability while `/health` remains liveness-only.
 - Hardened the Kubernetes deployment example with a restricted namespace policy, explicit non-root UID/GID, `RuntimeDefault` seccomp, disabled privilege escalation, dropped Linux capabilities, a read-only root filesystem, and bounded writable runtime volumes.
