@@ -193,7 +193,15 @@ def _validate_pdf_structure(file_path: Path) -> None:
         reader = PdfReader(file_path, strict=True)
         if len(reader.pages) < 1:
             raise ValueError("PDF has no pages")
-    except (PdfReadError, RecursionError, ValueError, OverflowError):
+    except (
+        PdfReadError,
+        RecursionError,
+        ValueError,
+        OverflowError,
+        TypeError,
+        MemoryError,
+    ):
+        LOGGER.warning("PdfReader rejected an invalid or resource-exhausting PDF")
         raise HTTPException(
             status_code=415,
             detail=UNSUPPORTED_MEDIA_DETAIL,
@@ -266,7 +274,7 @@ async def parse(
                 temporary_file.write(chunk)
 
         LOGGER.debug("Wrote %s upload bytes to %s", bytes_read, tmp_path)
-        _validate_pdf_structure(tmp_path)
+        await asyncio.to_thread(_validate_pdf_structure, tmp_path)
         return await asyncio.to_thread(
             parse_pdf,
             tmp_path,
