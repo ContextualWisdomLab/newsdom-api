@@ -632,3 +632,14 @@ def test_run_mineru_wraps_output_read_failures(
     else:
         assert "model JSON could not be read" in str(exc_info.value)
     _assert_no_private_path_material(str(exc_info.value))
+
+def test_find_output_dir_oserror(tmp_path):
+    """Test that _find_output_dir handles OSError gracefully when checking for iterdir."""
+    from newsdom_api.mineru_runner import _find_output_dir
+    import pytest
+
+    file_path = tmp_path / "not_a_dir"
+    file_path.write_text("dummy")
+
+    with pytest.raises(FileNotFoundError, match="MinerU output directory was not produced"):
+        _find_output_dir(file_path)

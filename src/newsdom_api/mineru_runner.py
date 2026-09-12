@@ -237,11 +237,20 @@ def _find_output_dir(base_output_dir: Path, method: str = DEFAULT_MODE) -> Path:
     """
 
     search_order = [method, *(m for m in _KNOWN_METHOD_DIRS if m != method)]
+
+    # ⚡ Bolt: Pre-fetch document subdirectories with iterdir() once to avoid
+    # the redundant filesystem I/O overhead of multiple glob() pattern matches.
+    try:
+        document_dirs = [d for d in base_output_dir.iterdir() if d.is_dir()]
+    except OSError:
+        document_dirs = []
+
     for candidate_method in search_order:
-        try:
-            return next(base_output_dir.glob(f"*/{candidate_method}"))
-        except StopIteration:
-            continue
+        for doc_dir in document_dirs:
+            candidate_path = doc_dir / candidate_method
+            if candidate_path.is_dir():
+                return candidate_path
+
     raise FileNotFoundError("MinerU output directory was not produced")
 
 
