@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MinerU subprocess argv 생성 시 `-`로 시작하는 option-like 인자를 거부하여 argument injection 위험을 낮춤
 - API 에러 응답 생성 시 내부 예외 체인을 억제하여 의존성 오류나 내부 경로가 노출될 가능성을 줄임
 - API 응답 미들웨어에 `Cache-Control: no-store, max-age=0` 헤더를 추가하여 민감한 파싱 데이터의 브라우저 및 중간 캐싱을 방지
-- `uv.lock`의 의존성 보안 floor를 current scanner findings에 맞춰 다시 고정: `pypdf>=6.16.1,<7.0`(lock 6.18.0; CVE-2026-84309/84310/84311), 개발/TestClient 경계의 `httpx2>=2.12.0` 및 `httpcore2>=2.12.0`(lock 2.12.0; CVE-2026-84378/84379/84380/84381/84382), `pillow>=12.3,<13.0`, `setuptools>=83`, `mkdocs-material>=9.7,<9.8`을 선언·lock·regression으로 함께 묶었습니다. HTTPX2의 가장 높은 현재 patch boundary는 streaming decompression amplification(CVE-2026-84382)의 2.12.0이며, suppression 없이 exact-head filesystem/dependency scan이 통과해야 완료로 인정합니다.
+- `uv.lock`의 의존성 보안 floor를 current scanner findings에 맞춰 다시 고정: `pypdf>=6.16.1,<7.0`(pypdf 6.18.0 lock; CVE-2026-84309 / GHSA-jp53-mhqp-8xcg, CVE-2026-84310 / GHSA-23w6-3w8w-8484, CVE-2026-84311 / GHSA-763m-79hh-57f2), 개발/TestClient 경계의 `httpx2>=2.12.0` 및 `httpcore2>=2.12.0`(lock 2.12.0; CVE-2026-84378/84379/84380/84381/84382), `pillow>=12.3,<13.0`, `setuptools>=83`, `mkdocs-material>=9.7,<9.8`을 선언·lock·regression으로 함께 묶었습니다. HTTPX2의 가장 높은 현재 patch boundary는 streaming decompression amplification(CVE-2026-84382)의 2.12.0이며, suppression 없이 exact-head filesystem/dependency scan이 통과해야 완료로 인정합니다.
 
 ### Performance
 - `newsdom_api.dom_builder._html_safe_text` 함수에 early return과 타입 체크를 도입하여 불필요한 `str()` 캐스팅을 제거함으로써 처리 속도를 개선했습니다.
