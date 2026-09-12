@@ -622,6 +622,7 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
+    { name = "httpcore2" },
     { name = "httpx" },
     { name = "httpx2" },
     { name = "pytest" },
@@ -645,6 +646,7 @@ requires-dist = [
     { name = "atheris", marker = "python_full_version == '3.11.*' and sys_platform == 'linux' and extra == 'fuzz'", specifier = "==3.0.0" },
     { name = "atheris", marker = "python_full_version >= '3.12' and sys_platform == 'linux' and extra == 'fuzz'", specifier = "==3.1.0" },
     { name = "fastapi", specifier = ">=0.115,<1.0" },
+    { name = "httpcore2", marker = "extra == 'dev'", specifier = ">=2.12.0" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.28,<1.0" },
     { name = "httpx2", marker = "extra == 'dev'", specifier = ">=2.12.0" },
     { name = "mkdocs", marker = "extra == 'docs'", specifier = ">=1.6,<2.0" },
