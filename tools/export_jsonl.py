@@ -25,7 +25,9 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
 
     temp_path = None
     try:
-        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", delete=False, dir=output_path.parent
+        ) as f:
             temp_path = Path(f.name)
             for page in pages:
                 if not isinstance(page, dict):
