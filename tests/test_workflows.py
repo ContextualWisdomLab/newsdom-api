@@ -1,20 +1,105 @@
 from pathlib import Path
 
-
-def test_scorecards_push_runs_only_on_default_branch():
-    text = Path(".github/workflows/scorecards.yml").read_text(encoding="utf-8")
-    push_section = text.split("pull_request:", 1)[0]
-    assert "branches: [develop]" in push_section
-    assert "branches: [main, develop]" not in push_section
+import pytest
+import yaml
 
 
-def test_scorecards_pull_requests_cover_main_and_develop():
-    text = Path(".github/workflows/scorecards.yml").read_text(encoding="utf-8")
-    assert "pull_request:" in text
-    pull_request_section = text.split("pull_request:", 1)[1].split("schedule:", 1)[0]
-    assert "branches:" not in pull_request_section
+def _load_workflow(workflow_name: str) -> dict:
+    return yaml.safe_load(
+        Path(".github/workflows", workflow_name).read_text(encoding="utf-8")
+    )
 
 
-def test_scorecards_workflow_supports_optional_repo_token_for_branch_protection():
-    text = Path(".github/workflows/scorecards.yml").read_text(encoding="utf-8")
-    assert "repo_token: ${{ secrets.SCORECARD_TOKEN || github.token }}" in text
+def _triggers(workflow: dict) -> dict:
+    return workflow.get("on", workflow.get(True))
+
+
+@pytest.mark.parametrize(
+    ("workflow_name", "group", "cancel_in_progress"),
+    [
+        (
+            "tests.yml",
+            "tests-${{ github.repository }}-${{ github.event.pull_request.number }}",
+            True,
+        ),
+        (
+            "clusterfuzzlite.yml",
+            "clusterfuzzlite-${{ github.repository }}-${{ github.event.pull_request.number || github.run_id }}",
+            "${{ github.event_name == 'pull_request' }}",
+        ),
+        (
+            "container-image.yml",
+            "container-image-${{ github.repository }}-${{ github.event.pull_request.number || github.ref }}",
+            False,
+        ),
+        (
+            "build-ci-image.yml",
+            "build-ci-environment-image-${{ github.repository }}-${{ github.event.pull_request.number || github.ref }}",
+            False,
+        ),
+        (
+            "gh-pages.yml",
+            "deploy-web-manual-to-github-pages-${{ github.repository }}-${{ github.ref }}",
+            False,
+        ),
+        (
+            "release.yml",
+            "release-${{ github.repository }}-${{ github.ref }}",
+            False,
+        ),
+        (
+            "codeql.yml",
+            "codeql-${{ github.repository }}-${{ github.ref }}",
+            False,
+        ),
+        (
+            "scorecards.yml",
+            "scorecards-${{ github.repository }}-${{ github.ref }}",
+            False,
+        ),
+    ],
+)
+def test_workflow_concurrency_is_trigger_aware(
+    workflow_name: str, group: str, cancel_in_progress: bool | str
+) -> None:
+    concurrency = _load_workflow(workflow_name)["concurrency"]
+
+    assert concurrency == {
+        "group": group,
+        "cancel-in-progress": cancel_in_progress,
+    }
+
+
+def test_tests_run_once_per_pull_request_without_post_merge_push_duplication() -> None:
+    triggers = _triggers(_load_workflow("tests.yml"))
+
+    assert set(triggers) == {"pull_request"}
+
+
+@pytest.mark.parametrize("workflow_name", ["codeql.yml", "scorecards.yml"])
+def test_central_security_owners_replace_local_pr_triggers(
+    workflow_name: str,
+) -> None:
+    triggers = _triggers(_load_workflow(workflow_name))
+
+    assert "pull_request" not in triggers
+    assert {"push", "schedule"}.issubset(triggers)
+
+
+@pytest.mark.parametrize(
+    "workflow_name", ["clusterfuzzlite.yml", "container-image.yml"]
+)
+def test_expensive_pr_workflows_skip_documentation_only_changes(
+    workflow_name: str,
+) -> None:
+    paths_ignore = set(
+        _triggers(_load_workflow(workflow_name))["pull_request"]["paths-ignore"]
+    )
+
+    assert paths_ignore == {"docs/**", "manual/**", "**.md"}
+
+
+def test_tagged_container_release_has_no_path_filter() -> None:
+    push_trigger = _triggers(_load_workflow("container-image.yml"))["push"]
+
+    assert push_trigger == {"tags": ["v*"]}

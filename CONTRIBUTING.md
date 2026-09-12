@@ -66,13 +66,6 @@ artifacts, generate SHA256 checksums, emit a JSON manifest, export
 `*.intoto.jsonl` provenance bundles, and publish a GitHub Release with
 provenance attestation.
 
-For full OpenSSF Scorecard branch-protection visibility against
-classic GitHub branch protection rules, set a repository secret named
-`SCORECARD_TOKEN` with the fine-grained administration-read scope
-recommended by the Scorecard Action documentation. Without that
-secret, Scorecard still runs but may report the Branch-Protection
-check as inconclusive.
-
 ## Fixture policy
 
 This project intentionally separates public test artifacts from

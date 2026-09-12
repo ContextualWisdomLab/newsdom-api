@@ -170,18 +170,6 @@ def test_gh_pages_workflow_targets_supported_branches_only() -> None:
     assert set(branches) == {"main", "develop"}
 
 
-def test_security_gate_docs_use_current_codeql_check_name() -> None:
-    paths = [
-        Path("docs/plans/2026-04-08-security-gates.md"),
-        Path("docs/plans/2026-04-08-security-gates-design.md"),
-    ]
-
-    for path in paths:
-        text = path.read_text(encoding="utf-8")
-        assert "codeql (python, actions)" in text
-        assert "codeql (python)" not in text
-
-
 def test_adr_follow_up_drops_stale_issue_references() -> None:
     text = Path("docs/adr/0001-openssf-best-practices-badge.md").read_text(
         encoding="utf-8"

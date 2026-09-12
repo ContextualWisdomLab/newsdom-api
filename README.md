@@ -205,8 +205,8 @@ budget on each pull request. Targets cover the untrusted-input boundaries: the
 MinerU DOM normalizer (`build_dom`), the `ParseResponse` schema validator, and
 the equivalence metrics normalizer. See `docs/papers/` for background.
 
-The repository also enforces a `quality-gate` workflow with 100% source
-coverage and docstring audit coverage.
+The repository-local `tests` workflow enforces 100% source coverage and
+docstring audit coverage once per pull-request head.
 
 ## Fixtures and provenance
 
@@ -221,9 +221,16 @@ maintenance are documented in `CONTRIBUTING.md`.
 
 Mechanical branch updates and merges are attributed to `github-actions[bot]`.
 Scratch PoC files are not committed. Failed GitHub Checks are not reviewed as URL lists.
-OpenCode Review, Strix Security Scan, and PR Review Merge Scheduler are
-provided by the organization-level required workflows in
-`ContextualWisdomLab/.github`, not copied into this repository.
+CodeQL PR, Noema Review, OpenCode Review, Security Scan, Strix Security Scan,
+SAST Semgrep, and PR Review Merge Scheduler are provided by the organization
+required-workflow ruleset, not copied into this repository. This ownership was
+audited against `ContextualWisdomLab/.github` main commit
+`769691526f8c73cf714de8fe8ba51ae6cfa2901a`. Security Scan is the single PR
+owner for dependency review and Scorecard. `pytest` is the sole
+repository-local required check; fuzzing and container builds remain local
+because they validate NewsDOM-specific inputs and delivery artifacts. Local
+CodeQL and Scorecard workflows retain only default-branch and scheduled
+backstops; they do not run for pull requests.
 
 Security reporting guidance is documented in `SECURITY.md`.
 Version tags trigger a GitHub-native release workflow that builds

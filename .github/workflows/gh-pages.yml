@@ -18,8 +18,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: github-pages
-  cancel-in-progress: true
+  group: deploy-web-manual-to-github-pages-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:

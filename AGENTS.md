@@ -138,9 +138,9 @@ follow it.
   DB-backed KV is fine) unless a dedicated KV is adopted.
 - **This repo today:** no runtime secrets or credentials — it holds no
   API keys, no DB creds, and makes no authenticated external calls (it
-  shells out to a local MinerU binary). CI secrets are only the
-  standard `GITHUB_TOKEN` / `SCORECARD_TOKEN`, which are build-time,
-  not runtime app secrets.
+  shells out to a local MinerU binary). CI uses the standard `GITHUB_TOKEN`
+  and an optional `SCORECARD_TOKEN` for the scheduled Scorecard backstop;
+  both are build-time, not runtime app secrets.
 - **Known deviation to migrate:** `mineru_runner._resolve_mineru_bin`
   reads `os.environ.get("NEWSDOM_MINERU_BIN")` (a local executable-path
   override) at runtime. This is a deployment knob, not a secret, so it

@@ -3,9 +3,12 @@ name: scorecards
 on:
   push:
     branches: [develop]
-  pull_request:
   schedule:
     - cron: '31 5 * * 1'
+
+concurrency:
+  group: scorecards-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions: {}
 
@@ -32,10 +35,9 @@ jobs:
           repo_token: ${{ secrets.SCORECARD_TOKEN || github.token }}
           results_file: results.sarif
           results_format: sarif
-          publish_results: ${{ github.event_name != 'pull_request' }}
+          publish_results: true
 
       - name: Upload SARIF results
-        if: github.event_name != 'pull_request'
         uses: github/codeql-action/upload-sarif@f205ea1c3313d32999d8d6a48b4f6530d4437b38
         env:
           FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true

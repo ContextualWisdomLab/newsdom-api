@@ -1,9 +1,11 @@
 name: tests
 
 on:
-  push:
-    branches: [main, develop]
   pull_request:
+
+concurrency:
+  group: tests-${{ github.repository }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
