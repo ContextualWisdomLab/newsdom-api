@@ -57,3 +57,6 @@ def test_openapi_metadata_includes_contact_and_license():
         "name": "MIT License",
         "identifier": "MIT",
     }
+
+def test_openapi_swagger_ui_parameters():
+    assert app.swagger_ui_parameters.get("persistAuthorization") is True

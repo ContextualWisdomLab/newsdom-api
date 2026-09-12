@@ -319,6 +319,7 @@ def create_app(
         openapi_tags=tags_metadata,
         swagger_ui_parameters={
             "displayRequestDuration": True,
+            "persistAuthorization": True,
             "syntaxHighlight.theme": "monokai",
             "tryItOutEnabled": True,
         },
