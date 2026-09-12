@@ -119,3 +119,16 @@ def test_export_csv_cli_invalid_file(
     assert exc_info.value.code == 1
     captured = capsys.readouterr()
     assert "Error exporting CSV:" in captured.err
+
+
+def test_module_main(monkeypatch: pytest.MonkeyPatch) -> None:
+    import runpy
+    import sys
+    from unittest.mock import patch
+
+    monkeypatch.delitem(sys.modules, "tools.export_csv", raising=False)
+    with patch("sys.argv", ["tools/export_csv.py", "-h"]):
+        with pytest.raises(SystemExit) as excinfo:
+            runpy.run_module("tools.export_csv", run_name="__main__")
+
+    assert excinfo.value.code == 0
