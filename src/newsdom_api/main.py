@@ -43,6 +43,10 @@ from .service import parse_pdf
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
 MAX_AUTHORIZATION_HEADER_BYTES = MAX_BEARER_HEADER_BYTES
+BEARER_PREFIX_BYTES = b"Bearer "
+MAX_BEARER_TOKEN_BYTES = MAX_BEARER_HEADER_BYTES - len(BEARER_PREFIX_BYTES)
+TOKEN_LENGTH_PREFIX_BYTES = 2
+FIXED_TOKEN_VERIFIER_BYTES = TOKEN_LENGTH_PREFIX_BYTES + MAX_BEARER_TOKEN_BYTES
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
 PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
 INVALID_PARSE_PARAMS_DETAIL = "Invalid parse parameters"
@@ -58,6 +62,15 @@ tags_metadata = [
         "description": "Health and deployment diagnostic endpoints.",
     },
 ]
+
+
+def _fixed_width_token_verifier(token_bytes: bytes) -> bytes:
+    """Encode token bytes into one collision-safe fixed-width equality value."""
+
+    return len(token_bytes).to_bytes(TOKEN_LENGTH_PREFIX_BYTES, "big") + token_bytes.ljust(
+        MAX_BEARER_TOKEN_BYTES,
+        b"\x00",
+    )
 
 
 def _apply_security_headers(response: Response, request: Request) -> Response:
@@ -131,7 +144,18 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     scheme, separator, credentials = provided.partition(b" ")
     if separator != b" " or scheme.lower() != b"bearer" or not credentials:
         return _unauthorized_response()
-    if not hmac.compare_digest(credentials, token.encode("utf-8")):
+
+    expected_verifier = getattr(request.app.state, "api_token_verifier", None)
+    if (
+        not isinstance(expected_verifier, bytes)
+        or len(expected_verifier) != FIXED_TOKEN_VERIFIER_BYTES
+    ):
+        return JSONResponse(
+            status_code=503,
+            content={"detail": SERVICE_UNAVAILABLE_DETAIL},
+        )
+    provided_verifier = _fixed_width_token_verifier(credentials)
+    if not hmac.compare_digest(provided_verifier, expected_verifier):
         return _unauthorized_response()
     return None
 
@@ -324,6 +348,12 @@ def create_app(
         },
     )
     application.state.runtime_settings = application_settings
+    api_token = application_settings.api_token
+    application.state.api_token_verifier = (
+        _fixed_width_token_verifier(api_token.encode("utf-8"))
+        if api_token is not None
+        else None
+    )
     application.state.runtime_readiness_probe = (
         runtime_readiness_probe or mineru_runtime_available
     )
