@@ -90,3 +90,11 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+## 2026-09-08 - FastAPI Form Data Memory Exhaustion Protection
+**Vulnerability:** Unbounded textual form fields in multipart endpoints using FastAPI's `python-multipart` backend.
+**Learning:** `python-multipart` buffers string fields into memory synchronously during request parsing before yielding control to route handlers. An attacker could send multi-gigabyte values in string fields (like `language` or `mode`), exhausting memory (DoS) and crashing the API instance, even if file uploads themselves have byte limits checked asynchronously.
+**Prevention:** Always enforce explicit `max_length` bounds on FastAPI `Form()` parameters (e.g., `Form(max_length=50)`) rather than relying on unbound default typing.
+## 2026-09-08 - Update pypdf to fix CVEs
+**Vulnerability:** pypdf versions prior to 6.16.0 have multiple CVEs (e.g. CVE-2026-84309, CVE-2026-84310, CVE-2026-84311).
+**Learning:** Trivy correctly flags these vulnerabilities, and we must update the lockfile alongside constraints and documentation.
+**Prevention:** Always monitor for and update vulnerable dependency versions promptly.
