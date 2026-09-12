@@ -90,3 +90,11 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+## 2025-03-05 - [HTTP 예외 보안 헤더 누락]
+**Vulnerability:** FastAPI에서 발생하는 기본 `HTTPException` (4xx, 5xx 에러) 응답에 보안 헤더(CSP, X-Frame-Options 등)가 포함되지 않는 취약점.
+**Learning:** FastAPI의 기본 미들웨어나 일반적인 예외 처리기(`Exception` 핸들러)는 내장 `HTTPException` 발생 시 우회되므로, 명시적으로 핸들러를 등록하지 않으면 보안 헤더가 누락됨.
+**Prevention:** `application.add_exception_handler(HTTPException, custom_handler)`를 사용하여 `HTTPException`에 대한 사용자 정의 핸들러를 등록하고, 모든 에러 응답에도 보안 헤더를 적용해야 함.
+## 2025-03-05 - [PdfReader 내 예기치 않은 예외로 인한 DoS 취약점 방어]
+**Vulnerability:** 파일 업로드 시 `PdfReader`가 기형적인 PDF 파일을 파싱하다가 `MemoryError`나 `TypeError` 등 예상치 못한 예외를 발생시킬 경우, 500 에러를 반환하며 서버 프로세스에 영향을 줄 수 있는 DoS 취약점.
+**Learning:** 서드파티 파싱 라이브러리는 문서의 구조에 따라 광범위한 예외를 던질 수 있으며, 특정 예외만 명시적으로 잡는 방식(`except (PdfReadError, ...)`)은 한계가 있음.
+**Prevention:** 파서 라이브러리 호출부를 포괄적인 `except Exception:` 블록으로 감싸 시스템 장애를 방지하고, 에러를 안전한 415 상태 코드로 변환하기 전 실제 예외를 로깅하여 숨겨진 문제를 디버깅할 수 있도록 해야 함.
