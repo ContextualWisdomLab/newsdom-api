@@ -555,3 +555,20 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
+
+
+def test_validate_pdf_structure_rejects_unhandled_exceptions(
+    monkeypatch, tmp_path, caplog
+):
+    def reject_pdf(_stream, *, strict):
+        raise TypeError("unexpected type error during validation")
+
+    monkeypatch.setattr("newsdom_api.main.PdfReader", reject_pdf)
+
+    with pytest.raises(HTTPException) as exc_info:
+        (tmp_path / "test.pdf").write_bytes(b"%PDF-1.4\n%%EOF")
+        _validate_pdf_structure(tmp_path / "test.pdf")
+
+    assert exc_info.value.status_code == 415
+    assert exc_info.value.detail == "Unsupported Media Type"
+    assert "Unhandled exception during PDF structure validation" in caplog.text
