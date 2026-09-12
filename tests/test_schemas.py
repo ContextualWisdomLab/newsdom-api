@@ -26,3 +26,15 @@ def test_page_node_openapi_schema_descriptions():
         == "One-based page number from the parsed PDF."
     )
     assert properties["articles"]["description"] == "Articles extracted from this page."
+
+
+def test_openapi_schema_examples_added():
+    """Verify that JSON schema extra examples are correctly populated."""
+    from newsdom_api.schemas import ImageNode, PageNode
+
+    image_schema = ImageNode.model_json_schema()
+    assert image_schema["properties"]["media_type"]["example"] == "image"
+
+    page_schema = PageNode.model_json_schema()
+    assert page_schema["properties"]["width"]["example"] == 595.276
+    assert page_schema["properties"]["height"]["example"] == 841.89
