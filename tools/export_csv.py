@@ -7,6 +7,19 @@ import sys
 from pathlib import Path
 
 
+def _neutralize_formula(text: str) -> str:
+    if text.startswith(("=", "+", "-", "@", "\t", "\r", "＝")):
+        return "'" + text
+    return text
+
+
+def _caption_text(caption: dict | str) -> str:
+    """Helper to safely extract caption text."""
+    if isinstance(caption, dict):
+        return str(caption.get("text", ""))
+    return str(caption)
+
+
 def export_csv(json_path: Path, output_path: Path) -> None:
     """Export NewsDOM JSON to a CSV file containing article metadata and body blocks."""
     if not json_path.is_file():
@@ -29,11 +42,14 @@ def export_csv(json_path: Path, output_path: Path) -> None:
             "headline",
             "body_block_index",
             "body_block_text",
+            "caption_text",  # Added caption text field
         ]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
 
-        document_id = data.get("document_id", "Unknown Document")
+        document_id = _neutralize_formula(
+            str(data.get("document_id", "Unknown Document"))
+        )
 
         for page in pages:
             if not isinstance(page, dict):
@@ -44,12 +60,27 @@ def export_csv(json_path: Path, output_path: Path) -> None:
             for article in articles:
                 if not isinstance(article, dict):
                     continue
-                article_id = article.get("article_id", "Unknown Article ID")
-                headline = article.get("headline", "")
+                article_id = _neutralize_formula(
+                    str(article.get("article_id", "Unknown Article ID"))
+                )
+                headline = _neutralize_formula(str(article.get("headline", "")))
 
                 body_blocks = article.get("body_blocks", [])
 
-                if not body_blocks:
+                # Collect captions
+                captions_list = []
+                for image in article.get("images", []):
+                    if not isinstance(image, dict):
+                        continue
+                    for caption in image.get("captions", []):
+                        captions_list.append(
+                            _neutralize_formula(_caption_text(caption))
+                        )
+
+                for caption in article.get("captions", []):
+                    captions_list.append(_neutralize_formula(_caption_text(caption)))
+
+                if not body_blocks and not captions_list:
                     writer.writerow(
                         {
                             "document_id": document_id,
@@ -58,20 +89,34 @@ def export_csv(json_path: Path, output_path: Path) -> None:
                             "headline": headline,
                             "body_block_index": "",
                             "body_block_text": "",
+                            "caption_text": "",
                         }
                     )
-
-                for idx, block in enumerate(body_blocks):
-                    writer.writerow(
-                        {
-                            "document_id": document_id,
-                            "page_number": page_number,
-                            "article_id": article_id,
-                            "headline": headline,
-                            "body_block_index": idx,
-                            "body_block_text": block,
-                        }
-                    )
+                else:
+                    for idx, block in enumerate(body_blocks):
+                        writer.writerow(
+                            {
+                                "document_id": document_id,
+                                "page_number": page_number,
+                                "article_id": article_id,
+                                "headline": headline,
+                                "body_block_index": idx,
+                                "body_block_text": _neutralize_formula(str(block)),
+                                "caption_text": "",
+                            }
+                        )
+                    for idx, caption in enumerate(captions_list):
+                        writer.writerow(
+                            {
+                                "document_id": document_id,
+                                "page_number": page_number,
+                                "article_id": article_id,
+                                "headline": headline,
+                                "body_block_index": "",
+                                "body_block_text": "",
+                                "caption_text": caption,
+                            }
+                        )
 
 
 def main(argv: list[str] | None = None) -> None:
