@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from newsdom_api.equivalence import compare_fixture_to_baseline, load_metrics
 
 
@@ -241,3 +243,11 @@ def test_derived_metrics_invalid_types():
     }
     metrics = _derived_metrics(payload)
     assert metrics == payload
+
+
+def test_load_metrics_rejects_large_json(tmp_path: Path):
+    path = tmp_path / "large_metrics.json"
+    # Write slightly more than 10MB of data
+    path.write_text("x" * (10 * 1024 * 1024 + 1), encoding="utf-8")
+    with pytest.raises(ValueError, match="JSON file too large"):
+        load_metrics(path)
