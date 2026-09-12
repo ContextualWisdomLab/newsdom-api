@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CLI] 파싱된 NewsDOM JSON에서 순수 텍스트 데이터를 추출하여 텍스트 파일 또는 stdout으로 출력하는 `tools/extract_text.py` 도구를 추가했습니다.
 
 ### Security
+- `/parse` POST 요청에 multipart parser 이전의 21 MiB request-body admission limit를 추가해 선언된 초과 `Content-Length`는 body read 전에 413으로 거절하고, 길이가 없거나 신뢰할 수 없는 stream은 실제 누적 receive bytes 기준으로 제한합니다. 기존 PDF payload 상한 20 MiB와 multipart/form framing 예산 1 MiB를 분리해 유지합니다.
+- `/parse`의 `language` 및 `mode` Form 필드에 `max_length=50` 제한을 추가했습니다. 이 검증은 parser 이후의 필드 경계이며, pre-parser request-body limit를 대체하지 않습니다.
 - `/parse` authentication is now immutable per application instance and fails closed before multipart body parsing when required configuration is missing. Hostile missing, invalid, Unicode, oversized, and duplicated Authorization headers return one non-sensitive response.
 - Added unauthenticated `/ready` traffic readiness that combines authentication configuration with MinerU executable availability while `/health` remains liveness-only.
 - Hardened the Kubernetes deployment example with a restricted namespace policy, explicit non-root UID/GID, `RuntimeDefault` seccomp, disabled privilege escalation, dropped Linux capabilities, a read-only root filesystem, and bounded writable runtime volumes.
@@ -34,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MinerU subprocess argv 생성 시 `-`로 시작하는 option-like 인자를 거부하여 argument injection 위험을 낮춤
 - API 에러 응답 생성 시 내부 예외 체인을 억제하여 의존성 오류나 내부 경로가 노출될 가능성을 줄임
 - API 응답 미들웨어에 `Cache-Control: no-store, max-age=0` 헤더를 추가하여 민감한 파싱 데이터의 브라우저 및 중간 캐싱을 방지
-- `uv.lock`의 의존성을 재잠금하여 실제 `pip-audit`/`trivy-fs` CVE를 제거: 런타임 경로의 `pillow` 12.2.0→12.3.0 (PYSEC-2026-3451/3452/3453/3454/3493/3494/3495/3496, 이미지 파서 취약점 8건), `pypdf>=6.15.0,<7.0` (lock 6.15.0; CVE-2026-59935/59936/59937/59938/71852/71870, PDF 파싱 경로), `click` 8.3.2→8.4.2 (PYSEC-2026-2132) — 모두 스캔 PDF/이미지 파싱 런타임에 직접 관련되며 선언 범위와 lock을 함께 고정함. 빌드 도구 `setuptools` 81.0.0→83.0.0 (CVE-2026-59890). 문서 툴체인의 `pymdown-extensions` 10.21.3→11.0.1 (CVE-2026-61632, MEDIUM)은 `mkdocs-material` 9.6.x의 `pymdown-extensions~=10.2`(`<11`) 상한 때문에 막혀 있었으므로, docs extra 핀을 `mkdocs-material>=9.7,<9.8`로 올려(9.7.x는 상한을 `>=10.2`로 완화) 해소함. `uv run mkdocs build --strict` 통과 확인. 조치 후 전체 잠금(런타임+extras) `pip-audit`: 취약점 0건.
+- `uv.lock`의 의존성을 재잠금하여 실제 `pip-audit`/`trivy-fs` findings를 해소: 런타임 경로의 `pillow` 12.2.0→12.3.0 (PYSEC-2026-3451/3452/3453/3454/3493/3494/3495/3496, 이미지 파서 취약점 8건), `pypdf>=6.16.2,<7.0` (lock 6.16.2; 기존 CVE-2026-59935/59936/59937/59938/71852/71870뿐 아니라 upstream의 6.16.0/6.16.1 patched floors 이후 버전), `click` 8.3.2→8.4.2 (PYSEC-2026-2132). 빌드 도구 `setuptools` 81.0.0→83.0.0 (CVE-2026-59890). 문서 툴체인의 `pymdown-extensions` 10.21.3→11.0.1 (CVE-2026-61632, MEDIUM)은 `mkdocs-material` 9.6.x의 `pymdown-extensions~=10.2`(`<11`) 상한 때문에 막혀 있었으므로, docs extra 핀을 `mkdocs-material>=9.7,<9.8`로 올려(9.7.x는 상한을 `>=10.2`로 완화) 해소함. `uv run mkdocs build --strict` 통과 확인. 조치 후 전체 잠금(런타임+extras) `pip-audit`: 취약점 0건.
 
 ### Performance
 - `newsdom_api.dom_builder._html_safe_text` 함수에 early return과 타입 체크를 도입하여 불필요한 `str()` 캐스팅을 제거함으로써 처리 속도를 개선했습니다.
