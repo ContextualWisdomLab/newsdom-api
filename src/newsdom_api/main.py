@@ -41,7 +41,9 @@ from .mineru_runner import (
 from .schemas import HealthResponse, ParseResponse, ReadinessResponse
 from .service import parse_pdf
 
-MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
+# Keep the sidecar transport ceiling aligned with Naruon's direct PDF DOM
+# upload. The streaming read still rejects the first byte above this bound.
+MAX_PARSE_UPLOAD_BYTES = 64 * 1024 * 1024
 MAX_AUTHORIZATION_HEADER_BYTES = MAX_BEARER_HEADER_BYTES
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
 PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
