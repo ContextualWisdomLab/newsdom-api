@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-08-27 - FastAPI 폼 데이터 입력 길이 제한(max_length) 추가를 통한 DoS 방지
+**Vulnerability:** FastAPI 애플리케이션의 `/parse` 엔드포인트에서 `language` 및 `mode` Form 필드에 입력 길이 제한(max_length)이 누락되었습니다.
+**Learning:** `python-multipart`는 라우트 실행이나 페이로드 크기 제한이 평가되기 전에 전체 폼 데이터를 메모리에 로드하므로, 제한 없는 텍스트 폼 필드는 메모리 고갈을 통한 서비스 거부(DoS) 공격에 악용될 수 있습니다.
+**Prevention:** 텍스트 `Form` 필드에는 항상 `max_length` 제한(예: `Form(max_length=...)`)을 추가하여 과도한 입력값에 의한 메모리 고갈을 방지해야 합니다.
