@@ -43,8 +43,12 @@ from .service import parse_pdf
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
 MAX_AUTHORIZATION_HEADER_BYTES = MAX_BEARER_HEADER_BYTES
-UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
-PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
+UNSUPPORTED_MEDIA_DETAIL = (
+    "Only structurally valid PDF files are accepted. Upload a valid PDF and try again."
+)
+PAYLOAD_TOO_LARGE_DETAIL = (
+    "File exceeds the 20 MiB upload limit. Choose a smaller PDF and try again."
+)
 INVALID_PARSE_PARAMS_DETAIL = "Invalid parse parameters"
 UNAUTHORIZED_DETAIL = "Unauthorized"
 SERVICE_UNAVAILABLE_DETAIL = "Service Unavailable"
