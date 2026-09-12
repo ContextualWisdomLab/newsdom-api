@@ -63,3 +63,10 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2023-08-18 - Replacing isinstance() with type() is an Anti-Pattern
+**Learning:** Replacing `isinstance(var, type)` checks with strict `type(var) is type` comparisons provides negligible nanosecond performance gains while violating PEP 8 and breaking Python duck-typing/subclass handling. It is considered an unimpactful micro-optimization that reduces code maintainability.
+**Action:** Never optimize Python type checks by avoiding `isinstance`. Focus on algorithmic, structural, or I/O bottlenecks instead.
+
+## 2023-08-18 - Fast Directory Discovery
+**Learning:** When searching for specific subdirectories from a known list of candidates, pre-fetching the parent directory's contents once using `Path.iterdir()` is measurably faster (~35%) than executing multiple `Path.glob()` pattern searches, because it avoids repeated filesystem I/O and pattern parsing overhead.
+**Action:** Use `iterdir()` and filter in-memory when scanning for multiple known potential directories within a single parent.
