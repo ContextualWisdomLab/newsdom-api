@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- NewsDOM JSON을 schema validation 후 article/body-block 단위 JSONL로 변환하는 `tools/export_jsonl.py` 도구를 추가했습니다. 출력은 같은 디렉터리의 임시 파일에 완전히 기록된 뒤 교체되므로 encoding/write 실패 시 기존 published JSONL을 보존하고 partial 결과를 완료 산출물로 노출하지 않습니다.
+
+
 > **Planned 0.3.0 deployment migration:** parser authentication changes from
 > **default-open** to **default-required**. Production must configure
 > `NEWSDOM_AUTH_MODE=required`, `NEWSDOM_RUNTIME_PROFILE=production`, and
