@@ -264,6 +264,29 @@ def test_doctoring_records_distinct_failure_domains_and_apa_references() -> None
         assert phrase in doctoring
 
 
+def test_isolated_pdf_doctoring_records_limits_and_apa_references() -> None:
+    """Operators must keep the isolation contract and its sources together."""
+
+    doctoring = _text("docs/doctoring/isolated-pdf-structure-validation.md")
+
+    for phrase in (
+        "re-export the file as",
+        "valid",
+        "invalid_document",
+        "validator_failure",
+        "415 Unsupported Media Type",
+        "503 Service Unavailable",
+        "Carmony, C., Hu, X., Yin, H., Bhaskar, A. V., & Zhang, M. (2016)",
+        "International Organization for Standardization. (2020)",
+        "Open Worldwide Application Security Project. (2023)",
+        "The Open Group. (2018)",
+        "512 MiB",
+        "Linux only",
+        "signal-killed",
+    ):
+        assert phrase in doctoring
+
+
 def test_changelog_records_breaking_default_and_readiness_endpoint() -> None:
     """The unreleased history must make the deployment behavior change visible."""
 

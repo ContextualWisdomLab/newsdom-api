@@ -68,8 +68,14 @@ else:
 
 #### 실패 응답 계약
 
+- `415 Unsupported Media Type`
+  - 업로드가 PDF가 아니거나, 격리된 구조 검증이 문서를 거부했거나, 검증
+    자식 프로세스가 5초 벽시계 한도를 넘겼을 때 반환됩니다. 표준 PDF로
+    다시 내보낸 뒤 재시도하십시오.
 - `503 Service Unavailable`
-  - backend parser 실행 파일을 찾을 수 없거나 실행 자체가 실패했을 때 반환됩니다.
+  - backend parser 실행 파일을 찾을 수 없거나 실행 자체가 실패했을 때,
+    또는 구조 검증 프로세스를 시작하지 못했을 때 반환됩니다. 호스트의
+    `setrlimit` 지원과 운영 로그를 확인하십시오.
 - `502 Bad Gateway`
   - backend parser 프로세스는 종료되었지만 필수 JSON 산출물이 없거나 불완전할 때 반환됩니다.
 

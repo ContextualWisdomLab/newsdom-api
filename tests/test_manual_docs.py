@@ -33,6 +33,7 @@ def test_api_reference_documents_sanitized_parse_failure_semantics() -> None:
     text = Path("manual/api-reference.md").read_text(encoding="utf-8")
 
     for expected in [
+        "415 Unsupported Media Type",
         "503 Service Unavailable",
         "502 Bad Gateway",
         "generic client-facing error details",
