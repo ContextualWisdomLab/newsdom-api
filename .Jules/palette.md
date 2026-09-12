@@ -29,3 +29,6 @@
 ## 2026-07-07 - [Improve Swagger UX with Pydantic V2 Examples]
 **Learning:** Using json_schema_extra={'example': ...} instead of example=... in Pydantic V2 schemas ensures OpenAPI compatibility and prevents deprecation warnings, significantly improving Developer Experience (DX) for API consumers.
 **Action:** Apply json_schema_extra to Pydantic Field definitions to automatically generate rich, self-documenting OpenAPI schemas for headless APIs.
+## 2026-09-10 - 개발 환경의 Swagger UI 개선
+**Learning:** 개발 환경에서 Swagger UI를 사용할 때 페이지 새로고침 시 인증 정보가 유지되지 않는 불편함과 엄격한 CSP 정책으로 인해 UI가 깨지는 문제를 발견했습니다.
+**Action:** `RuntimeProfile.DEVELOPMENT` 환경에서 `"persistAuthorization": True` 옵션을 추가하여 DX(Developer Experience)를 향상시키고, 문서화 관련 라우트에 한해 CSP를 완화하여 Swagger UI가 정상적으로 렌더링되도록 수정했습니다.
