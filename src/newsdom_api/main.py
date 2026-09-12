@@ -201,14 +201,15 @@ def _validate_pdf_structure(file_path: Path) -> None:
 
 
 async def parse(
-    file: Annotated[UploadFile, File(..., description="The PDF file to parse.")],
+    file: Annotated[UploadFile, File(description="The PDF file to parse.")],
     language: Annotated[
         str,
         Form(
             description=(
                 "MinerU language family or compatibility alias (e.g. `ch`, "
                 "`en`, `japan`, `korean`, `arabic`, `devanagari`)."
-            )
+            ),
+            examples=["ch"],
         ),
     ] = DEFAULT_LANGUAGE,
     mode: Annotated[
@@ -217,7 +218,8 @@ async def parse(
             description=(
                 "MinerU parsing mode: `auto` (born-digital text PDFs skip forced "
                 "OCR), `ocr` (force OCR), or `txt` (embedded text layer only)."
-            )
+            ),
+            examples=["auto"],
         ),
     ] = DEFAULT_MODE,
 ) -> ParseResponse:
