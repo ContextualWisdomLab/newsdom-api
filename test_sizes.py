@@ -1,0 +1,5 @@
+import asyncio
+from newsdom_api.main import UPLOAD_READ_CHUNK_SIZE_BYTES, MAX_PARSE_UPLOAD_BYTES
+
+print(f"CHUNK SIZE: {UPLOAD_READ_CHUNK_SIZE_BYTES}")
+print(f"MAX SIZE: {MAX_PARSE_UPLOAD_BYTES}")

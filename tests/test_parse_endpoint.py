@@ -9,6 +9,7 @@ from pypdf.errors import PdfReadError
 from newsdom_api import mineru_runner
 from newsdom_api.main import (
     MAX_PARSE_UPLOAD_BYTES,
+    UPLOAD_READ_CHUNK_SIZE_BYTES,
     app,
     parse,
     _validate_pdf_structure,
@@ -385,7 +386,7 @@ def test_parse_endpoint_rejects_missing_magic_bytes():
 
 @pytest.mark.asyncio
 async def test_parse_endpoint_rejects_magic_bytes_before_full_read():
-    upload = _ReadTrackingUpload(b"MZ\x90\x00\x03" + (b"x" * 1024 * 1024))
+    upload = _ReadTrackingUpload(b"MZ\x90\x00\x03" + (b"x" * UPLOAD_READ_CHUNK_SIZE_BYTES))
 
     with pytest.raises(HTTPException) as exc_info:
         await parse(upload)
