@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- [CLI] 지정한 키워드가 포함된 기사만 남기도록 NewsDOM JSON 파일을 필터링하는 `tools/filter_dom.py` 도구를 추가했습니다.
+
 > **Planned 0.3.0 deployment migration:** parser authentication changes from
 > **default-open** to **default-required**. Production must configure
 > `NEWSDOM_AUTH_MODE=required`, `NEWSDOM_RUNTIME_PROFILE=production`, and
