@@ -555,3 +555,24 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
+
+
+def test_parse_endpoint_rejects_overly_long_language_and_mode():
+    client = TestClient(app)
+    # The limit is 64 characters
+    long_string = "a" * 65
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+        data={"language": long_string, "mode": "auto"},
+    )
+    assert response.status_code == 422
+    assert "language" in response.text
+
+    response2 = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+        data={"language": "en", "mode": long_string},
+    )
+    assert response2.status_code == 422
+    assert "mode" in response2.text
