@@ -63,3 +63,7 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2024-08-23 - Dictionary Lookup Caching
+**학습:** 동일한 키로 딕셔너리 조회를 반복(예: 타입 체크 및 후속 할당)하는 것은 중복된 비용을 발생시킵니다.
+**실행:** 페이로드 파싱과 같이 빈번하게 호출되는 루프에서는 딕셔너리 조회(`payload.get('key')`) 결과를 지역 변수에 캐시하여 불필요한 반복 조회를 줄입니다.
