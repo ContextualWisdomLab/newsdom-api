@@ -20,6 +20,7 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.security import HTTPBearer
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
@@ -131,7 +132,11 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     scheme, separator, credentials = provided.partition(b" ")
     if separator != b" " or scheme.lower() != b"bearer" or not credentials:
         return _unauthorized_response()
-    if not hmac.compare_digest(credentials, token.encode("utf-8")):
+    try:
+        token_bytes = token.encode("utf-8")
+    except UnicodeEncodeError:
+        return _unauthorized_response()
+    if not hmac.compare_digest(credentials, token_bytes):
         return _unauthorized_response()
     return None
 
@@ -157,6 +162,18 @@ async def global_exception_handler(request: Request, exc: Exception) -> Response
     response = JSONResponse(
         status_code=500,
         content={"detail": "Internal Server Error"},
+    )
+    return _apply_security_headers(response, request)
+
+
+async def custom_http_exception_handler(
+    request: Request, exc: StarletteHTTPException
+) -> Response:
+    """Ensure HTTPExceptions also receive standard security headers."""
+    response = JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers=exc.headers,
     )
     return _apply_security_headers(response, request)
 
@@ -329,6 +346,9 @@ def create_app(
     )
     application.middleware("http")(security_boundary_middleware)
     application.add_exception_handler(Exception, global_exception_handler)
+    application.add_exception_handler(
+        StarletteHTTPException, custom_http_exception_handler
+    )
     application.add_api_route(
         "/health",
         health,
