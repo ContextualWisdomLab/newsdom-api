@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-08-15 - Prevent Memory Exhaustion via Unbounded Form Fields
+**Vulnerability:** FastAPI `Form` fields for `language` and `mode` lacked `max_length` validation, allowing attackers to send excessively large strings that consume memory before the main payload size limit is enforced.
+**Learning:** Even if the underlying ASGI server or middleware limits the total payload size, missing length constraints on individual fields can still cause disproportionate memory allocation and CPU overhead during string parsing.
+**Prevention:** Always set strict `max_length` limits on all textual `Form` fields in FastAPI to drop malicious inputs early in the validation layer.
