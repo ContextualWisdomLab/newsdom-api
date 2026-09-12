@@ -15,11 +15,13 @@ The adopted floors are:
 - `setuptools>=83` for the build backend;
 - `Pillow>=12.3,<13.0` for image parsing on the untrusted document-ingestion path;
 - `pypdf>=6.16.1,<7.0` for PDF parsing;
+- `httpx2>=2.12.0` and `httpcore2>=2.12.0` in the development/TestClient dependency
+  set;
 - `mkdocs-material>=9.7,<9.8`, allowing `pymdown-extensions>=11` while the MkDocs
   core remains on the supported 1.x line.
 
-The generated lock additionally resolves Click 8.4.2, setuptools 83.0.0,
-Pillow 12.3.0, pypdf 6.18.0, mkdocs-material 9.7.7, and
+The generated lock resolves Click 8.4.2, setuptools 83.0.0, Pillow 12.3.0,
+pypdf 6.18.0, HTTPX2 2.12.0, httpcore2 2.12.0, mkdocs-material 9.7.7, and
 pymdown-extensions 11.0.1. Direct floors prevent a later lock refresh from
 silently selecting known-vulnerable ranges again.
 
@@ -41,18 +43,39 @@ NewsDOM requires `pypdf>=6.16.1,<7.0`. The generated lock currently resolves
 pypdf 6.18.0 with hashes. The repository does not suppress these findings in
 `.trivyignore`; scanner success must come from a remediated artifact.
 
+The exact-head filesystem scan also exposed the TestClient HTTPX2 family as a
+separate current lock vulnerability. The upstream HTTPX2 advisories establish
+these patch boundaries:
+
+- CVE-2026-84378 / GHSA-f2fp-rgf2-35cp: quadratic SSE line buffering is fixed in
+  HTTPX2 2.10.0;
+- CVE-2026-84379 / GHSA-h4x7-gw46-3wm6: multipart part-header injection is fixed
+  in HTTPX2 2.11.0;
+- CVE-2026-84380 / GHSA-pf96-p4fj-6566: conflicting `Content-Length` and
+  `Transfer-Encoding` auto-generation is fixed in HTTPX2 2.11.0;
+- CVE-2026-84381 / GHSA-7mj9-2mp8-4m2p: `wss://` traffic through SOCKS could omit
+  TLS; HTTPX2 and httpcore2 2.10.0 are the fixed boundary;
+- CVE-2026-84382 / GHSA-8xx6-hgc6-gc2m: streaming decompression could create an
+  unbounded intermediate allocation and is fixed in HTTPX2 2.12.0.
+
+The strongest current HTTPX2 boundary is therefore 2.12.0. NewsDOM declares both
+`httpx2>=2.12.0` and `httpcore2>=2.12.0` in its development/TestClient dependency
+set and resolves both to 2.12.0. This does not claim that every advisory is
+reachable through NewsDOM production traffic; it removes known-vulnerable
+artifacts from the repository's tested and scanned lock without weakening the
+whole-tree security gate.
+
 CVE-2026-59890 affects setuptools versions before 83.0.0. On
 normalization-preserving macOS filesystems, specially named files could bypass
 `MANIFEST.in` exclusion matching and enter a source distribution. Although this
 is a build-time rather than request-time issue, it can compromise release
 contents, so the build-system floor is raised to 83.0.0.
 
-Pillow 12.3.0 and pypdf release artifacts are distributed through PyPI with
-published cryptographic file digests. Those artifacts and digests provide
-provenance inputs; they do not by themselves establish that a package is safe.
-Repository scans, hash-locked resolution, current-head tests, and independent
-review remain mandatory. The current generated lock records pypdf 6.18.0 and its
-artifact hashes.
+Pillow, pypdf, HTTPX2, and httpcore2 release artifacts are distributed through
+PyPI with published cryptographic file digests. Those artifacts and digests
+provide provenance inputs; they do not by themselves establish that a package is
+safe. Repository scans, hash-locked resolution, current-head tests, and
+independent review remain mandatory.
 
 ## Secure-development and provenance controls
 
@@ -85,8 +108,11 @@ Before merge, the exact current head must prove all of the following:
 - the production docstring gate passes;
 - `pyproject.toml` and `uv.lock` contain the same `pypdf>=6.16.1,<7.0` direct
   floor and the resolved pypdf artifact is at least 6.16.1;
-- CVE-2026-84309, CVE-2026-84310, and CVE-2026-84311 are absent from the
-  dependency/filesystem scan without suppression;
+- the development/TestClient set declares `httpx2>=2.12.0` and
+  `httpcore2>=2.12.0`, and the lock resolves both to at least 2.12.0;
+- CVE-2026-84309, CVE-2026-84310, CVE-2026-84311, CVE-2026-84378,
+  CVE-2026-84379, CVE-2026-84380, CVE-2026-84381, and CVE-2026-84382 are absent
+  from the dependency/filesystem scan without suppression;
 - dependency, filesystem, container, CodeQL, Semgrep, fuzzing, and scorecard
   checks complete successfully on the same head;
 - no unresolved valid review thread remains;
@@ -100,11 +126,12 @@ fresh current-head run supplies the required evidence.
 
 ## Residual risk
 
-Version upgrades do not prove that every malformed PDF is safe to process.
-NewsDOM still requires bounded upload size, parser timeouts, concurrency limits,
-resource isolation, readiness reporting, and production telemetry. The current
-change removes identified dependency vulnerabilities; it does not replace those
-runtime controls or a corpus-based parser accuracy and resilience program.
+Version upgrades do not prove that every malformed PDF, multipart request, or
+HTTP response is safe to process. NewsDOM still requires bounded upload size,
+parser timeouts, concurrency limits, resource isolation, readiness reporting,
+and production telemetry. The current change removes identified dependency
+vulnerabilities; it does not replace those runtime controls or a corpus-based
+parser accuracy and resilience program.
 
 ## References
 
@@ -118,31 +145,37 @@ development framework (SSDF) version 1.2: Recommendations for mitigating the
 risk of software vulnerabilities* (NIST Special Publication 800-218 Rev. 1,
 Initial Public Draft). https://doi.org/10.6028/NIST.SP.800-218r1.ipd
 
-National Institute of Standards and Technology. (2026a). *CVE-2026-59935*.
-National Vulnerability Database. Retrieved August 4, 2026, from
-https://nvd.nist.gov/vuln/detail/CVE-2026-59935
-
-National Institute of Standards and Technology. (2026b). *CVE-2026-59890*.
-National Vulnerability Database. Retrieved August 4, 2026, from
-https://nvd.nist.gov/vuln/detail/CVE-2026-59890
-
-Open Source Vulnerabilities. (2026a). *CVE-2026-59935*. Retrieved August 4,
-2026, from https://osv.dev/vulnerability/CVE-2026-59935
-
-Open Source Vulnerabilities. (2026b). *CVE-2026-59890*. Retrieved August 4,
-2026, from https://osv.dev/vulnerability/CVE-2026-59890
-
-Open Source Vulnerabilities. (2026c). *GHSA-jp53-mhqp-8xcg (CVE-2026-84309)*.
+Open Source Vulnerabilities. (2026a). *GHSA-jp53-mhqp-8xcg (CVE-2026-84309)*.
 Retrieved September 8, 2026, from
 https://osv.dev/vulnerability/GHSA-jp53-mhqp-8xcg
 
-Open Source Vulnerabilities. (2026d). *GHSA-23w6-3w8w-8484 (CVE-2026-84310)*.
+Open Source Vulnerabilities. (2026b). *GHSA-23w6-3w8w-8484 (CVE-2026-84310)*.
 Retrieved September 8, 2026, from
 https://osv.dev/vulnerability/GHSA-23w6-3w8w-8484
 
-Open Source Vulnerabilities. (2026e). *GHSA-763m-79hh-57f2 (CVE-2026-84311)*.
+Open Source Vulnerabilities. (2026c). *GHSA-763m-79hh-57f2 (CVE-2026-84311)*.
 Retrieved September 8, 2026, from
 https://osv.dev/vulnerability/GHSA-763m-79hh-57f2
+
+Pydantic. (2026a). *Quadratic SSE line buffering can cause CPU denial of service*
+(GHSA-f2fp-rgf2-35cp). GitHub Security Advisory.
+https://github.com/pydantic/httpx2/security/advisories/GHSA-f2fp-rgf2-35cp
+
+Pydantic. (2026b). *Multipart part header injection via unvalidated file
+Content-Type and custom headers* (GHSA-h4x7-gw46-3wm6). GitHub Security Advisory.
+https://github.com/pydantic/httpx2/security/advisories/GHSA-h4x7-gw46-3wm6
+
+Pydantic. (2026c). *Conflicting Content-Length and Transfer-Encoding headers can
+be auto-generated* (GHSA-pf96-p4fj-6566). GitHub Security Advisory.
+https://github.com/pydantic/httpx2/security/advisories/GHSA-pf96-p4fj-6566
+
+Pydantic. (2026d). *Secure WebSocket traffic sent without TLS through SOCKS
+proxies* (GHSA-7mj9-2mp8-4m2p). GitHub Security Advisory.
+https://github.com/pydantic/httpx2/security/advisories/GHSA-7mj9-2mp8-4m2p
+
+Pydantic. (2026e). *Streaming response decompression does not bound peak memory*
+(GHSA-8xx6-hgc6-gc2m). GitHub Security Advisory.
+https://github.com/pydantic/httpx2/security/advisories/GHSA-8xx6-hgc6-gc2m
 
 Python Packaging Authority. (2026a). *Digital attestations*. PyPI Docs.
 Retrieved August 4, 2026, from https://docs.pypi.org/attestations/
