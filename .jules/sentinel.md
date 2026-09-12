@@ -90,3 +90,7 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+## 2024-11-20 - PyPDF 취약성 패치
+**Vulnerability:** 구버전 pypdf(6.15.0)의 알려진 취약점(CVE-2026-84309, CVE-2026-84310, CVE-2026-84311)으로 인한 애플리케이션 보안 위험.
+**Learning:** 서드파티 PDF 파싱 라이브러리는 자주 공격 대상이 되며, 애플리케이션의 핵심 로직과 관계 없이 심각한 보안 취약점을 유발할 수 있습니다.
+**Prevention:** 의존성 스캐너(trivy)에서 발견된 주요 라이브러리의 보안 권고를 지속적으로 모니터링하고, 안전한 최신 버전으로 즉각 업데이트해야 합니다.
