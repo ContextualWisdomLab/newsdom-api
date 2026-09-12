@@ -111,6 +111,21 @@ def test_validate_pdf_structure_rejects_pypdf_read_errors(monkeypatch, tmp_path)
     assert exc_info.value.detail == "Unsupported Media Type"
 
 
+def test_validate_pdf_structure_rejects_unhandled_exceptions(monkeypatch, tmp_path):
+    def reject_pdf(_stream, *, strict):
+        assert strict is True
+        raise MemoryError("out of memory")
+
+    monkeypatch.setattr("newsdom_api.main.PdfReader", reject_pdf)
+
+    with pytest.raises(HTTPException) as exc_info:
+        (tmp_path / "test.pdf").write_bytes(b"%PDF-1.4\n%%EOF")
+        _validate_pdf_structure(tmp_path / "test.pdf")
+
+    assert exc_info.value.status_code == 415
+    assert exc_info.value.detail == "Unsupported Media Type"
+
+
 def test_parse_endpoint_rejects_prefixed_non_pdf_payload():
     client = TestClient(app)
     response = client.post(
