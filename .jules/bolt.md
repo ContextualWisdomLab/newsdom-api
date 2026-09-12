@@ -63,3 +63,7 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2025-01-25 - Performance: Improve FastAPI Asynchronous File Upload
+**Learning:** For asynchronous file uploads in FastAPI/Starlette, avoid small chunk sizes (e.g., 8192 bytes) with `await file.read()`, as it creates massive threadpool and context-switching overhead. Improve performance by using larger chunk sizes (e.g., 1MB) defined as a named constant (e.g., `UPLOAD_READ_CHUNK_SIZE_BYTES = 1024 * 1024`).
+**Action:** Update related tests (e.g., `tests/test_parse_endpoint.py`) to use this constant instead of hardcoded equivalent values (like `1024 * 1024`) to prevent test failures.
