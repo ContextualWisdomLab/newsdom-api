@@ -71,3 +71,32 @@ def test_mineru_runtime_available_checks_path_commands(
 
     monkeypatch.setattr(mineru_runner, "_cached_which", lambda _command: None)
     assert mineru_runner.mineru_runtime_available() is False
+
+def test_create_app_swagger_ui_parameters_development():
+    from fastapi.testclient import TestClient
+    from newsdom_api.config import RuntimeSettings, AuthenticationMode, RuntimeProfile
+    from newsdom_api.main import create_app
+    settings = RuntimeSettings(
+        authentication_mode=AuthenticationMode.DISABLED,
+        runtime_profile=RuntimeProfile.DEVELOPMENT
+    )
+    app = create_app(settings)
+    client = TestClient(app)
+    response = client.get("/docs")
+    assert response.status_code == 200
+    assert "\"persistAuthorization\": true" in response.text
+
+def test_create_app_swagger_ui_parameters_production():
+    from fastapi.testclient import TestClient
+    from newsdom_api.config import RuntimeSettings, AuthenticationMode, RuntimeProfile
+    from newsdom_api.main import create_app
+    settings = RuntimeSettings(
+        authentication_mode=AuthenticationMode.REQUIRED,
+        runtime_profile=RuntimeProfile.PRODUCTION,
+        api_token="test"
+    )
+    app = create_app(settings)
+    client = TestClient(app)
+    response = client.get("/docs")
+    assert response.status_code == 200
+    assert "persistAuthorization" not in response.text
