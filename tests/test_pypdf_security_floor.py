@@ -7,10 +7,11 @@ import yaml
 
 
 _REQUIRED_PYPDF_VERSION = (6, 16, 1)
+_LOCKED_PYPDF_VERSION = (6, 18, 0)
 _CURRENT_PYPDF_ADVISORIES = (
-    ("CVE-2026-84309", "GHSA-jp53-mhqp-8xcg"),
-    ("CVE-2026-84310", "GHSA-23w6-3w8w-8484"),
-    ("CVE-2026-84311", "GHSA-763m-79hh-57f2"),
+    ("CVE-2026-84309", "GHSA-jp53-mhqp-8xcg", "6.16.0"),
+    ("CVE-2026-84310", "GHSA-23w6-3w8w-8484", "6.16.1"),
+    ("CVE-2026-84311", "GHSA-763m-79hh-57f2", "6.16.1"),
 )
 _LOCKED_PYPDF_REQUIREMENT = '{ name = "pypdf", specifier = ">=6.16.1,<7.0" },'
 
@@ -37,7 +38,7 @@ def test_project_declares_current_pypdf_security_floor() -> None:
 def test_lock_uses_current_pypdf_security_release() -> None:
     """Require the resolved parser used by CI and production to be remediated."""
 
-    assert _locked_pypdf_version() >= _REQUIRED_PYPDF_VERSION
+    assert _locked_pypdf_version() == _LOCKED_PYPDF_VERSION
 
 
 def test_lock_metadata_matches_current_pypdf_security_floor() -> None:
@@ -51,7 +52,7 @@ def test_current_pypdf_findings_are_not_suppressed() -> None:
     """Keep current pypdf vulnerability findings visible to the Trivy gate."""
 
     ignore_text = Path(".trivyignore.yaml").read_text(encoding="utf-8")
-    for cve_id, ghsa_id in _CURRENT_PYPDF_ADVISORIES:
+    for cve_id, ghsa_id, _fixed_version in _CURRENT_PYPDF_ADVISORIES:
         assert cve_id not in ignore_text
         assert ghsa_id not in ignore_text
 
@@ -64,11 +65,20 @@ def test_current_pypdf_advisories_and_floor_are_documented() -> None:
     )
     changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
 
-    for cve_id, ghsa_id in _CURRENT_PYPDF_ADVISORIES:
-        assert cve_id in baseline
-        assert ghsa_id in baseline
+    for cve_id, ghsa_id, fixed_version in _CURRENT_PYPDF_ADVISORIES:
+        for document in (baseline, changelog):
+            assert cve_id in document
+            assert ghsa_id in document
+        boundary = re.compile(
+            rf"{re.escape(cve_id)}\s*/\s*{re.escape(ghsa_id)}.*?fixed\s+in\s+{re.escape(fixed_version)}",
+            re.DOTALL,
+        )
+        assert boundary.search(baseline) is not None
+
     assert "`pypdf>=6.16.1,<7.0`" in changelog
     assert "`pypdf>=6.16.1,<7.0`" in baseline
+    assert "pypdf 6.18.0" in changelog
+    assert "pypdf 6.18.0" in baseline
 
 
 def test_trivy_registry_exception_is_scoped_to_the_example_manifest() -> None:
