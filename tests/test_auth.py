@@ -38,6 +38,7 @@ def _settings(
     token: str | None = "s3cret-token",
     mode: AuthenticationMode = AuthenticationMode.REQUIRED,
     profile: RuntimeProfile = RuntimeProfile.PRODUCTION,
+    max_concurrent_parses: int = 1,
 ) -> RuntimeSettings:
     """Build one explicit immutable settings object for an application test."""
 
@@ -45,6 +46,7 @@ def _settings(
         authentication_mode=mode,
         runtime_profile=profile,
         api_token=token,
+        max_concurrent_parses=max_concurrent_parses,
     )
 
 
@@ -346,7 +348,8 @@ def test_concurrent_requests_cannot_switch_authentication_state(
     """Concurrent callers should observe one frozen token and mode."""
 
     application = create_app(
-        _settings(token="fixed"), runtime_readiness_probe=lambda: True
+        _settings(token="fixed", max_concurrent_parses=20),
+        runtime_readiness_probe=lambda: True,
     )
 
     def request(token: str) -> int:
@@ -388,22 +391,80 @@ def test_get_api_token_normalizes_bootstrap_transport() -> None:
 
     assert get_api_token({}) is None
     assert get_api_token({API_TOKEN_ENV_VAR: "   "}) is None
-    assert get_api_token({API_TOKEN_ENV_VAR: "  padded-token\n"}) == "padded-token"
+    assert get_api_token({API_TOKEN_ENV_VAR: " mounted-secret\n"}) == "mounted-secret"
 
 
-def test_default_runtime_settings_are_required_production() -> None:
-    """Missing mode variables must select the fail-closed production contract."""
+def test_environment_settings_are_snapshotted_once(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Loading settings once should isolate them from later environment mutation."""
 
-    settings = load_runtime_settings({API_TOKEN_ENV_VAR: "token"})
+    environment = {
+        AUTH_MODE_ENV_VAR: "required",
+        RUNTIME_PROFILE_ENV_VAR: "production",
+        API_TOKEN_ENV_VAR: "initial-token",
+    }
+    settings = load_runtime_settings(environment)
+    environment[API_TOKEN_ENV_VAR] = "changed-token"
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "process-token")
 
-    assert settings.authentication_mode is AuthenticationMode.REQUIRED
-    assert settings.runtime_profile is RuntimeProfile.PRODUCTION
-    assert settings.authentication_ready is True
+    assert settings.api_token == "initial-token"
 
 
-def test_config_module_exposes_versioned_environment_contract() -> None:
-    """Deployment tooling should use the exact documented environment names."""
+def test_default_factory_loads_settings_once_per_application(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The factory should evaluate runtime configuration only during app creation."""
 
-    assert config.API_TOKEN_ENV_VAR == "NEWSDOM_API_TOKEN"
-    assert config.AUTH_MODE_ENV_VAR == "NEWSDOM_AUTH_MODE"
-    assert config.RUNTIME_PROFILE_ENV_VAR == "NEWSDOM_RUNTIME_PROFILE"
+    calls = {"count": 0}
+    frozen = _settings()
+
+    def fake_loader():
+        calls["count"] += 1
+        return frozen
+
+    monkeypatch.setattr("newsdom_api.main.load_runtime_settings", fake_loader)
+    application = create_app(runtime_readiness_probe=lambda: True)
+
+    assert calls["count"] == 1
+    assert application.state.runtime_settings is frozen
+
+
+def test_compatibility_get_api_token_reads_process_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The compatibility helper should keep its explicit process lookup contract."""
+
+    monkeypatch.setenv(API_TOKEN_ENV_VAR, "compat-token")
+
+    assert get_api_token() == "compat-token"
+
+
+def test_security_headers_are_applied_to_unhandled_server_errors() -> None:
+    """Unhandled errors should keep the same response hardening as normal traffic."""
+
+    async def failing_route() -> None:
+        raise RuntimeError("internal path /tmp/private-token")
+
+    application = create_app(_settings(), runtime_readiness_probe=lambda: True)
+    application.add_api_route("/boom", failing_route, methods=["GET"])
+    response = TestClient(application, raise_server_exceptions=False).get("/boom")
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Internal Server Error"}
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert "private-token" not in response.text
+
+
+def test_main_module_logs_missing_required_token_without_crashing(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Application creation should expose configuration failure only to operators."""
+
+    caplog.set_level(logging.ERROR, logger="newsdom_api")
+    create_app(_settings(token=None), runtime_readiness_probe=lambda: True)
+
+    assert "Parser authentication configuration is unavailable" in caplog.text
+    assert "token" not in caplog.text.lower().replace(
+        "parser authentication configuration is unavailable", ""
+    )

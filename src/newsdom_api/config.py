@@ -10,7 +10,10 @@ from typing import Mapping
 API_TOKEN_ENV_VAR = "NEWSDOM_API_TOKEN"
 AUTH_MODE_ENV_VAR = "NEWSDOM_AUTH_MODE"
 RUNTIME_PROFILE_ENV_VAR = "NEWSDOM_RUNTIME_PROFILE"
+MAX_CONCURRENT_PARSES_ENV_VAR = "NEWSDOM_MAX_CONCURRENT_PARSES"
 MAX_BEARER_HEADER_BYTES = 4096
+DEFAULT_MAX_CONCURRENT_PARSES = 1
+MAX_MAX_CONCURRENT_PARSES = 128
 
 
 class RuntimeConfigurationError(ValueError):
@@ -31,6 +34,20 @@ class RuntimeProfile(str, Enum):
     DEVELOPMENT = "development"
 
 
+def _validated_parse_capacity(value: object) -> int:
+    """Return one supported non-boolean per-process parse capacity."""
+
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int)
+        or not 1 <= value <= MAX_MAX_CONCURRENT_PARSES
+    ):
+        raise RuntimeConfigurationError(
+            "Invalid value for NEWSDOM_MAX_CONCURRENT_PARSES; use an integer from 1 to 128"
+        )
+    return value
+
+
 @dataclass(frozen=True, slots=True)
 class RuntimeSettings:
     """Validated settings frozen for the lifetime of one FastAPI application."""
@@ -38,6 +55,7 @@ class RuntimeSettings:
     authentication_mode: AuthenticationMode = AuthenticationMode.REQUIRED
     runtime_profile: RuntimeProfile = RuntimeProfile.PRODUCTION
     api_token: str | None = field(default=None, repr=False)
+    max_concurrent_parses: int = DEFAULT_MAX_CONCURRENT_PARSES
 
     def __post_init__(self) -> None:
         """Normalize secrets once and reject unsafe direct construction."""
@@ -49,6 +67,12 @@ class RuntimeSettings:
             raise RuntimeConfigurationError(
                 "Authentication can be disabled only in the development runtime profile"
             )
+
+        object.__setattr__(
+            self,
+            "max_concurrent_parses",
+            _validated_parse_capacity(self.max_concurrent_parses),
+        )
 
         if self.api_token is None:
             return
@@ -98,6 +122,22 @@ def _parse_enum_value(
     return raw
 
 
+def _parse_capacity_value(source: Mapping[str, str]) -> int:
+    """Parse the bounded parser budget without echoing malformed input."""
+
+    raw = source.get(
+        MAX_CONCURRENT_PARSES_ENV_VAR,
+        str(DEFAULT_MAX_CONCURRENT_PARSES),
+    ).strip()
+    try:
+        parsed = int(raw)
+    except ValueError as exc:
+        raise RuntimeConfigurationError(
+            "Invalid value for NEWSDOM_MAX_CONCURRENT_PARSES; use an integer from 1 to 128"
+        ) from exc
+    return _validated_parse_capacity(parsed)
+
+
 def get_api_token(source: Mapping[str, str] | None = None) -> str | None:
     """Return a normalized bootstrap token without logging or exposing it."""
 
@@ -136,4 +176,5 @@ def load_runtime_settings(
         authentication_mode=authentication_mode,
         runtime_profile=runtime_profile,
         api_token=get_api_token(values),
+        max_concurrent_parses=_parse_capacity_value(values),
     )

@@ -24,6 +24,7 @@ from fastapi.security import HTTPBearer
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
+from .admission import ParseAdmissionLimiter
 from .config import (
     AuthenticationMode,
     MAX_BEARER_HEADER_BYTES,
@@ -47,7 +48,9 @@ UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
 PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
 INVALID_PARSE_PARAMS_DETAIL = "Invalid parse parameters"
 UNAUTHORIZED_DETAIL = "Unauthorized"
+TOO_MANY_REQUESTS_DETAIL = "Too Many Requests"
 SERVICE_UNAVAILABLE_DETAIL = "Service Unavailable"
+RETRY_AFTER_SECONDS = "1"
 LOGGER = logging.getLogger("newsdom_api")
 BEARER_SCHEME = HTTPBearer(auto_error=False, scheme_name="BearerAuth")
 
@@ -108,6 +111,16 @@ def _unauthorized_response() -> JSONResponse:
     )
 
 
+def _too_many_requests_response() -> JSONResponse:
+    """Return one fixed response for a saturated parser process."""
+
+    return JSONResponse(
+        status_code=429,
+        content={"detail": TOO_MANY_REQUESTS_DETAIL},
+        headers={"Retry-After": RETRY_AFTER_SECONDS},
+    )
+
+
 def _parse_access_failure(request: Request) -> JSONResponse | None:
     """Validate `/parse` authorization before multipart upload parsing begins."""
 
@@ -140,12 +153,22 @@ async def security_boundary_middleware(
     request: Request,
     call_next: Callable,
 ) -> Response:
-    """Enforce parser authorization before reading the request body and add headers."""
+    """Enforce parser access boundaries before reading the request body."""
 
     if request.method == "POST" and request.scope.get("path") == "/parse":
         failure = _parse_access_failure(request)
         if failure is not None:
             return _apply_security_headers(failure, request)
+
+        limiter: ParseAdmissionLimiter = request.app.state.parse_admission_limiter
+        if not limiter.try_acquire():
+            return _apply_security_headers(_too_many_requests_response(), request)
+        try:
+            response = await call_next(request)
+        finally:
+            limiter.release()
+        return _apply_security_headers(response, request)
+
     response = await call_next(request)
     return _apply_security_headers(response, request)
 
@@ -324,6 +347,9 @@ def create_app(
         },
     )
     application.state.runtime_settings = application_settings
+    application.state.parse_admission_limiter = ParseAdmissionLimiter(
+        application_settings.max_concurrent_parses
+    )
     application.state.runtime_readiness_probe = (
         runtime_readiness_probe or mineru_runtime_available
     )
@@ -367,6 +393,7 @@ def create_app(
             413: {"description": PAYLOAD_TOO_LARGE_DETAIL},
             415: {"description": UNSUPPORTED_MEDIA_DETAIL},
             422: {"description": INVALID_PARSE_PARAMS_DETAIL},
+            429: {"description": TOO_MANY_REQUESTS_DETAIL},
             502: {"description": "Bad Gateway"},
             503: {"description": SERVICE_UNAVAILABLE_DETAIL},
         },
