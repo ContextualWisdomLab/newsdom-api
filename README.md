@@ -176,6 +176,8 @@ NEWSDOM_RUNTIME_PROFILE=development \
   uv run uvicorn --app-dir src newsdom_api.main:app --reload
 ```
 
+In development, you may also optionally enable Swagger UI authorization persistence by exporting `NEWSDOM_SWAGGER_PERSIST_AUTHORIZATION=true`. This caches credentials in the browser so they survive page close/refresh. This setting is strictly for local development and should **not** be enabled on shared or remote development browsers, as it risks exposing authorization data to other users of that browser. It is rejected in production profiles.
+
 Do not use the development-only bypass as a production rollback. Restore a
 working secret or the previous release instead.
 
