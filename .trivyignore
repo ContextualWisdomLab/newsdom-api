@@ -1,0 +1,22 @@
+# Suppressions for the trivy-fs gate of the central "Security Scan" required
+# workflow (ContextualWisdomLab/.github, .github/workflows/security-scan.yml).
+# That gate runs `trivy fs .` from the repository root with
+# severity=CRITICAL,HIGH,MEDIUM and ignore-unfixed=true. Trivy picks this
+# plain .trivyignore up automatically because it is the default --ignorefile;
+# no trivyignores:/TRIVY_IGNOREFILE wiring exists (or is needed) in this repo.
+#
+# Contract for every entry (enforced by tests/test_fuzzing_integration.py):
+# the comment block directly above an entry must name the rule/CVE id, the
+# affected artifact, why it cannot be fixed here, and a revisit condition.
+# Only add an entry after reproducing the finding from the trivy-fs job log
+# (the job prints a findings table on failure) or the uploaded trivy-fs SARIF
+# in code scanning. Prefer fixing (dependency bump, Dockerfile change) over
+# suppressing, and rebase stale branches onto develop before concluding that
+# a repo-wide finding is real.
+
+# DS-0002 applies to .clusterfuzzlite/Dockerfile, which is a CI-only OSS-Fuzz
+# builder image. ClusterFuzzLite mounts /github/workspace/build-out as a
+# root-owned volume and its build harness writes libFuzzer artifacts before
+# invoking the project build script, so forcing a non-root USER breaks fuzz CI.
+# Revisit by 2026-10-31 or when ClusterFuzzLite supports non-root build output.
+DS-0002
