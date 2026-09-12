@@ -12,6 +12,7 @@ from .mineru_runner import DEFAULT_LANGUAGE, DEFAULT_MODE, run_mineru
 from .schemas import ParseResponse
 
 
+_UNSAFE_UPLOAD_CHARS_PATTERN = re.compile(r"[^a-zA-Z0-9_.-]")
 MAX_UPLOAD_FILENAME_LENGTH = 240
 
 
@@ -22,7 +23,8 @@ def _safe_upload_filename(filename: str) -> str:
     filename = filename[-512:]
     normalized = filename.replace("\0", "").replace("\\", "/")
     name = PurePosixPath(normalized).name
-    name = re.sub(r"[^a-zA-Z0-9_.-]", "_", name)
+    # ⚡ Bolt: Pre-compile regex for performance
+    name = _UNSAFE_UPLOAD_CHARS_PATTERN.sub("_", name)
     # ⚡ Bolt: Use .strip("_.") instead of chained .replace() to avoid multiple intermediate string allocations
     if name in ("", ".", "..") or not name.strip("_."):
         return "upload.pdf"
