@@ -5,16 +5,11 @@ import json
 import os
 import sys
 import tempfile
-from contextlib import suppress
 from pathlib import Path
-
-from pydantic import ValidationError
-
-from newsdom_api.schemas import ParseResponse
 
 
 def export_jsonl(json_path: Path, output_path: Path) -> None:
-    """Export a canonical NewsDOM parse response as article/body-block JSONL."""
+    """Export NewsDOM JSON to a JSONL file containing article metadata and body blocks."""
     if not json_path.is_file():
         raise FileNotFoundError(f"File not found or is not a file: {json_path}")
     if json_path.suffix.lower() != ".json":
@@ -25,53 +20,56 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
     except json.JSONDecodeError as exc:
         raise ValueError(f"Invalid JSON file: {exc}") from exc
 
-    try:
-        parsed = ParseResponse.model_validate(data)
-    except ValidationError as exc:
-        raise ValueError("Input must be a valid NewsDOM parse response") from exc
+    pages = data.get("pages", [])
+    document_id = data.get("document_id", "Unknown Document")
 
-    temp_path: Path | None = None
+    temp_path = None
     try:
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            delete=False,
-            dir=output_path.parent,
-        ) as file_handle:
-            temp_path = Path(file_handle.name)
-            for page in parsed.pages:
-                for article in page.articles:
-                    if not article.body_blocks:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", delete=False) as f:
+            temp_path = Path(f.name)
+            for page in pages:
+                if not isinstance(page, dict):
+                    continue
+                page_number = page.get("page_number", "Unknown")
+
+                articles = page.get("articles", [])
+                for article in articles:
+                    if not isinstance(article, dict):
+                        continue
+                    article_id = article.get("article_id", "Unknown Article ID")
+                    headline = article.get("headline", "")
+
+                    body_blocks = article.get("body_blocks", [])
+
+                    if not body_blocks:
                         record = {
-                            "document_id": parsed.document_id,
-                            "page_number": page.page_number,
-                            "article_id": article.article_id,
-                            "headline": article.headline,
+                            "document_id": document_id,
+                            "page_number": page_number,
+                            "article_id": article_id,
+                            "headline": headline,
                             "body_block_index": "",
                             "body_block_text": "",
                         }
-                        file_handle.write(
-                            json.dumps(record, ensure_ascii=False) + "\n"
-                        )
+                        f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
-                    for index, block in enumerate(article.body_blocks):
+                    for idx, block in enumerate(body_blocks):
                         record = {
-                            "document_id": parsed.document_id,
-                            "page_number": page.page_number,
-                            "article_id": article.article_id,
-                            "headline": article.headline,
-                            "body_block_index": index,
+                            "document_id": document_id,
+                            "page_number": page_number,
+                            "article_id": article_id,
+                            "headline": headline,
+                            "body_block_index": idx,
                             "body_block_text": block,
                         }
-                        file_handle.write(
-                            json.dumps(record, ensure_ascii=False) + "\n"
-                        )
+                        f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
         os.replace(temp_path, output_path)
     except Exception:
-        if temp_path is not None and temp_path.exists():
-            with suppress(OSError):
+        if temp_path and temp_path.exists():
+            try:
                 temp_path.unlink()
+            except OSError:
+                pass
         raise
 
 
