@@ -552,3 +552,59 @@ def test_bbox_helper_returns_none_for_invalid_y0_x1_y1():
     assert _bbox_from_values([0, "bad", 1, 1]) is None
     assert _bbox_from_values([0, 0, "bad", 1]) is None
     assert _bbox_from_values([0, 0, 1, "bad"]) is None
+
+
+def test_missing_page_idx_multi_metadata():
+    content = [{"type": "text", "text": "hello"}]
+    model = [{"page_info": {"width": 100}}, {"page_info": {"width": 200}}]
+    res = build_dom(content, "doc1", model)
+    assert len(res.pages) == 2
+    assert len(res.pages[0].articles) == 1
+    assert len(res.pages[1].articles) == 0
+
+
+def test_sparse_page_idx():
+    content = [{"type": "text", "text": "hello", "page_idx": 2}]
+    model = [
+        {"page_info": {"width": 100}},
+        {"page_info": {"width": 200}},
+        {"page_info": {"width": 300}},
+    ]
+    res = build_dom(content, "doc1", model)
+    assert len(res.pages) == 1
+    assert res.pages[0].page_number == 3
+    assert len(res.pages[0].articles) == 1
+
+
+def test_mixed_missing_page_idx():
+    content = [
+        {"type": "text", "text": "hello", "page_idx": 1},
+        {"type": "text", "text": "world"},
+    ]
+    model = [{"page_info": {"width": 100}}, {"page_info": {"width": 200}}]
+    res = build_dom(content, "doc1", model)
+    assert len(res.pages) == 2
+    assert len(res.pages[0].articles) == 1
+    assert res.pages[0].articles[0].body_blocks[0] == "world"
+    assert len(res.pages[1].articles) == 1
+    assert res.pages[1].articles[0].body_blocks[0] == "hello"
+
+
+def test_metadata_fallback():
+    content = [{"type": "text", "text": "hello"}]
+    res = build_dom(content, "doc1", [{"page_info": {}}])
+    assert len(res.pages) == 1
+    assert res.pages[0].page_number == 1
+
+
+def test_deterministic_ordering():
+    content = [
+        {"type": "text", "text": "page1", "page_idx": 0},
+        {"type": "text", "text": "page3", "page_idx": 2},
+        {"type": "text", "text": "page2", "page_idx": 1},
+    ]
+    res = build_dom(content, "doc1")
+    assert len(res.pages) == 3
+    assert res.pages[0].articles[0].body_blocks[0] == "page1"
+    assert res.pages[1].articles[0].body_blocks[0] == "page2"
+    assert res.pages[2].articles[0].body_blocks[0] == "page3"
