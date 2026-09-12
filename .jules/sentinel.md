@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-08-21 - Prevent Memory Exhaustion DoS in Form Fields
+**Vulnerability:** FastAPI `Form` fields for `language` and `mode` lacked a `max_length` parameter. `python-multipart` loads the entire form data into memory, creating a memory exhaustion (DoS) vulnerability if a malicious client sends extremely large strings in these fields.
+**Learning:** In FastAPI, always add `max_length` limits to textual `Form` fields to prevent denial-of-service (DoS) via memory exhaustion, as `python-multipart` loads the entire form data into memory before route execution or payload size limits are evaluated.
+**Prevention:** Add `max_length=50` to `language` and `mode` Form parameters in `/parse`.
