@@ -57,3 +57,28 @@ def test_openapi_metadata_includes_contact_and_license():
         "name": "MIT License",
         "identifier": "MIT",
     }
+
+
+def test_openapi_swagger_ui_parameters_in_production():
+    from newsdom_api.main import create_app
+    from newsdom_api.config import RuntimeSettings, RuntimeProfile
+
+    app_prod = create_app(
+        RuntimeSettings(runtime_profile=RuntimeProfile.PRODUCTION, api_token="secret")
+    )
+    params = app_prod.swagger_ui_parameters
+    assert params.get("persistAuthorization") is None
+
+
+def test_openapi_swagger_ui_persists_authorization_in_authenticated_development():
+    from newsdom_api.config import RuntimeProfile, RuntimeSettings
+    from newsdom_api.main import create_app
+
+    app_dev = create_app(
+        RuntimeSettings(
+            runtime_profile=RuntimeProfile.DEVELOPMENT,
+            api_token="development-secret",
+        )
+    )
+    params = app_dev.swagger_ui_parameters
+    assert params.get("persistAuthorization") is True
