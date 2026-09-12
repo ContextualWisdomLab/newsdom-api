@@ -53,6 +53,7 @@ class ImageNode(BaseModel):
     media_type: str = Field(
         default="image",
         description="Media type label for the extracted image node.",
+        examples=["image"],
     )
     bbox: Optional[BoundingBox] = Field(
         default=None,
@@ -118,15 +119,17 @@ class PageNode(BaseModel):
 
     page_number: int = Field(
         description="One-based page number from the parsed PDF.",
-        json_schema_extra={"example": 1},
+        examples=[1],
     )
     width: Optional[float] = Field(
         default=None,
         description="Page width reported by the parser, if available.",
+        examples=[595.28],
     )
     height: Optional[float] = Field(
         default=None,
         description="Page height reported by the parser, if available.",
+        examples=[841.89],
     )
     articles: List[ArticleNode] = Field(
         default_factory=list,
@@ -135,18 +138,22 @@ class PageNode(BaseModel):
     ads: List[str] = Field(
         default_factory=list,
         description="Advertisement text blocks extracted from this page.",
+        examples=[["Example advertisement text"]],
     )
     headers: List[str] = Field(
         default_factory=list,
         description="Header text blocks extracted from this page.",
+        examples=[["Quarterly report", "2026 Q2"]],
     )
     footers: List[str] = Field(
         default_factory=list,
         description="Footer text blocks extracted from this page.",
+        examples=[["Confidential"]],
     )
     page_numbers: List[str] = Field(
         default_factory=list,
         description="Visible page-number text blocks extracted from this page.",
+        examples=[["1", "Page 1"]],
     )
 
 
