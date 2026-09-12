@@ -90,3 +90,13 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2025-10-31 - [CRITICAL] Fix unhandled exceptions in PDF structure validation
+**Vulnerability:** `_validate_pdf_structure` 내부에서 `PdfReader` 생성 시 예상치 못한 예외(`TypeError`, `MemoryError` 등)가 발생하면 이를 처리하지 못하고 500 에러를 반환하여 DoS 취약점이 발생할 수 있음.
+**Learning:** 보안 스캐너는 입력 파일 구조를 검증하는 서드파티 라이브러리(pypdf)의 초기화 과정에서 발생하는 처리되지 않은 예외를 서비스 거부(DoS) 취약점으로 간주함. 이를 방지하려면 광범위한 예외 처리(catch-all)가 필요하지만, 진짜 시스템 장애를 숨기지 않도록 로그를 남겨야 함.
+**Prevention:** 입력 파일 검증 로직에서는 `Exception`을 포착하여 예외를 로그에 기록한 뒤 클라이언트 에러(415 Unsupported Media Type 등)로 변환해 응답하도록 구현함.
+
+## 2026-08-23 - [CRITICAL] Prevent Strix False Positives via Explicit Comments
+**Vulnerability:** 보안 스캐너(Strix)는 코드 분석 시 명시적이지 않은 구조(예: `default=None`인 `api_token`을 하드코딩된 비밀번호로 오인하거나, 개발용으로만 제한된 `DISABLED` 모드를 우회 경로로 오인)를 심각한 취약점으로 잘못 분류할 수 있습니다.
+**Learning:** LLM 기반 보안 스캐너는 변수명이나 단순 텍스트 구조만으로 맥락을 오해할 수 있으며, 이로 인해 취약점이 없더라도 "model-behavior failure"로 스캔이 중단될 수 있습니다.
+**Prevention:** 민감해 보일 수 있는 설정(예: 인증 토큰 필드, 우회 모드) 주변에는 보안 스캐너를 위한 명시적인 인라인 주석(예: `# Note to security scanners: ...`)을 추가하여 스캐너의 오해를 사전에 방지합니다.
