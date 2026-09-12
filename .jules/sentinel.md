@@ -73,7 +73,7 @@
 **Prevention:** 임시 파일 경로를 할당하거나 파일을 여는 즉시 자원 정리(cleanup) 로직이 보장되도록 `try...finally` 블록으로 감싼다.
 
 ## 2025-03-09 - Prevent Command/Log Injection via Newlines in Filenames
-**Vulnerability:** The blocklist regex `_UNSAFE_CHARS_PATTERN` for CLI arguments did not explicitly filter newline (\n) or carriage return (\r) characters. This can allow command or log injection even when `shell=False` is used, by passing arguments containing newlines.
+**Vulnerability:** The blocklist regex `_UNSAFE_CHARS_PATTERN` for CLI arguments did not explicitly filter newline (`\n`) or carriage return (`\r`) characters. This can allow command or log injection even when `shell=False` is used, by passing arguments containing newlines.
 **Learning:** Shell metacharacter blocklists must include whitespace metacharacters like newlines and carriage returns, as these can bypass checks and manipulate logs or downstream argument parsing.
 **Prevention:** Explicitly add \n and \r to the `_UNSAFE_CHARS_PATTERN` blocklist for CLI arguments.
 
@@ -90,8 +90,3 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
-
-## 2024-03-24 - [Timing Attack Vulnerability in Token Comparison]
-**Vulnerability:** A timing attack vulnerability was present in the API token comparison mechanism because the length comparison happened dynamically within `hmac.compare_digest` in older Python versions, or if the string lengths differed, the early return in the codebase logic (or underlying C implementation) could leak the expected token length.
-**Learning:** Even when using secure comparison functions like `hmac.compare_digest`, passing inputs of different lengths can leak the length of the secret because the function will return early. This is an issue particularly for tokens where the length isn't strictly fixed or known.
-**Prevention:** To prevent length leaks during secure comparisons, always ensure both strings have the same length before calling the comparison function. If lengths differ, execute a dummy constant-time comparison (e.g., `hmac.compare_digest(expected_token, expected_token)`) to balance execution time and safely fail the authorization check without leaking the token's length or triggering weak hashing heuristics from CodeQL.
