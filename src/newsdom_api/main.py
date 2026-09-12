@@ -27,6 +27,7 @@ from pypdf.errors import PdfReadError
 from .config import (
     AuthenticationMode,
     MAX_BEARER_HEADER_BYTES,
+    RuntimeProfile,
     RuntimeSettings,
     load_runtime_settings,
 )
@@ -319,6 +320,7 @@ def create_app(
         openapi_tags=tags_metadata,
         swagger_ui_parameters={
             "displayRequestDuration": True,
+            "persistAuthorization": application_settings.runtime_profile is RuntimeProfile.DEVELOPMENT,
             "syntaxHighlight.theme": "monokai",
             "tryItOutEnabled": True,
         },
