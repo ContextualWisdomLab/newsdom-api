@@ -14,12 +14,12 @@ The adopted floors are:
 
 - `setuptools>=83` for the build backend;
 - `Pillow>=12.3,<13.0` for image parsing on the untrusted document-ingestion path;
-- `pypdf>=6.16.0,<7.0` for PDF parsing;
+- `pypdf>=6.15.0,<7.0` for PDF parsing;
 - `mkdocs-material>=9.7,<9.8`, allowing `pymdown-extensions>=11` while the MkDocs
   core remains on the supported 1.x line.
 
 The generated lock additionally resolves Click 8.4.2, setuptools 83.0.0,
-Pillow 12.3.0, pypdf 6.16.0, mkdocs-material 9.7.7, and
+Pillow 12.3.0, pypdf 6.15.0, mkdocs-material 9.7.7, and
 pymdown-extensions 11.0.1. Direct floors prevent a later lock refresh from
 silently selecting known-vulnerable ranges again.
 
@@ -129,22 +129,13 @@ Open Source Vulnerabilities. (2026c). *CVE-2026-71852*. Retrieved August 9,
 Open Source Vulnerabilities. (2026d). *CVE-2026-71870*. Retrieved August 9,
     2026, from https://osv.dev/vulnerability/CVE-2026-71870
 
-Open Source Vulnerabilities. (2026e). *CVE-2026-84309*. Retrieved September 14,
-    2026, from https://osv.dev/vulnerability/CVE-2026-84309
-
-Open Source Vulnerabilities. (2026f). *CVE-2026-84310*. Retrieved September 14,
-    2026, from https://osv.dev/vulnerability/CVE-2026-84310
-
-Open Source Vulnerabilities. (2026g). *CVE-2026-84311*. Retrieved September 14,
-    2026, from https://osv.dev/vulnerability/CVE-2026-84311
-
 Python Packaging Authority. (2026a). *Digital attestations*. PyPI Docs.
     Retrieved August 4, 2026, from https://docs.pypi.org/attestations/
 
 Python Packaging Authority. (2026b). *Pillow 12.3.0*. Python Package Index.
     Retrieved August 4, 2026, from https://pypi.org/project/pillow/12.3.0/
 
-Python Packaging Authority. (2026c). *pypdf 6.16.0*. Python Package Index.
+Python Packaging Authority. (2026c). *pypdf 6.15.0*. Python Package Index.
     Retrieved August 9, 2026, from https://pypi.org/project/pypdf/6.15.0/
 
 Python Packaging Authority. (2026d). *setuptools 83.0.0*. Python Package Index.
