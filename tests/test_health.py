@@ -43,6 +43,17 @@ def test_healthcheck_emits_hsts_for_forwarded_https():
     )
 
 
+def test_docs_endpoints_relax_csp():
+    client = TestClient(app)
+    for endpoint in ("/docs", "/redoc", "/openapi.json", "/docs/oauth2-redirect"):
+        response = client.get(endpoint)
+        assert response.status_code == 200
+        csp = response.headers.get("Content-Security-Policy")
+        assert "default-src 'self'" in csp
+        assert "https://cdn.jsdelivr.net" in csp
+        assert "https://fonts.googleapis.com" in csp
+
+
 def test_openapi_metadata_includes_contact_and_license():
     client = TestClient(app)
     response = client.get("/openapi.json")
