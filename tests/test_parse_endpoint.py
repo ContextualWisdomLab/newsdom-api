@@ -555,3 +555,21 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
+
+def test_parse_endpoint_rejects_large_content_length_header(monkeypatch):
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda *a: None)
+    client = TestClient(app)
+
+    # Send a small file but with a huge forged Content-Length
+    headers = {
+        "Content-Length": "100000000"  # Exceeds MAX_PARSE_UPLOAD_BYTES + 8192
+    }
+
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+        headers=headers,
+    )
+
+    assert response.status_code == 413
+    assert response.json()["detail"] == "Payload Too Large"

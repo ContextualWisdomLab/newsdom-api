@@ -146,6 +146,21 @@ async def security_boundary_middleware(
         failure = _parse_access_failure(request)
         if failure is not None:
             return _apply_security_headers(failure, request)
+
+        content_length_str = request.headers.get("content-length")
+        if content_length_str is not None:
+            try:
+                content_length = int(content_length_str)
+                # Form fields limit + Upload limit + generous boundary overhead
+                if content_length > MAX_PARSE_UPLOAD_BYTES + 8192:
+                    response = JSONResponse(
+                        status_code=413,
+                        content={"detail": PAYLOAD_TOO_LARGE_DETAIL},
+                    )
+                    return _apply_security_headers(response, request)
+            except ValueError:
+                pass
+
     response = await call_next(request)
     return _apply_security_headers(response, request)
 
