@@ -5,6 +5,8 @@ import os
 import sys
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from newsdom_api.schemas import ParseResponse
+from pydantic import ValidationError
 
 
 def export_jsonl(json_path: Path, output_path: Path) -> None:
@@ -17,24 +19,24 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
         data = json.loads(json_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise ValueError(f"Invalid JSON file: {exc}") from exc
-    pages = data.get("pages", [])
-    document_id = data.get("document_id", "Unknown Document")
+
+    try:
+        validated_data = ParseResponse.model_validate(data)
+    except ValidationError as exc:
+        raise ValueError(f"Data failed schema validation: {exc}") from exc
+    pages = validated_data.pages
+    document_id = validated_data.document_id
     temp_file = NamedTemporaryFile(
         delete=False, mode="w", dir=output_path.parent, encoding="utf-8"
     )
     temp_path = Path(temp_file.name)
     try:
         for page in pages:
-            if not isinstance(page, dict):
-                continue
-            page_number = page.get("page_number", "Unknown")
-            articles = page.get("articles", [])
-            for article in articles:
-                if not isinstance(article, dict):
-                    continue
-                article_id = article.get("article_id", "Unknown Article ID")
-                headline = article.get("headline", "")
-                body_blocks = article.get("body_blocks", [])
+            page_number = page.page_number
+            for article in page.articles:
+                article_id = article.article_id
+                headline = article.headline
+                body_blocks = article.body_blocks
                 record = {
                     "document_id": document_id,
                     "page_number": page_number,

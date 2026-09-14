@@ -23,11 +23,9 @@ VALID_JSON_DATA = {
                 },
             ],
         },
-        "not_a_dict_page",
         {
             "page_number": 2,
             "articles": [
-                "not_a_dict_article",
                 {
                     "article_id": "art_3",
                     "headline": "Test Headline 3",
@@ -168,3 +166,52 @@ def test_export_jsonl_exception_in_loop_temp_path_not_exists(tmp_path: Path) -> 
         with mock.patch("json.dumps", side_effect=mock_dumps):
             with pytest.raises(Exception, match="Simulated error no path"):
                 export_jsonl(input_file, output_file)
+
+
+def test_export_jsonl_invalid_schema(tmp_path: Path) -> None:
+    output_file = tmp_path / "output.jsonl"
+
+    # 1. Non-object root
+    invalid_root = tmp_path / "invalid_root.json"
+    invalid_root.write_text(json.dumps(["not", "an", "object"]), encoding="utf-8")
+    with pytest.raises(ValueError, match="Data failed schema validation:"):
+        export_jsonl(invalid_root, output_file)
+    assert not output_file.exists()
+
+    # 2. Pages of the wrong type
+    invalid_pages = tmp_path / "invalid_pages.json"
+    invalid_pages.write_text(
+        json.dumps({"document_id": "doc1", "pages": "not_a_list"}), encoding="utf-8"
+    )
+    with pytest.raises(ValueError, match="Data failed schema validation:"):
+        export_jsonl(invalid_pages, output_file)
+    assert not output_file.exists()
+
+    # 3. Valid article + structurally invalid article
+    invalid_article = tmp_path / "invalid_article.json"
+    bad_data = {
+        "document_id": "doc1",
+        "pages": [
+            {
+                "page_number": 1,
+                "articles": [
+                    {"article_id": "art1", "headline": "Valid", "body_blocks": []},
+                    {
+                        "article_id": "art2",
+                        "headline": "Invalid type",
+                        "body_blocks": "not_a_list",
+                    },
+                ],
+            }
+        ],
+    }
+    invalid_article.write_text(json.dumps(bad_data), encoding="utf-8")
+    with pytest.raises(ValueError, match="Data failed schema validation:"):
+        export_jsonl(invalid_article, output_file)
+    assert not output_file.exists()
+
+    # 4. Preserves existing destination bytes on validation failure
+    output_file.write_text("existing data", encoding="utf-8")
+    with pytest.raises(ValueError, match="Data failed schema validation:"):
+        export_jsonl(invalid_root, output_file)
+    assert output_file.read_text(encoding="utf-8") == "existing data"
