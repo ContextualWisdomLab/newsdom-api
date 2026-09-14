@@ -29,21 +29,21 @@ UNSAFE_MEDIA_PATH_PATTERN = re.compile(r"[\x00-\x1f\"'<>` \t\r\n]")
 def _coerce_bbox_coordinate(value: Any) -> float | None:
     """Convert a bounded, finite bounding-box coordinate into a float."""
 
-    if type(value) is bool:
+    v_type = type(value)
+    if v_type is float:
+        pass
+    elif v_type is bool or value is None:
+        return None
+    else:
+        try:
+            value = float(value)
+        except (TypeError, ValueError, OverflowError):
+            return None
+
+    if not isfinite(value) or value < 0 or value > MAX_BBOX_COORDINATE:
         return None
 
-    try:
-        coordinate = value if type(value) is float else float(value)
-    except (TypeError, ValueError, OverflowError):
-        return None
-
-    if not isfinite(coordinate):
-        return None
-
-    if coordinate < 0 or coordinate > MAX_BBOX_COORDINATE:
-        return None
-
-    return coordinate
+    return value
 
 
 def _bbox_from_values(values: list[Any] | None) -> BoundingBox | None:
@@ -83,6 +83,8 @@ def _html_safe_text(value: Any) -> str:
     # ⚡ Bolt: Fast path for str to avoid expensive str() cast
     text = value if type(value) is str else str(value)
     text = text.strip()
+    if not text:
+        return ""
     # ⚡ Bolt: Explicit 'in' checks are faster than regex allocation and overhead
     if (
         "&" not in text
