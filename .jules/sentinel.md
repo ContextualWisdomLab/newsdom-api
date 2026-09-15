@@ -91,11 +91,6 @@
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
 
-## 2024-05-24 - [CRITICAL] Fix temporary file cleanup to prevent DoS via disk exhaustion
-**Vulnerability:** Incomplete temporary file cleanup on asynchronous file uploads.
-**Learning:** When processing asynchronous file uploads in FastAPI (`await file.read()`), instantiating temporary files (`NamedTemporaryFile(delete=False)`) inside a nested `try` block while the initial read happens outside can leave temporary files orphaned if an exception occurs before the nested block or during the initial read. This can lead to disk exhaustion (DoS) if clients maliciously disconnect or send malformed data.
-**Prevention:** Ensure the temporary path variable (`tmp_path = None`) is initialized before the main `try` block, and the read loop and file instantiation are entirely enclosed within a unified `try...finally` block. Verify cleanup in the `finally` block with `if tmp_path and tmp_path.exists(): tmp_path.unlink(missing_ok=True)`.
-
 ## 2025-09-14 - Prevent Multipart Memory Exhaustion via Content-Length Limits
 **Vulnerability:** FastAPIs Pydantic models validate input only after Starlette's `python-multipart` backend has fully buffered string fields into memory. This allows attackers to bypass application-level limits (like max field sizes) by sending massive multipart requests, causing Memory Exhaustion DoS before validation kicks in.
 **Learning:** For multipart parsing, field constraints defined in route endpoints are applied too late in the request lifecycle to protect server memory. Defenses must be positioned at the middleware layer.
