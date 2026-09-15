@@ -14,7 +14,7 @@ from typing import Any
 
 from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 
-# ⚡ Bolt: Use a pre-compiled regex to push pattern matching to C,
+# Bolt: Use a pre-compiled regex to push pattern matching to C,
 # avoiding the Python-level overhead of `any()` and generator comprehensions
 _UNSAFE_CHARS_PATTERN = re.compile(r"[\0&;|`$<>\n\r]")
 

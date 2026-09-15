@@ -63,3 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2025-02-18 - [딕셔너리 이터레이션 최적화]
+**Learning:** `blocks_by_page_idx`와 같은 딕셔너리를 순회할 때, 키만 순회하면서 루프 내부에서 값을 조회(`dict[key]`)하는 것은 대용량 반복 작업에서 불필요한 해시맵 조회를 유발하여 성능 저하의 원인이 될 수 있음.
+**Action:** 딕셔너리 키와 값을 동시에 다루는 문맥에서는 `sorted(dict.items())` 등을 활용하여 반복적인 해시맵 조회를 회피함으로써 O(1) 수준이라도 오버헤드를 줄일 것.
