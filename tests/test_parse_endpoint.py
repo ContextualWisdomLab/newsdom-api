@@ -648,7 +648,7 @@ def test_parse_endpoint_accepts_no_content_length_header(monkeypatch):
 
     response = client.post(
         "/parse",
-        data=chunked_generator(),
+        content=chunked_generator(),
         headers={"Content-Type": "multipart/form-data; boundary=boundary"},
     )
 
