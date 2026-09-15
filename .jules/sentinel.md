@@ -95,3 +95,8 @@
 **Vulnerability:** FastAPIs Pydantic models validate input only after Starlette's `python-multipart` backend has fully buffered string fields into memory. This allows attackers to bypass application-level limits (like max field sizes) by sending massive multipart requests, causing Memory Exhaustion DoS before validation kicks in.
 **Learning:** For multipart parsing, field constraints defined in route endpoints are applied too late in the request lifecycle to protect server memory. Defenses must be positioned at the middleware layer.
 **Prevention:** Implement early Content-Length header verification inside the security-boundary middleware to reject excessively large payloads before the ASGI request body is consumed.
+
+## 2026-09-15 - Keep security baselines up-to-date
+**Vulnerability:** Dependabot didn't automatically update vulnerable dependencies when locked or restricted by explicit ranges in the security metadata and test assertions, causing a CI check (`trivy-fs`) to fail on new CVEs (e.g. CVE-2026-84381, CVE-2026-84309).
+**Learning:** Hardcoded dependency ranges in tests and markdown files act as constraints that prevent simple `uv sync` operations from fixing vulnerabilities.
+**Prevention:** When upgrading dependencies like `pypdf`, `httpcore2`, and `httpx2` to address security advisories, always ensure the corresponding explicit versions in `tests/test_project_metadata.py`, `tests/test_pypdf_security_floor.py`, `CHANGELOG.md`, and documentation are updated accordingly.
