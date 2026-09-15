@@ -49,9 +49,15 @@ def test_docs_endpoints_relax_csp():
         response = client.get(endpoint)
         assert response.status_code == 200
         csp = response.headers.get("Content-Security-Policy")
-        assert "default-src 'self'" in csp
-        assert "https://cdn.jsdelivr.net" in csp
-        assert "https://fonts.googleapis.com" in csp
+        expected_csp = (
+            "default-src 'self'; "
+            "img-src 'self' data: https://fastapi.tiangolo.com; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "frame-ancestors 'none'; base-uri 'none'"
+        )
+        assert csp == expected_csp
 
 
 def test_openapi_metadata_includes_contact_and_license():
