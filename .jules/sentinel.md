@@ -90,3 +90,13 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2025-09-14 - Prevent Multipart Memory Exhaustion via Content-Length Limits
+**Vulnerability:** FastAPIs Pydantic models validate input only after Starlette's `python-multipart` backend has fully buffered string fields into memory. This allows attackers to bypass application-level limits (like max field sizes) by sending massive multipart requests, causing Memory Exhaustion DoS before validation kicks in.
+**Learning:** For multipart parsing, field constraints defined in route endpoints are applied too late in the request lifecycle to protect server memory. Defenses must be positioned at the middleware layer.
+**Prevention:** Implement early Content-Length header verification inside the security-boundary middleware to reject excessively large payloads before the ASGI request body is consumed.
+
+## 2026-09-15 - Keep security baselines up-to-date
+**Vulnerability:** Dependabot didn't automatically update vulnerable dependencies when locked or restricted by explicit ranges in the security metadata and test assertions, causing a CI check (`trivy-fs`) to fail on new CVEs (e.g. CVE-2026-84381, CVE-2026-84309).
+**Learning:** Hardcoded dependency ranges in tests and markdown files act as constraints that prevent simple `uv sync` operations from fixing vulnerabilities.
+**Prevention:** When upgrading dependencies like `pypdf`, `httpcore2`, and `httpx2` to address security advisories, always ensure the corresponding explicit versions in `tests/test_project_metadata.py`, `tests/test_pypdf_security_floor.py`, `CHANGELOG.md`, and documentation are updated accordingly.
