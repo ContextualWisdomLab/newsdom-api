@@ -63,6 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
-## 2025-02-18 - [FastAPI UploadFile 청크 최적화]
-**Learning:** FastAPI의 `UploadFile.read()` 메서드를 사용할 때 기본적으로 혹은 관례적으로 사용되는 작은 청크 크기(예: 8KB)는 20MB와 같은 대용량 파일 업로드 시 잦은 I/O 작업 및 컨텍스트 스위칭을 유발하여 병목현상을 초래할 수 있음.
-**Action:** 파일 업로드 읽기 청크 크기를 1MB(`1024 * 1024`)로 늘려 메모리 효율성을 유지하면서 디스크 쓰기 및 I/O 오버헤드를 약 40배 단축함.
+## 2025-02-18 - [딕셔너리 이터레이션 최적화]
+**Learning:** `blocks_by_page_idx`와 같은 딕셔너리를 순회할 때, 키만 순회하면서 루프 내부에서 값을 조회(`dict[key]`)하는 것은 대용량 반복 작업에서 불필요한 해시맵 조회를 유발하여 성능 저하의 원인이 될 수 있음.
+**Action:** 딕셔너리 키와 값을 동시에 다루는 문맥에서는 `sorted(dict.items())` 등을 활용하여 반복적인 해시맵 조회를 회피함으로써 O(1) 수준이라도 오버헤드를 줄일 것.

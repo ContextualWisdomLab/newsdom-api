@@ -252,8 +252,7 @@ async def parse(
             temporary_file.write(header)
 
             bytes_read = len(header)
-            # ⚡ Bolt: FastAPI UploadFile의 청크 읽기 크기를 8KB에서 1MB로 늘려 대용량 파일 업로드 시 I/O 및 컨텍스트 스위칭 오버헤드를 크게 줄임
-            while chunk := await file.read(1024 * 1024):
+            while chunk := await file.read(8192):
                 bytes_read += len(chunk)
                 if bytes_read > MAX_PARSE_UPLOAD_BYTES:
                     LOGGER.warning(

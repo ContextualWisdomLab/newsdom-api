@@ -55,7 +55,7 @@ def _bbox_from_values(values: list[Any] | None) -> BoundingBox | None:
     if len(values) != 4:
         return None
 
-    # ⚡ Bolt: Unroll coordinate extraction to avoid generator and tuple allocation overhead.
+    # Bolt: Unroll coordinate extraction to avoid generator and tuple allocation overhead.
     # This also enables early returns, stopping the function immediately if any coordinate is invalid.
     x0 = _coerce_bbox_coordinate(values[0])
     if x0 is None:
@@ -80,10 +80,10 @@ def _html_safe_text(value: Any) -> str:
     """Normalize OCR text for safe downstream HTML rendering."""
     if not value:
         return ""
-    # ⚡ Bolt: Fast path for str to avoid expensive str() cast
+    # Bolt: Fast path for str to avoid expensive str() cast
     text = value if type(value) is str else str(value)
     text = text.strip()
-    # ⚡ Bolt: Explicit 'in' checks are faster than regex allocation and overhead
+    # Bolt: Explicit 'in' checks are faster than regex allocation and overhead
     if (
         "&" not in text
         and "<" not in text
@@ -98,7 +98,7 @@ def _html_safe_text(value: Any) -> str:
 def _safe_media_path(value: Any, fallback: str) -> str:
     """Return a bounded relative media path or a deterministic fallback."""
 
-    # ⚡ Bolt: Early truthiness return to avoid calling .strip() on empty strings
+    # Bolt: Early truthiness return to avoid calling .strip() on empty strings
     if type(value) is not str or not value:
         return fallback
 
@@ -162,7 +162,7 @@ def _caption_nodes_from_items(items: Any) -> list[CaptionNode]:
         if type(item) is dict:
             text = _html_safe_text(item.get("text") or item.get("contents"))
             if text:
-                # ⚡ Bolt: Defer expensive bbox parsing/float casting until we actually need it
+                # Bolt: Defer expensive bbox parsing/float casting until we actually need it
                 bbox = _bbox_from_values(item.get("bbox") or item.get("box"))
                 nodes.append(CaptionNode(text=text, bbox=bbox))
         else:
@@ -274,7 +274,7 @@ def _build_page_dom(
         role = block.get("role")
 
         if role == "header":
-            # ⚡ Bolt: Defer expensive string operations until we know we need the text
+            # Bolt: Defer expensive string operations until we know we need the text
             text = _block_text(block)
             if text:
                 page.headers.append(text)
@@ -357,7 +357,7 @@ def _group_blocks_by_page_idx(
     """Group content blocks by their page index."""
     has_page_idx = False
     has_missing_page_idx = False
-    # ⚡ Bolt: Use defaultdict instead of dict.setdefault in this hot grouping loop
+    # Bolt: Use defaultdict instead of dict.setdefault in this hot grouping loop
     # to avoid the overhead of instantiating an empty list on every single iteration
     blocks_by_page_idx: defaultdict[int, list[dict[str, Any]]] = defaultdict(list)
 
@@ -425,11 +425,12 @@ def _build_pages_with_page_idx(
 
     pages = []
     article_seq = count(1)
-    for page_idx in sorted(blocks_by_page_idx):
+    # Bolt: 대용량 문서 처리 시 반복적인 딕셔너리 키 조회를 피하기 위해 .items()를 활용하여 루프 성능을 최적화함
+    for page_idx, page_blocks in sorted(blocks_by_page_idx.items()):
         page_info = page_info_by_idx.get(page_idx, {})
         pages.append(
             _build_page_dom(
-                blocks_by_page_idx[page_idx],
+                page_blocks,
                 page_number=_page_number_from_info(page_info, page_idx + 1),
                 article_seq=article_seq,
                 width=page_info.get("width"),
