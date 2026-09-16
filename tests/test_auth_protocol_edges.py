@@ -100,3 +100,17 @@ def test_ready_converts_probe_exception_to_fixed_unavailable_response() -> None:
     assert response.json() == {"detail": "Service Unavailable"}
     assert "private" not in response.text.lower()
     assert "operating-system" not in response.text.lower()
+
+
+def test_docs_csp_relaxed():
+    from fastapi.testclient import TestClient
+    from newsdom_api.main import create_app
+    from newsdom_api.config import RuntimeSettings, AuthenticationMode, RuntimeProfile
+
+    app = create_app(RuntimeSettings(
+        authentication_mode=AuthenticationMode.DISABLED,
+        runtime_profile=RuntimeProfile.DEVELOPMENT
+    ))
+    client = TestClient(app)
+    response = client.get('/docs')
+    assert 'script-src' in response.headers['content-security-policy']
