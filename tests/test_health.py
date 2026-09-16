@@ -57,3 +57,18 @@ def test_openapi_metadata_includes_contact_and_license():
         "name": "MIT License",
         "identifier": "MIT",
     }
+
+def test_docs_csp_relaxed():
+    """Verify that API documentation endpoints receive a relaxed CSP."""
+    client = TestClient(app)
+    response = client.get("/docs")
+    assert response.status_code == 200
+    expected_csp = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; "
+        "img-src 'self' data: fastapi.tiangolo.com; "
+        "font-src 'self' fonts.gstatic.com; "
+        "frame-ancestors 'none'; base-uri 'none'"
+    )
+    assert response.headers.get("Content-Security-Policy") == expected_csp
