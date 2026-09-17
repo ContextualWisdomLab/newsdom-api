@@ -256,6 +256,7 @@ def test_article_has_headline_truthiness():
 
 def test_article_has_headline_performance_allocation_evidence():
     """Verify that using isspace() is faster and allocates less memory than strip() for typical headline evaluation."""
+    import sys
     import tracemalloc
     from typing import Any
     from newsdom_api.equivalence import _article_has_headline
@@ -275,22 +276,24 @@ def test_article_has_headline_performance_allocation_evidence():
         " short ",
     ] * 1000
 
+    articles = [{"headline": h} for h in headlines]
+
     # Warmup
-    for h in headlines:
-        check_strip(h)
-        _article_has_headline({"headline": h})
+    for a in articles:
+        check_strip(a.get("headline"))
+        _article_has_headline(a)
 
     # Measure strip
     tracemalloc.start()
-    for h in headlines:
-        check_strip(h)
+    for a in articles:
+        check_strip(a.get("headline"))
     current_strip, peak_strip = tracemalloc.get_traced_memory()
     tracemalloc.stop()
 
     # Measure isspace
     tracemalloc.start()
-    for h in headlines:
-        _article_has_headline({"headline": h})
+    for a in articles:
+        _article_has_headline(a)
     current_isspace, peak_isspace = tracemalloc.get_traced_memory()
     tracemalloc.stop()
 

@@ -27,10 +27,6 @@ def _article_has_headline(article: dict[str, Any]) -> bool:
 
 def _process_articles(metrics: dict[str, Any], articles: list[Any]) -> None:
     """Process articles and update metrics."""
-    metrics.setdefault("article_count", len(articles))
-    metrics.setdefault("vertical_article_ratio", 0.0)
-    metrics.setdefault("headline_page_coverage", 0.0)
-
     metrics["article_count"] = len(articles)
     headline_blocks = 0
     vertical_count = 0
