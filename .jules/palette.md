@@ -7,7 +7,3 @@
 
 **Learning:** 백엔드 전용 프로젝트(프론트엔드가 없는 경우)에서는 'UX(사용자 경험)'가 주로 'DX(개발자 경험)'로 해석됩니다. OpenAPI/Swagger 스키마에 `json_schema_extra={"example": ...}`와 같은 구체적인 예시를 추가하면 API를 사용하는 개발자들의 인터페이스 이해도를 높일 수 있습니다.
 **Action:** 향후 백엔드 API 중심의 프로젝트에서는 Pydantic 스키마 정의에 풍부한 문서화와 예제 데이터가 포함되어 있는지 확인하여 개발자 경험을 개선할 것입니다.
-
-## 2026-09-16 - API 문서(Swagger/ReDoc) 렌더링을 위한 CSP 정책 완화
-**Learning:** 과도하게 엄격한 CSP(`default-src 'none'`)는 FastAPI의 자동 생성 API 문서(Swagger UI, ReDoc)가 필수적인 외부 자원(CDN 스크립트, 스타일시트 등)을 로드하는 것을 차단하여 렌더링을 깨뜨릴 수 있습니다.
-**Action:** API 문서 관련 경로(`/docs`, `/redoc` 등)에 대해서만 예외적으로 CSP를 완화하여 개발자 경험과 접근성을 향상시키고, 나머지 API는 엄격한 보안을 유지합니다.
