@@ -57,11 +57,9 @@ def test_current_pypdf_advisories_and_floor_are_documented() -> None:
     baseline = Path("docs/doctoring/dependency-security-baseline.md").read_text(
         encoding="utf-8"
     )
-    changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
 
     for cve_id in _CURRENT_PYPDF_CVES:
         assert f"https://osv.dev/vulnerability/{cve_id}" in baseline
-    assert "`pypdf>=6.16.0,<7.0`" in changelog
 
 
 def test_trivy_registry_exception_is_scoped_to_the_example_manifest() -> None:

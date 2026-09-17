@@ -18,8 +18,6 @@ dependencies = [
   "reportlab>=4.2,<6.0",
   "Pillow>=12.3,<13.0",
   "pypdf>=6.16.0,<7.0",
-  "httpcore2>=2.5.0",
-  "httpx2>=2.5.0",
 ]
 
 [project.optional-dependencies]
@@ -81,3 +79,9 @@ module = [
   "reportlab.*",
 ]
 ignore_missing_imports = true
+
+[dependency-groups]
+dev = [
+    "httpcore2>=2.13.0",
+    "httpx2>=2.13.0",
+]
