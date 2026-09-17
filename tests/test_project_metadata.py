@@ -96,7 +96,7 @@ def test_security_dependency_floors_exclude_known_vulnerable_ranges():
     dependencies_section = _dependencies_section(text)
 
     assert '"Pillow>=12.3,<13.0"' in dependencies_section
-    assert '"pypdf>=6.16.0,<7.0"' in dependencies_section
+    assert '"pypdf>=6.15.0,<7.0"' in dependencies_section
     assert 'requires = ["setuptools>=83", "wheel"]' in text
 
 
