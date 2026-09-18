@@ -93,7 +93,8 @@ def _authorization_values(request: Request) -> list[bytes]:
 
     return [
         value
-        for name, value in request.scope.get("headers", [])
+        # ⚡ Bolt: Use direct dictionary lookup for standard ASGI scope keys to avoid .get() method overhead
+        for name, value in request.scope["headers"]
         if name.lower() == b"authorization"
     ]
 
@@ -142,7 +143,8 @@ async def security_boundary_middleware(
 ) -> Response:
     """Enforce parser authorization before reading the request body and add headers."""
 
-    if request.method == "POST" and request.scope.get("path") == "/parse":
+    # ⚡ Bolt: Use direct dictionary lookup for standard ASGI scope keys to avoid .get() method overhead
+    if request.method == "POST" and request.scope["path"] == "/parse":
         failure = _parse_access_failure(request)
         if failure is not None:
             return _apply_security_headers(failure, request)
