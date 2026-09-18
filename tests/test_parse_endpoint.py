@@ -555,3 +555,23 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
+
+def test_parse_endpoint_rejects_malformed_content_length():
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        headers={"Content-Length": "not-an-integer"},
+        content=b"x"
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid Content-Length"
+
+
+def test_parse_endpoint_rejects_chunked_transfer_encoding():
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        headers={"Transfer-Encoding": "chunked"}
+    )
+    assert response.status_code == 411
+    assert response.json()["detail"] == "Length Required"
