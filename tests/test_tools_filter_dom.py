@@ -65,7 +65,7 @@ def test_filter_dom_invalid_json(tmp_path):
 def test_filter_dom_invalid_schema(tmp_path):
     p = tmp_path / "schema.json"
     p.write_text(json.dumps({"invalid": "schema"}))
-    with pytest.raises(ValueError, match="does not match ParseResponse schema"):
+    with pytest.raises(ValueError, match="File does not match ParseResponse schema"):
         filter_dom.filter_dom(p)
 
 def test_main_success(sample_json, tmp_path, capsys):
@@ -110,3 +110,23 @@ def test_sys_path_insertion(tmp_path):
     finally:
         # Restore original path
         sys.path = original_path
+
+def test_filter_dom_path_traversal():
+    with pytest.raises(ValueError, match="Path traversal detected"):
+        filter_dom.filter_dom(Path("/etc/passwd"))
+
+def test_filter_dom_file_too_large(tmp_path):
+    p = tmp_path / "large.json"
+    with open(p, "wb") as f:
+        f.seek(100 * 1024 * 1024 + 1)
+        f.write(b"0")
+
+    with pytest.raises(ValueError, match="File is too large to parse securely"):
+        filter_dom.filter_dom(p)
+
+def test_main_path_traversal(sample_json, capsys):
+    with pytest.raises(SystemExit) as e:
+        filter_dom.main([str(sample_json), "-o", "/etc/passwd/out.json"])
+    assert e.value.code == 1
+    err = capsys.readouterr().err
+    assert "Path traversal detected" in err
