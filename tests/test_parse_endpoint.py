@@ -360,7 +360,7 @@ def test_parse_endpoint_rejects_large_files(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_parse_endpoint_rejects_large_file_without_size_metadata():
-    upload = _ReadTrackingUpload(b"%PDF-" + (b"x" * (MAX_PARSE_UPLOAD_BYTES + 8192)))
+    upload = _ReadTrackingUpload(b"%PDF-" + (b"x" * (MAX_PARSE_UPLOAD_BYTES + 8192 * 2)))
     upload.size = None
 
     with pytest.raises(HTTPException) as exc_info:
@@ -575,3 +575,298 @@ def test_parse_endpoint_rejects_chunked_transfer_encoding():
     )
     assert response.status_code == 411
     assert response.json()["detail"] == "Length Required"
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_rejects_upload_exceeding_limit_exactly():
+    class BigChunkUpload:
+        content_type = "application/pdf"
+        filename = "fixture.pdf"
+        size = None
+
+        def __init__(self):
+            self._read = 0
+
+        async def read(self, size: int = -1):
+            if self._read == 0:
+                self._read += 5
+                return b"%PDF-"
+            if self._read == 5:
+                chunk_size = 20 * 1024 * 1024 + 1
+                self._read += chunk_size
+                return b"x" * chunk_size
+            return b""
+
+    upload = BigChunkUpload()
+    with pytest.raises(HTTPException) as exc_info:
+        await parse(upload)
+
+    assert exc_info.value.status_code == 413
+    assert exc_info.value.detail == "Payload Too Large"
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_rejects_large_file_during_read_loop():
+    class FastReadUpload:
+        content_type = "application/pdf"
+        filename = "fixture.pdf"
+        size = None
+
+        def __init__(self):
+            self.state = 0
+
+        async def read(self, size: int = -1) -> bytes:
+            if self.state == 0:
+                self.state = 1
+                return b"%PDF-"
+            elif self.state == 1:
+                self.state = 2
+                return b"x" * (20 * 1024 * 1024 - 5)
+            elif self.state == 2:
+                self.state = 3
+                return b"x"
+            return b""
+
+    upload = FastReadUpload()
+    with pytest.raises(HTTPException) as exc_info:
+        await parse(upload)
+
+    assert exc_info.value.status_code == 413
+    assert exc_info.value.detail == "Payload Too Large"
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_rejects_large_file_during_read_loop_gradually():
+    class StreamUpload:
+        content_type = "application/pdf"
+        filename = "fixture.pdf"
+        size = None
+
+        def __init__(self):
+            self.state = 0
+            self.bytes_read = 0
+
+        async def read(self, size: int = -1) -> bytes:
+            if self.state == 0:
+                self.state = 1
+                return b"%PDF-"
+            elif self.state == 1:
+                # We need bytes_read to hit exactly MAX_PARSE_UPLOAD_BYTES, then one more read
+                if self.bytes_read < 20 * 1024 * 1024 - 5:
+                    chunk_size = min(8192, (20 * 1024 * 1024 - 5) - self.bytes_read)
+                    self.bytes_read += chunk_size
+                    return b"x" * chunk_size
+                else:
+                    self.state = 2
+                    return b"y"
+            return b""
+
+    upload = StreamUpload()
+    with pytest.raises(HTTPException) as exc_info:
+        await parse(upload)
+
+    assert exc_info.value.status_code == 413
+    assert exc_info.value.detail == "Payload Too Large"
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_rejects_large_file_during_read_loop_gradually2():
+    class StreamUpload2:
+        content_type = "application/pdf"
+        filename = "fixture.pdf"
+        size = None
+
+        def __init__(self):
+            self.state = 0
+            self.bytes_read = 0
+
+        async def read(self, size: int = -1) -> bytes:
+            if self.state == 0:
+                self.state = 1
+                self.bytes_read += 5
+                return b"%PDF-"
+            elif self.state == 1:
+                # Need bytes_read to hit exactly MAX_PARSE_UPLOAD_BYTES, then one more
+                if self.bytes_read < 20 * 1024 * 1024:
+                    chunk_size = min(8192, 20 * 1024 * 1024 - self.bytes_read)
+                    self.bytes_read += chunk_size
+                    return b"x" * chunk_size
+                else:
+                    self.state = 2
+                    return b"y"
+            return b""
+
+    upload = StreamUpload2()
+    with pytest.raises(HTTPException) as exc_info:
+        await parse(upload)
+
+    assert exc_info.value.status_code == 413
+    assert exc_info.value.detail == "Payload Too Large"
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_rejects_large_file_during_read_loop_limit_plus_one():
+    class StreamUpload3:
+        content_type = "application/pdf"
+        filename = "fixture.pdf"
+        size = None
+
+        def __init__(self):
+            self.state = 0
+            self.bytes_read = 0
+
+        async def read(self, size: int = -1) -> bytes:
+            if self.state == 0:
+                self.state = 1
+                self.bytes_read += 5
+                return b"%PDF-"
+            elif self.state == 1:
+                # Need bytes_read to hit exactly MAX_PARSE_UPLOAD_BYTES, then one more byte
+                if self.bytes_read < 20 * 1024 * 1024:
+                    chunk_size = min(8192, 20 * 1024 * 1024 - self.bytes_read)
+                    self.bytes_read += chunk_size
+                    return b"x" * chunk_size
+                else:
+                    self.state = 2
+                    self.bytes_read += 1
+                    return b"y"
+            return b""
+
+    upload = StreamUpload3()
+    with pytest.raises(HTTPException) as exc_info:
+        await parse(upload)
+
+    assert exc_info.value.status_code == 413
+    assert exc_info.value.detail == "Payload Too Large"
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_rejects_large_file_during_read_loop_exceed_limit():
+    class StreamUpload4:
+        content_type = "application/pdf"
+        filename = "fixture.pdf"
+        size = None
+
+        def __init__(self):
+            self.state = 0
+            self.bytes_read = 0
+
+        async def read(self, size: int = -1) -> bytes:
+            if self.state == 0:
+                self.state = 1
+                self.bytes_read += 5
+                return b"%PDF-"
+            elif self.state == 1:
+                chunk_size = 20 * 1024 * 1024
+                self.bytes_read += chunk_size
+                self.state = 2
+                return b"x" * chunk_size
+            return b""
+
+    upload = StreamUpload4()
+    with pytest.raises(HTTPException) as exc_info:
+        await parse(upload)
+
+    assert exc_info.value.status_code == 413
+    assert exc_info.value.detail == "Payload Too Large"
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_rejects_large_file_during_read_loop_exceed_limit_by_one():
+    class StreamUpload5:
+        content_type = "application/pdf"
+        filename = "fixture.pdf"
+        size = None
+
+        def __init__(self):
+            self.state = 0
+            self.bytes_read = 0
+
+        async def read(self, size: int = -1) -> bytes:
+            if self.state == 0:
+                self.state = 1
+                self.bytes_read += 5
+                return b"%PDF-"
+            elif self.state == 1:
+                chunk_size = 20 * 1024 * 1024 - 4
+                self.bytes_read += chunk_size
+                self.state = 2
+                return b"x" * chunk_size
+            return b""
+
+    upload = StreamUpload5()
+    with pytest.raises(HTTPException) as exc_info:
+        await parse(upload)
+
+    assert exc_info.value.status_code == 413
+    assert exc_info.value.detail == "Payload Too Large"
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_rejects_large_file_during_read_loop_exceed_limit_by_one_last_chunk():
+    class StreamUpload6:
+        content_type = "application/pdf"
+        filename = "fixture.pdf"
+        size = None
+
+        def __init__(self):
+            self.state = 0
+            self.bytes_read = 0
+
+        async def read(self, size: int = -1) -> bytes:
+            if self.state == 0:
+                self.state = 1
+                self.bytes_read += 5
+                return b"%PDF-"
+            elif self.state == 1:
+                # Provide chunks until we are exactly at limit
+                if self.bytes_read < 20 * 1024 * 1024:
+                    chunk_size = min(8192, 20 * 1024 * 1024 - self.bytes_read)
+                    self.bytes_read += chunk_size
+                    return b"x" * chunk_size
+                else:
+                    self.state = 2
+                    self.bytes_read += 8192
+                    return b"y" * 8192
+            return b""
+
+    upload = StreamUpload6()
+    with pytest.raises(HTTPException) as exc_info:
+        await parse(upload)
+
+    assert exc_info.value.status_code == 413
+    assert exc_info.value.detail == "Payload Too Large"
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_rejects_large_file_during_read_loop_exceed_limit_immediately():
+    class StreamUpload7:
+        content_type = "application/pdf"
+        filename = "fixture.pdf"
+        size = None
+
+        def __init__(self):
+            self.state = 0
+            self.bytes_read = 0
+
+        async def read(self, size: int = -1) -> bytes:
+            if self.state == 0:
+                self.state = 1
+                return b"%PDF-"
+            elif self.state == 1:
+                chunk_size = 20 * 1024 * 1024 + 1
+                self.state = 2
+                return b"x" * chunk_size
+            return b""
+
+    upload = StreamUpload7()
+    with pytest.raises(HTTPException) as exc_info:
+        await parse(upload)
+
+    assert exc_info.value.status_code == 413
+    assert exc_info.value.detail == "Payload Too Large"
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_rejects_large_file_size_metadata_exact():
+    # If the file size is explicitly set but slightly over, it should raise early.
+    # The coverage says line 257 is missing, meaning `file_size > MAX_PARSE_UPLOAD_BYTES` didn't happen
+    # Let's write a test that hits exactly line 257
+    upload = _ReadTrackingUpload(b"%PDF-" + (b"x" * (MAX_PARSE_UPLOAD_BYTES + 1)))
+    upload.size = MAX_PARSE_UPLOAD_BYTES + 1
+
+    with pytest.raises(HTTPException) as exc_info:
+        await parse(upload)
+
+    assert exc_info.value.status_code == 413
+    assert exc_info.value.detail == "Payload Too Large"
