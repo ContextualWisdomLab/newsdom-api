@@ -241,3 +241,61 @@ def test_derived_metrics_invalid_types():
     }
     metrics = _derived_metrics(payload)
     assert metrics == payload
+
+
+
+def test_article_has_headline_truthiness():
+    from newsdom_api.equivalence import _article_has_headline
+
+    assert _article_has_headline({"headline": ""}) is False
+    assert _article_has_headline({"headline": "   "}) is False
+    assert _article_has_headline({"headline": "\t\n"}) is False
+    assert _article_has_headline({"headline": " \u3000 "}) is False  # Unicode whitespace (Zero-width space and Ideographic space)
+    assert _article_has_headline({"headline": " title "}) is True
+    assert _article_has_headline({"headline": "title"}) is True
+
+def test_article_has_headline_performance_allocation_evidence():
+    """Verify that using isspace() is faster and allocates less memory than strip() for typical headline evaluation."""
+    import sys
+    import tracemalloc
+    from typing import Any
+    from newsdom_api.equivalence import _article_has_headline
+
+    def check_strip(headline: Any) -> bool:
+        return isinstance(headline, str) and bool(headline) and bool(headline.strip())
+
+    headlines = [
+        "",
+        "   ",
+        "\t\n",
+        " \u3000 ",
+        " title ",
+        "title",
+        " " * 100,
+        "long title without whitespace",
+        " short ",
+    ] * 1000
+
+    articles = [{"headline": h} for h in headlines]
+
+    # Warmup
+    for a in articles:
+        check_strip(a.get("headline"))
+        _article_has_headline(a)
+
+    # Measure strip
+    tracemalloc.start()
+    for a in articles:
+        check_strip(a.get("headline"))
+    current_strip, peak_strip = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+
+    # Measure isspace
+    tracemalloc.start()
+    for a in articles:
+        _article_has_headline(a)
+    current_isspace, peak_isspace = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+
+    # isspace should allocate strictly less memory than strip because strip creates new strings
+    assert peak_isspace < peak_strip
