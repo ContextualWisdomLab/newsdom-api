@@ -611,6 +611,7 @@ name = "newsdom-api"
 version = "0.2.0"
 source = { editable = "." }
 dependencies = [
+    { name = "anyio" },
     { name = "fastapi" },
     { name = "pillow" },
     { name = "pydantic" },
@@ -648,6 +649,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "anyio", specifier = ">=4.13.0" },
     { name = "atheris", marker = "python_full_version == '3.11.*' and sys_platform == 'linux' and extra == 'fuzz'", specifier = "==3.0.0" },
     { name = "atheris", marker = "python_full_version >= '3.12' and sys_platform == 'linux' and extra == 'fuzz'", specifier = "==3.1.0" },
     { name = "fastapi", specifier = ">=0.115,<1.0" },
