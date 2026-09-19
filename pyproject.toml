@@ -49,6 +49,9 @@ where = ["src", "tools"]
 include = ["newsdom_api*", "tools*"]
 
 [tool.pytest.ini_options]
+filterwarnings = [
+  "ignore::DeprecationWarning:",
+]
 testpaths = ["tests"]
 asyncio_default_fixture_loop_scope = "function"
 markers = [
