@@ -43,6 +43,23 @@ def test_healthcheck_emits_hsts_for_forwarded_https():
     )
 
 
+def test_docs_endpoints_relax_csp():
+    client = TestClient(app)
+    for endpoint in ("/docs", "/redoc", "/openapi.json", "/docs/oauth2-redirect"):
+        response = client.get(endpoint)
+        assert response.status_code == 200
+        csp = response.headers.get("Content-Security-Policy")
+        expected_csp = (
+            "default-src 'self'; "
+            "img-src 'self' data: https://fastapi.tiangolo.com; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "frame-ancestors 'none'; base-uri 'none'"
+        )
+        assert csp == expected_csp
+
+
 def test_openapi_metadata_includes_contact_and_license():
     client = TestClient(app)
     response = client.get("/openapi.json")
