@@ -134,6 +134,9 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
 
     expected_token = token.encode("utf-8")
     if len(credentials) != len(expected_token):
+        # 🛡️ Sentinel: 타이밍 공격(Timing Attack) 방어
+        # hmac.compare_digest는 길이가 다르면 즉시 반환하여 예상 토큰의 길이가 노출될 수 있습니다.
+        # 이를 방지하기 위해 길이가 다를 경우 동일한 길이의 dummy 비교를 수행하여 실행 시간을 맞춥니다.
         hmac.compare_digest(expected_token, expected_token)
         return _unauthorized_response()
 
