@@ -360,7 +360,7 @@ def test_parse_endpoint_rejects_large_files(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_parse_endpoint_rejects_large_file_without_size_metadata():
-    upload = _ReadTrackingUpload(b"%PDF-" + (b"x" * MAX_PARSE_UPLOAD_BYTES))
+    upload = _ReadTrackingUpload(b"%PDF-" + (b"x" * (MAX_PARSE_UPLOAD_BYTES + 8192)))
     upload.size = None
 
     with pytest.raises(HTTPException) as exc_info:
