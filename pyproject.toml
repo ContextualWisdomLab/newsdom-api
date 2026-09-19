@@ -19,6 +19,7 @@ dependencies = [
   "Pillow>=12.3,<13.0",
   "pypdf>=6.16.0,<7.0",
   "httpx2>=2.4.1",
+  "anyio>=4.4.0",
 ]
 
 [project.optional-dependencies]
