@@ -14,8 +14,7 @@ module behind an API gateway.
   FastAPI. Its outer middleware authenticates and admits parser work before the
   multipart body is read.
 - `src/newsdom_api/config.py` snapshots immutable runtime authentication,
-  profile, executable, and per-process capacity settings during application
-  creation.
+  profile, and per-process capacity settings during application creation.
 - `src/newsdom_api/admission.py` owns the process-local non-waiting parser lease
   pool. `ParseAdmissionLimiter` uses `threading.BoundedSemaphore` so excess
   release is treated as a programming error rather than silently inflating
@@ -86,8 +85,8 @@ bounded retry semantics.
 ## Liveness and readiness
 
 `GET /health` proves only that the web process is live. `GET /ready` proves that
-fail-closed authentication configuration and the MinerU executable are
-available. Parser saturation does not make a process unready: readiness is a
+fail-closed authentication configuration and an approved parser backend are
+available. A discoverable legacy MinerU executable alone is not readiness. Parser saturation does not make a process unready: readiness is a
 routing eligibility signal, whereas the admission response is instantaneous
 load feedback for each request. A future durable asynchronous job API may add
 queue-depth readiness policy without changing this synchronous endpoint's
