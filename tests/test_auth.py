@@ -304,6 +304,20 @@ def test_default_runtime_probe_is_not_an_unconditional_success(
     assert response.status_code == 503
 
 
+def test_legacy_mineru_executable_is_not_an_approved_parser(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A discoverable legacy executable cannot make commercial traffic ready."""
+
+    monkeypatch.setattr(
+        "newsdom_api.main.mineru_runtime_available", lambda: True, raising=False
+    )
+    response = TestClient(create_app(_settings())).get("/ready")
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Service Unavailable"}
+
+
 def test_authentication_middleware_rejects_before_reading_request_body() -> None:
     """Reject parser access before ASGI body receive or downstream parsing."""
 
