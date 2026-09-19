@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- JSON 데이터의 본문 블록을 추출하여 저장하는 JSONL 내보내기 도구 추가 (`tools/export_jsonl.py`)
 
 > **Planned 0.3.0 deployment migration:** parser authentication changes from
 > **default-open** to **default-required**. Production must configure
