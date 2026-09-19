@@ -270,7 +270,7 @@ async def test_matrix_report_records_environment_cases_and_raw_samples(
         indent=2,
         sort_keys=True,
     ) + "\n"
-    assert report["schema_version"] == "1.1.0"
+    assert report["schema_version"] == "1.2.0"
     assert report["benchmark_environment"]["python_version"]
     for field_name, field_value in _environment_manifest().items():
         assert report["benchmark_environment"][field_name] == field_value
@@ -310,7 +310,7 @@ def test_raw_evidence_schema_is_strict_and_covers_required_metrics() -> None:
     required_environment_fields = set(_environment_manifest())
 
     assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
-    assert schema["properties"]["schema_version"] == {"const": "1.1.0"}
+    assert schema["properties"]["schema_version"] == {"const": "1.2.0"}
     assert schema["additionalProperties"] is False
     assert case_schema["additionalProperties"] is False
     assert environment_schema["additionalProperties"] is False
