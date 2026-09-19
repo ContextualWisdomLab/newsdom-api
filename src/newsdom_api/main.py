@@ -190,6 +190,16 @@ def health() -> HealthResponse:
     return HealthResponse()
 
 
+def approved_parser_runtime_available() -> bool:
+    """Fail closed until an unrestricted parser backend is released."""
+
+    if not mineru_runtime_available():
+        return False
+    # The discoverable MinerU 3.x adapter is legacy-only and is not approved
+    # for the unrestricted commercial runtime tracked by issue #671.
+    return False
+
+
 def ready(request: Request) -> ReadinessResponse:
     """Return readiness only when authentication and MinerU runtime are available."""
 
@@ -351,7 +361,7 @@ def create_app(
         application_settings.max_concurrent_parses
     )
     application.state.runtime_readiness_probe = (
-        runtime_readiness_probe or mineru_runtime_available
+        runtime_readiness_probe or approved_parser_runtime_available
     )
     application.middleware("http")(security_boundary_middleware)
     application.add_exception_handler(Exception, global_exception_handler)
@@ -372,7 +382,7 @@ def create_app(
         summary="Readiness Check",
         description=(
             "Returns ready only when parser authentication configuration and "
-            "the MinerU runtime can safely accept traffic."
+            "an approved parser backend can safely accept traffic."
         ),
         responses={503: {"description": SERVICE_UNAVAILABLE_DETAIL}},
         tags=["System"],
