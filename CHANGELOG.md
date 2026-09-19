@@ -119,3 +119,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dependency update: bumped pypdf to `>=6.16.0,<7.0` to resolve `trivy-fs` findings.
 
 `pypdf>=6.16.0,<7.0`
+
+`anyio>=4.13.1`
