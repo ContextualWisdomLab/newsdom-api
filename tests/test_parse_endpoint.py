@@ -358,6 +358,42 @@ def test_parse_endpoint_rejects_large_files(monkeypatch):
     assert response.json()["detail"] == "Payload Too Large"
 
 
+def test_parse_endpoint_rejects_large_content_length_before_parsing(monkeypatch):
+    client = TestClient(app)
+
+    # Middleware blocks immediately without reading the body when Content-Length
+    # exceeds the multipart-allowance limit, preventing python-multipart OOMs.
+    response = client.post(
+        "/parse",
+        headers={"Content-Length": str(MAX_PARSE_UPLOAD_BYTES + 1048577)},
+        data={"language": "a" * 100},
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n", "application/pdf")},
+    )
+
+    assert response.status_code == 413
+    assert response.json()["detail"] == "Payload Too Large"
+
+
+def test_parse_endpoint_handles_invalid_content_length(monkeypatch):
+    def fake_parse_pdf_bytes(file_path, filename, **kwargs):
+        return {"document_id": "fixture", "pages": []}
+
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
+
+    client = TestClient(app)
+
+    # Middleware should gracefully ignore malformed Content-Length headers
+    # and let the application handle the request normally.
+    response = client.post(
+        "/parse",
+        headers={"Content-Length": "not-an-integer"},
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+    )
+
+    assert response.status_code == 200
+
+
 @pytest.mark.asyncio
 async def test_parse_endpoint_rejects_large_file_without_size_metadata():
     upload = _ReadTrackingUpload(b"%PDF-" + (b"x" * MAX_PARSE_UPLOAD_BYTES))
