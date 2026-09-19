@@ -9,6 +9,7 @@ import json
 import math
 import os
 import platform
+import re
 import sys
 import tempfile
 import time
@@ -34,6 +35,22 @@ TARGET_FIXTURE_BYTES = (
     20 * 1024 * 1024,
 )
 _RESULT_SCHEMA_PATH = "docs/benchmarks/upload-ingestion-result.schema.json"
+MAX_FIXTURE_BYTES = 20 * 1024 * 1024
+_ENVIRONMENT_MANIFEST_FIELDS = frozenset(
+    {
+        "execution_image",
+        "cpu_model",
+        "memory_bytes",
+        "storage_device",
+        "filesystem",
+        "dependency_lock_sha256",
+        "commit_sha",
+        "worker_count",
+        "cache_state",
+    }
+)
+_SHA256_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
+_COMMIT_SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 SampleRecord = dict[str, int | float]
 
 
@@ -99,12 +116,15 @@ def inventory_fixture(path: Path) -> dict[str, int | str]:
 
     if not path.is_file() or path.is_symlink():
         raise ValueError(f"Fixture must be a regular non-symlink file: {path}")
+    size_bytes = path.stat().st_size
+    if size_bytes > MAX_FIXTURE_BYTES:
+        raise ValueError(f"Fixture exceeds 20 MiB: {path.name}")
     with path.open("rb") as handle:
         if handle.read(5) != b"%PDF-":
             raise ValueError(f"Fixture does not contain PDF magic bytes: {path.name}")
     return {
         "fixture_name": path.name,
-        "size_bytes": path.stat().st_size,
+        "size_bytes": size_bytes,
         "sha256": _sha256(path),
     }
 
@@ -290,6 +310,52 @@ def _environment_record() -> dict[str, Any]:
     }
 
 
+def _validated_environment_manifest(
+    manifest: dict[str, Any],
+) -> dict[str, int | str]:
+    """Validate caller-supplied hardware and execution provenance."""
+
+    field_names = set(manifest)
+    if field_names != _ENVIRONMENT_MANIFEST_FIELDS:
+        missing = sorted(_ENVIRONMENT_MANIFEST_FIELDS - field_names)
+        unexpected = sorted(field_names - _ENVIRONMENT_MANIFEST_FIELDS)
+        raise ValueError(
+            f"Environment manifest fields mismatch; missing={missing}, "
+            f"unexpected={unexpected}"
+        )
+    string_fields = (
+        "execution_image",
+        "cpu_model",
+        "storage_device",
+        "filesystem",
+    )
+    if any(
+        not isinstance(manifest[field_name], str)
+        or not str(manifest[field_name]).strip()
+        for field_name in string_fields
+    ):
+        raise ValueError("Environment manifest string fields must be non-empty")
+    if (
+        not isinstance(manifest["memory_bytes"], int)
+        or manifest["memory_bytes"] < 1
+        or not isinstance(manifest["worker_count"], int)
+        or manifest["worker_count"] < 1
+    ):
+        raise ValueError("Environment manifest counts must be positive integers")
+    dependency_lock = manifest["dependency_lock_sha256"]
+    commit_sha = manifest["commit_sha"]
+    if (
+        not isinstance(dependency_lock, str)
+        or _SHA256_PATTERN.fullmatch(dependency_lock) is None
+        or not isinstance(commit_sha, str)
+        or _COMMIT_SHA_PATTERN.fullmatch(commit_sha) is None
+    ):
+        raise ValueError("Environment manifest hashes are invalid")
+    if manifest["cache_state"] not in {"cold", "warm", "disabled"}:
+        raise ValueError("Environment manifest cache_state is invalid")
+    return dict(manifest)
+
+
 def aggregate_metrics(
     cohorts: Sequence[CohortObservation],
 ) -> dict[str, int | float]:
@@ -338,6 +404,7 @@ async def run_matrix(
     candidates: tuple[str, ...] = tuple(CHUNK_CANDIDATES),
     concurrency_levels: tuple[int, ...] = CONCURRENCY_LEVELS,
     repetitions: int = 3,
+    environment_manifest: dict[str, Any],
     cohort_runner: CohortRunner = run_cohort,
 ) -> dict[str, Any]:
     """Run and write the reproducible raw upload-ingestion evidence matrix."""
@@ -347,6 +414,8 @@ async def run_matrix(
     if not fixture_paths:
         raise ValueError("At least one PDF fixture is required")
 
+    benchmark_environment = _environment_record()
+    benchmark_environment.update(_validated_environment_manifest(environment_manifest))
     fixture_records = [inventory_fixture(path) for path in fixture_paths]
     cases: list[dict[str, Any]] = []
     for concurrency in concurrency_levels:
@@ -385,10 +454,10 @@ async def run_matrix(
                 )
 
     report: dict[str, Any] = {
-        "schema_version": "1.1.0",
+        "schema_version": "1.2.0",
         "schema_path": _RESULT_SCHEMA_PATH,
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "benchmark_environment": _environment_record(),
+        "benchmark_environment": benchmark_environment,
         "fixtures": fixture_records,
         "cases": cases,
     }
@@ -430,6 +499,12 @@ def main(argv: list[str] | None = None) -> None:
         help="Path for the schema-versioned raw JSON report.",
     )
     parser.add_argument(
+        "--environment-manifest",
+        type=Path,
+        required=True,
+        help="Strict JSON hardware, lock, revision, worker, and cache evidence.",
+    )
+    parser.add_argument(
         "--repetitions",
         type=_positive_int,
         default=3,
@@ -451,6 +526,11 @@ def main(argv: list[str] | None = None) -> None:
     )
     args = parser.parse_args(argv)
     fixture_paths = discover_fixtures(args.fixtures_dir)
+    environment_manifest = json.loads(
+        args.environment_manifest.read_text(encoding="utf-8")
+    )
+    if not isinstance(environment_manifest, dict):
+        raise ValueError("Environment manifest must be a JSON object")
     candidates = tuple(args.candidates or CHUNK_CANDIDATES)
     concurrency_levels = tuple(args.concurrency_levels or CONCURRENCY_LEVELS)
     asyncio.run(
@@ -460,6 +540,7 @@ def main(argv: list[str] | None = None) -> None:
             candidates=candidates,
             concurrency_levels=concurrency_levels,
             repetitions=args.repetitions,
+            environment_manifest=environment_manifest,
         )
     )
 
