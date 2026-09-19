@@ -11,6 +11,22 @@ import pytest
 from tools import benchmark_upload_ingestion as benchmark
 
 
+def _environment_manifest() -> dict[str, int | str]:
+    """Return complete host evidence for a deterministic benchmark report."""
+
+    return {
+        "execution_image": "host:ubuntu-24.04",
+        "cpu_model": "Test CPU",
+        "memory_bytes": 8 * 1024**3,
+        "storage_device": "test-volume",
+        "filesystem": "ext4",
+        "dependency_lock_sha256": "sha256:" + "a" * 64,
+        "commit_sha": "b" * 40,
+        "worker_count": 1,
+        "cache_state": "cold",
+    }
+
+
 def _sample(
     duration: float = 0.25,
     *,
@@ -76,6 +92,33 @@ def test_fixture_inventory_rejects_non_pdf_magic(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="PDF magic"):
         benchmark.inventory_fixture(fixture)
+
+
+@pytest.mark.parametrize(
+    ("size_bytes", "accepted"),
+    [
+        (20 * 1024 * 1024, True),
+        (20 * 1024 * 1024 + 1, False),
+    ],
+)
+def test_fixture_inventory_enforces_twenty_mib_boundary(
+    tmp_path: Path,
+    size_bytes: int,
+    accepted: bool,
+) -> None:
+    """The fixture contract accepts the boundary and rejects oversized input."""
+
+    fixture = tmp_path / "boundary.pdf"
+    with fixture.open("wb") as fixture_handle:
+        fixture_handle.write(b"%PDF-")
+        fixture_handle.seek(size_bytes - 1)
+        fixture_handle.write(b"\0")
+
+    if accepted:
+        assert benchmark.inventory_fixture(fixture)["size_bytes"] == size_bytes
+    else:
+        with pytest.raises(ValueError, match="20 MiB"):
+            benchmark.inventory_fixture(fixture)
 
 
 def test_fixture_inventory_records_hash_and_size(tmp_path: Path) -> None:
@@ -217,6 +260,7 @@ async def test_matrix_report_records_environment_cases_and_raw_samples(
         candidates=("8kib", "adaptive"),
         concurrency_levels=(1, 2),
         repetitions=2,
+        environment_manifest=_environment_manifest(),
         cohort_runner=fake_cohort,
     )
 
@@ -228,6 +272,8 @@ async def test_matrix_report_records_environment_cases_and_raw_samples(
     ) + "\n"
     assert report["schema_version"] == "1.1.0"
     assert report["benchmark_environment"]["python_version"]
+    for field_name, field_value in _environment_manifest().items():
+        assert report["benchmark_environment"][field_name] == field_value
     assert len(report["fixtures"]) == 1
     assert len(report["cases"]) == 4
     assert len(report["cases"][0]["samples"]) == 2
@@ -260,11 +306,16 @@ def test_raw_evidence_schema_is_strict_and_covers_required_metrics() -> None:
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     case_schema = schema["$defs"]["benchmark_case"]
     metric_properties = case_schema["properties"]["metrics"]["properties"]
+    environment_schema = schema["$defs"]["benchmark_environment"]
+    required_environment_fields = set(_environment_manifest())
 
     assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
     assert schema["properties"]["schema_version"] == {"const": "1.1.0"}
     assert schema["additionalProperties"] is False
     assert case_schema["additionalProperties"] is False
+    assert environment_schema["additionalProperties"] is False
+    assert required_environment_fields <= set(environment_schema["required"])
+    assert required_environment_fields <= set(environment_schema["properties"])
     assert "cohort_observations" in case_schema["required"]
     assert case_schema["properties"]["concurrency"] == {
         "type": "integer",
@@ -292,6 +343,8 @@ def test_cli_defaults_to_the_complete_evidence_matrix(monkeypatch, tmp_path: Pat
     fixtures = tmp_path / "fixtures"
     fixtures.mkdir()
     output = tmp_path / "results.json"
+    manifest_path = tmp_path / "environment.json"
+    manifest_path.write_text(json.dumps(_environment_manifest()), encoding="utf-8")
     captured: dict[str, object] = {}
 
     async def fake_run_matrix(
@@ -301,6 +354,7 @@ def test_cli_defaults_to_the_complete_evidence_matrix(monkeypatch, tmp_path: Pat
         candidates: tuple[str, ...],
         concurrency_levels: tuple[int, ...],
         repetitions: int,
+        environment_manifest: dict[str, int | str],
         cohort_runner=benchmark.run_cohort,
     ) -> dict[str, object]:
         captured.update(
@@ -309,6 +363,7 @@ def test_cli_defaults_to_the_complete_evidence_matrix(monkeypatch, tmp_path: Pat
             candidates=candidates,
             concurrency_levels=concurrency_levels,
             repetitions=repetitions,
+            environment_manifest=environment_manifest,
             cohort_runner=cohort_runner,
         )
         return {}
@@ -322,6 +377,8 @@ def test_cli_defaults_to_the_complete_evidence_matrix(monkeypatch, tmp_path: Pat
             str(fixtures),
             "--output",
             str(output),
+            "--environment-manifest",
+            str(manifest_path),
             "--repetitions",
             "3",
         ]
@@ -331,4 +388,5 @@ def test_cli_defaults_to_the_complete_evidence_matrix(monkeypatch, tmp_path: Pat
     assert captured["concurrency_levels"] == benchmark.CONCURRENCY_LEVELS
     assert captured["repetitions"] == 3
     assert captured["output_path"] == output
+    assert captured["environment_manifest"] == _environment_manifest()
     assert asyncio.iscoroutinefunction(fake_run_matrix)
