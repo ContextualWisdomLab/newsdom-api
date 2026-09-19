@@ -14,8 +14,12 @@ def test_security_policy_covers_reporting_and_supported_branches():
 
 def test_security_policy_includes_explicit_reporting_links():
     text = Path("SECURITY.md").read_text(encoding="utf-8")
-    assert "https://github.com/Seongho-Bae/newsdom-api/security/advisories/new" in text
-    assert "https://github.com/seonghobae" in text
+    assert (
+        "https://github.com/ContextualWisdomLab/newsdom-api/security/advisories/new"
+        in text
+    )
+    assert "ContextualWisdomLab repository maintainers" in text
+    assert "Do not open a public issue, pull-request comment, or discussion" in text
 
 
 def test_readme_and_contributing_link_security_policy():
