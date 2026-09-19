@@ -15,7 +15,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "1.1.0"
+      "const": "1.2.0"
     },
     "schema_path": {
       "const": "docs/benchmarks/upload-ingestion-result.schema.json"
@@ -53,7 +53,16 @@
         "platform",
         "machine",
         "processor_count",
-        "rss_provider"
+        "rss_provider",
+        "execution_image",
+        "cpu_model",
+        "memory_bytes",
+        "storage_device",
+        "filesystem",
+        "dependency_lock_sha256",
+        "commit_sha",
+        "worker_count",
+        "cache_state"
       ],
       "properties": {
         "python_version": {
@@ -76,18 +85,64 @@
           "type": "string"
         },
         "processor_count": {
-          "type": ["integer", "null"],
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 1
         },
         "rss_provider": {
           "const": "linux_proc_status_vmrss"
+        },
+        "execution_image": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cpu_model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "memory_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "storage_device": {
+          "type": "string",
+          "minLength": 1
+        },
+        "filesystem": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dependency_lock_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "commit_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "worker_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cache_state": {
+          "enum": [
+            "cold",
+            "warm",
+            "disabled"
+          ]
         }
       }
     },
     "fixture_record": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["fixture_name", "size_bytes", "sha256"],
+      "required": [
+        "fixture_name",
+        "size_bytes",
+        "sha256"
+      ],
       "properties": {
         "fixture_name": {
           "type": "string",
@@ -123,7 +178,13 @@
           "minLength": 1
         },
         "candidate": {
-          "enum": ["8kib", "64kib", "256kib", "1mib", "adaptive"]
+          "enum": [
+            "8kib",
+            "64kib",
+            "256kib",
+            "1mib",
+            "adaptive"
+          ]
         },
         "chunk_bytes": {
           "type": "integer",
@@ -256,7 +317,11 @@
     "sample_record": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["duration_seconds", "read_calls", "bytes_copied"],
+      "required": [
+        "duration_seconds",
+        "read_calls",
+        "bytes_copied"
+      ],
       "properties": {
         "duration_seconds": {
           "type": "number",
