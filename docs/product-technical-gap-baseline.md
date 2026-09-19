@@ -36,7 +36,7 @@ The upstream HTTPX2 advisories establish:
 - CVE-2026-84381 / GHSA-7mj9-2mp8-4m2p: `wss://` over SOCKS could omit TLS, fixed in HTTPX2 and httpcore2 2.10.0;
 - CVE-2026-84382 / GHSA-8xx6-hgc6-gc2m: streaming decompression amplification, fixed in HTTPX2 2.12.0.
 
-The strongest current HTTPX2 floor is 2.12.0. PR #822 therefore declares `httpx2>=2.12.0` and `httpcore2>=2.12.0` in the development/TestClient dependency set and resolves both to 2.12.0. The lock and direct metadata were taken from an already resolver-generated repository generation that also preserved `pypdf>=6.16.1,<7.0`; source, form-field, auth, and generated Sentinel changes from that historical generation were not adopted.
+The strongest current HTTPX2 floor is 2.12.0. Fresh PR #900 additionally exposed CVE-2026-63374 in the locked AnyIO 4.13.0 generation. The canonical owner now declares `anyio>=4.14.2` and resolves AnyIO 4.15.1; the same resolver generation advances HTTPX2/httpcore2 to 2.13.0 without weakening their reviewed 2.12.0 floors. PR #822 therefore declares `httpx2>=2.12.0` and `httpcore2>=2.12.0` in the development/TestClient dependency set and resolves both to 2.12.0. The lock and direct metadata were taken from an already resolver-generated repository generation that also preserved `pypdf>=6.16.1,<7.0`; source, form-field, auth, and generated Sentinel changes from that historical generation were not adopted.
 
 This does not assert that every HTTPX2 advisory is reachable through NewsDOM production traffic. It removes known-vulnerable artifacts from the exact lock that tests and scanners consume, which is required by the existing whole-tree gate.
 
@@ -57,7 +57,7 @@ This does not assert that every HTTPX2 advisory is reachable through NewsDOM pro
 3. `tests/test_pypdf_security_floor.py` and `tests/test_httpx2_security_floor.py` reject weaker declaration/lock states.
 4. `CHANGELOG.md` and `docs/doctoring/dependency-security-baseline.md` describe the same current floors and advisory boundaries.
 5. Complete tests, 100% owned production statement/branch coverage and docstring gates, package/docs builds, Security Scan, SAST, repository CodeQL, central CodeQL, container, fuzz, and scorecard evidence reach terminal success on the same SHA.
-6. Security Scan reports none of CVE-2026-84309/84310/84311/84378/84379/84380/84381/84382 without suppression.
+6. Security Scan reports none of CVE-2026-63374/84309/84310/84311/84378/84379/84380/84381/84382 without suppression.
 7. Independent current-head review has no unresolved valid finding.
 8. Merge is a normal protected-branch merge. Dependent parser/auth lanes then adopt the resulting protected base through non-force descendants and obtain fresh exact-head evidence.
 
