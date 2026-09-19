@@ -113,3 +113,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
 - [보안] `pypdf` 및 `httpx2`, `httpcore2` 라이브러리의 취약점을 해결하기 위해 버전을 업데이트했습니다 (CVE-2026-84309 등).
+- [보안] `anyio` 패키지의 CRITICAL 및 MEDIUM 취약점을 해결하기 위해 버전을 업데이트했습니다 (CVE-2026-63374 등).

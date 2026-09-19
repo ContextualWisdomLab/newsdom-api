@@ -20,6 +20,7 @@ dependencies = [
   "pypdf>=6.17.0,<7.0",
   "httpx2>=2.4.1",
   "httpcore2>=2.4.1",
+  "anyio>=4.8.0",
 ]
 
 [project.optional-dependencies]
