@@ -47,7 +47,7 @@ uv run pytest
 API shell은 parser 설치 없이도 liveness, 인증 설정, 요청 계약을 개발·검증하는 데 사용할 수 있습니다.
 
 ```bash
-uv run uvicorn --app-dir src newsdom_api.main:app --host 0.0.0.0 --port 8000 --reload
+uv run uvicorn --app-dir src newsdom_api.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 다른 터미널에서 liveness를 확인합니다.
