@@ -193,7 +193,15 @@ def _validate_pdf_structure(file_path: Path) -> None:
         reader = PdfReader(file_path, strict=True)
         if len(reader.pages) < 1:
             raise ValueError("PDF has no pages")
-    except (PdfReadError, RecursionError, ValueError, OverflowError):
+    except (
+        PdfReadError,
+        RecursionError,
+        ValueError,
+        OverflowError,
+        TypeError,
+        MemoryError,
+    ) as exc:
+        LOGGER.error("Failed to parse PDF structure", exc_info=exc)
         raise HTTPException(
             status_code=415,
             detail=UNSUPPORTED_MEDIA_DETAIL,
