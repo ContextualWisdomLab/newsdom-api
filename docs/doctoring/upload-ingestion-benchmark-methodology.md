@@ -44,11 +44,16 @@ acceptance rules below.
 ```bash
 uv run python tools/benchmark_upload_ingestion.py \
   --fixtures-dir /absolute/path/to/approved-pdf-fixtures \
+  --environment-manifest /absolute/path/to/environment.json \
   --output artifacts/upload-ingestion-result.json \
   --repetitions 3
 ```
 
-The default command runs the complete candidate and concurrency matrix. Filters
+The environment manifest is a strict JSON object containing the execution image,
+CPU model, memory bytes, storage device, filesystem, dependency-lock SHA-256,
+exact 40-character commit SHA, worker count, and cache state
+(`cold`, `warm`, or `disabled`). The harness rejects missing and unknown
+fields. The default command runs the complete candidate and concurrency matrix. Filters
 are available for diagnosis, but a filtered run is not sufficient for a default
 selection. Execute the benchmark on an otherwise idle, dedicated Linux
 environment and record the container or host image, CPU model, memory, storage
@@ -106,7 +111,7 @@ The checked-in JSON Schema is:
 docs/benchmarks/upload-ingestion-result.schema.json
 ```
 
-Accepted evidence must validate against schema version `1.1.0`. The report keeps
+Accepted evidence must validate against schema version `1.2.0`. The report keeps
 request samples and raw cohort observations alongside aggregates, rejects
 unknown top-level and case fields, and records the exact resolved byte size even
 for the adaptive candidate. Generated reports are evidence artifacts, not source
