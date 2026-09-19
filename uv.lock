@@ -611,9 +611,7 @@ name = "newsdom-api"
 version = "0.2.0"
 source = { editable = "." }
 dependencies = [
-    { name = "anyio" },
     { name = "fastapi" },
-    { name = "httpx2" },
     { name = "pillow" },
     { name = "pydantic" },
     { name = "pypdf" },
@@ -644,12 +642,10 @@ fuzz = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anyio", specifier = ">=4.4.0" },
     { name = "atheris", marker = "python_full_version == '3.11.*' and sys_platform == 'linux' and extra == 'fuzz'", specifier = "==3.0.0" },
     { name = "atheris", marker = "python_full_version >= '3.12' and sys_platform == 'linux' and extra == 'fuzz'", specifier = "==3.1.0" },
     { name = "fastapi", specifier = ">=0.115,<1.0" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.28,<1.0" },
-    { name = "httpx2", specifier = ">=2.4.1" },
     { name = "httpx2", marker = "extra == 'dev'", specifier = ">=2.4.0" },
     { name = "mkdocs", marker = "extra == 'docs'", specifier = ">=1.6,<2.0" },
     { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=9.7,<9.8" },
@@ -657,7 +653,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.9,<3.0" },
     { name = "pyinstaller", marker = "extra == 'fuzz'", specifier = "==6.21.0" },
     { name = "pymdown-extensions", marker = "extra == 'docs'", specifier = ">=11,<12" },
-    { name = "pypdf", specifier = ">=6.16.0,<7.0" },
+    { name = "pypdf", specifier = ">=6.15.0,<7.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3,<10.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.21" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0,<8.0" },
