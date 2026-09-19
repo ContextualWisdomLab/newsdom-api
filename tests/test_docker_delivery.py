@@ -169,9 +169,10 @@ def test_readme_describes_default_image_as_api_only_runtime() -> None:
     assert "does not bundle the MinerU runtime" in text
     assert "real `/parse` execution" not in text
     assert (
-        "requires a compatible MinerU runtime to be available inside the container image"
+        "`/ready` must stay fail-closed until an approved parser backend exists"
         in text
     )
+    assert "commercially blocked under organization policy" in text
 
 
 def test_docker_command_matchers_allow_wrapped_whitespace():
