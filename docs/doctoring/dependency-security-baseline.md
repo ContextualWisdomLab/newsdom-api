@@ -12,6 +12,8 @@ review gates before merge.
 
 The adopted floors are:
 
+- `anyio>=4.14.2` for the async runtime, with the lock resolving 4.15.1 after PR #900 exposed CVE-2026-63374 in 4.13.0;
+
 - `setuptools>=83` for the build backend;
 - `Pillow>=12.3,<13.0` for image parsing on the untrusted document-ingestion path;
 - `pypdf>=6.16.1,<7.0` for PDF parsing;

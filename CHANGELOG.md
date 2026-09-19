@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CLI] 파싱된 NewsDOM JSON에서 순수 텍스트 데이터를 추출하여 텍스트 파일 또는 stdout으로 출력하는 `tools/extract_text.py` 도구를 추가했습니다.
 
 ### Security
+
+- Raised the AnyIO floor to 4.14.2 and refreshed the lock to AnyIO 4.15.1, HTTPX2 2.13.0, and httpcore2 2.13.0 after current PR #900 exposed CVE-2026-63374 in the prior lock.
 - `/parse` authentication is now immutable per application instance and fails closed before multipart body parsing when required configuration is missing. Hostile missing, invalid, Unicode, oversized, and duplicated Authorization headers return one non-sensitive response.
 - Added unauthenticated `/ready` traffic readiness that combines authentication configuration with MinerU executable availability while `/health` remains liveness-only.
 - Hardened the Kubernetes deployment example with a restricted namespace policy, explicit non-root UID/GID, `RuntimeDefault` seccomp, disabled privilege escalation, dropped Linux capabilities, a read-only root filesystem, and bounded writable runtime volumes.
