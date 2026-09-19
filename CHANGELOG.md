@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CLI] 파싱된 NewsDOM JSON에서 순수 텍스트 데이터를 추출하여 텍스트 파일 또는 stdout으로 출력하는 `tools/extract_text.py` 도구를 추가했습니다.
 
 ### Security
+
+- Raised the AnyIO floor to 4.14.2 and refreshed the lock to AnyIO 4.15.1, HTTPX2 2.13.0, and httpcore2 2.13.0 after current PR #900 exposed CVE-2026-63374 in the prior lock.
 - `/parse` authentication is now immutable per application instance and fails closed before multipart body parsing when required configuration is missing. Hostile missing, invalid, Unicode, oversized, and duplicated Authorization headers return one non-sensitive response.
 - Added unauthenticated `/ready` traffic readiness that combines authentication configuration with MinerU executable availability while `/health` remains liveness-only.
 - Hardened the Kubernetes deployment example with a restricted namespace policy, explicit non-root UID/GID, `RuntimeDefault` seccomp, disabled privilege escalation, dropped Linux capabilities, a read-only root filesystem, and bounded writable runtime volumes.
@@ -37,7 +39,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `uv.lock`의 의존성 보안 floor를 current scanner findings에 맞춰 다시 고정: `pypdf>=6.16.1,<7.0`(pypdf 6.18.0 lock; CVE-2026-84309 / GHSA-jp53-mhqp-8xcg, CVE-2026-84310 / GHSA-23w6-3w8w-8484, CVE-2026-84311 / GHSA-763m-79hh-57f2), 개발/TestClient 경계의 `httpx2>=2.12.0` 및 `httpcore2>=2.12.0`(lock 2.12.0; CVE-2026-84378/84379/84380/84381/84382), `pillow>=12.3,<13.0`, `setuptools>=83`, `mkdocs-material>=9.7,<9.8`을 선언·lock·regression으로 함께 묶었습니다. HTTPX2의 가장 높은 현재 patch boundary는 streaming decompression amplification(CVE-2026-84382)의 2.12.0이며, suppression 없이 exact-head filesystem/dependency scan이 통과해야 완료로 인정합니다.
 
 ### Performance
-- `_article_has_headline`은 headline 존재 여부를 판단할 때 임시 stripped 문자열을 만들지 않고 `str.isspace()`로 공백 전용 값을 판별하며, 빈 값·Unicode 공백·패딩된 제목의 기존 의미를 회귀 테스트로 고정합니다.
 - `newsdom_api.dom_builder._html_safe_text` 함수에 early return과 타입 체크를 도입하여 불필요한 `str()` 캐스팅을 제거함으로써 처리 속도를 개선했습니다.
 
 ### Added
@@ -113,3 +114,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
+- `_article_has_headline`은 headline 존재 여부를 판단할 때 임시 stripped 문자열을 만들지 않고 `str.isspace()`로 공백 전용 값을 판별하며, 빈 값·Unicode 공백·패딩된 제목의 기존 의미를 회귀 테스트로 고정합니다.
