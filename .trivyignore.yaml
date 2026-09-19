@@ -18,20 +18,3 @@ misconfigurations:
       Revisit when the central scan accepts repository-owned trusted-registry
       data or by 2026-10-31.
     expired_at: 2026-10-31
-vulnerabilities:
-  - id: CVE-2026-84381
-    paths:
-      - uv.lock
-    statement: "Trivy failure false positive for dev dependency"
-  - id: CVE-2026-84382
-    paths:
-      - uv.lock
-    statement: "Trivy failure false positive for dev dependency"
-  - id: CVE-2026-84379
-    paths:
-      - uv.lock
-    statement: "Trivy failure false positive for dev dependency"
-  - id: CVE-2026-84380
-    paths:
-      - uv.lock
-    statement: "Trivy failure false positive for dev dependency"
