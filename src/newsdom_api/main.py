@@ -201,7 +201,7 @@ def approved_parser_runtime_available() -> bool:
 
 
 def ready(request: Request) -> ReadinessResponse:
-    """Return readiness only when authentication and MinerU runtime are available."""
+    """Return readiness only for valid authentication and an approved parser."""
 
     settings = _runtime_settings(request)
     runtime_probe = request.app.state.runtime_readiness_probe
