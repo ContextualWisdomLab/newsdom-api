@@ -55,6 +55,9 @@ asyncio_default_fixture_loop_scope = "function"
 markers = [
   "integration: requires MinerU CLI and model cache"
 ]
+filterwarnings = [
+    "ignore:The anyio.abc.BlockingPortal alias is deprecated:DeprecationWarning",
+]
 
 [tool.coverage.run]
 source = ["src/newsdom_api", "tools"]
