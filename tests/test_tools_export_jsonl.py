@@ -127,3 +127,40 @@ def test_main_error(tmp_path: Path, capsys) -> None:
     assert exc_info.value.code == 1
     captured = capsys.readouterr()
     assert "Error exporting JSONL" in captured.err
+
+def test_export_jsonl_cleans_up_on_exception_without_temp_file(
+    sample_json_path: Path, tmp_path: Path, monkeypatch
+) -> None:
+    output_path = tmp_path / "output.jsonl"
+
+    def mock_dumps(*args, **kwargs):
+        raise TypeError("Simulated error")
+
+    monkeypatch.setattr(json, "dumps", mock_dumps)
+
+    # We'll monkeypatch unlink to ensure it's not called if the file doesn't exist
+    from pathlib import Path
+    original_exists = Path.exists
+    original_unlink = Path.unlink
+
+    unlink_called = False
+
+    def mock_exists(self):
+        if str(self).startswith(str(tmp_path / "tmp")):
+            return False
+        return original_exists(self)
+
+    def mock_unlink(self):
+        nonlocal unlink_called
+        if str(self).startswith(str(tmp_path / "tmp")):
+            unlink_called = True
+        else:
+            original_unlink(self)
+
+    monkeypatch.setattr(Path, "exists", mock_exists)
+    monkeypatch.setattr(Path, "unlink", mock_unlink)
+
+    with pytest.raises(TypeError, match="Simulated error"):
+        export_jsonl(sample_json_path, output_path)
+
+    assert not unlink_called
