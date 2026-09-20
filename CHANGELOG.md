@@ -112,3 +112,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
+
+### UX Improvements
+- FastAPI 문서(Swagger UI, ReDoc)의 원활한 렌더링을 위해 관련 엔드포인트에 한하여 CSP를 조건부 완화
