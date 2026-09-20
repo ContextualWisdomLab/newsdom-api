@@ -115,9 +115,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### UX Improvements
 - FastAPI 문서(Swagger UI, ReDoc)의 원활한 렌더링을 위해 관련 엔드포인트에 한하여 CSP를 조건부 완화
-
-- Dependency update: bumped pypdf to `>=6.16.0,<7.0` to resolve `trivy-fs` findings.
-
-`pypdf>=6.16.0,<7.0`
-
-`anyio>=4.13.1`
