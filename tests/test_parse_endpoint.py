@@ -555,3 +555,55 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
+
+def test_large_content_length_header(monkeypatch):
+    monkeypatch.setattr("newsdom_api.main.parse_pdf", lambda *a, **k: {"document_id": "x", "pages": []})
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        headers={"Content-Length": str(MAX_PARSE_UPLOAD_BYTES + 1024)},
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+    )
+    assert response.status_code == 413
+    assert response.json()["detail"] == "Payload Too Large"
+
+def test_malformed_content_length_header(monkeypatch):
+    monkeypatch.setattr("newsdom_api.main.parse_pdf", lambda *a, **k: {"document_id": "x", "pages": []})
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        headers={"Content-Length": "not-a-number"},
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+    )
+    assert response.status_code == 200
+
+def test_chunked_transfer_encoding_bypasses_length_check(monkeypatch):
+    monkeypatch.setattr("newsdom_api.main.parse_pdf", lambda *a, **k: {"document_id": "x", "pages": []})
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        headers={"Transfer-Encoding": "chunked"},
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+    )
+    assert response.status_code == 200
+
+def test_parse_endpoint_rejects_large_files_via_size_metadata(monkeypatch):
+    from newsdom_api.main import PAYLOAD_TOO_LARGE_DETAIL, parse, MAX_PARSE_UPLOAD_BYTES
+    from fastapi import HTTPException
+    import pytest
+    class MockUploadFile:
+        filename = "test.pdf"
+        content_type = "application/pdf"
+        size = MAX_PARSE_UPLOAD_BYTES + 1
+
+        async def read(self, *args):
+            return b""
+
+    with pytest.raises(HTTPException) as exc_info:
+        import asyncio
+        asyncio.run(parse(MockUploadFile()))
+    assert exc_info.value.status_code == 413
+    assert exc_info.value.detail == PAYLOAD_TOO_LARGE_DETAIL
