@@ -254,7 +254,7 @@ def _execute_mineru(cmd: list[str]) -> subprocess.CompletedProcess[str]:
     except subprocess.TimeoutExpired as exc:
         stdout_str = (
             exc.stdout.decode("utf-8", "replace")
-            if type(exc.stdout) is bytes
+            if isinstance(exc.stdout, bytes)
             else exc.stdout
         )
         raise MineruRuntimeUnavailableError(

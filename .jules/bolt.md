@@ -63,6 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
-## 2024-09-19 - 파싱 루프 내 isinstance 오버헤드 최적화 및 redundant lookup 제거
-**Learning:** 파싱의 핵심 루프나 데이터 처리 구간에서 `isinstance()`를 사용한 기본 타입(bool, str, list, dict, int 등) 확인은 함수 호출 오버헤드를 유발하며, 딕셔너리의 `.get()`을 여러 번 호출하는 것도 낭비입니다.
-**Action:** `isinstance()` 대신 `type() is` 또는 `type() is not`을 사용해 오버헤드를 약 20% 줄이고, `.get()` 결과를 변수에 저장하여 재사용함으로써 성능을 최적화합니다. 단, PEP 8 규약(isinstance 선호)과 상속 구조를 고려하여 엄격한 성능 향상이 필요한 로컬 캐시나 핫 경로의 기본 자료형 검사에만 한정하여 사용합니다.
+## 2024-09-19 - Redundant dictionary lookup 최적화
+**Learning:** `payload.get('key') if isinstance(payload.get('key'), list) else None`와 같이 딕셔너리에서 동일한 키를 반복해서 조회하는 것은 불필요한 해싱 오버헤드를 유발합니다. 특히 자주 호출되는 로직에서는 성능 저하의 원인이 될 수 있습니다.
+**Action:** 조건문에서 동일한 키를 여러 번 사용해야 할 경우 그 결과를 로컬 변수에 먼저 저장한 후 참조하여 중복 조회를 방지합니다. PEP 8과 호환성을 위해 `isinstance()`는 그대로 유지합니다.

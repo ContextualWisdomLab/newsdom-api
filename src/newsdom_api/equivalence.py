@@ -17,12 +17,12 @@ def _article_has_headline(article: dict[str, Any]) -> bool:
     """Return whether an article-like structure declares a headline."""
 
     headline_present = article.get("headline_present")
-    if type(headline_present) is bool:
+    if isinstance(headline_present, bool):
         return headline_present
 
     headline = article.get("headline")
     # ⚡ Bolt: Early truthiness return to avoid allocating a stripped string when it is empty
-    return type(headline) is str and bool(headline) and bool(headline.strip())
+    return isinstance(headline, str) and bool(headline) and bool(headline.strip())
 
 
 def _process_articles(metrics: dict[str, Any], articles: list[Any]) -> None:
@@ -34,7 +34,7 @@ def _process_articles(metrics: dict[str, Any], articles: list[Any]) -> None:
     headline_page_numbers: set[int] = set()
 
     for article in articles:
-        if type(article) is not dict:
+        if not isinstance(article, dict):
             continue
 
         has_headline = _article_has_headline(article)
@@ -45,7 +45,7 @@ def _process_articles(metrics: dict[str, Any], articles: list[Any]) -> None:
             vertical_count += 1
 
         page_number = article.get("page_number")
-        if type(page_number) is int:
+        if isinstance(page_number, int):
             article_page_numbers.add(page_number)
             if has_headline:
                 headline_page_numbers.add(page_number)
@@ -78,10 +78,10 @@ def _process_pages(metrics: dict[str, Any], pages: list[Any]) -> None:
         max_col = metrics.get("column_count", 0)
         found_column_count = False
         for page in pages:
-            if type(page) is not dict:
+            if not isinstance(page, dict):
                 continue
             column_count = page.get("column_count")
-            if type(column_count) is not int:
+            if not isinstance(column_count, int):
                 continue
             if not found_column_count or column_count > max_col:
                 max_col = column_count
@@ -94,13 +94,13 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
 
     metrics = dict(payload)
     articles_val = payload.get("articles")
-    articles = articles_val if type(articles_val) is list else None
+    articles = articles_val if isinstance(articles_val, list) else None
     images_val = payload.get("images")
-    images = images_val if type(images_val) is list else None
+    images = images_val if isinstance(images_val, list) else None
     ads_val = payload.get("ads")
-    ads = ads_val if type(ads_val) is list else None
+    ads = ads_val if isinstance(ads_val, list) else None
     pages_val = payload.get("pages")
-    pages = pages_val if type(pages_val) is list else None
+    pages = pages_val if isinstance(pages_val, list) else None
 
     if articles is not None:
         _process_articles(metrics, articles)
