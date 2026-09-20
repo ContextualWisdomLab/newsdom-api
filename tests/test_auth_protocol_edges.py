@@ -100,3 +100,34 @@ def test_ready_converts_probe_exception_to_fixed_unavailable_response() -> None:
     assert response.json() == {"detail": "Service Unavailable"}
     assert "private" not in response.text.lower()
     assert "operating-system" not in response.text.lower()
+
+
+def test_required_mode_uses_equal_length_dummy_comparison_for_wrong_length(
+    monkeypatch: pytest.MonkeyPatch,
+    parser_spy: dict[str, int],
+) -> None:
+    """Unequal credentials must take the fixed expected-token comparison path."""
+
+    comparisons: list[tuple[bytes, bytes]] = []
+
+    def recording_compare_digest(left: bytes, right: bytes) -> bool:
+        comparisons.append((left, right))
+        return left == right
+
+    monkeypatch.setattr(
+        "newsdom_api.main.hmac.compare_digest", recording_compare_digest
+    )
+    application = create_app(
+        RuntimeSettings(api_token="s3cret-token"),
+        runtime_readiness_probe=lambda: True,
+    )
+
+    response = TestClient(application).post(
+        "/parse",
+        files=_PDF_FILES,
+        headers={"Authorization": "Bearer x"},
+    )
+
+    assert response.status_code == 401
+    assert comparisons == [(b"s3cret-token", b"s3cret-token")]
+    assert parser_spy["count"] == 0
