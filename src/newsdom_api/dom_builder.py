@@ -273,26 +273,20 @@ def _build_page_dom(
         block_type = block.get("type")
         role = block.get("role")
 
-        if role == "header":
-            # ⚡ Bolt: Defer expensive string operations until we know we need the text
+        if role in {"header", "footer", "page_number", "ad"}:
             text = _block_text(block)
             if text:
-                page.headers.append(text)
+                if role == "header":
+                    page.headers.append(text)
+                elif role == "footer":
+                    page.footers.append(text)
+                elif role == "page_number":
+                    page.page_numbers.append(text)
+                else:
+                    page.ads.append(text)
             continue
 
-        if role == "footer":
-            text = _block_text(block)
-            if text:
-                page.footers.append(text)
-            continue
-
-        if role == "page_number":
-            text = _block_text(block)
-            if text:
-                page.page_numbers.append(text)
-            continue
-
-        if role == "ad" or block_type == "ad":
+        if block_type == "ad":
             text = _block_text(block)
             if text:
                 page.ads.append(text)
