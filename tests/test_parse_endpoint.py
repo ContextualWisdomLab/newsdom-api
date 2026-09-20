@@ -9,6 +9,7 @@ from pypdf.errors import PdfReadError
 from newsdom_api import mineru_runner
 from newsdom_api.main import (
     MAX_PARSE_UPLOAD_BYTES,
+    PAYLOAD_TOO_LARGE_DETAIL,
     app,
     parse,
     _validate_pdf_structure,
@@ -555,3 +556,28 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
+
+def test_parse_endpoint_rejects_large_content_length() -> None:
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        headers={
+            "Authorization": "Bearer test-token",
+            "Content-Length": str(MAX_PARSE_UPLOAD_BYTES + 8193),
+        },
+        files={"file": ("test.pdf", b"%PDF-")},
+    )
+    assert response.status_code == 413
+    assert response.json() == {"detail": PAYLOAD_TOO_LARGE_DETAIL}
+
+def test_parse_endpoint_rejects_invalid_content_length() -> None:
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        headers={
+            "Authorization": "Bearer test-token",
+            "Content-Length": "not-a-number",
+        },
+        files={"file": ("test.pdf", b"%PDF-")},
+    )
+    assert response.status_code == 400
