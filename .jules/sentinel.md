@@ -90,3 +90,13 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+## 2025-03-10 - Prevent Log Injection and DoS via Exception Handling & Headers
+**Vulnerability:**
+1) In `mineru_runner.py`, `subprocess.CalledProcessError` exceptions embedded unbounded `stdout` and `stderr` directly into `MinerURuntimeUnavailableError`. Malicious input leading to massive subprocess output could cause memory exhaustion or log flooding (DoS).
+2) In `main.py`, standard FastAPIs `HTTPException` responses lacked defense-in-depth security headers (like `X-Content-Type-Options`, `X-Frame-Options`, `Content-Security-Policy`), leaving HTTP 4xx error responses less secure than successful 200 responses.
+**Learning:**
+1) Unbounded external process output must be truncated before it is attached to exception details or logged, as the downstream systems (e.g. JSON encoders or log aggregators) are vulnerable to large payloads.
+2) Adding security headers only to middleware or a global `Exception` handler is insufficient, because standard `HTTPException`s (like 401, 413, 422) raised by FastAPI are processed differently and require an explicit exception handler to append security headers.
+**Prevention:**
+1) Truncate `exc.output` and `exc.stderr` to a safe limit (e.g. 4096 bytes) and ensure robust decoding in the `subprocess.CalledProcessError` except block.
+2) Register an explicit `http_exception_handler` in the FastAPI app initialization to wrap HTTP errors in `_apply_security_headers`.
