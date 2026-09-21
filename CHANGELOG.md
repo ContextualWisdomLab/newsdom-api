@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- [HIGH] FastAPI의 `multipart/form-data` 파싱 과정에서 발생할 수 있는 메모리 고갈 서비스 거부(DoS) 취약점을 해결했습니다.
+  `Content-Length` 헤더를 검사하여 `MAX_PARSE_UPLOAD_BYTES + 1MB`를 초과하는 요청에 대해 즉각적으로 413 에러를 반환합니다.
+
 > **Planned 0.3.0 deployment migration:** parser authentication changes from
 > **default-open** to **default-required**. Production must configure
 > `NEWSDOM_AUTH_MODE=required`, `NEWSDOM_RUNTIME_PROFILE=production`, and

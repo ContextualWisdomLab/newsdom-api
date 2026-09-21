@@ -143,6 +143,21 @@ async def security_boundary_middleware(
     """Enforce parser authorization before reading the request body and add headers."""
 
     if request.method == "POST" and request.scope.get("path") == "/parse":
+        content_length = request.headers.get("content-length")
+        if content_length:
+            try:
+                # Add 1MB overhead allowance for multipart boundaries and metadata
+                if int(content_length) > MAX_PARSE_UPLOAD_BYTES + 1048576:
+                    return _apply_security_headers(
+                        JSONResponse(
+                            status_code=413,
+                            content={"detail": PAYLOAD_TOO_LARGE_DETAIL}
+                        ),
+                        request,
+                    )
+            except ValueError:
+                pass
+
         failure = _parse_access_failure(request)
         if failure is not None:
             return _apply_security_headers(failure, request)
