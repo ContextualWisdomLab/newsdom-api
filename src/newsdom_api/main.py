@@ -129,7 +129,7 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
         return _unauthorized_response()
 
     provided_stripped = provided.strip()
-    parts = provided_stripped.split(b" ", 1)
+    parts = provided_stripped.split(None, 1)
     if len(parts) != 2 or parts[0].strip().lower() != b"bearer" or not parts[1].strip():
         return _unauthorized_response()
     if not hmac.compare_digest(parts[1].strip(), token.encode("utf-8")):

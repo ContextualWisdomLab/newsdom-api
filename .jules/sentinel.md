@@ -98,3 +98,7 @@
 **Vulnerability:** Trivy filesystem scan blocked the pipeline due to multiple vulnerabilities detected in dependencies: `anyio` (CVE-2026-63374, CVE-2026-64847), `httpcore2` (CVE-2026-84381), `httpx2` (CVE-2026-84382, CVE-2026-84379, CVE-2026-84380), and `pypdf` (CVE-2026-84309, CVE-2026-84310, CVE-2026-84311).
 **Learning:** Security gates like `trivy-fs` fail the build when vulnerable dependencies are found. These must be addressed immediately to maintain a secure supply chain, rather than bypassed.
 **Prevention:** Use package manager commands (e.g., `uv lock --upgrade-package <pkg>`) to bump vulnerable dependencies to secure versions and commit the updated lockfile.
+## 2026-09-21 - Authorization Header Parsing Bypass (Whitespace Inject)
+**Vulnerability:** The `_parse_access_failure` function used `split(b" ", 1)` to split the Authorization header. This fails to handle combinations of spaces and tabs (e.g., `\t` injection), which could lead to authentication bypass since `split(b" ", 1)` only targets spaces, not other whitespace variants. Strix flags this as a MEDIUM severity authorization bypass vulnerability.
+**Learning:** `split(b" ", 1)` explicitly splits on the space byte, meaning tab `\t` characters or sequential whitespaces might bypass the expected splitting behavior and malform the parsing.
+**Prevention:** Use `split(None, 1)` to robustly split the Authorization header into its components across any combination of whitespace sequences, and ensure both parts are correctly formatted and non-empty.
