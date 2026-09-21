@@ -79,3 +79,8 @@ module = [
   "reportlab.*",
 ]
 ignore_missing_imports = true
+
+[dependency-groups]
+dev = [
+    "anyio>=4.13.0",
+]
