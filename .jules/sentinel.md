@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-07-28 - Swagger UI 접근을 위한 CSP 완화
+**Vulnerability:** 전역적으로 과도하게 엄격한 `Content-Security-Policy` (`default-src 'none'`) 설정은 OpenAPI 문서 생성(FastAPI의 Swagger, ReDoc 등)에 필요한 스크립트, 폰트, 이미지 등 리소스를 차단하여 문서 UI 기능을 망가뜨립니다.
+**Learning:** 외부 CDN을 사용하여 문서를 자동 생성하는 프레임워크(예: FastAPI)의 경우 문서 엔드포인트와 oauth2 리다이렉트 경로에 대해서만 조건적으로 CSP를 완화(`script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; ...`)해야 합니다.
+**Prevention:** 보안 헤더 미들웨어에서 요청 경로를 검사하여 `/docs`, `/redoc`, `/openapi.json`, `/docs/oauth2-redirect` 등의 경로에는 문서 기능 동작을 위한 완화된 CSP를 적용하고, 다른 API 엔드포인트에는 엄격한 전역 설정(`default-src 'none'`)을 유지하도록 합니다.

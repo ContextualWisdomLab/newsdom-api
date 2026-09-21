@@ -57,3 +57,25 @@ def test_openapi_metadata_includes_contact_and_license():
         "name": "MIT License",
         "identifier": "MIT",
     }
+
+def test_openapi_docs_relaxed_csp():
+    client = TestClient(app)
+    response = client.get("/docs")
+    assert response.status_code == 200
+    csp = response.headers.get("Content-Security-Policy")
+    assert csp == (
+        "default-src 'none'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://fastapi.tiangolo.com; "
+        "connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"
+    )
+
+    response = client.get("/redoc")
+    assert response.status_code == 200
+    csp = response.headers.get("Content-Security-Policy")
+    assert csp == (
+        "default-src 'none'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://fastapi.tiangolo.com; "
+        "connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"
+    )
