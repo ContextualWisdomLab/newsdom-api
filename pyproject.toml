@@ -17,7 +17,8 @@ dependencies = [
   "python-multipart>=0.0.31,<1.0",
   "reportlab>=4.2,<6.0",
   "Pillow>=12.3,<13.0",
-  "pypdf>=6.15.0,<7.0",
+  "pypdf>=6.16.0,<7.0",
+  "anyio>=4.13.1",
 ]
 
 [project.optional-dependencies]
@@ -27,7 +28,7 @@ dev = [
   "pytest-asyncio>=0.21",
   "httpx>=0.28,<1.0",
   "pyyaml>=6.0,<7.0",
-  "httpx2>=2.4.0",
+  "httpx2>=2.4.1",
 ]
 docs = [
     "mkdocs>=1.6,<2.0",
@@ -48,6 +49,9 @@ where = ["src", "tools"]
 include = ["newsdom_api*", "tools*"]
 
 [tool.pytest.ini_options]
+filterwarnings = [
+  "ignore::DeprecationWarning:",
+]
 testpaths = ["tests"]
 asyncio_default_fixture_loop_scope = "function"
 markers = [
