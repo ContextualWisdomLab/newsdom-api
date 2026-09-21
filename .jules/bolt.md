@@ -63,3 +63,7 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2024-09-21 - FastAPI UploadFile 청크 크기 최적화
+**Learning:** FastAPI의 `UploadFile.read()`를 사용하여 최대 20MB와 같은 큰 파일을 읽을 때 기본 청크 크기인 8KB를 사용하면 과도한 비동기 컨텍스트 스위칭과 스레드 풀 디스패치 오버헤드가 발생하여 성능 병목 현상이 일어난다는 점을 확인했습니다.
+**Action:** `await file.read(8192)` 대신 더 큰 청크 크기(예: `1024 * 1024` 즉 1MB)를 사용하여 읽기 루프 횟수를 줄이고 I/O 처리량을 향상시켜야 합니다.
