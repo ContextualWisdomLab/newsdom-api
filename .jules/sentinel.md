@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2024-03-24 - [Fix Time-Based Token Length Leak]
+**Vulnerability:** Length-hiding comparison (`hmac.compare_digest`) was used but the input token lengths weren't checked carefully beforehand. In `_parse_access_failure`, an attacker might provide a token of a different length, and the short-circuit logic or execution time could reveal the expected token's length.
+**Learning:** Using `hmac.compare_digest` alone isn't sufficient if lengths differ. We need to normalize execution time by performing a dummy constant-time comparison when lengths don't match, using the expected token against itself (e.g., `hmac.compare_digest(expected_token, expected_token)`) to prevent leaking length information through timing while avoiding weak hashing rule violations.
+**Prevention:** When comparing tokens or secrets in hot paths, check lengths first and perform a dummy `hmac.compare_digest(expected, expected)` if they differ before returning, effectively masking the timing difference.
