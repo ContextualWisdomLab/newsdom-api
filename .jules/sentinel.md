@@ -90,7 +90,3 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
-## 2026-09-20 - [Fix python-multipart DoS risk with Content-Length check]
-**Vulnerability:** python-multipart는 대용량 페이로드가 처리되기 전에 차단하는 기능이 부족하여, 악의적인 사용자가 제한을 초과하는 대규모 파일을 업로드하여 서버 메모리를 고갈시키거나 DoS 공격을 유발할 수 있습니다.
-**Learning:** 파일 업로드 처리 시, 실제 파일을 읽기 전에 `Content-Length` 헤더를 통해 미들웨어에서 미리 크기를 검증함으로써 자원 낭비를 막고 DoS 공격을 효과적으로 방어할 수 있습니다. 또한, chunked 인코딩과 같이 `Content-Length`가 없거나 조작된 예외 케이스도 적절하게 처리해야 합니다.
-**Prevention:** `Content-Length` 기반 검증을 미들웨어에 조기 도입하고, 이후 컨트롤러 단에서도 한 번 더 검증하는 다중 계층 방어(defense in depth)를 항상 적용해야 합니다.
