@@ -1,3 +1,5 @@
+from newsdom_api.config import AuthenticationMode, RuntimeProfile, RuntimeSettings
+from newsdom_api.main import create_app
 from newsdom_api.schemas import (
     ArticleNode,
     BoundingBox,
@@ -76,3 +78,32 @@ def test_openapi_schema_examples_use_json_schema_2020_12_contract():
 
     article_schema = ArticleNode.model_json_schema()
     assert "headline" in article_schema["required"]
+
+
+def test_generated_fastapi_openapi_preserves_example_and_required_contracts():
+    settings = RuntimeSettings(
+        authentication_mode=AuthenticationMode.DISABLED,
+        runtime_profile=RuntimeProfile.DEVELOPMENT,
+    )
+    openapi = create_app(settings, runtime_readiness_probe=lambda: True).openapi()
+
+    assert openapi["openapi"].startswith("3.1.")
+    schemas = openapi["components"]["schemas"]
+    page_properties = schemas["PageNode"]["properties"]
+    assert page_properties["width"]["examples"] == [800.0]
+    assert page_properties["ads"]["examples"] == [["Buy our new product!"]]
+    assert schemas["ImageNode"]["properties"]["media_type"]["examples"] == ["image"]
+    assert "headline" in schemas["ArticleNode"]["required"]
+
+    for schema_name in (
+        "BoundingBox",
+        "CaptionNode",
+        "ImageNode",
+        "ArticleNode",
+        "PageNode",
+        "ParseQuality",
+        "ParseResponse",
+        "HealthResponse",
+        "ReadinessResponse",
+    ):
+        _assert_no_deprecated_example_keyword(schemas[schema_name])
