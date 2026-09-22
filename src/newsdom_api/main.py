@@ -161,17 +161,6 @@ async def global_exception_handler(request: Request, exc: Exception) -> Response
     return _apply_security_headers(response, request)
 
 
-async def http_exception_handler(request: Request, exc: HTTPException) -> Response:
-    """Return HTTPException responses with the standard security headers."""
-
-    response = JSONResponse(
-        status_code=exc.status_code,
-        content={"detail": exc.detail},
-        headers=exc.headers,
-    )
-    return _apply_security_headers(response, request)
-
-
 def health() -> HealthResponse:
     """Return a minimal liveness response independent from service readiness."""
 
@@ -340,7 +329,6 @@ def create_app(
     )
     application.middleware("http")(security_boundary_middleware)
     application.add_exception_handler(Exception, global_exception_handler)
-    application.add_exception_handler(HTTPException, http_exception_handler)
     application.add_api_route(
         "/health",
         health,

@@ -555,16 +555,3 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
-
-def test_http_exception_includes_security_headers():
-    client = TestClient(app)
-    response = client.post("/parse")
-
-    assert response.status_code in (401, 422, 503)
-
-    assert response.headers.get("X-Content-Type-Options") == "nosniff"
-    assert response.headers.get("X-Frame-Options") == "DENY"
-    assert (
-        response.headers.get("Content-Security-Policy")
-        == "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
-    )
