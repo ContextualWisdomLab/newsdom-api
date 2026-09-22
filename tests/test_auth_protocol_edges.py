@@ -12,9 +12,7 @@ from newsdom_api.config import (
 )
 from newsdom_api.main import create_app
 
-_PDF_FILES = {
-    "file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")
-}
+_PDF_FILES = {"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")}
 _BEARER_PREFIX = "Bearer "
 
 
@@ -81,6 +79,33 @@ def test_runtime_settings_wrap_unencodable_secret_as_configuration_error() -> No
 
     with pytest.raises(RuntimeConfigurationError, match="UTF-8"):
         RuntimeSettings(api_token="\ud800")
+
+
+def test_timing_attack_protection(parser_spy: dict[str, int]) -> None:
+    """Authentication must not leak length differences via timing side-channels."""
+
+    token = "a" * 64
+    application = create_app(
+        RuntimeSettings(api_token=token),
+        runtime_readiness_probe=lambda: True,
+    )
+
+    client = TestClient(application)
+
+    response = client.post(
+        "/parse",
+        files=_PDF_FILES,
+        headers={"Authorization": f"Bearer {'b' * 32}"},
+    )
+    assert response.status_code == 401
+
+    response = client.post(
+        "/parse",
+        files=_PDF_FILES,
+        headers={"Authorization": f"Bearer {'b' * 64}"},
+    )
+    assert response.status_code == 401
+    assert parser_spy["count"] == 0
 
 
 def test_ready_converts_probe_exception_to_fixed_unavailable_response() -> None:
