@@ -252,9 +252,7 @@ async def parse(
             temporary_file.write(header)
 
             bytes_read = len(header)
-            # ⚡ Bolt: Increase chunk size to 1MB to reduce async context switches and thread pool overhead
-            # Expected impact: Reduces loop iterations from ~2560 to ~20 for a 20MB file
-            while chunk := await file.read(1024 * 1024):
+            while chunk := await file.read(8192):
                 bytes_read += len(chunk)
                 if bytes_read > MAX_PARSE_UPLOAD_BYTES:
                     LOGGER.warning(

@@ -64,6 +64,6 @@
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
 
-## 2024-09-21 - FastAPI UploadFile 청크 크기 최적화
-**Learning:** FastAPI의 `UploadFile.read()`를 사용하여 최대 20MB와 같은 큰 파일을 읽을 때 기본 청크 크기인 8KB를 사용하면 과도한 비동기 컨텍스트 스위칭과 스레드 풀 디스패치 오버헤드가 발생하여 성능 병목 현상이 일어난다는 점을 확인했습니다.
-**Action:** `await file.read(8192)` 대신 더 큰 청크 크기(예: `1024 * 1024` 즉 1MB)를 사용하여 읽기 루프 횟수를 줄이고 I/O 처리량을 향상시켜야 합니다.
+## 2024-09-22 - 딕셔너리 반복문에서 불필요한 키 조회 제거
+**Learning:** 파싱된 블록들을 페이지별로 병합할 때, `for key in sorted(dict):` 형태로 키만 정렬한 후 반복문 내부에서 `dict[key]`나 `dict.get(key)`로 값을 다시 조회하면 불필요한 해시맵 조회가 반복적으로 발생하여 파싱 지연의 원인이 됩니다.
+**Action:** `for key, value in sorted(dict.items()):` 형태로 반복문을 수정하여, 정렬된 튜플에서 즉시 값에 접근하도록 최적화함으로써 중복 조회 오버헤드를 제거해야 합니다. 파이썬의 튜플 비교는 첫 번째 요소(고유한 딕셔너리 키)에서 조기 종료되므로 기존의 순차 정렬 동작도 완벽히 유지됩니다.
