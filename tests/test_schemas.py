@@ -1,4 +1,10 @@
-from newsdom_api.schemas import ArticleNode, HealthResponse, PageNode, ParseResponse, ImageNode
+from newsdom_api.schemas import (
+    ArticleNode,
+    HealthResponse,
+    PageNode,
+    ParseResponse,
+    ImageNode,
+)
 
 
 def test_parse_response_schema_round_trip():
@@ -26,6 +32,7 @@ def test_page_node_openapi_schema_descriptions():
         == "One-based page number from the parsed PDF."
     )
     assert properties["articles"]["description"] == "Articles extracted from this page."
+
 
 def test_openapi_schema_examples_present():
     schema = PageNode.model_json_schema()

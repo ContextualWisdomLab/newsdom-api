@@ -97,7 +97,9 @@ class ArticleNode(BaseModel):
     body_blocks: List[str] = Field(
         default_factory=list,
         description="Ordered text blocks that make up the article body.",
-        json_schema_extra={"example": ["First paragraph of the article.", "Second paragraph."]},
+        json_schema_extra={
+            "example": ["First paragraph of the article.", "Second paragraph."]
+        },
     )
     images: List[ImageNode] = Field(
         default_factory=list,
