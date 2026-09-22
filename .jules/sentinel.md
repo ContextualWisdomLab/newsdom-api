@@ -90,3 +90,13 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-09-22 - Handling expected pending status in CodeQL
+**Vulnerability:** CI fails and prompts to fix the error, but the failure is actually an expected pending state from CodeQL compatibility analysis dispatch. The message says "CodeQL scan dispatched. The dispatch workflow will rerun this exact failed CodeQL job after publishing its terminal verdict."
+**Learning:** This is an expected pending state where the system is waiting for an asynchronous CodeQL scan to complete. Modifying the codebase or pushing new commits to "fix" this will only re-trigger the pending state.
+**Prevention:** If the CodeQL check fails with "CodeQL scan dispatched", recognize it as a pending state and do not make changes; push valid code or re-submit the current branch if instructed.
+
+## 2026-09-22 - Prevent Log Injection and DoS via Subprocess Error Handling
+**Vulnerability:** In `mineru_runner.py`, `subprocess.CalledProcessError` exceptions embedded unbounded `stdout` and `stderr` directly into `MinerURuntimeUnavailableError`. Malicious input leading to massive subprocess output could cause memory exhaustion or log flooding (DoS) when the error is recorded.
+**Learning:** Unbounded external process output must be truncated before it is attached to exception details or logged, as downstream systems (e.g. JSON encoders or log aggregators) are vulnerable to large payloads.
+**Prevention:** Truncate `exc.output` and `exc.stderr` to a safe limit (e.g., 4096 bytes) and ensure robust decoding in the `subprocess.CalledProcessError` except block.

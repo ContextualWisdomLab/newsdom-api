@@ -113,7 +113,6 @@ _LANGUAGE_ALIASES = {
 
 # Method subdirectories MinerU may create beneath the output directory.
 _KNOWN_METHOD_DIRS = ("auto", "ocr", "txt")
-_MAX_FAILURE_DIAGNOSTIC_CHARS = 4096
 
 
 def normalize_mode(mode: str) -> str:
@@ -246,15 +245,6 @@ def _find_output_dir(base_output_dir: Path, method: str = DEFAULT_MODE) -> Path:
     raise FileNotFoundError("MinerU output directory was not produced")
 
 
-def _bounded_subprocess_text(value: str | bytes | None) -> str:
-    """Decode and cap subprocess diagnostics stored on internal runtime errors."""
-
-    if value is None:
-        return ""
-    text = value.decode("utf-8", "replace") if isinstance(value, bytes) else value
-    return text[:_MAX_FAILURE_DIAGNOSTIC_CHARS]
-
-
 def _execute_mineru(cmd: list[str]) -> subprocess.CompletedProcess[str]:
     """Execute the MinerU command and handle runtime errors."""
     try:
@@ -262,16 +252,23 @@ def _execute_mineru(cmd: list[str]) -> subprocess.CompletedProcess[str]:
             cmd, check=True, capture_output=True, text=True, timeout=300, shell=False
         )
     except subprocess.TimeoutExpired as exc:
+        stdout_str = (
+            exc.stdout.decode("utf-8", "replace")
+            if isinstance(exc.stdout, bytes)
+            else exc.stdout
+        )
         raise MineruRuntimeUnavailableError(
             returncode=-1,
-            stdout=_bounded_subprocess_text(exc.stdout),
+            stdout=stdout_str or "",
             stderr="OCR processing timed out after 5 minutes",
         ) from exc
     except subprocess.CalledProcessError as exc:
+        stdout_str = exc.output if isinstance(exc.output, str) else (exc.output.decode("utf-8", "replace") if exc.output else "")
+        stderr_str = exc.stderr if isinstance(exc.stderr, str) else (exc.stderr.decode("utf-8", "replace") if exc.stderr else "")
         raise MineruRuntimeUnavailableError(
             returncode=exc.returncode,
-            stdout=_bounded_subprocess_text(exc.output),
-            stderr=_bounded_subprocess_text(exc.stderr),
+            stdout=stdout_str[:4096],
+            stderr=stderr_str[:4096],
         ) from exc
     except FileNotFoundError as exc:
         raise MineruRuntimeUnavailableError() from exc
