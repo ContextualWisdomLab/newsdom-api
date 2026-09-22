@@ -12,19 +12,19 @@ class BoundingBox(BaseModel):
 
     x0: float = Field(
         description="Leftmost X coordinate of the bounding box.",
-        json_schema_extra={"example": 10.5},
+        examples=[10.5],
     )
     y0: float = Field(
         description="Topmost Y coordinate of the bounding box.",
-        json_schema_extra={"example": 100.0},
+        examples=[100.0],
     )
     x1: float = Field(
         description="Rightmost X coordinate of the bounding box.",
-        json_schema_extra={"example": 500.5},
+        examples=[500.5],
     )
     y1: float = Field(
         description="Bottommost Y coordinate of the bounding box.",
-        json_schema_extra={"example": 800.0},
+        examples=[800.0],
     )
 
 
@@ -33,7 +33,7 @@ class CaptionNode(BaseModel):
 
     text: str = Field(
         description="Text content of the caption.",
-        json_schema_extra={"example": "写真：昨日の大雨の様子"},
+        examples=["写真：昨日の大雨の様子"],
     )
     bbox: Optional[BoundingBox] = Field(
         default=None,
@@ -48,12 +48,12 @@ class ImageNode(BaseModel):
 
     path: str = Field(
         description="Relative path to the extracted image asset.",
-        json_schema_extra={"example": "images/article_123_fig1.jpg"},
+        examples=["images/article_123_fig1.jpg"],
     )
     media_type: str = Field(
         default="image",
         description="Media type label for the extracted image node.",
-        json_schema_extra={"example": "image"},
+        examples=["image"],
     )
     bbox: Optional[BoundingBox] = Field(
         default=None,
@@ -79,14 +79,14 @@ class ArticleNode(BaseModel):
 
     article_id: str = Field(
         description="Stable identifier for the section within the parsed document.",
-        json_schema_extra={"example": "section-20231015-001"},
+        examples=["section-20231015-001"],
     )
     headline: str = Field(
         description=(
             "Primary section heading text. This is a generic section heading, "
             "not tied to any newspaper or language-specific concept."
         ),
-        json_schema_extra={"example": "Quarterly results"},
+        examples=["Quarterly results"],
     )
     bbox: Optional[BoundingBox] = Field(
         default=None,
@@ -97,9 +97,7 @@ class ArticleNode(BaseModel):
     body_blocks: List[str] = Field(
         default_factory=list,
         description="Ordered text blocks that make up the article body.",
-        json_schema_extra={
-            "example": ["First paragraph of the article.", "Second paragraph."]
-        },
+        examples=[["First paragraph of the article.", "Second paragraph."]],
     )
     images: List[ImageNode] = Field(
         default_factory=list,
@@ -120,17 +118,17 @@ class PageNode(BaseModel):
 
     page_number: int = Field(
         description="One-based page number from the parsed PDF.",
-        json_schema_extra={"example": 1},
+        examples=[1],
     )
     width: Optional[float] = Field(
         default=None,
         description="Page width reported by the parser, if available.",
-        json_schema_extra={"example": 800.0},
+        examples=[800.0],
     )
     height: Optional[float] = Field(
         default=None,
         description="Page height reported by the parser, if available.",
-        json_schema_extra={"example": 1200.0},
+        examples=[1200.0],
     )
     articles: List[ArticleNode] = Field(
         default_factory=list,
@@ -139,22 +137,22 @@ class PageNode(BaseModel):
     ads: List[str] = Field(
         default_factory=list,
         description="Advertisement text blocks extracted from this page.",
-        json_schema_extra={"example": ["Buy our new product!"]},
+        examples=[["Buy our new product!"]],
     )
     headers: List[str] = Field(
         default_factory=list,
         description="Header text blocks extracted from this page.",
-        json_schema_extra={"example": ["Chapter 1: Introduction"]},
+        examples=[["Chapter 1: Introduction"]],
     )
     footers: List[str] = Field(
         default_factory=list,
         description="Footer text blocks extracted from this page.",
-        json_schema_extra={"example": ["Confidential Document"]},
+        examples=[["Confidential Document"]],
     )
     page_numbers: List[str] = Field(
         default_factory=list,
         description="Visible page-number text blocks extracted from this page.",
-        json_schema_extra={"example": ["1", "Page 1"]},
+        examples=[["1", "Page 1"]],
     )
 
 
@@ -164,17 +162,17 @@ class ParseQuality(BaseModel):
     status: str = Field(
         default="success",
         description="Parsing operation status indicator.",
-        json_schema_extra={"example": "success"},
+        examples=["success"],
     )
     parser: str = Field(
         default="mineru",
         description="The underlying engine used to parse the PDF.",
-        json_schema_extra={"example": "mineru"},
+        examples=["mineru"],
     )
     warnings: List[str] = Field(
         default_factory=list,
         description="Non-fatal warnings encountered during the parsing process.",
-        json_schema_extra={"example": ["Image extraction failed on page 1."]},
+        examples=[["Image extraction failed on page 1."]],
     )
 
 
@@ -183,7 +181,7 @@ class ParseResponse(BaseModel):
 
     document_id: str = Field(
         description="Unique identifier for the parsed document.",
-        json_schema_extra={"example": "doc-a1b2c3d4"},
+        examples=["doc-a1b2c3d4"],
     )
     pages: List[PageNode] = Field(
         default_factory=list,
@@ -201,7 +199,7 @@ class HealthResponse(BaseModel):
     status: str = Field(
         default="ok",
         description="Current operational status of the service.",
-        json_schema_extra={"example": "ok"},
+        examples=["ok"],
     )
 
 
@@ -211,5 +209,5 @@ class ReadinessResponse(BaseModel):
     status: str = Field(
         default="ready",
         description="Stable traffic-readiness status.",
-        json_schema_extra={"example": "ready"},
+        examples=["ready"],
     )
