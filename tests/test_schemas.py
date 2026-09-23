@@ -1,9 +1,15 @@
+from newsdom_api.config import AuthenticationMode, RuntimeProfile, RuntimeSettings
+from newsdom_api.main import create_app
 from newsdom_api.schemas import (
     ArticleNode,
+    BoundingBox,
+    CaptionNode,
     HealthResponse,
-    PageNode,
-    ParseResponse,
     ImageNode,
+    PageNode,
+    ParseQuality,
+    ParseResponse,
+    ReadinessResponse,
 )
 
 
@@ -34,16 +40,70 @@ def test_page_node_openapi_schema_descriptions():
     assert properties["articles"]["description"] == "Articles extracted from this page."
 
 
-def test_openapi_schema_examples_present():
-    schema = PageNode.model_json_schema()
-    props = schema["properties"]
-    assert "example" in props["width"]
-    assert "example" in props["height"]
-    assert "example" in props["ads"]
-    assert "example" in props["headers"]
-    assert "example" in props["footers"]
-    assert "example" in props["page_numbers"]
+def _assert_no_deprecated_example_keyword(value):
+    if isinstance(value, dict):
+        assert "example" not in value
+        for child in value.values():
+            _assert_no_deprecated_example_keyword(child)
+    elif isinstance(value, list):
+        for child in value:
+            _assert_no_deprecated_example_keyword(child)
+
+
+def test_openapi_schema_examples_use_json_schema_2020_12_contract():
+    models = (
+        BoundingBox,
+        CaptionNode,
+        ImageNode,
+        ArticleNode,
+        PageNode,
+        ParseQuality,
+        ParseResponse,
+        HealthResponse,
+        ReadinessResponse,
+    )
+    for model in models:
+        _assert_no_deprecated_example_keyword(model.model_json_schema())
+
+    page_properties = PageNode.model_json_schema()["properties"]
+    assert page_properties["width"]["examples"] == [800.0]
+    assert page_properties["height"]["examples"] == [1200.0]
+    assert page_properties["ads"]["examples"] == [["Buy our new product!"]]
+    assert page_properties["headers"]["examples"] == [["Chapter 1: Introduction"]]
+    assert page_properties["footers"]["examples"] == [["Confidential Document"]]
+    assert page_properties["page_numbers"]["examples"] == [["1", "Page 1"]]
 
     image_schema = ImageNode.model_json_schema()
-    image_props = image_schema["properties"]
-    assert "example" in image_props["media_type"]
+    assert image_schema["properties"]["media_type"]["examples"] == ["image"]
+
+    article_schema = ArticleNode.model_json_schema()
+    assert "headline" in article_schema["required"]
+
+
+def test_generated_fastapi_openapi_preserves_example_and_required_contracts():
+    settings = RuntimeSettings(
+        authentication_mode=AuthenticationMode.DISABLED,
+        runtime_profile=RuntimeProfile.DEVELOPMENT,
+    )
+    openapi = create_app(settings, runtime_readiness_probe=lambda: True).openapi()
+
+    assert openapi["openapi"].startswith("3.1.")
+    schemas = openapi["components"]["schemas"]
+    page_properties = schemas["PageNode"]["properties"]
+    assert page_properties["width"]["examples"] == [800.0]
+    assert page_properties["ads"]["examples"] == [["Buy our new product!"]]
+    assert schemas["ImageNode"]["properties"]["media_type"]["examples"] == ["image"]
+    assert "headline" in schemas["ArticleNode"]["required"]
+
+    for schema_name in (
+        "BoundingBox",
+        "CaptionNode",
+        "ImageNode",
+        "ArticleNode",
+        "PageNode",
+        "ParseQuality",
+        "ParseResponse",
+        "HealthResponse",
+        "ReadinessResponse",
+    ):
+        _assert_no_deprecated_example_keyword(schemas[schema_name])
