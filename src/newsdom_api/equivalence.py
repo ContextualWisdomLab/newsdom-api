@@ -93,7 +93,6 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     """Normalize structural metrics, preferring derivation from structural data when present."""
 
     metrics = dict(payload)
-    # ⚡ Bolt: Cache dictionary lookups in local variables to avoid redundant hashing and retrieval
     raw_articles = payload.get("articles")
     articles = raw_articles if isinstance(raw_articles, list) else None
 
