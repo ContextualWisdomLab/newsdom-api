@@ -252,9 +252,7 @@ async def parse(
             temporary_file.write(header)
 
             bytes_read = len(header)
-            # ⚡ Bolt: FastAPI 기본 설정(8KB)을 사용할 때 대용량 파일 업로드 시 발생하는 과도한 비동기
-            # 컨텍스트 전환 및 스레드 풀 디스패치 오버헤드를 줄이기 위해 청크 크기를 1MB로 늘립니다.
-            while chunk := await file.read(1024 * 1024):
+            while chunk := await file.read(8192):
                 bytes_read += len(chunk)
                 if bytes_read > MAX_PARSE_UPLOAD_BYTES:
                     LOGGER.warning(

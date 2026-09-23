@@ -63,3 +63,11 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2024-05-25 - Avoid Eager DefaultDict in Empty Lists (빈 리스트에서 지연 할당으로 오버헤드 방지)
+**Learning:** `dict.setdefault(key, [])`를 사용하면 값이 존재하지 않을 때마다 새로운 리스트가 할당됩니다. 고빈도 루프에서는 이런 불필요한 할당이 반복되어 가비지 컬렉션 오버헤드가 커집니다.
+**Action:** 동일한 그룹핑(Grouping) 로직을 처리할 때는 매 반복마다 빈 리스트를 생성하는 `dict.setdefault` 대신, `collections.defaultdict(list)`를 사용해 메모리 할당을 최소화합니다.
+
+## 2024-05-25 - Avoid redundant dictionary lookups during iteration (딕셔너리 반복 중 중복 조회 방지)
+**Learning:** Python 루프 등 성능에 민감한 환경에서 딕셔너리의 키와 값을 모두 사용할 때, 키만 순회하면서 내부에서 `dict.get(key)`로 값을 가져오면 중복 해시 맵 조회가 발생하여 오버헤드가 추가됩니다.
+**Action:** 키와 값을 동시에 순회할 때는 중복 조회를 방지하기 위해 `dict.items()`를 사용하고, 순서가 필요할 경우 `sorted(dict.items())`를 활용합니다. 파이썬의 튜플 비교는 단락 평가(short-circuit)를 수행하고 딕셔너리 키는 고유하므로 `sorted(dict)`와 동일한 정렬 동작을 안전하게 보장합니다.
