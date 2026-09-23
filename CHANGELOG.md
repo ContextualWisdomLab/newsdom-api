@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- [API] OpenAPI 문서 및 Swagger UI 개발자 경험(DX) 개선을 위해 핵심 Pydantic 스키마 정의(`ImageNode`, `PageNode` 등)에 실사용 예제 데이터(`json_schema_extra={"example": ...}`)를 추가하였습니다.
+
 > **Planned 0.3.0 deployment migration:** parser authentication changes from
 > **default-open** to **default-required**. Production must configure
 > `NEWSDOM_AUTH_MODE=required`, `NEWSDOM_RUNTIME_PROFILE=production`, and
