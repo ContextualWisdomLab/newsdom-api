@@ -90,3 +90,7 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+## 2026-09-23 - trivy 스캔 발견 취약점 수정 (anyio, httpx2, pypdf 등)
+**Vulnerability:** CRITICAL ~ MEDIUM 등급의 여러 취약점이 오래된 라이브러리(anyio, httpx2, pypdf 등)에서 발견되었습니다.
+**Learning:** pyproject.toml 의 버전을 올리고, uv add 를 통해 uv.lock 파일을 갱신하는 것이 중요합니다. 또한, 코드 내 버전을 검증하는 테스트 파일(test_project_metadata.py, test_pypdf_security_floor.py) 역시 동시에 업데이트해야 테스트 커버리지를 100%로 만족하며 통과할 수 있습니다.
+**Prevention:** 정기적인 trivy fs 스캔을 통해 uv.lock 파일과 pyproject.toml 파일의 종속성 버전을 체크 및 갱신합니다.
