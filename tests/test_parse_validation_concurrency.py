@@ -60,4 +60,7 @@ async def test_pdf_structure_validation_does_not_block_event_loop(monkeypatch):
         await upload.close()
 
     assert result.document_id == "fixture.pdf"
+    # ⚡ Bolt: Make sure the validation had enough time to block
+    # and fail if it was indeed synchronous.
+    await asyncio.sleep(0.1)
     assert not validation_timed_out.is_set()
