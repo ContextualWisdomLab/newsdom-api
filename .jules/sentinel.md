@@ -1,6 +1,6 @@
 ## 2025-02-14 - Fix Insecure File Upload via Missing Magic Byte Check
 **Vulnerability:** The `/parse` endpoint verified file types exclusively using the `Content-Type` header, omitting payload inspection. This allowed bypassing checks by supplying malicious payloads with an `application/pdf` header.
-**Learning:** Checking headers is insufficient; APIs consuming binary data must validate content via magic bytes (e.g. `b"%PDF-"`) and structural parsing before processing.
+**Learning:** Checking headers is insufficient; APIs consuming binary data must validate content via magic bytes (e.g., `b"%PDF-"`) and structural parsing before processing.
 **Prevention:** Always inspect magic bytes for binary upload endpoints and reject structurally invalid payloads before handing data to downstream parsers.
 
 ## 2024-06-25 - Prevent DoS from unbounded file read
@@ -60,7 +60,7 @@
 ## 2024-10-24 - Fix DoS vulnerability in file uploads
 **Vulnerability:** Asynchronous file uploads created temporary files before entering a try/finally block. If the client disconnects or an error occurs during `await file.read()`, the temporary file is left orphaned on the filesystem, leading to disk exhaustion (DoS).
 **Learning:** File instantiation and the subsequent read loop must be entirely enclosed within a unified `try...finally` block.
-**Prevention:** Always initialize `tmp_path = None` before a `try` block, instantiate the file and perform network reads inside the `try` block, and handle cleanup in `finally` by checking `if tmp_path and tmp_path.exists(): tmp_path.unlink(missing_ok=True)`.
+**Prevention:** Always initialize `tmp_path = None` before a `try` block, instantiate the file and perform network reads inside the `try` block, and handle cleanup in `finally` by checking `if tmp_path and tmp_path.exists()`.
 
 ## 2025-03-01 - Prevent Disk Exhaustion DoS via Orphaned Temp Files
 **Vulnerability:** The `/parse` API streamed large uploaded files into a `NamedTemporaryFile(delete=False)`. If a read error or client disconnect occurred (e.g. an exception during `await file.read(8192)`), the execution flow would jump past the explicit `try...finally` cleanup block that was located *after* the read loop. This resulted in orphaned temporary files left on disk, creating a Disk Exhaustion DoS vulnerability when under attack.
@@ -73,7 +73,7 @@
 **Prevention:** 임시 파일 경로를 할당하거나 파일을 여는 즉시 자원 정리(cleanup) 로직이 보장되도록 `try...finally` 블록으로 감싼다.
 
 ## 2025-03-09 - Prevent Command/Log Injection via Newlines in Filenames
-**Vulnerability:** The blocklist regex `_UNSAFE_CHARS_PATTERN` for CLI arguments did not explicitly filter newline (\n) or carriage return (\r) characters. This can allow command or log injection even when `shell=False` is used, by passing arguments containing newlines.
+**Vulnerability:** The blocklist regex `_UNSAFE_CHARS_PATTERN` for CLI arguments did not explicitly filter newline (\n) or carriage return (`\r`) characters. This can allow command or log injection even when `shell=False` is used, by passing arguments containing newlines.
 **Learning:** Shell metacharacter blocklists must include whitespace metacharacters like newlines and carriage returns, as these can bypass checks and manipulate logs or downstream argument parsing.
 **Prevention:** Explicitly add \n and \r to the `_UNSAFE_CHARS_PATTERN` blocklist for CLI arguments.
 
