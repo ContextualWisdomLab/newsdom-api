@@ -1,6 +1,6 @@
 ## 2025-02-14 - Fix Insecure File Upload via Missing Magic Byte Check
 **Vulnerability:** The `/parse` endpoint verified file types exclusively using the `Content-Type` header, omitting payload inspection. This allowed bypassing checks by supplying malicious payloads with an `application/pdf` header.
-**Learning:** Checking headers is insufficient; APIs consuming binary data must validate content via magic bytes (e.g., `b"%PDF-"`) and structural parsing before processing.
+**Learning:** Checking headers is insufficient; APIs consuming binary data must validate content via magic bytes (e.g. `b"%PDF-"`) and structural parsing before processing.
 **Prevention:** Always inspect magic bytes for binary upload endpoints and reject structurally invalid payloads before handing data to downstream parsers.
 
 ## 2024-06-25 - Prevent DoS from unbounded file read
@@ -60,7 +60,7 @@
 ## 2024-10-24 - Fix DoS vulnerability in file uploads
 **Vulnerability:** Asynchronous file uploads created temporary files before entering a try/finally block. If the client disconnects or an error occurs during `await file.read()`, the temporary file is left orphaned on the filesystem, leading to disk exhaustion (DoS).
 **Learning:** File instantiation and the subsequent read loop must be entirely enclosed within a unified `try...finally` block.
-**Prevention:** Always initialize `tmp_path = None` before a `try` block, instantiate the file and perform network reads inside the `try` block, and handle cleanup in `finally` by checking `if tmp_path and tmp_path.exists()`.
+**Prevention:** Always initialize `tmp_path = None` before a `try` block, instantiate the file and perform network reads inside the `try` block, and handle cleanup in `finally` by checking `if tmp_path and tmp_path.exists(): tmp_path.unlink(missing_ok=True)`.
 
 ## 2025-03-01 - Prevent Disk Exhaustion DoS via Orphaned Temp Files
 **Vulnerability:** The `/parse` API streamed large uploaded files into a `NamedTemporaryFile(delete=False)`. If a read error or client disconnect occurred (e.g. an exception during `await file.read(8192)`), the execution flow would jump past the explicit `try...finally` cleanup block that was located *after* the read loop. This resulted in orphaned temporary files left on disk, creating a Disk Exhaustion DoS vulnerability when under attack.
@@ -90,8 +90,3 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
-
-## 2025-05-24 - Prevent Timing Attacks via Constant-Time Length Check Before HMAC Verification
-**Vulnerability:** When validating the API token, `hmac.compare_digest` returns immediately if the input length differs from the expected length. This small difference in response time, although subtle, could potentially allow an attacker to determine the true token length through timing analysis.
-**Learning:** Even though `hmac.compare_digest` prevents early exit within the comparison loop itself, it still leaks the token's length by quickly exiting on length mismatch. To build a robust timing-attack defense, we must ensure the time taken is relatively constant regardless of input length.
-**Prevention:** Explicitly check if the input length matches the expected length before using `hmac.compare_digest`. If there's a length mismatch, perform a "dummy" comparison (e.g., comparing the expected token against itself) to balance the execution time and obscure the length difference before rejecting the request.
