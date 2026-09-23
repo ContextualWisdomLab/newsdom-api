@@ -203,4 +203,5 @@ class ReadinessResponse(BaseModel):
     status: str = Field(
         default="ready",
         description="Stable traffic-readiness status.",
+        json_schema_extra={"example": "ready"},
     )
