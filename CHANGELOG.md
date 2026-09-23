@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CLI] 파싱된 NewsDOM JSON에서 순수 텍스트 데이터를 추출하여 텍스트 파일 또는 stdout으로 출력하는 `tools/extract_text.py` 도구를 추가했습니다.
 
 ### Security
+- 취약점 수정을 위해 `anyio`, `httpcore2`, `httpx2` 등 의존성 라이브러리를 업데이트 했습니다.
 - `hmac.compare_digest`를 통한 API 토큰 검증 시, 입력 길이와 기대 길이가 다를 경우 발생하는 타이밍 공격(timing attack) 취약점을 방지하기 위해 더미 검증(dummy comparison)을 수행하도록 수정했습니다.
 - `/parse` authentication is now immutable per application instance and fails closed before multipart body parsing when required configuration is missing. Hostile missing, invalid, Unicode, oversized, and duplicated Authorization headers return one non-sensitive response.
 - Added unauthenticated `/ready` traffic readiness that combines authentication configuration with MinerU executable availability while `/health` remains liveness-only.
