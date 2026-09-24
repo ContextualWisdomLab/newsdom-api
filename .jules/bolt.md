@@ -63,3 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2024-03-24 - Async Validation Avoids Blocking Event Loop
+**Learning:** In FastAPI, performing synchronous I/O operations (like `pypdf.PdfReader` validating PDF structure) directly inside an `async def` route handler blocks the main event loop, severely degrading concurrent request handling performance.
+**Action:** Always wrap synchronous I/O-bound parsing or validation logic in `asyncio.to_thread()` when called within async contexts to ensure the event loop remains unblocked.
