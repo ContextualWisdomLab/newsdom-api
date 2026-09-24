@@ -63,7 +63,3 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
-
-## 2025-02-23 - 딕셔너리 조회 중복 제거
-**Learning:** `dict.get()`과 같은 딕셔너리 조회 작업은 동일한 키에 대해 반복적으로 호출될 경우 불필요한 오버헤드를 발생시킵니다 (예: 조건문 내에서). 지역 변수에 반환된 값을 캐싱한 뒤 타입 검사를 수행하면 해싱 및 재조회 과정을 생략할 수 있어 특히 메트릭 도출과 같은 빈번하게 호출되는 경로에서 실행 성능을 향상시킬 수 있습니다.
-**Action:** 딕셔너리 항목을 검증할 때 (예: `payload.get('key') if isinstance(payload.get('key'), list) else None`), 한 번만 조회하여 지역 변수에 저장하고 (`val = payload.get('key')`) 해당 변수를 처리하는 방식 (`val if isinstance(val, list) else None`)으로 변경하여 중복된 연산을 제거해야 합니다.
