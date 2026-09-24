@@ -90,3 +90,7 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+## 2026-09-24 - [Dockerfile Healthcheck Missing]
+**Vulnerability:** The main `Dockerfile` lacked a `HEALTHCHECK` instruction, causing potential availability issues if the container became unresponsive (Trivy DS-0026).
+**Learning:** Adding a health check requires updating corresponding tests that verify Dockerfile configurations, such as `test_docker_delivery.py`, to prevent CI test failures.
+**Prevention:** Always ensure `HEALTHCHECK` instructions are added to production Dockerfiles, and update related deployment tests simultaneously.
