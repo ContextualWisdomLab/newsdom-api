@@ -21,7 +21,7 @@ def _article_has_headline(article: dict[str, Any]) -> bool:
         return headline_present
 
     headline = article.get("headline")
-    # ⚡ Bolt: Early truthiness return to avoid allocating a stripped string when it is empty
+    # ⚡ Bolt: 빈 문자열에 대한 불필요한 strip() 호출 및 메모리 할당을 방지하기 위한 조기 반환
     return isinstance(headline, str) and bool(headline) and bool(headline.strip())
 
 
@@ -93,12 +93,19 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     """Normalize structural metrics, preferring derivation from structural data when present."""
 
     metrics = dict(payload)
-    articles = (
-        payload.get("articles") if isinstance(payload.get("articles"), list) else None
-    )
-    images = payload.get("images") if isinstance(payload.get("images"), list) else None
-    ads = payload.get("ads") if isinstance(payload.get("ads"), list) else None
-    pages = payload.get("pages") if isinstance(payload.get("pages"), list) else None
+
+    # ⚡ Bolt: 지역 변수에 값을 캐싱하여 중복된 딕셔너리 조회를 제거함
+    raw_articles = payload.get("articles")
+    articles = raw_articles if isinstance(raw_articles, list) else None
+
+    raw_images = payload.get("images")
+    images = raw_images if isinstance(raw_images, list) else None
+
+    raw_ads = payload.get("ads")
+    ads = raw_ads if isinstance(raw_ads, list) else None
+
+    raw_pages = payload.get("pages")
+    pages = raw_pages if isinstance(raw_pages, list) else None
 
     if articles is not None:
         _process_articles(metrics, articles)
