@@ -63,3 +63,11 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2024-05-25 - Avoid duplicate dict lookups via `.get()`
+**Learning:** Calling `payload.get('key')` multiple times for the same key (e.g., in a conditional expression `payload.get('key') if isinstance(payload.get('key'), list) else None`) performs redundant hashing and dictionary lookups, adding measurable overhead in parsing loops.
+**Action:** Extract the result of `.get()` into a local variable and reuse it to eliminate the duplicate lookup overhead.
+
+## 2024-05-25 - Optimize truthiness checks by avoiding string allocation
+**Learning:** Replacing `bool(s.strip())` with `not s.isspace()` is an effective optimization. `.strip()` allocates a new string in memory just to check if it's empty, whereas `.isspace()` performs an in-place check without allocation.
+**Action:** When validating string emptiness while avoiding allocation, use a truthiness short-circuit alongside `.isspace()` (e.g., `bool(s) and not s.isspace()`), as `"".isspace()` evaluates to `False`.
