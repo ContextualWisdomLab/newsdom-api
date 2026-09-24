@@ -90,3 +90,7 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+## 2023-10-25 - Content-Security-Policy 예외 추가를 통한 API 문서 UI 허용
+**Vulnerability:** 기존의 지나치게 엄격한 전역 Content-Security-Policy(CSP) 설정(`default-src 'none'`)으로 인해 FastAPI의 자동 생성 Swagger UI 및 ReDoc 문서 인터페이스의 렌더링에 필요한 외부 스크립트 및 스타일시트 로드가 차단되는 문제가 있었습니다.
+**Learning:** 애플리케이션의 보안을 위해 도입한 정책이 오히려 문서화 엔드포인트의 정상 작동을 방해할 수 있음을 확인했습니다. FastAPI의 자동 문서는 외부 CDN에서 자산을 로드하므로, 이를 고려한 조건부 예외가 필요합니다.
+**Prevention:** 향후 전역적인 보안 정책을 설정할 때는, 애플리케이션의 핵심 기능을 저해하지 않는지 반드시 확인하고, 필요에 따라 라우트나 조건별로 정책을 세분화하여 적용해야 합니다.
