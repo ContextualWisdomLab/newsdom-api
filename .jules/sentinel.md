@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2025-09-24 - Prevent Timing Attacks on Token Validation
+**Vulnerability:** The API validates the bearer token using `hmac.compare_digest(credentials, token.encode("utf-8"))`. While `hmac.compare_digest` is constant-time for a given length, it returns early if the lengths of the two strings differ. An attacker can exploit this length-leak to enumerate the expected token length.
+**Learning:** `hmac.compare_digest` does not hide length differences. To fully mitigate timing attacks, the code must perform a dummy constant-time comparison when the lengths differ to balance execution time before returning an unauthorized response.
+**Prevention:** Check the length of the credentials against the expected token length first. If they differ, execute a dummy constant-time comparison (e.g., `hmac.compare_digest(expected_token, expected_token)`) before returning unauthorized.
