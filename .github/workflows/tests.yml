@@ -4,13 +4,19 @@ on:
   push:
     branches: [main, develop]
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft, closed]
 
 permissions:
   contents: read
   packages: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.repository }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   pytest:
+    if: github.event_name != 'pull_request' || (github.event.action != 'closed' && github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true

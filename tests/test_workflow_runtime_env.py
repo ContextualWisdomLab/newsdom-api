@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import yaml
@@ -14,6 +15,12 @@ def test_each_workflow_job_forces_javascript_actions_to_node24():
         data = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
         for job_name, job_data in data["jobs"].items():
             if workflow_path.name in {"scorecards.yml", "gh-pages.yml"}:
+                continue
+            if "uses" in job_data:
+                assert re.search(r"@[0-9a-f]{40}$", job_data["uses"]), (
+                    workflow_path,
+                    job_name,
+                )
                 continue
             assert job_data["env"]["FORCE_JAVASCRIPT_ACTIONS_TO_NODE24"] is True, (
                 workflow_path,
