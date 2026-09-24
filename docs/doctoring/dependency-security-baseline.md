@@ -13,7 +13,6 @@ review gates before merge.
 The adopted floors are:
 
 - `anyio>=4.14.2` for the async runtime, with the lock resolving 4.15.1 after PR #900 exposed CVE-2026-63374 in 4.13.0;
-
 - `setuptools>=83` for the build backend;
 - `Pillow>=12.3,<13.0` for image parsing on the untrusted document-ingestion path;
 - `pypdf>=6.16.1,<7.0` for PDF parsing;
@@ -23,7 +22,7 @@ The adopted floors are:
   core remains on the supported 1.x line.
 
 The generated lock resolves Click 8.4.2, setuptools 83.0.0, Pillow 12.3.0,
-pypdf 6.18.0, HTTPX2 2.12.0, httpcore2 2.12.0, mkdocs-material 9.7.7, and
+pypdf 6.18.0, HTTPX2 2.13.0, httpcore2 2.13.0, mkdocs-material 9.7.7, and
 pymdown-extensions 11.0.1. Direct floors prevent a later lock refresh from
 silently selecting known-vulnerable ranges again.
 
@@ -60,10 +59,10 @@ these patch boundaries:
 - CVE-2026-84382 / GHSA-8xx6-hgc6-gc2m: streaming decompression could create an
   unbounded intermediate allocation and is fixed in HTTPX2 2.12.0.
 
-The strongest current HTTPX2 boundary is therefore 2.12.0. NewsDOM declares both
+The strongest current HTTPX2 floor is therefore 2.12.0. NewsDOM declares both
 `httpx2>=2.12.0` and `httpcore2>=2.12.0` in its development/TestClient dependency
-set and resolves both to 2.12.0. This does not claim that every advisory is
-reachable through NewsDOM production traffic; it removes known-vulnerable
+set; the current lock resolves both to 2.13.0. This does not claim that every
+advisory is reachable through NewsDOM production traffic; it removes known-vulnerable
 artifacts from the repository's tested and scanned lock without weakening the
 whole-tree security gate.
 
