@@ -114,3 +114,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
+- `_article_has_headline`은 headline 존재 여부를 판단할 때 임시 stripped 문자열을 만들지 않고 `str.isspace()`로 공백 전용 값을 판별하며, 빈 값·Unicode 공백·패딩된 제목의 기존 의미를 회귀 테스트로 고정합니다.
