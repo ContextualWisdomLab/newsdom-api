@@ -6,7 +6,7 @@ import re
 import yaml
 
 
-_REQUIRED_PYPDF_VERSION = (6, 16, 0)
+_REQUIRED_PYPDF_VERSION = (6, 19, 0)
 _CURRENT_PYPDF_CVES = ("CVE-2026-71852", "CVE-2026-71870")
 _LOCKED_PYPDF_REQUIREMENT = '{ name = "pypdf", specifier = ">=6.16.0,<7.0" },'
 
