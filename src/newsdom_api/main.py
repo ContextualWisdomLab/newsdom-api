@@ -229,8 +229,11 @@ async def parse(
 ) -> ParseResponse:
     """Parse an authorized uploaded PDF into the canonical DOM response model."""
 
-    media_type = (file.content_type or "").split(";", 1)[0].strip().lower()
-    if media_type != "application/pdf":
+    content_type = (file.content_type or "").strip().lower()
+    media_type = content_type.split(";", 1)[0].strip()
+    if media_type != "application/pdf" or not content_type.startswith(
+        "application/pdf"
+    ):
         raise HTTPException(status_code=415, detail=UNSUPPORTED_MEDIA_DETAIL)
 
     try:
