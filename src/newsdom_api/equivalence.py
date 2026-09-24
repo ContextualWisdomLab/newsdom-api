@@ -21,8 +21,6 @@ def _article_has_headline(article: dict[str, Any]) -> bool:
         return headline_present
 
     headline = article.get("headline")
-    # ⚡ Bolt: Early truthiness return to avoid allocating a stripped string when it is empty
-    # Also replacing .strip() truthiness with .isspace() for better performance as per guidelines
     return isinstance(headline, str) and bool(headline) and not headline.isspace()
 
 
@@ -94,8 +92,6 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     """Normalize structural metrics, preferring derivation from structural data when present."""
 
     metrics = dict(payload)
-
-    # ⚡ Bolt: Cache payload.get() results to avoid redundant dictionary lookups
 
     raw_articles = payload.get("articles")
     articles = raw_articles if isinstance(raw_articles, list) else None
