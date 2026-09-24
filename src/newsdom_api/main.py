@@ -266,6 +266,8 @@ async def parse(
                 temporary_file.write(chunk)
 
         LOGGER.debug("Wrote %s upload bytes to %s", bytes_read, tmp_path)
+        # Execute synchronous I/O-bound PdfReader in a separate thread
+        # to prevent blocking the main asyncio event loop
         await asyncio.to_thread(_validate_pdf_structure, tmp_path)
         return await asyncio.to_thread(
             parse_pdf,
