@@ -19,8 +19,8 @@ def test_parse_accepts_form_value_at_declared_limit(field: str, limit: int) -> N
         data={field: "a" * limit},
     )
 
-    assert response.status_code == 415
-    assert response.json()["detail"] == "Unsupported Media Type"
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Invalid parse parameters"
 
 
 @pytest.mark.parametrize(
