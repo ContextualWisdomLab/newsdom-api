@@ -14,7 +14,7 @@ def test_dependencies_require_fixed_transport_floors() -> None:
 
     pyproject = (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
 
-    assert '"anyio>=4.14.2,<4.15.0"' in pyproject
+    assert '"anyio>=4.14.2"' in pyproject
     assert '"httpx2>=2.12.0"' in pyproject
     assert '"httpcore2>=2.12.0"' in pyproject
 
@@ -25,7 +25,7 @@ def test_lock_resolves_current_patched_transport_versions() -> None:
     lock = (PROJECT_ROOT / "uv.lock").read_text(encoding="utf-8")
 
     for dependency_name, resolved_version in (
-        ("anyio", "4.14.2"),
+        ("anyio", "4.15.1"),
         ("httpx2", "2.13.0"),
         ("httpcore2", "2.13.0"),
     ):
