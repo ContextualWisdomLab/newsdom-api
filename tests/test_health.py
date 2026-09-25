@@ -25,10 +25,16 @@ def test_docs_endpoints_have_relaxed_csp():
         response = client.get(endpoint)
         assert response.status_code == 200
         csp = response.headers.get("Content-Security-Policy")
-        assert "default-src 'self'" in csp
-        assert "unsafe-inline" in csp
-        assert "cdn.jsdelivr.net" in csp
-        assert "fonts.googleapis.com" in csp
+        expected_csp = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; "
+            "img-src 'self' data: fastapi.tiangolo.com; "
+            "font-src 'self' fonts.gstatic.com; "
+            "frame-ancestors 'none'; "
+            "base-uri 'none'"
+        )
+        assert csp == expected_csp
 
 
 def test_healthcheck_omits_hsts_for_plain_http():
