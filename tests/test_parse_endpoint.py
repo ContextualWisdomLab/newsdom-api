@@ -189,6 +189,47 @@ def test_parse_endpoint_accepts_pdf_content_type_parameters(monkeypatch):
 
     assert response.status_code == 200
 
+def test_parse_endpoint_rejects_invalid_pdf_content_type_parameters():
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={
+            "file": (
+                "fixture.pdf",
+                b"%PDF-1.4\n%synthetic\n",
+                "Application/PDF; charset=binary; extra=invalid",
+            )
+        },
+    )
+
+    assert response.status_code == 415
+
+    response = client.post(
+        "/parse",
+        files={
+            "file": (
+                "fixture.pdf",
+                b"%PDF-1.4\n%synthetic\n",
+                "Application/PDF; invalid=invalid",
+            )
+        },
+    )
+
+    assert response.status_code == 415
+
+    response = client.post(
+        "/parse",
+        files={
+            "file": (
+                "fixture.pdf",
+                b"%PDF-1.4\n%synthetic\n",
+                "Application/JSON",
+            )
+        },
+    )
+
+    assert response.status_code == 415
+
 
 def test_parse_endpoint_logs_tempfile_cleanup_failure(monkeypatch, caplog):
     def fake_parse_pdf_bytes(file_path, filename, **kwargs):

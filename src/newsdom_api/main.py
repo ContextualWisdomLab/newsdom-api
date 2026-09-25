@@ -131,7 +131,13 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     scheme, separator, credentials = provided.partition(b" ")
     if separator != b" " or scheme.lower() != b"bearer" or not credentials:
         return _unauthorized_response()
-    if not hmac.compare_digest(credentials, token.encode("utf-8")):
+
+    expected_credentials = token.encode("utf-8")
+    if len(credentials) != len(expected_credentials):
+        hmac.compare_digest(expected_credentials, expected_credentials)
+        return _unauthorized_response()
+
+    if not hmac.compare_digest(credentials, expected_credentials):
         return _unauthorized_response()
     return None
 
@@ -223,8 +229,16 @@ async def parse(
 ) -> ParseResponse:
     """Parse an authorized uploaded PDF into the canonical DOM response model."""
 
-    media_type = (file.content_type or "").split(";", 1)[0].strip().lower()
-    if media_type != "application/pdf":
+    content_type = file.content_type or ""
+    parts = [part.strip() for part in content_type.split(";")]
+
+    if not parts or parts[0].lower() != "application/pdf":
+        raise HTTPException(status_code=415, detail=UNSUPPORTED_MEDIA_DETAIL)
+
+    if len(parts) > 2:
+        raise HTTPException(status_code=415, detail=UNSUPPORTED_MEDIA_DETAIL)
+
+    if len(parts) == 2 and not parts[1].lower().startswith("charset="):
         raise HTTPException(status_code=415, detail=UNSUPPORTED_MEDIA_DETAIL)
 
     try:
