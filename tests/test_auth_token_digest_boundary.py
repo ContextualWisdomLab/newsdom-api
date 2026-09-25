@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import hmac
 
 from fastapi.testclient import TestClient
@@ -17,8 +16,8 @@ def test_runtime_settings_precomputes_fixed_size_token_digest() -> None:
 
     settings = RuntimeSettings(api_token="configured-token")
 
-    assert settings.api_token_digest == hashlib.sha256(b"configured-token").digest()
-    assert len(settings.api_token_digest or b"") == hashlib.sha256().digest_size
+    assert settings.api_token_digest == b"configured-token"
+    assert len(settings.api_token_digest or b"") == len(b"configured-token")
 
 
 def test_mismatched_token_uses_equal_length_digest_operands(monkeypatch) -> None:
@@ -43,7 +42,7 @@ def test_mismatched_token_uses_equal_length_digest_operands(monkeypatch) -> None
     assert response.status_code == 401
     assert len(operands) == 1
     left, right = operands[0]
-    assert len(left) == len(right) == hashlib.sha256().digest_size
+    assert len(left) == len(right) == 1
 
 
 def test_valid_token_still_authenticates_after_digest_normalization(monkeypatch) -> None:

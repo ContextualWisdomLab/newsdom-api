@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import os
 from dataclasses import dataclass, field
 from enum import Enum
@@ -72,7 +71,7 @@ class RuntimeSettings:
                 "The configured parser authentication token is too long"
             )
         object.__setattr__(self, "api_token", normalized_token)
-        object.__setattr__(self, "api_token_digest", hashlib.sha256(token_bytes).digest())
+        object.__setattr__(self, "api_token_digest", token_bytes)
 
     @property
     def authentication_ready(self) -> bool:
