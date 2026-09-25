@@ -34,4 +34,4 @@ keep one PR per distinct issue.
 ## 2026-07-07 - Use Pydantic v2 schema examples
 **Learning:** In a backend-only FastAPI project, UX naturally translates to developer experience. OpenAPI/Swagger documentation is the primary interface, so representative examples provide immediate value. `json_schema_extra={"example": ...}` is preferable to description-only documentation, deprecated plural `examples`, or the deprecated `example=...` form in Pydantic v2. Explicitly defining `...` is redundant and noisy when no default is provided.
 **Action:** Apply `json_schema_extra` to Pydantic field definitions, include rich documentation and representative examples, and omit redundant required-field ellipses when Pydantic can infer requiredness.
-**Source note:** The merged `.Jules/palette.md` copy included an unevaluated `$(date +%Y-%m-%d)` placeholder. Its date is unclear; the earliest credible date for this duplicate issue is retained here.
+**Source note:** The `.jules/palette.md` source included an unevaluated `$(date +%Y-%m-%d)` placeholder. Its date is unclear; the earliest credible date for this duplicate issue is retained here.

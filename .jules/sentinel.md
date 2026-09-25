@@ -9,9 +9,7 @@ keep one PR per distinct issue.
 
 ## In progress
 
-- Token-comparison timing issue: `src/newsdom_api/main.py` uses raw
-  `hmac.compare_digest` on provided and stored tokens. This is being handled
-  in a single tracked PR.
+- Token-comparison timing issue (src/newsdom_api/main.py): canonical PR #790; other open duplicates are being closed.
 
 ## 2023-10-27 - Fix naive absolute path traversal protection
 **Vulnerability:** The codebase rejected all absolute paths indiscriminately (for example, using `is_absolute()`) rather than whitelist-validating them, causing CI breakages when legitimate absolute paths within safe temporary directories were provided.
