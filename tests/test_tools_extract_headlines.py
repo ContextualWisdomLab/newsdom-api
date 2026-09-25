@@ -10,13 +10,6 @@ def test_extract_headlines(tmp_path: Path):
     result = extract_headlines(json_file)
     assert result == ["Test 1", "Test 2"]
 
-def test_extract_headlines_empty_headline(tmp_path: Path):
-    json_file = tmp_path / "test_empty.json"
-    data = {"pages": [{"articles": [{"headline": ""}, {"headline": "Test"}]}]}
-    json_file.write_text(json.dumps(data), encoding="utf-8")
-    result = extract_headlines(json_file)
-    assert result == ["Test"]
-
 def test_extract_headlines_file_not_found(tmp_path: Path):
     json_file = tmp_path / "nonexistent.json"
     with pytest.raises(FileNotFoundError, match="File not found or is not a file"):
@@ -53,3 +46,10 @@ def test_main_error(tmp_path: Path, capsys, monkeypatch):
     assert exc_info.value.code == 1
     captured = capsys.readouterr()
     assert "Error: File not found or is not a file:" in captured.err
+
+def test_extract_headlines_empty_headline(tmp_path: Path):
+    json_file = tmp_path / "test_empty.json"
+    data = {"pages": [{"articles": [{"headline": ""}, {"headline": "Test"}]}]}
+    json_file.write_text(json.dumps(data), encoding="utf-8")
+    result = extract_headlines(json_file)
+    assert result == ["Test"]
