@@ -2,6 +2,7 @@ name: container-image
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     tags:
       - 'v*'
@@ -12,11 +13,16 @@ on:
         required: false
         default: 'false'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.repository }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
 
 jobs:
   image:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
