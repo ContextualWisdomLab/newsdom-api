@@ -1,9 +1,37 @@
-## $(date +%Y-%m-%d) - Enhance Developer UX with OpenAPI Schema Examples
+# Palette's UX/A11y Journal
 
-**Learning:** In a backend-only FastAPI project without frontend files, "UX" improvements naturally translate to Developer Experience (DX). Enhancing Pydantic schemas with `json_schema_extra={"example": ...}` rather than just using the `description` field or deprecated plural `examples` provides concrete, immediate value in the generated Swagger UI. Additionally, explicitly defining the ellipsis `...` for required fields is redundant and noisy in modern Pydantic V2 when no default is provided.
-**Action:** When working on API schemas, proactively provide representative `json_schema_extra` examples to improve the consumer documentation experience, and omit the `...` default marker to keep schema declarations clean and idiomatic.
+## Automated-agent coordination
 
-## 2026-08-04 - Backend API Developer Experience
+Before starting work, check this journal and the repository's open pull
+requests. Do not open a PR for an issue that already has an open PR or a
+journal entry marked **In progress**. Pick a different topic instead, and
+keep one PR per distinct issue.
 
-**Learning:** 백엔드 전용 프로젝트(프론트엔드가 없는 경우)에서는 'UX(사용자 경험)'가 주로 'DX(개발자 경험)'로 해석됩니다. OpenAPI/Swagger 스키마에 `json_schema_extra={"example": ...}`와 같은 구체적인 예시를 추가하면 API를 사용하는 개발자들의 인터페이스 이해도를 높일 수 있습니다.
-**Action:** 향후 백엔드 API 중심의 프로젝트에서는 Pydantic 스키마 정의에 풍부한 문서화와 예제 데이터가 포함되어 있는지 확인하여 개발자 경험을 개선할 것입니다.
+## 2024-05-18 - Preserve required field status in Pydantic v2 schemas
+**Learning:** In Pydantic v2 schemas and FastAPI `File` dependencies, adding a `description` without an explicit default can silently mark a field as optional in generated OpenAPI specifications.
+**Action:** Use `Field(..., description="...")` or `File(..., description="...")` for mandatory fields so OpenAPI preserves required status.
+
+## 2024-05-18 - Improve Swagger UI developer experience
+**Learning:** Default Swagger UI lacks helpful features such as request-duration display, dark syntax highlighting, and automatic Try It Out behavior.
+**Action:** Configure `swagger_ui_parameters` with options such as `displayRequestDuration`, `syntaxHighlight.theme`, and `tryItOutEnabled` when they improve the API documentation experience.
+
+## 2025-03-01 - Enhance OpenAPI/Swagger DX for a headless API
+**Learning:** For a backend-only service without a frontend UI, the OpenAPI/Swagger page is the primary user interface. Rich `summary`, `description`, version, parameter descriptions, and file-parameter guidance improve the developer experience for consumers.
+**Action:** Prioritize clear, useful API metadata when maintaining a headless API so the documentation surface is intuitive for developers.
+
+## 2026-06-02 - Group OpenAPI/Swagger tags
+**Learning:** Organizing API endpoints with `openapi_tags` improves Swagger UI readability by grouping related endpoints such as `Parser` and `System`.
+**Action:** Assign descriptive metadata to endpoints and use `openapi_tags` when enhancing a FastAPI application.
+
+## 2026-06-26 - Document backend services through OpenAPI
+**Learning:** For backend-only services without a frontend UI, developer experience is the primary user experience. OpenAPI/Swagger documentation generated from Pydantic models should be usable and intuitive for developers consuming the service.
+**Action:** Enhance Pydantic model properties with detailed `Field()` descriptions to generate rich, self-documenting OpenAPI schemas.
+
+## 2026-06-27 - Add OpenAPI contact and license metadata
+**Learning:** Contact and license metadata in generated OpenAPI documents helps consumers identify maintainers, support paths, and reuse terms without leaving the documentation surface.
+**Action:** Include clear `contact` and SPDX-aligned `license_info` metadata for FastAPI services intended for third-party integration.
+
+## 2026-07-07 - Use Pydantic v2 schema examples
+**Learning:** In a backend-only FastAPI project, UX naturally translates to developer experience. OpenAPI/Swagger documentation is the primary interface, so representative examples provide immediate value. `json_schema_extra={"example": ...}` is preferable to description-only documentation, deprecated plural `examples`, or the deprecated `example=...` form in Pydantic v2. Explicitly defining `...` is redundant and noisy when no default is provided.
+**Action:** Apply `json_schema_extra` to Pydantic field definitions, include rich documentation and representative examples, and omit redundant required-field ellipses when Pydantic can infer requiredness.
+**Source note:** The merged `.Jules/palette.md` copy included an unevaluated `$(date +%Y-%m-%d)` placeholder. Its date is unclear; the earliest credible date for this duplicate issue is retained here.
