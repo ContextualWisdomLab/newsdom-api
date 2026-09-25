@@ -63,3 +63,7 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2024-09-25 - FastAPI UploadFile Chunk Size Overhead
+**Learning:** Reading large file uploads (up to 20MB) using `UploadFile.read()` with the default 8KB chunk size causes excessive asynchronous context switching and thread-pool dispatch overhead.
+**Action:** Increase the chunk size (e.g., to 1MB) when reading large uploads to mitigate this overhead.
