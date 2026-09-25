@@ -47,6 +47,16 @@ Read these first when making repository changes:
 - When PRs are blocked externally, continue local adjacent tasks
   instead of stopping.
 
+## Automated-agent coordination
+
+- Before starting, automated agents such as Jules must check the
+  relevant `.jules/*.md` journal and the current open pull requests.
+- Do not open a PR for an issue that already has an open PR or a
+  journal entry marked **In progress**.
+- Pick a different topic when work is already tracked.
+- Keep one PR per distinct issue and use lowercase `.jules/` as the
+  canonical journal directory.
+
 ## Security gates and `.trivyignore`
 
 - The blocking `trivy-fs` PR check is not defined in this repository. It is
