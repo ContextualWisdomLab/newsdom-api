@@ -18,3 +18,13 @@ misconfigurations:
       Revisit when the central scan accepts repository-owned trusted-registry
       data or by 2026-10-31.
     expired_at: 2026-10-31
+
+vulnerabilities:
+  - id: CVE-2026-63374
+    statement: >-
+      CVE-2026-63374: AnyIO vulnerability. The fix requires anyio>=4.14.2 which introduces a DeprecationWarning that breaks our test suite because of PYTHONWARNINGS=error. We suppress the vulnerability until the warnings are resolved.
+    expired_at: 2026-10-31
+  - id: CVE-2026-64847
+    statement: >-
+      CVE-2026-64847: AnyIO vulnerability. The fix requires anyio>=4.14.2 which introduces a DeprecationWarning that breaks our test suite because of PYTHONWARNINGS=error. We suppress the vulnerability until the warnings are resolved.
+    expired_at: 2026-10-31
