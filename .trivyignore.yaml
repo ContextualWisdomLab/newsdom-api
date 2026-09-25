@@ -18,39 +18,3 @@ misconfigurations:
       Revisit when the central scan accepts repository-owned trusted-registry
       data or by 2026-10-31.
     expired_at: 2026-10-31
-  - id: CVE-2026-63374
-    paths: ['uv.lock']
-    statement: anyio upgrade out-of-scope for strict leaf branch; revisit for shared base branch remediation
-    expired_at: 2026-12-31
-  - id: CVE-2026-64847
-    paths: ['uv.lock']
-    statement: anyio upgrade out-of-scope for strict leaf branch; revisit for shared base branch remediation
-    expired_at: 2026-12-31
-  - id: CVE-2026-84381
-    paths: ['uv.lock']
-    statement: httpcore2 upgrade out-of-scope for strict leaf branch; revisit for shared base branch remediation
-    expired_at: 2026-12-31
-  - id: CVE-2026-84382
-    paths: ['uv.lock']
-    statement: httpx2 upgrade out-of-scope for strict leaf branch; revisit for shared base branch remediation
-    expired_at: 2026-12-31
-  - id: CVE-2026-84379
-    paths: ['uv.lock']
-    statement: httpx2 upgrade out-of-scope for strict leaf branch; revisit for shared base branch remediation
-    expired_at: 2026-12-31
-  - id: CVE-2026-84380
-    paths: ['uv.lock']
-    statement: httpx2 upgrade out-of-scope for strict leaf branch; revisit for shared base branch remediation
-    expired_at: 2026-12-31
-  - id: CVE-2026-84309
-    paths: ['uv.lock']
-    statement: pypdf upgrade out-of-scope for strict leaf branch; revisit for shared base branch remediation
-    expired_at: 2026-12-31
-  - id: CVE-2026-84310
-    paths: ['uv.lock']
-    statement: pypdf upgrade out-of-scope for strict leaf branch; revisit for shared base branch remediation
-    expired_at: 2026-12-31
-  - id: CVE-2026-84311
-    paths: ['uv.lock']
-    statement: pypdf upgrade out-of-scope for strict leaf branch; revisit for shared base branch remediation
-    expired_at: 2026-12-31
