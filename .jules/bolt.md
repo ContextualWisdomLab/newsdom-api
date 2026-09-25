@@ -63,3 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2024-05-20 - [Redundant Dictionary Lookups Avoidance]
+**Learning:** Python dictionaries are fast, but performing a `.get()` lookup twice for the same key in a conditional check (e.g., `payload.get('key') if isinstance(payload.get('key'), list) else None`) results in unnecessary hashing and retrieval overhead.
+**Action:** When validating dictionary values in conditional expressions, retrieve the value once, assign it to a local variable, and reuse that variable for both the validation check and the final assignment to optimize performance and prevent redundant lookups.
