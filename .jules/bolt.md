@@ -19,9 +19,9 @@ keep one PR per distinct issue.
 **Learning:** Using `re.compile().search()` for simple fixed character sets such as `&`, `<`, `>`, `"`, and `'` in hot string paths adds measurable overhead compared with plain Python `in` checks.
 **Action:** Replace regex checks with explicit boolean substring checks for fixed target characters.
 
-## 2024-07-12 - Avoid unnecessary primitive type checks
-**Learning:** When exact built-in types are required, `type(var) is int` already excludes `bool`, so a redundant `type(var) is not bool` check adds work.
-**Action:** Avoid duplicate type checks when the language's type relationships already provide the required distinction.
+## 2024-05-24 - Avoid unnecessary primitive type checks
+**Learning:** `isinstance()` adds small but measurable call overhead for exact primitive checks in high-frequency parsing paths. When exact built-in types are required, `type(var) is int` already excludes `bool`, so a redundant `type(var) is not bool` check adds work.
+**Action:** Use `type() is` or `type() is not` when exact built-in primitive types are required.
 
 ## 2024-06-23 - Avoid empty-list allocation in grouping loops
 **Learning:** In hot loops grouped by a key, `dict.setdefault(key, []).append(item)` instantiates an empty list on every iteration even though it is discarded for existing keys.
@@ -34,10 +34,6 @@ keep one PR per distinct issue.
 ## 2024-07-28 - Check truthiness before string allocation
 **Learning:** Calling `.strip()` unconditionally on values that may be empty allocates and adds overhead.
 **Action:** Check truthiness, for example with `if not value:`, before string operations on potentially empty values.
-
-## 2024-05-24 - Avoid `isinstance` overhead in parsing hot loops
-**Learning:** `isinstance()` adds small but measurable call overhead for exact primitive checks in high-frequency parsing paths.
-**Action:** Use `type() is` or `type() is not` when exact built-in primitive types are required.
 
 ## 2024-07-30 - Avoid chained replacement for character-set checks
 **Learning:** Chained `.replace()` calls allocate intermediate strings when checking whether a string consists of specific characters.
