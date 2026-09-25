@@ -63,6 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
-## 2025-03-01 - 파일 업로드 시 사용되는 정규표현식 컴파일 최적화
-**Learning:** Python의 `re.sub()`를 호출할 때마다 매번 패턴 문자열을 인자로 넘기면 내부적인 캐싱에도 불구하고 약간의 오버헤드가 발생한다.
-**Action:** 자주 호출되는 파일 업로드 경로(`_safe_upload_filename`)의 정규표현식을 모듈 레벨에서 미리 컴파일(`re.compile()`)해두고 재사용하여 오버헤드를 줄인다.
+## 2025-03-01 - 파일 업로드 시 사용되는 정규표현식 컴파일 최적화 기각
+**Learning:** Python의 `re.sub()` 사용 시 모듈 레벨에서 정규표현식을 미리 컴파일(`re.compile()`)하면 미세한 성능 향상을 얻을 수 있으나, 그 차이가 측정 가능할 정도로 유의미한 실제 서비스 병목이 아닌 경우에는 CI 비용과 코드 리뷰 비용을 정당화하지 못해 변경이 반려될 수 있다. 성능 최적화는 실제 병목 지점에 집중해야 한다.
+**Action:** 코드베이스의 성능 최적화를 진행할 때, 단순한 마이크로 최적화(예: `re.compile`)보다는 전체 실행 시간에 측정 가능하고 실질적인 영향을 주는 병목(예: 불필요한 반복문, 무거운 연산 등)을 찾는 데 우선순위를 둔다.
