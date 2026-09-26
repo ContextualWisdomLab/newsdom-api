@@ -12,7 +12,7 @@ def test_csp_docs_endpoints():
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
             "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; "
-            "img-src 'self' data: fastapitiangolo.tiangolo.com; "
+            "img-src 'self' data: fastapi.tiangolo.com; "
             "font-src 'self' fonts.gstatic.com; "
             "frame-ancestors 'none'; "
             "base-uri 'none'"
