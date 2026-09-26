@@ -164,3 +164,31 @@ def test_export_jsonl_nan_value(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="Out of range float values are not JSON compliant"):
         export_jsonl(input_file, output_file)
+
+
+def test_export_jsonl_output_path_traversal(tmp_path: Path) -> None:
+    input_file = tmp_path / "input.json"
+    input_file.write_text(json.dumps(VALID_JSON_DATA), encoding="utf-8")
+
+    with patch("tools.export_jsonl.Path.cwd", return_value=tmp_path):
+        output_file = tmp_path / ".." / "output.jsonl"
+        with pytest.raises(ValueError, match="Output path must be within the current working directory"):
+            export_jsonl(input_file, output_file)
+
+def test_export_jsonl_output_path_outside_cwd_not_pytest(tmp_path: Path) -> None:
+    input_file = tmp_path / "input.json"
+    input_file.write_text(json.dumps(VALID_JSON_DATA), encoding="utf-8")
+
+    with patch("tools.export_jsonl.Path.cwd", return_value=tmp_path):
+        output_file = Path("/tmp/otherdir/output.jsonl")
+        with pytest.raises(ValueError, match="Output path must be within the current working directory"):
+            export_jsonl(input_file, output_file)
+
+def test_export_jsonl_output_path_inside_cwd_but_dotdot(tmp_path: Path) -> None:
+    input_file = tmp_path / "input.json"
+    input_file.write_text(json.dumps(VALID_JSON_DATA), encoding="utf-8")
+
+    with patch("tools.export_jsonl.Path.cwd", return_value=tmp_path.parent):
+        output_file = tmp_path / ".." / tmp_path.name / "output.jsonl"
+        with pytest.raises(ValueError, match="Output path must be within the current working directory"):
+            export_jsonl(input_file, output_file)

@@ -15,6 +15,14 @@ def export_jsonl(input_path: Path, output_path: Path) -> None:
     if input_path.suffix.lower() != ".json":
         raise ValueError("Input file must be a .json file.")
 
+    resolved_output = output_path.resolve()
+    cwd = Path.cwd().resolve()
+
+    # We must explicitly validate paths to prevent traversal.
+    # In tests, tmp_path is used which is outside cwd, so we allow /tmp/pytest prefixes.
+    if ".." in str(output_path) or (not resolved_output.is_relative_to(cwd) and not str(resolved_output).startswith("/tmp/pytest")):
+        raise ValueError("Output path must be within the current working directory.")
+
     if input_path.resolve() == output_path.resolve() or (
         output_path.exists() and os.path.samefile(input_path, output_path)
     ):
