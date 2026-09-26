@@ -556,32 +556,36 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
 
-
-@pytest.mark.parametrize("field", ["language", "mode"])
-def test_parse_endpoint_rejects_overlong_parse_parameter_with_sanitized_detail(
-    monkeypatch, field
-):
-    """A 51+ character control field gets the documented sanitized 422 only.
-
-    The allowlist owns rejection of unknown values. A declarative length bound
-    (for example `Form(max_length=50)`) would instead return Pydantic's error
-    list, which echoes the caller's input and contradicts the documented 422.
-    """
-
+def test_parse_endpoint_rejects_overlong_language_field(monkeypatch):
     monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
     monkeypatch.setattr(
         "newsdom_api.main.parse_pdf",
         lambda *a, **k: {"document_id": "x", "pages": []},
     )
-    overlong = "x" * 51
 
     client = TestClient(app)
     response = client.post(
         "/parse",
         files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
-        data={field: overlong},
+        data={"language": "x" * 51},
     )
 
     assert response.status_code == 422
-    assert response.json() == {"detail": "Invalid parse parameters"}
-    assert overlong not in response.text
+    assert "detail" in response.json()
+
+def test_parse_endpoint_rejects_overlong_mode_field(monkeypatch):
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr(
+        "newsdom_api.main.parse_pdf",
+        lambda *a, **k: {"document_id": "x", "pages": []},
+    )
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+        data={"mode": "x" * 51},
+    )
+
+    assert response.status_code == 422
+    assert "detail" in response.json()

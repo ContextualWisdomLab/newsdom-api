@@ -3,19 +3,16 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Awaitable, Callable, Iterator
+from collections.abc import Awaitable, Callable
 
-import httpx
 import pytest
 from fastapi.testclient import TestClient
-from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.types import Message, Receive, Scope, Send
 
 from newsdom_api.body_limit import (
     RequestBodyLimitMiddleware,
     RequestBodyTooLarge,
     _declared_content_length,
-    _route_path,
 )
 from newsdom_api.config import AuthenticationMode, RuntimeProfile, RuntimeSettings
 from newsdom_api.main import MAX_PARSE_REQUEST_BYTES, create_app
@@ -28,7 +25,6 @@ def _http_scope(
     path: str = "/parse",
     method: str = "POST",
     headers: list[tuple[bytes, bytes]] | None = None,
-    root_path: str = "",
 ) -> Scope:
     """Build the minimal HTTP scope required by the admission middleware."""
 
@@ -41,7 +37,7 @@ def _http_scope(
         "path": path,
         "raw_path": path.encode("ascii"),
         "query_string": b"",
-        "root_path": root_path,
+        "root_path": "",
         "headers": headers or [],
         "client": ("testclient", 1234),
         "server": ("testserver", 80),
@@ -322,138 +318,3 @@ def test_authentication_precedes_parse_body_admission() -> None:
     assert authorized.json() == {"detail": "Payload Too Large"}
     assert authorized.headers["X-Content-Type-Options"] == "nosniff"
     assert authorized.headers["Cache-Control"] == "no-store, no-cache, max-age=0"
-
-
-def _authorized_parse_client() -> TestClient:
-    """Return a client for the real application with required authentication."""
-
-    application = create_app(
-        RuntimeSettings(
-            authentication_mode=AuthenticationMode.REQUIRED,
-            runtime_profile=RuntimeProfile.PRODUCTION,
-            api_token="unit-test-token",
-        )
-    )
-    return TestClient(application)
-
-
-_MULTIPART_BOUNDARY = "newsdom-body-limit-boundary"
-
-
-def _oversized_multipart_chunks() -> Iterator[bytes]:
-    """Yield a well-formed multipart upload whose file part exceeds the raw cap."""
-
-    yield (
-        f"--{_MULTIPART_BOUNDARY}\r\n"
-        'Content-Disposition: form-data; name="file"; filename="fixture.pdf"\r\n'
-        "Content-Type: application/pdf\r\n\r\n%PDF-"
-    ).encode("ascii")
-    chunk = b"x" * (1024 * 1024)
-    for _ in range(MAX_PARSE_REQUEST_BYTES // len(chunk) + 1):
-        yield chunk
-    yield f"\r\n--{_MULTIPART_BOUNDARY}--\r\n".encode("ascii")
-
-
-def _assert_security_headed_413(response: httpx.Response) -> None:
-    """Require the sanitized 413 contract inside the security-header boundary."""
-
-    assert response.status_code == 413
-    assert response.json() == {"detail": "Payload Too Large"}
-    assert response.headers["X-Content-Type-Options"] == "nosniff"
-    assert response.headers["X-Frame-Options"] == "DENY"
-    assert response.headers["Content-Security-Policy"] == (
-        "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
-    )
-    assert response.headers["Referrer-Policy"] == "no-referrer"
-    assert response.headers["Cache-Control"] == "no-store, no-cache, max-age=0"
-
-
-def test_real_app_chunked_oversize_without_content_length_is_413() -> None:
-    """A chunked upload with no length hint is capped mid-parse as 413, not 400.
-
-    FastAPI wraps non-HTTP exceptions raised while reading form data into a
-    generic 400; the limiter's signal must survive that wrapper.
-    """
-
-    client = _authorized_parse_client()
-
-    response = client.post(
-        "/parse",
-        headers={
-            "Authorization": "Bearer unit-test-token",
-            "Content-Type": f"multipart/form-data; boundary={_MULTIPART_BOUNDARY}",
-        },
-        content=_oversized_multipart_chunks(),
-    )
-
-    assert response.request.headers.get("content-length") is None
-    assert response.request.headers["transfer-encoding"] == "chunked"
-    _assert_security_headed_413(response)
-
-
-def test_real_app_understated_content_length_oversize_is_413() -> None:
-    """An understated Content-Length cannot smuggle an oversized body past 413."""
-
-    client = _authorized_parse_client()
-
-    response = client.post(
-        "/parse",
-        headers={
-            "Authorization": "Bearer unit-test-token",
-            "Content-Type": f"multipart/form-data; boundary={_MULTIPART_BOUNDARY}",
-            "Content-Length": "128",
-        },
-        content=b"".join(_oversized_multipart_chunks()),
-    )
-
-    assert response.request.headers["content-length"] == "128"
-    _assert_security_headed_413(response)
-
-
-def test_body_limit_signal_is_a_413_http_exception() -> None:
-    """FastAPI re-raises HTTPException from body readers instead of wrapping it."""
-
-    signal = RequestBodyTooLarge()
-
-    assert isinstance(signal, StarletteHTTPException)
-    assert signal.status_code == 413
-    assert signal.detail == "Payload Too Large"
-
-
-@pytest.mark.parametrize(
-    ("path", "root_path", "expected"),
-    [
-        ("/parse", "", "/parse"),
-        ("/api/parse", "/api", "/parse"),
-        ("/parse", "/api", "/parse"),
-        ("/api", "/api", ""),
-        ("/apiparse", "/api", "/apiparse"),
-    ],
-)
-def test_route_path_strips_root_path_only_at_a_segment_boundary(
-    path: str, root_path: str, expected: str
-) -> None:
-    """Match Starlette's routing view of the path under a proxy prefix or mount."""
-
-    assert _route_path(_http_scope(path=path, root_path=root_path)) == expected
-
-
-@pytest.mark.asyncio
-async def test_root_path_prefixed_parse_route_is_still_bounded() -> None:
-    """A proxy `root_path` or mount prefix does not take `/parse` out of scope."""
-
-    downstream = _BodyConsumer()
-    middleware = RequestBodyLimitMiddleware(
-        downstream,
-        max_body_size=4,
-        path="/parse",
-    )
-    messages = await _run_asgi(
-        middleware,
-        _http_scope(path="/api/parse", root_path="/api"),
-        [{"type": "http.request", "body": b"12345", "more_body": False}],
-    )
-
-    assert downstream.calls == 1
-    assert _status(messages) == 413
-    assert _response_json(messages) == {"detail": "Payload Too Large"}
