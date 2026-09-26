@@ -143,6 +143,11 @@ async def security_boundary_middleware(
     """Enforce parser authorization before reading the request body and add headers."""
 
     if request.method == "POST" and request.scope.get("path") == "/parse":
+        if "chunked" in request.headers.get("transfer-encoding", "").lower():
+            return _apply_security_headers(
+                JSONResponse(status_code=411, content={"detail": "Length Required"}), request
+            )
+
         cl_header = request.headers.get("content-length")
         if cl_header is not None:
             try:
@@ -154,10 +159,6 @@ async def security_boundary_middleware(
                 return _apply_security_headers(
                     JSONResponse(status_code=400, content={"detail": "Invalid Content-Length"}), request
                 )
-        elif request.headers.get("transfer-encoding", "").lower() == "chunked":
-            return _apply_security_headers(
-                JSONResponse(status_code=411, content={"detail": "Length Required"}), request
-            )
 
         failure = _parse_access_failure(request)
         if failure is not None:
