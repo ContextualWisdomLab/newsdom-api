@@ -138,3 +138,30 @@ def test_run_as_main(valid_json_path: Path, tmp_path: Path, capsys: pytest.Captu
     captured = capsys.readouterr()
     assert f"JSONL successfully written to {output_path}" in captured.out
     assert output_path.is_file()
+
+def test_export_jsonl_invalid_non_object(tmp_path: Path) -> None:
+    input_path = tmp_path / "invalid_type.json"
+    input_path.write_text('["not", "an", "object"]', encoding="utf-8")
+    output_path = tmp_path / "output.jsonl"
+    with pytest.raises(ValueError, match="Expected a JSON object"):
+        export_jsonl(input_path, output_path)
+
+def test_export_jsonl_invalid_pages_not_list(tmp_path: Path) -> None:
+    input_path = tmp_path / "invalid_pages.json"
+    input_path.write_text('{"document_id": "123", "pages": "not a list"}', encoding="utf-8")
+    output_path = tmp_path / "output.jsonl"
+    with pytest.raises(ValueError, match="'pages' must be a list"):
+        export_jsonl(input_path, output_path)
+
+def test_export_jsonl_same_input_output(valid_json_path: Path) -> None:
+    with pytest.raises(ValueError, match="Input and output paths must be different"):
+        export_jsonl(valid_json_path, valid_json_path)
+
+
+def test_export_jsonl_invalid_articles_not_list(tmp_path: Path) -> None:
+    input_path = tmp_path / "invalid_articles.json"
+    input_path.write_text('{"document_id": "123", "pages": [{"articles": null}]}', encoding="utf-8")
+    output_path = tmp_path / "output.jsonl"
+    export_jsonl(input_path, output_path)
+    assert output_path.is_file()
+    assert output_path.read_text(encoding="utf-8").strip() == ""

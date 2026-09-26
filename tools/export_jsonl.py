@@ -12,13 +12,20 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
         raise FileNotFoundError(f"File not found or is not a file: {json_path}")
     if json_path.suffix.lower() != ".json":
         raise ValueError("Input file must be a .json file.")
+    if json_path.resolve() == output_path.resolve():
+        raise ValueError("Input and output paths must be different.")
 
     try:
         data = json.loads(json_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise ValueError(f"Invalid JSON file: {exc}") from exc
 
-    pages = data.get("pages", [])
+    if not isinstance(data, dict):
+        raise ValueError("Invalid JSON file: Expected a JSON object.")
+
+    pages = data.get("pages")
+    if not isinstance(pages, list):
+        raise ValueError("Invalid JSON file: 'pages' must be a list.")
 
     with output_path.open("w", encoding="utf-8") as jsonl_file:
         document_id = data.get("document_id", "Unknown Document")
@@ -28,7 +35,9 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
                 continue
             page_number = page.get("page_number", "Unknown")
 
-            articles = page.get("articles", [])
+            articles = page.get("articles")
+            if not isinstance(articles, list):
+                continue
             for article in articles:
                 if not isinstance(article, dict):
                     continue
