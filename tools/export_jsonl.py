@@ -14,23 +14,44 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
         raise ValueError("Input file must be a .json file.")
 
     try:
-        data = json.loads(json_path.read_text(encoding="utf-8"))
+        def reject_nan(val: str) -> float:
+            raise ValueError(f"Non-standard JSON number token: {val}")
+        data = json.loads(json_path.read_text(encoding="utf-8"), parse_constant=reject_nan)
     except json.JSONDecodeError as exc:
         raise ValueError(f"Invalid JSON file: {exc}") from exc
+    except ValueError as exc:
+        raise ValueError(f"Invalid JSON file: {exc}") from exc
 
-    pages = data.get("pages", [])
+    if not isinstance(data, dict):
+        raise ValueError("Top-level JSON must be a dictionary.")
+
+    document_id = data.get("document_id")
+
+    pages = data.get("pages")
+    if not isinstance(pages, list):
+        pages = []
 
     with output_path.open("w", encoding="utf-8") as jsonlfile:
         for page in pages:
             if not isinstance(page, dict):
                 continue
 
-            articles = page.get("articles", [])
+            page_number = page.get("page_number")
+
+            articles = page.get("articles")
+            if not isinstance(articles, list):
+                continue
+
             for article in articles:
                 if not isinstance(article, dict):
                     continue
 
-                jsonlfile.write(json.dumps(article, ensure_ascii=False) + "\n")
+                if "document_id" not in article and document_id is not None:
+                    article["document_id"] = document_id
+                if "page_number" not in article and page_number is not None:
+                    article["page_number"] = page_number
+
+                jsonlfile.write(json.dumps(article, ensure_ascii=False, allow_nan=False) + "\n")
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -44,7 +65,7 @@ def main(argv: list[str] | None = None) -> None:
     try:
         export_jsonl(args.input, args.output)
         print(f"JSONL successfully written to {args.output}")
-    except Exception as exc:
+    except (FileNotFoundError, ValueError, OSError) as exc:
         print(f"Error exporting JSONL: {exc}", file=sys.stderr)
         sys.exit(1)
 
