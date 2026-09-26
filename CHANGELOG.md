@@ -37,8 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `uv.lock`의 의존성을 재잠금하여 실제 `pip-audit`/`trivy-fs` CVE를 제거: 런타임 경로의 `pillow` 12.2.0→12.3.0 (PYSEC-2026-3451/3452/3453/3454/3493/3494/3495/3496, 이미지 파서 취약점 8건), `pypdf>=6.15.0,<7.0` (lock 6.15.0; CVE-2026-59935/59936/59937/59938/71852/71870, PDF 파싱 경로), `click` 8.3.2→8.4.2 (PYSEC-2026-2132) — 모두 스캔 PDF/이미지 파싱 런타임에 직접 관련되며 선언 범위와 lock을 함께 고정함. 빌드 도구 `setuptools` 81.0.0→83.0.0 (CVE-2026-59890). 문서 툴체인의 `pymdown-extensions` 10.21.3→11.0.1 (CVE-2026-61632, MEDIUM)은 `mkdocs-material` 9.6.x의 `pymdown-extensions~=10.2`(`<11`) 상한 때문에 막혀 있었으므로, docs extra 핀을 `mkdocs-material>=9.7,<9.8`로 올려(9.7.x는 상한을 `>=10.2`로 완화) 해소함. `uv run mkdocs build --strict` 통과 확인. 조치 후 전체 잠금(런타임+extras) `pip-audit`: 취약점 0건.
 
 ### Performance
-- `src/newsdom_api/equivalence.py`에서 `bool(headline.strip())` 대신 `not headline.isspace()`를 사용하여 문자열의 truthiness를 확인하도록 변경함으로써 불필요한 메모리 할당을 제거하고 처리 속도를 개선함.
-
 - `newsdom_api.dom_builder._html_safe_text` 함수에 early return과 타입 체크를 도입하여 불필요한 `str()` 캐스팅을 제거함으로써 처리 속도를 개선했습니다.
 
 ### Added
@@ -114,3 +112,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
+
+### Fixed
+
+- **성능:** `src/newsdom_api/equivalence.py`에서 텍스트 처리 시 `strip()`을 제거하고 `isspace()`를 사용하여 불필요한 문자열 메모리 할당을 방지했습니다.
