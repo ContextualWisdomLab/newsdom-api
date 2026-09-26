@@ -112,3 +112,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
+
+### Fixed
+
+- **성능:** `src/newsdom_api/equivalence.py`에서 텍스트 처리 시 `strip()`을 제거하고 `isspace()`를 사용하여 불필요한 문자열 메모리 할당을 방지했습니다.
