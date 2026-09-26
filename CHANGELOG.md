@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `tools/export_jsonl.py`: DOM JSON을 JSONL 형식으로 내보내는 기능 구현
+
+
 > **Planned 0.3.0 deployment migration:** parser authentication changes from
 > **default-open** to **default-required**. Production must configure
 > `NEWSDOM_AUTH_MODE=required`, `NEWSDOM_RUNTIME_PROFILE=production`, and
