@@ -33,6 +33,6 @@ jobs:
 
       - name: Run tests with coverage
         env:
-          PYTHONWARNINGS: error,ignore::DeprecationWarning:anyio._lazyimport
+          PYTHONWARNINGS: error
           PYTHONPATH: src
         run: uv run pytest --cov=src/newsdom_api --cov-branch --cov-report=term-missing --cov-fail-under=100
