@@ -7,6 +7,7 @@ import yaml
 
 
 _REQUIRED_PYPDF_VERSION = (6, 16, 1)
+_REQUIRED_PYPDF_SPECIFIER = ".".join(str(part) for part in _REQUIRED_PYPDF_VERSION)
 _LOCKED_PYPDF_VERSION = (6, 18, 0)
 _CURRENT_PYPDF_ADVISORIES = (
     ("CVE-2026-84309", "GHSA-jp53-mhqp-8xcg", "6.16.0"),
@@ -32,7 +33,7 @@ def test_project_declares_current_pypdf_security_floor() -> None:
     """Prevent lock refreshes from selecting a version below the full advisory floor."""
 
     project_text = Path("pyproject.toml").read_text(encoding="utf-8")
-    assert '"pypdf>=6.16.1,<7.0"' in project_text
+    assert f'"pypdf>={_REQUIRED_PYPDF_SPECIFIER},<7.0"' in project_text
 
 
 def test_lock_uses_current_pypdf_security_release() -> None:
@@ -75,8 +76,8 @@ def test_current_pypdf_advisories_and_floor_are_documented() -> None:
         )
         assert boundary.search(baseline) is not None
 
-    assert "`pypdf>=6.16.1,<7.0`" in changelog
-    assert "`pypdf>=6.16.1,<7.0`" in baseline
+    assert f"`pypdf>={_REQUIRED_PYPDF_SPECIFIER},<7.0`" in changelog
+    assert f"`pypdf>={_REQUIRED_PYPDF_SPECIFIER},<7.0`" in baseline
     assert "pypdf 6.18.0" in changelog
     assert "pypdf 6.18.0" in baseline
 
