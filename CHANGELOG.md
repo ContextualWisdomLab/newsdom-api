@@ -16,8 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > acceptance are aligned for an actual 0.3.0 publication.
 
 ### Added
-- [CLI] 파싱된 NewsDOM JSON을 특정 키워드로 필터링하는 `tools/filter_dom.py` 도구 추가
-- [CLI] NewsDOM JSON 파일의 불필요한 메타데이터(예: bbox)를 제거하고 용량을 최소화하는 `tools/minify_dom.py` 도구 추가
+- [CLI] NewsDOM JSON을 JSONL 형식으로 변환하여 내보내는 `tools/export_jsonl.py` 도구를 추가했습니다.
 
 ### Changed
 - `/parse`를 언어 선택형 파서로 일반화: MinerU `-l japan`/`-m ocr` 하드코딩을 제거하고 optional form 필드 `language`(MinerU 3.4.4 공식 기본 `ch`, 공개 언어군/alias 검증)와 `mode`(`auto`/`ocr`/`txt`, 기본 `auto`)로 파라미터화. `mode=auto`는 born-digital PDF가 강제 OCR을 건너뛰도록 함. 기존 입력 `language=japan&mode=ocr`는 공식 규약대로 `ch`/`ocr`로 정규화됨.
