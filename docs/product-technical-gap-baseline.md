@@ -2,6 +2,19 @@
 
 Updated: 2026-09-12
 
+## 2026-09-26 parser-selector length contract
+
+Status: **Proposed** on open PR #822; protected-branch integration and hosted
+exact-head acceptance remain required.
+
+The `/parse` API now rejects `language` and `mode` values longer than 50
+characters at FastAPI's validated form boundary. Focused endpoint regressions
+pin the public 422 response for both fields. This is deliberately not described
+as a complete request-memory control: multipart parsing occurs before Pydantic
+field validation, so deployment request-body limits and parser-level part
+limits remain separate controls. The change preserves the canonical AnyIO
+4.14.2 and HTTPX2/httpcore2 2.13.0 dependency contract on this owner branch.
+
 ## Current authority
 
 - Protected branch: `develop@539528f9667524f6b65de0ee7b8b21fbdd97c380`
