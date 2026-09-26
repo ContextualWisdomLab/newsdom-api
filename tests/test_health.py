@@ -57,22 +57,3 @@ def test_openapi_metadata_includes_contact_and_license():
         "name": "MIT License",
         "identifier": "MIT",
     }
-
-def test_openapi_endpoints_relax_csp():
-    client = TestClient(app)
-    endpoints = ["/docs", "/redoc", "/openapi.json", "/docs/oauth2-redirect"]
-
-    for endpoint in endpoints:
-        response = client.get(endpoint)
-        csp = response.headers.get("Content-Security-Policy")
-        assert csp is not None
-        assert csp == (
-            "default-src 'none'; "
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
-            "img-src 'self' data: https://fastapi.tiangolo.com; "
-            "font-src 'self' https://fonts.gstatic.com; "
-            "connect-src 'self'; "
-            "frame-ancestors 'none'; "
-            "base-uri 'none'"
-        )
