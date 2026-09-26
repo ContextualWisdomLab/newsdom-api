@@ -155,3 +155,9 @@ def test_export_jsonl_temp_file_not_created(tmp_path: Path, monkeypatch: pytest.
 
     with pytest.raises(OSError, match="Permission denied"):
         export_jsonl(input_file, output_file)
+
+def test_export_jsonl_identical_paths(tmp_path: Path) -> None:
+    input_file = tmp_path / "input.json"
+    input_file.write_text(json.dumps(VALID_JSON_DATA), encoding="utf-8")
+    with pytest.raises(ValueError, match="refer to different files"):
+        export_jsonl(input_file, input_file)

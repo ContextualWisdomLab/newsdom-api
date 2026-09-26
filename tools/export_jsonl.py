@@ -14,6 +14,10 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
         raise FileNotFoundError(f"File not found or is not a file: {json_path}")
     if json_path.suffix.lower() != ".json":
         raise ValueError("Input file must be a .json file.")
+    if json_path.resolve() == output_path.resolve() or (
+        output_path.exists() and os.path.samefile(json_path, output_path)
+    ):
+        raise ValueError("Input and output paths must refer to different files.")
 
     try:
         data = json.loads(json_path.read_text(encoding="utf-8"))
