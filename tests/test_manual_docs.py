@@ -69,7 +69,7 @@ def test_installation_doc_includes_manual_api_healthcheck_commands():
         "uv run uvicorn",
         "--app-dir src",
         "newsdom_api.main:app",
-        "--host 0.0.0.0",
+        "--host 127.0.0.1",
         "--port 8000",
         "--reload",
     ]:
