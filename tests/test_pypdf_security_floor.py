@@ -6,7 +6,7 @@ import re
 import yaml
 
 
-_REQUIRED_PYPDF_VERSION = (6, 15, 0)
+_REQUIRED_PYPDF_VERSION = (6, 19, 0)
 _CURRENT_PYPDF_CVES = ("CVE-2026-71852", "CVE-2026-71870")
 _LOCKED_PYPDF_REQUIREMENT = '{ name = "pypdf", specifier = ">=6.19.0,<7.0" },'
 
@@ -61,7 +61,7 @@ def test_current_pypdf_advisories_and_floor_are_documented() -> None:
 
     for cve_id in _CURRENT_PYPDF_CVES:
         assert f"https://osv.dev/vulnerability/{cve_id}" in baseline
-    assert "`pypdf>=6.15.0,<7.0`" in changelog
+    assert "`pypdf>=6.19.0,<7.0`" in changelog
 
 
 def test_trivy_registry_exception_is_scoped_to_the_example_manifest() -> None:
@@ -71,7 +71,9 @@ def test_trivy_registry_exception_is_scoped_to_the_example_manifest() -> None:
     ignore_document = yaml.safe_load(
         Path(".trivyignore.yaml").read_text(encoding="utf-8")
     )
-    exceptions = {entry["id"]: entry for entry in ignore_document["misconfigurations"]}
+    exceptions = {
+        entry["id"]: entry for entry in ignore_document["misconfigurations"]
+    }
 
     assert trivy_config["ignorefile"] == ".trivyignore.yaml"
     assert exceptions["KSV-0125"]["paths"] == [
