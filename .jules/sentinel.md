@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2025-02-28 - [Authentication Timing Attack Prevention]
+**Vulnerability:** Length-leaking timing attack on API token validation in `/parse` endpoint.
+**Learning:** `hmac.compare_digest` in CPython does not inherently prevent timing attacks if the lengths of the two strings differ, as it delegates to `CRYPTO_memcmp` which might return early on length mismatch. Explicit length checks are required.
+**Prevention:** Always compare lengths before validating tokens, and perform a dummy constant-time comparison (e.g., `hmac.compare_digest(expected, expected)`) on length mismatch to balance execution time and prevent length-leaking timing attacks.
