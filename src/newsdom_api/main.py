@@ -266,7 +266,9 @@ async def parse(
                 temporary_file.write(chunk)
 
         LOGGER.debug("Wrote %s upload bytes to %s", bytes_read, tmp_path)
-        _validate_pdf_structure(tmp_path)
+        # ⚡ Bolt: Offload synchronous blocking PDF structure validation to the thread pool
+        # to prevent starving the ASGI event loop when processing large/complex PDF uploads.
+        await asyncio.to_thread(_validate_pdf_structure, tmp_path)
         return await asyncio.to_thread(
             parse_pdf,
             tmp_path,
