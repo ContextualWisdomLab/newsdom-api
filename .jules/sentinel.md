@@ -90,3 +90,7 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+## 2026-09-18 - 🛡️ Sentinel: [HIGH] Multipart DoS 취약점 완화
+**Vulnerability:** FastAPI/Starlette에서 `python-multipart`를 사용해 폼 데이터를 파싱할 때, 라우트 핸들러에 도달하기 전에 메모리에 데이터를 버퍼링합니다. 악의적인 대용량 페이로드 또는 청크 인코딩을 통한 DoS 공격에 취약할 수 있습니다.
+**Learning:** Pydantic `Form`의 `max_length` 설정은 스트림을 읽는 단계에서 발생하는 메모리 고갈을 막지 못합니다. 안전한 방어는 미들웨어(ASGI 레벨)에서 이루어져야 합니다.
+**Prevention:** `security_boundary_middleware`에서 라우터 핸들러 실행 전에 `Content-Length`를 조기 검증하고, `Content-Length`를 우회할 수 있는 `Transfer-Encoding: chunked` 요청을 차단하도록 수정했습니다.
