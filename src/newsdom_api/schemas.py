@@ -97,7 +97,9 @@ class ArticleNode(BaseModel):
     body_blocks: List[str] = Field(
         default_factory=list,
         description="Ordered text blocks that make up the article body.",
-        json_schema_extra={"example": ["First paragraph of the article.", "Second paragraph."]},
+        json_schema_extra={
+            "example": ["First paragraph of the article.", "Second paragraph."]
+        },
     )
     images: List[ImageNode] = Field(
         default_factory=list,
@@ -123,10 +125,12 @@ class PageNode(BaseModel):
     width: Optional[float] = Field(
         default=None,
         description="Page width reported by the parser, if available.",
+        json_schema_extra={"example": 595.276},
     )
     height: Optional[float] = Field(
         default=None,
         description="Page height reported by the parser, if available.",
+        json_schema_extra={"example": 841.89},
     )
     articles: List[ArticleNode] = Field(
         default_factory=list,
