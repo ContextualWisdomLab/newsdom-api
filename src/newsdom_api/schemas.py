@@ -107,7 +107,7 @@ class ArticleNode(BaseModel):
     images: List[ImageNode] = Field(
         default_factory=list,
         description="Images associated with the article.",
-        json_schema_extra={"example": [{"path": "images/article_123_fig1.jpg", "media_type": "image", "bbox": {"x0": 10.5, "y0": 100.0, "x1": 500.5, "y1": 800.0}, "captions": [], "footnotes": []}]},
+        json_schema_extra={"example": [{"media_type": "image", "bbox": {"x0": 10.5, "y0": 100.0, "x1": 500.5, "y1": 800.0}, "captions": [], "footnotes": []}]},
     )
     captions: List[CaptionNode] = Field(
         default_factory=list,
