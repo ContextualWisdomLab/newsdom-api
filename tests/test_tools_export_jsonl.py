@@ -128,3 +128,39 @@ def test_export_jsonl_exception_handling_cleans_up_tempfile_no_exist(tmp_path: P
 
         assert mock_file.close.call_count >= 1
         mock_remove.assert_not_called()
+
+def test_export_jsonl_same_file(tmp_path: Path) -> None:
+    input_file = tmp_path / "input.json"
+    input_file.write_text(json.dumps(VALID_JSON_DATA), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="Input and output paths must refer to different files"):
+        export_jsonl(input_file, input_file)
+
+def test_export_jsonl_pages_not_list(tmp_path: Path) -> None:
+    input_file = tmp_path / "input.json"
+    data = {"pages": "not_a_list"}
+    input_file.write_text(json.dumps(data), encoding="utf-8")
+    output_file = tmp_path / "output.jsonl"
+
+    with pytest.raises(ValueError, match="'pages' must be a list."):
+        export_jsonl(input_file, output_file)
+
+def test_export_jsonl_articles_not_list(tmp_path: Path) -> None:
+    input_file = tmp_path / "input.json"
+    data = {"pages": [{"articles": "not_a_list"}]}
+    input_file.write_text(json.dumps(data), encoding="utf-8")
+    output_file = tmp_path / "output.jsonl"
+
+    with pytest.raises(ValueError, match="'articles' must be a list."):
+        export_jsonl(input_file, output_file)
+
+import math
+
+def test_export_jsonl_nan_value(tmp_path: Path) -> None:
+    input_file = tmp_path / "input.json"
+    data = {"pages": [{"articles": [{"val": math.nan}]}]}
+    input_file.write_text(json.dumps(data), encoding="utf-8")
+    output_file = tmp_path / "output.jsonl"
+
+    with pytest.raises(ValueError, match="Out of range float values are not JSON compliant"):
+        export_jsonl(input_file, output_file)

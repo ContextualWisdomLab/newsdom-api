@@ -15,12 +15,19 @@ def export_jsonl(input_path: Path, output_path: Path) -> None:
     if input_path.suffix.lower() != ".json":
         raise ValueError("Input file must be a .json file.")
 
+    if input_path.resolve() == output_path.resolve() or (
+        output_path.exists() and os.path.samefile(input_path, output_path)
+    ):
+        raise ValueError("Input and output paths must refer to different files.")
+
     try:
         data = json.loads(input_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise ValueError(f"Invalid JSON file: {exc}") from exc
 
     pages = data.get("pages", [])
+    if not isinstance(pages, list):
+        raise ValueError("'pages' must be a list.")
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     temp_file = tempfile.NamedTemporaryFile(
@@ -32,10 +39,14 @@ def export_jsonl(input_path: Path, output_path: Path) -> None:
             if not isinstance(page, dict):
                 continue
             articles = page.get("articles", [])
+            if not isinstance(articles, list):
+                raise ValueError("'articles' must be a list.")
             for article in articles:
                 if not isinstance(article, dict):
                     continue
-                temp_file.write(json.dumps(article, ensure_ascii=False) + "\n")
+                temp_file.write(
+                    json.dumps(article, ensure_ascii=False, allow_nan=False) + "\n"
+                )
         temp_file.close()
         os.replace(temp_file.name, output_path)
     except Exception:
