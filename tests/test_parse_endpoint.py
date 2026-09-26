@@ -555,3 +555,37 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
+
+def test_parse_endpoint_rejects_overlong_language_field(monkeypatch):
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr(
+        "newsdom_api.main.parse_pdf",
+        lambda *a, **k: {"document_id": "x", "pages": []},
+    )
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+        data={"language": "x" * 51},
+    )
+
+    assert response.status_code == 422
+    assert "detail" in response.json()
+
+def test_parse_endpoint_rejects_overlong_mode_field(monkeypatch):
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr(
+        "newsdom_api.main.parse_pdf",
+        lambda *a, **k: {"document_id": "x", "pages": []},
+    )
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+        data={"mode": "x" * 51},
+    )
+
+    assert response.status_code == 422
+    assert "detail" in response.json()
