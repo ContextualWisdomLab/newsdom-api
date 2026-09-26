@@ -28,15 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-- Limited the validated `/parse` `language` and `mode` form values to 50
-  characters. This bounds parser-selector processing after multipart parsing;
-  it does not replace transport- or multipart-level request limits.
-- Constrained AnyIO to the patched 4.14 series because 4.15.1 imports the
-  unavailable `typing_extensions.sentinel` symbol on the supported Python 3.13
-  runtime and makes the Starlette TestClient boundary fail on a cold import.
-- Raised the AnyIO floor to 4.14.2 and refreshed the lock to AnyIO 4.14.2,
-  HTTPX2 2.13.0, and httpcore2 2.13.0 after current PR #900 exposed
-  CVE-2026-63374 in the prior lock.
+- Raised the AnyIO floor to 4.14.2 and refreshed the lock to AnyIO 4.15.1, HTTPX2 2.13.0, and httpcore2 2.13.0 after current PR #900 exposed CVE-2026-63374 in the prior lock.
 - `/parse` authentication is now immutable per application instance and fails closed before multipart body parsing when required configuration is missing. Hostile missing, invalid, Unicode, oversized, and duplicated Authorization headers return one non-sensitive response.
 - Added unauthenticated `/ready` traffic readiness that combines authentication configuration with MinerU executable availability while `/health` remains liveness-only.
 - Hardened the Kubernetes deployment example with a restricted namespace policy, explicit non-root UID/GID, `RuntimeDefault` seccomp, disabled privilege escalation, dropped Linux capabilities, a read-only root filesystem, and bounded writable runtime volumes.
