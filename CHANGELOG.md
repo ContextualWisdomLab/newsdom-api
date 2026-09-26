@@ -112,3 +112,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
+
+### Fixed
+- `uv.lock`의 의존성을 재잠금하여 실제 `trivy-fs` CVE를 제거: `pypdf>=6.17.0,<7.0` (lock 6.17.0)
