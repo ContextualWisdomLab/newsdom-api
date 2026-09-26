@@ -266,7 +266,9 @@ async def parse(
                 temporary_file.write(chunk)
 
         LOGGER.debug("Wrote %s upload bytes to %s", bytes_read, tmp_path)
-        _validate_pdf_structure(tmp_path)
+        # ⚡ Bolt: Offload synchronous PDF structural validation to a thread pool
+        # to prevent pypdf.PdfReader from blocking the FastAPI main event loop.
+        await asyncio.to_thread(_validate_pdf_structure, tmp_path)
         return await asyncio.to_thread(
             parse_pdf,
             tmp_path,

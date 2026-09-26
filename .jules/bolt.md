@@ -63,3 +63,7 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2024-10-27 - [Event Loop Blocking by pypdf]
+**Learning:** `pypdf.PdfReader(file_path, strict=True)` performs synchronous file IO and heavy structural parsing which completely blocks the FastAPI main event loop, significantly degrading concurrency during large file uploads or concurrent requests.
+**Action:** Always wrap `pypdf.PdfReader` invocations or related synchronous IO-bound PDF inspection functions with `asyncio.to_thread` when executing within async routes to maintain service responsiveness.
