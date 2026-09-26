@@ -14,13 +14,20 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
         raise FileNotFoundError(f"File not found or is not a file: {json_path}")
     if json_path.suffix.lower() != ".json":
         raise ValueError("Input file must be a .json file.")
+    if json_path.resolve() == output_path.resolve():
+        raise ValueError("Input and output paths must be different.")
 
     try:
         data = json.loads(json_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise ValueError(f"Invalid JSON file: {exc}") from exc
 
+    if not isinstance(data, dict):
+        raise ValueError("NewsDOM JSON root must be an object.")
+
     pages = data.get("pages", [])
+    if not isinstance(pages, list):
+        raise ValueError("NewsDOM JSON field 'pages' must be a list.")
 
     temp_file = NamedTemporaryFile(
         delete=False, dir=output_path.parent, mode="w", encoding="utf-8"
@@ -32,6 +39,8 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
 
             page_number = page.get("page_number", "Unknown")
             articles = page.get("articles", [])
+            if not isinstance(articles, list):
+                raise ValueError("NewsDOM page field 'articles' must be a list.")
             for article in articles:
                 if not isinstance(article, dict):
                     continue

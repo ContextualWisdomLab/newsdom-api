@@ -72,6 +72,37 @@ def test_export_jsonl_success(tmp_path: Path) -> None:
     assert data_3["body_blocks"] == ["Block 3"]
 
 
+def test_export_jsonl_same_path_error(tmp_path: Path) -> None:
+    input_file = tmp_path / "input.json"
+    input_file.write_text(json.dumps(VALID_JSON_DATA), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="Input and output paths must be different."):
+        export_jsonl(input_file, input_file)
+
+
+def test_export_jsonl_invalid_format_error(tmp_path: Path) -> None:
+    output_file = tmp_path / "output.jsonl"
+
+    input_file_1 = tmp_path / "input1.json"
+    input_file_1.write_text(json.dumps(["not a dict"]), encoding="utf-8")
+    with pytest.raises(ValueError, match="NewsDOM JSON root must be an object."):
+        export_jsonl(input_file_1, output_file)
+
+    input_file_2 = tmp_path / "input2.json"
+    input_file_2.write_text(json.dumps({"pages": "not a list"}), encoding="utf-8")
+    with pytest.raises(ValueError, match="NewsDOM JSON field 'pages' must be a list."):
+        export_jsonl(input_file_2, output_file)
+
+    input_file_3 = tmp_path / "input3.json"
+    input_file_3.write_text(
+        json.dumps({"pages": [{"articles": "not a list"}]}), encoding="utf-8"
+    )
+    with pytest.raises(
+        ValueError, match="NewsDOM page field 'articles' must be a list."
+    ):
+        export_jsonl(input_file_3, output_file)
+
+
 def test_export_jsonl_invalid_file(tmp_path: Path) -> None:
     output_file = tmp_path / "output.jsonl"
 
