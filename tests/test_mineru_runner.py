@@ -164,6 +164,20 @@ def test_run_mineru_handles_called_process_error(tmp_path: Path):
 def test_find_output_dir_handles_oserror(tmp_path):
     import unittest.mock
     from newsdom_api.mineru_runner import _find_output_dir
-    with unittest.mock.patch("pathlib.Path.iterdir", side_effect=OSError):
+    with unittest.mock.patch("pathlib.Path.iterdir", side_effect=FileNotFoundError):
         with pytest.raises(FileNotFoundError, match="MinerU output directory was not produced"):
             _find_output_dir(tmp_path)
+
+def test_find_output_dir_propagates_permission_error(tmp_path):
+    import unittest.mock
+    from newsdom_api.mineru_runner import _find_output_dir
+    with unittest.mock.patch("pathlib.Path.iterdir", side_effect=PermissionError):
+        with pytest.raises(PermissionError):
+            _find_output_dir(tmp_path)
+
+def test_find_output_dir_ignores_files(tmp_path):
+    from newsdom_api.mineru_runner import _find_output_dir
+    file_path = tmp_path / "not_a_dir"
+    file_path.write_text("content")
+    with pytest.raises(FileNotFoundError, match="MinerU output directory was not produced"):
+        _find_output_dir(tmp_path)

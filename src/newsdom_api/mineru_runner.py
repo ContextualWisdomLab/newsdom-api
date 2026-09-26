@@ -240,9 +240,11 @@ def _find_output_dir(base_output_dir: Path, method: str = DEFAULT_MODE) -> Path:
 
     # ⚡ Bolt: Use iterdir() instead of glob() to avoid hitting the filesystem repeatedly for each candidate
     try:
-        doc_dirs = [p for p in base_output_dir.iterdir() if p.is_dir()]
-    except OSError:
+        entries = list(base_output_dir.iterdir())
+    except FileNotFoundError:
         doc_dirs = []
+    else:
+        doc_dirs = [p for p in entries if p.is_dir()]
 
     for candidate_method in search_order:
         for doc_dir in doc_dirs:
