@@ -12,7 +12,8 @@ review gates before merge.
 
 The adopted floors are:
 
-- `anyio>=4.14.2` for the async runtime, with the lock resolving 4.15.1 after PR #900 exposed CVE-2026-63374 in 4.13.0;
+- `anyio>=4.14.2,<4.15` for the async runtime, with the lock resolving 4.14.2
+  after PR #900 exposed CVE-2026-63374 in 4.13.0;
 - `setuptools>=83` for the build backend;
 - `Pillow>=12.3,<13.0` for image parsing on the untrusted document-ingestion path;
 - `pypdf>=6.16.1,<7.0` for PDF parsing;
@@ -65,6 +66,14 @@ set; the current lock resolves both to 2.13.0. This does not claim that every
 advisory is reachable through NewsDOM production traffic; it removes known-vulnerable
 artifacts from the repository's tested and scanned lock without weakening the
 whole-tree security gate.
+
+AnyIO remains at the patched 4.14.2 release instead of 4.15.1. A cold import of
+`starlette.testclient` under Python 3.13 fails with AnyIO 4.15.1 because that
+release imports `typing_extensions.sentinel`, while the newest resolver-visible
+`typing-extensions` release is 4.16.0 and exports `Sentinel` instead. The direct
+range `anyio>=4.14.2,<4.15` keeps the CVE-2026-63374 fix and preserves a
+warning-free TestClient import. A subprocess regression test enforces the cold
+import boundary so module caching cannot conceal this compatibility failure.
 
 CVE-2026-59890 affects setuptools versions before 83.0.0. On
 normalization-preserving macOS filesystems, specially named files could bypass
