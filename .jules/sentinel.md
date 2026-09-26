@@ -92,6 +92,6 @@
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
 
 ## 2023-10-31 - Prevent Timing Attacks on API Tokens
-**Vulnerability:** `hmac.compare_digest(a, b)` returns immediately when inputs have different lengths, which allows attackers to deduce the expected length of the API token through timing differences.
+**Vulnerability:** The authentication code checks token lengths before calling `hmac.compare_digest`. If the length-mismatch branch does not perform equivalent comparison work, attackers may deduce the expected length of the API token through timing differences.
 **Learning:** Even when using constant-time comparison functions, length-checks must be balanced by dummy constant-time operations if the underlying library leaks length via early exits.
 **Prevention:** Verify length explicitly and execute a dummy `hmac.compare_digest(expected, expected)` on mismatch to balance execution time before rejecting the request.
