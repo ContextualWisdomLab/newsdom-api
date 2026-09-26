@@ -1,6 +1,7 @@
 ## 2024-05-24 - Eager BoundingBox Float Casting
 **Learning:** A performance anti-pattern in `newsdom-api` parsing loops is eager allocation and expensive type-conversions (e.g., float casting for `BoundingBox`) at the start of block iterations. We found ~45% overhead was caused by converting unused `bbox` values to floats in blocks that were early-returned (like headers/footers).
 **Action:** Defer expensive conversions and allocations into the specific conditional branches that actually consume them to reduce overhead on unused block types.
+
 ## 2024-05-24 - Defer string operations for MinerU text blocks
 **Learning:** Eager execution of string operations like `.strip()` and `.get("text")` on every block adds overhead, especially for non-textual blocks like images and tables.
 **Action:** Defer these operations to the conditional branches that actually handle textual blocks to optimize parsing speed.
@@ -40,6 +41,7 @@
 ## 2026-06-30 - Regex over Generator `any` string loops
 **Learning:** Using `any(...)` with a generator comprehension in string evaluation paths allocates a new generator and adds Python-level loop overhead for every character.
 **Action:** Replace `any()` generators with a pre-compiled regex (`re.compile().search()`) to evaluate string patterns in C, achieving a ~7x speedup for text-heavy operations.
+
 ## 2024-07-09 - Avoid eager list allocation on glob generators
 **Learning:** In file discovery routines, eagerly resolving a glob generator into a list (e.g., `list(path.glob(...))`) causes unnecessary directory traversals and memory allocation when only a single match is needed.
 **Action:** Use `next(path.glob(...))` with a `try/except StopIteration` block to efficiently avoid this performance overhead.
@@ -63,3 +65,11 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2023-08-18 - Replacing isinstance() with type() is an Anti-Pattern
+**Learning:** Replacing `isinstance(var, type)` checks with strict `type(var) is type` comparisons provides negligible nanosecond performance gains while violating PEP 8 and breaking Python duck-typing/subclass handling. It is considered an unimpactful micro-optimization that reduces code maintainability.
+**Action:** Never optimize Python type checks by avoiding `isinstance`. Focus on algorithmic, structural, or I/O bottlenecks instead.
+
+## 2023-08-18 - Fast Directory Discovery
+**Learning:** When searching for specific subdirectories from a known list of candidates, pre-fetching the parent directory's contents once using `Path.iterdir()` is measurably faster (~35%) than executing multiple `Path.glob()` pattern searches, because it avoids repeated filesystem I/O and pattern parsing overhead.
+**Action:** Use `iterdir()` and filter in-memory when scanning for multiple known potential directories within a single parent.
