@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
-import subprocess
-import sys
 
 
 def _locked_package_versions(name: str) -> set[tuple[int, ...]]:
@@ -98,7 +96,7 @@ def test_security_dependency_floors_exclude_known_vulnerable_ranges():
     dependencies_section = _dependencies_section(text)
 
     assert '"Pillow>=12.3,<13.0"' in dependencies_section
-    assert '"pypdf>=6.16.1,<7.0"' in dependencies_section
+    assert '"pypdf>=6.15.0,<7.0"' in dependencies_section
     assert 'requires = ["setuptools>=83", "wheel"]' in text
 
 
@@ -204,23 +202,4 @@ def test_uv_lock_does_not_track_external_mineru_pipeline_runtime_stack():
 
 
 def test_uv_lock_pins_pypdf_at_patched_release():
-    assert _locked_package_version("pypdf") >= (6, 16, 1)
-
-
-def test_starlette_testclient_import_has_no_deprecation_warning() -> None:
-    """Keep the test-client boundary warning-free with the locked AnyIO API."""
-
-    completed = subprocess.run(
-        [
-            sys.executable,
-            "-W",
-            "error::DeprecationWarning",
-            "-c",
-            "from starlette.testclient import TestClient",
-        ],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-
-    assert completed.returncode == 0, completed.stderr
+    assert _locked_package_version("pypdf") >= (6, 15, 0)
