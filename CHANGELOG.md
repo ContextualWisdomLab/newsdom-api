@@ -28,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- Limited the validated `/parse` `language` and `mode` form values to 50
+  characters. This bounds parser-selector processing after multipart parsing;
+  it does not replace transport- or multipart-level request limits.
 - Constrained AnyIO to the patched 4.14 series because 4.15.1 imports the
   unavailable `typing_extensions.sentinel` symbol on the supported Python 3.13
   runtime and makes the Starlette TestClient boundary fail on a cold import.

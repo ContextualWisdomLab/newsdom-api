@@ -520,6 +520,29 @@ def test_parse_endpoint_rejects_invalid_language_with_422(monkeypatch):
     assert response.json()["detail"] == "Invalid parse parameters"
 
 
+@pytest.mark.parametrize("field_name", ("language", "mode"))
+def test_parse_endpoint_rejects_oversized_form_field(field_name):
+    """Reject parser selectors longer than the public 50-character contract."""
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+        data={field_name: "a" * 51},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == [
+        {
+            "type": "string_too_long",
+            "loc": ["body", field_name],
+            "msg": "String should have at most 50 characters",
+            "input": "a" * 51,
+            "ctx": {"max_length": 50},
+        }
+    ]
+
+
 @pytest.mark.asyncio
 async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     class ClientDisconnectError(Exception):
