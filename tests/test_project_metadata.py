@@ -179,8 +179,8 @@ def test_project_declares_python_compatible_locked_fuzz_extra():
         '"atheris==3.1.0 ; platform_system == \'Linux\' and '
         'python_version >= \'3.12\'"'
     ) in text
-    assert _locked_package_versions("atheris") == {(3, 0, 0), (3, 1, 0)}
-    assert '"pyinstaller==6.21.0"' in text
+    assert _locked_package_versions("atheris") == {(3, 1, 0)}
+    assert '"pyinstaller==6.22.3"' in text
     assert "nvidia = [" not in text
 
 
