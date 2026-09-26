@@ -29,6 +29,7 @@ from .config import (
     MAX_BEARER_HEADER_BYTES,
     RuntimeSettings,
     load_runtime_settings,
+    RuntimeProfile,
 )
 from .errors import MineruIncompleteOutputError, MineruRuntimeUnavailableError
 from .mineru_runner import (
@@ -321,6 +322,7 @@ def create_app(
             "displayRequestDuration": True,
             "syntaxHighlight.theme": "monokai",
             "tryItOutEnabled": True,
+            **({"persistAuthorization": True} if application_settings.runtime_profile is RuntimeProfile.DEVELOPMENT else {}),
         },
     )
     application.state.runtime_settings = application_settings

@@ -14,7 +14,7 @@ The adopted floors are:
 
 - `setuptools>=83` for the build backend;
 - `Pillow>=12.3,<13.0` for image parsing on the untrusted document-ingestion path;
-- `pypdf>=6.15.0,<7.0` for PDF parsing;
+- `pypdf>=6.18.1,<7.0` for PDF parsing;
 - `mkdocs-material>=9.7,<9.8`, allowing `pymdown-extensions>=11` while the MkDocs
   core remains on the supported 1.x line.
 
