@@ -2,6 +2,19 @@
 
 Updated: 2026-09-12
 
+## 2026-09-26 parser-selector length contract
+
+Status: **Proposed** on open PR #822; protected-branch integration and hosted
+exact-head acceptance remain required.
+
+The `/parse` API now rejects `language` and `mode` values longer than 50
+characters at FastAPI's validated form boundary. Focused endpoint regressions
+pin the public 422 response for both fields. This is deliberately not described
+as a complete request-memory control: multipart parsing occurs before Pydantic
+field validation, so deployment request-body limits and parser-level part
+limits remain separate controls. The change preserves the canonical AnyIO
+4.14.2 and HTTPX2/httpcore2 2.13.0 dependency contract on this owner branch.
+
 ## Current authority
 
 - Protected branch: `develop@539528f9667524f6b65de0ee7b8b21fbdd97c380`
@@ -36,7 +49,7 @@ The upstream HTTPX2 advisories establish:
 - CVE-2026-84381 / GHSA-7mj9-2mp8-4m2p: `wss://` over SOCKS could omit TLS, fixed in HTTPX2 and httpcore2 2.10.0;
 - CVE-2026-84382 / GHSA-8xx6-hgc6-gc2m: streaming decompression amplification, fixed in HTTPX2 2.12.0.
 
-The strongest current HTTPX2 floor is 2.12.0. Fresh PR #900 additionally exposed CVE-2026-63374 in the locked AnyIO 4.13.0 generation. The canonical owner now declares `anyio>=4.14.2` and resolves AnyIO 4.15.1; the same resolver generation advances HTTPX2/httpcore2 to 2.13.0 without weakening their reviewed 2.12.0 floors. PR #822 therefore declares `httpx2>=2.12.0` and `httpcore2>=2.12.0` in the development/TestClient dependency set and resolves both to 2.12.0. The lock and direct metadata were taken from an already resolver-generated repository generation that also preserved `pypdf>=6.16.1,<7.0`; source, form-field, auth, and generated Sentinel changes from that historical generation were not adopted.
+The strongest current HTTPX2 floor is 2.12.0. Fresh PR #900 additionally exposed CVE-2026-63374 in the locked AnyIO 4.13.0 generation. The canonical owner now declares `anyio>=4.14.2,<4.15` and resolves AnyIO 4.14.2: 4.15.1 cannot cold-import Starlette TestClient on the supported Python 3.13 runtime because it imports an unavailable `typing_extensions.sentinel` symbol. The same resolver generation advances HTTPX2/httpcore2 to 2.13.0 without weakening their reviewed 2.12.0 floors. PR #822 therefore declares `httpx2>=2.12.0` and `httpcore2>=2.12.0` in the development/TestClient dependency set and resolves both to 2.13.0. The lock and direct metadata were taken from an already resolver-generated repository generation that also preserved `pypdf>=6.16.1,<7.0`; source, form-field, auth, and generated Sentinel changes from that historical generation were not adopted.
 
 This does not assert that every HTTPX2 advisory is reachable through NewsDOM production traffic. It removes known-vulnerable artifacts from the exact lock that tests and scanners consume, which is required by the existing whole-tree gate.
 
