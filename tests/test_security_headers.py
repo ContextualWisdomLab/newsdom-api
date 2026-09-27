@@ -5,7 +5,7 @@ from newsdom_api.main import app
 client = TestClient(app)
 
 def test_csp_docs_endpoints():
-    for endpoint in ("/docs", "/redoc", "/openapi.json", "/docs/oauth2-redirect"):
+    for endpoint in ("/docs", "/redoc", "/docs/oauth2-redirect"):
         response = client.get(endpoint)
         csp = response.headers.get("Content-Security-Policy", "")
         expected_csp = (
@@ -21,5 +21,9 @@ def test_csp_docs_endpoints():
 
 def test_csp_api_endpoints():
     response = client.get("/health")
+    csp = response.headers.get("Content-Security-Policy", "")
+    assert csp == "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+
+    response = client.get("/openapi.json")
     csp = response.headers.get("Content-Security-Policy", "")
     assert csp == "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"

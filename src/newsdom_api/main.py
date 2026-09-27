@@ -67,7 +67,7 @@ def _apply_security_headers(response: Response, request: Request) -> Response:
     response.headers["X-Frame-Options"] = "DENY"
 
     path = request.scope.get("path", "")
-    if path in ("/docs", "/redoc", "/openapi.json", "/docs/oauth2-redirect"):
+    if path in ("/docs", "/redoc", "/docs/oauth2-redirect"):
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
