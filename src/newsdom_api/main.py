@@ -6,9 +6,12 @@ import asyncio
 import hmac
 import logging
 import tempfile
+from contextvars import copy_context
+from functools import partial
 from pathlib import Path
 from typing import Annotated, Callable
 
+from anyio import CancelScope
 from fastapi import (
     Depends,
     FastAPI,
@@ -166,7 +169,11 @@ async def security_boundary_middleware(
         try:
             response = await call_next(request)
         finally:
-            limiter.release()
+            worker = getattr(request.state, "parse_worker", None)
+            if worker is None:
+                limiter.release()
+            else:
+                worker.add_done_callback(lambda _future: limiter.release())
         return _apply_security_headers(response, request)
 
     response = await call_next(request)
@@ -253,6 +260,8 @@ async def parse(
             )
         ),
     ] = DEFAULT_MODE,
+    *,
+    request: Request,
 ) -> ParseResponse:
     """Parse an authorized uploaded PDF into the canonical DOM response model."""
 
@@ -300,13 +309,25 @@ async def parse(
 
         LOGGER.debug("Wrote %s upload bytes to %s", bytes_read, tmp_path)
         _validate_pdf_structure(tmp_path)
-        return await asyncio.to_thread(
-            parse_pdf,
-            tmp_path,
-            filename=file.filename or "upload.pdf",
-            language=resolved_language,
-            mode=resolved_mode,
+        worker = asyncio.get_running_loop().run_in_executor(
+            None, partial(copy_context().run, parse_pdf, tmp_path,
+                          filename=file.filename or "upload.pdf",
+                          language=resolved_language, mode=resolved_mode)
         )
+        request.state.parse_worker = worker
+        try:
+            return await asyncio.shield(worker)
+        except asyncio.CancelledError:
+            # A cancelled await cannot stop the existing thread/subprocess.
+            # Keep its upload until actual work is terminal.
+            with CancelScope(shield=True):
+                while not worker.done():
+                    try:
+                        await asyncio.wait({worker})
+                    except asyncio.CancelledError:
+                        continue
+                worker.exception()
+            raise
     except MineruRuntimeUnavailableError:
         raise HTTPException(
             status_code=503, detail=SERVICE_UNAVAILABLE_DETAIL

@@ -29,7 +29,8 @@ Apply this checklist whenever the FastAPI surface changes.
 - return fixed `429 Too Many Requests`, exact `Retry-After: 1`, and no-store
   cache headers when every process lease is in use
 - release admission leases after success, validation failure, backend failure,
-  unhandled exception, and request cancellation
+  and unhandled exception; after request cancellation, retain an active parser
+  lease until actual synchronous work finishes
 - keep `NEWSDOM_MAX_CONCURRENT_PARSES` immutable, bounded to `1..128`, and
   explicit in production deployment examples
 - treat the process boundary as a last-resort resource control; retain

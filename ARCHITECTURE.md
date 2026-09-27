@@ -60,9 +60,12 @@ flowchart LR
    MinerU under the configured runtime and error boundaries.
 5. `src/newsdom_api/dom_builder.py` normalizes OCR blocks into the canonical
    response while preserving page-aware structure from MinerU model metadata.
-6. The outer `finally` boundary releases the parser lease after success,
-   validation failure, backend failure, request cancellation, or another
-   exception.
+6. The outer `finally` boundary releases the parser lease immediately if no
+   parser work was started. Otherwise it registers release against actual
+   executor completion. Shared request state connects this completion signal
+   across Starlette's outer middleware and downstream endpoint tasks. Request
+   cancellation therefore cannot admit replacement work while its parser is
+   still running. The endpoint retains its temporary upload until completion.
 7. FastAPI returns typed JSON from `src/newsdom_api/schemas.py` and maps MinerU
    runtime failures to 503 and incomplete output to 502.
 
