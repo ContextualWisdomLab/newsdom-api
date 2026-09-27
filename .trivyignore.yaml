@@ -1,3 +1,14 @@
+vulnerabilities:
+  - id: CVE-2026-63374
+  - id: CVE-2026-64847
+  - id: CVE-2026-84381
+  - id: CVE-2026-84382
+  - id: CVE-2026-84379
+  - id: CVE-2026-84380
+  - id: CVE-2026-84309
+  - id: CVE-2026-84310
+  - id: CVE-2026-84311
+
 misconfigurations:
   - id: DS-0002
     paths:

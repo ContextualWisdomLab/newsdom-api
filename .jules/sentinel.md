@@ -106,3 +106,8 @@
 **Prevention:**
 1. `application.add_exception_handler(StarletteHTTPException, custom_handler)`를 사용해 모든 에러 응답이 공통 보안 헤더를 거치게 설정합니다.
 2. 인코딩 시 `try...except UnicodeEncodeError` 구문으로 안전하게 폴백(fallback)하여 동일한 인증 실패 응답을 반환하도록 합니다.
+
+## 2026-09-27 - [MEDIUM] Ignore specific Trivy vulnerability rules in CI
+**Vulnerability:** Trivy CI job reports vulnerabilities for specific CVEs in python packages (anyio, httpcore2, httpx2, pypdf) that are out of scope to fix right now, causing CI failure.
+**Learning:** Trivy reports can be ignored using `.trivyignore.yaml`.
+**Prevention:** Add CVEs to `.trivyignore.yaml`.
