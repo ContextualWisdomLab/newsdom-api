@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 from newsdom_api.main import app
 
 def test_parse_large_form_field_language(monkeypatch):
+    """Ensure the `language` form field rejects overly long input to prevent DoS."""
     client = TestClient(app)
 
     # Bypass auth for this test
@@ -21,6 +22,7 @@ def test_parse_large_form_field_language(monkeypatch):
     assert "string_too_long" in response.text
 
 def test_parse_large_form_field_mode(monkeypatch):
+    """Ensure the `mode` form field rejects overly long input to prevent DoS."""
     client = TestClient(app)
 
     # Bypass auth for this test
