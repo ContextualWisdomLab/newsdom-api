@@ -94,3 +94,7 @@
 **Vulnerability:** The FastAPI endpoint `/parse` accepts `language` and `mode` form fields without length constraints. This can lead to a Denial of Service (DoS) due to memory exhaustion since `python-multipart` loads form fields into memory.
 **Learning:** In FastAPI, textual `Form` fields should always have a length constraint.
 **Prevention:** Always add `max_length` parameter to textual `Form` fields.
+## 2026-09-27 - [CRITICAL] Update dependencies to fix vulnerabilities
+**Vulnerability:** Trivy scan identified multiple vulnerabilities including CVE-2026-63374 (CRITICAL) in anyio, and other HIGH/MEDIUM vulnerabilities in httpcore2, httpx2, and pypdf.
+**Learning:** Outdated dependencies can expose the application to severe vulnerabilities like Denial of Service and Connection Desynchronization.
+**Prevention:** Regularly scan and update dependencies, ensuring the lockfile (`uv.lock`) remains free of known CVEs.
