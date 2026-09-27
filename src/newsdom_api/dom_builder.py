@@ -425,11 +425,11 @@ def _build_pages_with_page_idx(
 
     pages = []
     article_seq = count(1)
-    for page_idx in sorted(blocks_by_page_idx):
+    for page_idx in sorted(blocks_by_page_idx.keys() | page_info_by_idx.keys()):
         page_info = page_info_by_idx.get(page_idx, {})
         pages.append(
             _build_page_dom(
-                blocks_by_page_idx[page_idx],
+                blocks_by_page_idx.get(page_idx, []),
                 page_number=_page_number_from_info(page_info, page_idx + 1),
                 article_seq=article_seq,
                 width=page_info.get("width"),
