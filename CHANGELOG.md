@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- [CLI] NewsDOM JSON 파일에서 특정 키워드로 기사를 필터링하는 `tools/filter_dom.py` 도구를 추가했습니다.
+- [CLI] 중첩된 문서 구조의 NewsDOM JSON 파일을 단일 기사 배열로 평탄화하는 `tools/flatten_dom.py` 도구를 추가했습니다.
+
 > **Planned 0.3.0 deployment migration:** parser authentication changes from
 > **default-open** to **default-required**. Production must configure
 > `NEWSDOM_AUTH_MODE=required`, `NEWSDOM_RUNTIME_PROFILE=production`, and
