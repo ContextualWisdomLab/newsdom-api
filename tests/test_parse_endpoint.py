@@ -2,7 +2,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from fastapi.testclient import TestClient
 from pypdf.errors import PdfReadError
 
@@ -333,7 +333,7 @@ async def test_parse_endpoint_suppresses_service_exception_chain(monkeypatch):
     monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
 
     with pytest.raises(HTTPException) as exc_info:
-        await parse(_ReadTrackingUpload(b"%PDF-1.4\n%synthetic\n"))
+        await parse(_ReadTrackingUpload(b"%PDF-1.4\n%synthetic\n"), request=Request({"type": "http"}))
 
     assert exc_info.value.status_code == 503
     assert exc_info.value.detail == "Service Unavailable"
@@ -364,7 +364,7 @@ async def test_parse_endpoint_rejects_large_file_without_size_metadata():
     upload.size = None
 
     with pytest.raises(HTTPException) as exc_info:
-        await parse(upload)
+        await parse(upload, request=Request({"type": "http"}))
 
     assert exc_info.value.status_code == 413
     assert exc_info.value.detail == "Payload Too Large"
@@ -388,7 +388,7 @@ async def test_parse_endpoint_rejects_magic_bytes_before_full_read():
     upload = _ReadTrackingUpload(b"MZ\x90\x00\x03" + (b"x" * 1024 * 1024))
 
     with pytest.raises(HTTPException) as exc_info:
-        await parse(upload)
+        await parse(upload, request=Request({"type": "http"}))
 
     assert exc_info.value.status_code == 415
     assert exc_info.value.detail == "Unsupported Media Type"
@@ -550,7 +550,7 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     monkeypatch.setattr(Path, "unlink", spy_unlink)
 
     with pytest.raises(ClientDisconnectError):
-        await parse(upload)
+        await parse(upload, request=Request({"type": "http"}))
 
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1

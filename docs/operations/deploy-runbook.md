@@ -74,8 +74,11 @@ Retry-After: 1
 Cache-Control: no-store, no-cache, max-age=0
 ```
 
-No in-process waiting queue is created. The lease is released after success,
-validation failure, MinerU failure, request cancellation, or another exception.
+No in-process waiting queue is created. Before parser work starts, validation
+failure or cancellation releases the lease immediately. Once parser work has
+started, its lease remains held until actual work finishes, including after
+request cancellation or parser failure. A cancelled request cannot free capacity
+while its existing parser continues running.
 A gateway may add tenant-aware request-rate policy, but it must not convert the
 synchronous endpoint into an unbounded buffered queue.
 
