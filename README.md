@@ -106,14 +106,7 @@ docker build -f Dockerfile.nvidia -t newsdom-api:nvidia .
 docker run --gpus all -p 8000:8000 newsdom-api:nvidia
 ```
 
-`Dockerfile.nvidia` is intended for Linux/NVIDIA environments and is
-`linux/amd64`-only. Apple Silicon can run the lean API image, but Docker
-Desktop does not expose Apple GPU acceleration to Linux containers, so real
-GPU-accelerated parsing should stay on a native Apple Silicon path instead of
-the containerized runtime.
-
-The NVIDIA variant is `linux/amd64`-only and is meant for hosts that can
-provide the CUDA user-space/runtime stack required by MinerU.
+`Dockerfile.nvidia` is intended for Linux/NVIDIA environments and is `linux/amd64`-only. Apple Silicon can run the lean API image, but Docker Desktop does not expose Apple GPU acceleration to Linux containers, so real GPU-accelerated parsing should stay on a native Apple Silicon path instead of the containerized runtime.
 
 ### Parse a PDF
 
