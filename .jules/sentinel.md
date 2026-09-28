@@ -92,6 +92,6 @@
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
 
 ## 2025-05-18 - Prevent timing attacks in token validation
-**Vulnerability:** FastAPIs `_parse_access_failure` explicitly returned an unauthorized response upon a length mismatch (`if len(authorization_values[0]) > MAX_BEARER_HEADER_BYTES: ...`) or if the credentials length didn't match the expected token length, before the cryptographic comparison. This timing leak could allow attackers to guess the valid token length and potentially its contents.
+**Vulnerability:** FastAPIs `_parse_access_failure` explicitly returned an unauthorized response if the credentials length didn't match the expected token length, before the cryptographic comparison (distinct from the `MAX_BEARER_HEADER_BYTES` check which safely validates header size). This timing leak could allow attackers to guess the valid token length and potentially its contents.
 **Learning:** When mitigating timing attacks during token validation, timing leaks typically occur if application code explicitly returns early upon a length mismatch before the cryptographic comparison.
 **Prevention:** Ensure the code always performs equivalent comparison work regardless of length (e.g., by evaluating `valid_length = len(a) == len(b)`, conditionally selecting a safe token to compare against, and evaluating `hmac.compare_digest` before returning).
