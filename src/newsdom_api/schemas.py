@@ -86,6 +86,7 @@ class ArticleNode(BaseModel):
         json_schema_extra={"example": "section-20231015-001"},
     )
     headline: str = Field(
+        ...,
         description=(
             "Primary section heading text. This is a generic section heading, "
             "not tied to any newspaper or language-specific concept."
