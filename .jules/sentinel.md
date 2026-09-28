@@ -90,3 +90,7 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+## 2026-09-28 - Update vulnerable dependencies reported by Trivy
+**Vulnerability:** Trivy reported several critical, high, and medium severity vulnerabilities in `anyio`, `httpcore2`, `httpx2`, and `pypdf`.
+**Learning:** Outdated dependencies can introduce significant security risks to the application. It is crucial to monitor and update them promptly.
+**Prevention:** Regularly run vulnerability scanners like Trivy and update the `uv.lock` and `pyproject.toml` files to use secure dependency versions.
