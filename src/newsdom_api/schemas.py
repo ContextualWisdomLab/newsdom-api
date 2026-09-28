@@ -11,18 +11,22 @@ class BoundingBox(BaseModel):
     """Axis-aligned bounding box expressed in page coordinates."""
 
     x0: float = Field(
+        ...,
         description="Leftmost X coordinate of the bounding box.",
         json_schema_extra={"example": 10.5},
     )
     y0: float = Field(
+        ...,
         description="Topmost Y coordinate of the bounding box.",
         json_schema_extra={"example": 100.0},
     )
     x1: float = Field(
+        ...,
         description="Rightmost X coordinate of the bounding box.",
         json_schema_extra={"example": 500.5},
     )
     y1: float = Field(
+        ...,
         description="Bottommost Y coordinate of the bounding box.",
         json_schema_extra={"example": 800.0},
     )
@@ -32,6 +36,7 @@ class CaptionNode(BaseModel):
     """Caption text associated with an image or figure."""
 
     text: str = Field(
+        ...,
         description="Text content of the caption.",
         json_schema_extra={"example": "写真：昨日の大雨の様子"},
     )
@@ -47,6 +52,7 @@ class ImageNode(BaseModel):
     """Image metadata preserved in the canonical page structure."""
 
     path: str = Field(
+        ...,
         description="Relative path to the extracted image asset.",
         json_schema_extra={"example": "images/article_123_fig1.jpg"},
     )
@@ -77,6 +83,7 @@ class ArticleNode(BaseModel):
     """
 
     article_id: str = Field(
+        ...,
         description="Stable identifier for the section within the parsed document.",
         json_schema_extra={"example": "section-20231015-001"},
     )
@@ -97,7 +104,9 @@ class ArticleNode(BaseModel):
     body_blocks: List[str] = Field(
         default_factory=list,
         description="Ordered text blocks that make up the article body.",
-        json_schema_extra={"example": ["First paragraph of the article.", "Second paragraph."]},
+        json_schema_extra={
+            "example": ["First paragraph of the article.", "Second paragraph."]
+        },
     )
     images: List[ImageNode] = Field(
         default_factory=list,
@@ -117,6 +126,7 @@ class PageNode(BaseModel):
     """Single parsed page including article, ad, and header groupings."""
 
     page_number: int = Field(
+        ...,
         description="One-based page number from the parsed PDF.",
         json_schema_extra={"example": 1},
     )
@@ -174,6 +184,7 @@ class ParseResponse(BaseModel):
     """Top-level API response for a parsed document."""
 
     document_id: str = Field(
+        ...,
         description="Unique identifier for the parsed document.",
         json_schema_extra={"example": "doc-a1b2c3d4"},
     )
