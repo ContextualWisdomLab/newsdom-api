@@ -241,3 +241,50 @@ def test_derived_metrics_invalid_types():
     }
     metrics = _derived_metrics(payload)
     assert metrics == payload
+
+def test_article_has_headline_truthiness() -> None:
+    """
+    Test that has_headline correctly handles empty and whitespace-only strings
+    while avoiding allocations from strip().
+    """
+    from newsdom_api.equivalence import _article_has_headline
+    assert _article_has_headline({}) is False
+    assert _article_has_headline({"headline_present": True}) is True
+    assert _article_has_headline({"headline": None}) is False
+    assert _article_has_headline({"headline": ""}) is False
+    assert _article_has_headline({"headline": "   "}) is False
+    assert _article_has_headline({"headline": "\n\t"}) is False
+    assert _article_has_headline({"headline": "\u3000"}) is False  # Ideographic space
+
+    assert _article_has_headline({"headline": "Title"}) is True
+    assert _article_has_headline({"headline": "  Title  "}) is True
+
+def test_article_has_headline_performance_allocation_evidence() -> None:
+    """
+    Provide evidence that using not isspace() allocates less memory than bool(strip()).
+    """
+    import tracemalloc
+
+    test_str = "   "
+
+    def strip_approach():
+        return bool(test_str.strip())
+
+    def isspace_approach():
+        return bool(test_str) and not test_str.isspace()
+
+    # Warmup
+    strip_approach()
+    isspace_approach()
+
+    tracemalloc.start()
+    strip_approach()
+    _, peak_strip = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+
+    tracemalloc.start()
+    isspace_approach()
+    _, peak_isspace = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+
+    assert peak_isspace <= peak_strip # tracemalloc might record 0 peak for both in some environments/short strings

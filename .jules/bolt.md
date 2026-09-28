@@ -63,3 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2026-09-21 - [성능 최적화] 불필요한 문자열 메모리 할당 제거
+**Learning:** `bool(s.strip())`은 새 문자열 객체를 할당하므로 GC 부하를 유발합니다. 공백 여부만 확인하려면 `bool(s) and not s.isspace()`를 사용하는 것이 메모리 할당 없이 동일한 논리적 결과를 보장합니다.
+**Action:** 조건문에서 빈 문자열 확인 시 `strip()` 사용을 지양하고 `isspace()`를 활용합니다.
