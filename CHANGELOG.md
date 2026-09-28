@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > acceptance are aligned for an actual 0.3.0 publication.
 
 ### Changed
+- CI 파이프라인의 `trivy-fs` 스캐너가 보고한 심각도(CRITICAL, HIGH, MEDIUM) 취약점을 해결하기 위해 `uv.lock`에서 `anyio`, `httpcore2`, `httpx2`, `pypdf` 의존성 버전을 업데이트했습니다.
 - Pydantic V2 스키마(`ImageNode`, `PageNode`)에 JSON 예제(`json_schema_extra`)를 추가하여 OpenAPI 문서의 개발자 경험(DX)을 개선했습니다.
 - Pydantic V2 및 FastAPI 모델 정의에서 불필요한 `...` 인자를 제거하여 코드 가독성과 개발자 경험(DX)을 개선했습니다.
 - `/parse`를 언어 선택형 파서로 일반화: MinerU `-l japan`/`-m ocr` 하드코딩을 제거하고 optional form 필드 `language`(MinerU 3.4.4 공식 기본 `ch`, 공개 언어군/alias 검증)와 `mode`(`auto`/`ocr`/`txt`, 기본 `auto`)로 파라미터화. `mode=auto`는 born-digital PDF가 강제 OCR을 건너뛰도록 함. 기존 입력 `language=japan&mode=ocr`는 공식 규약대로 `ch`/`ocr`로 정규화됨.
