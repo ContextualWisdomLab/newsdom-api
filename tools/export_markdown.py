@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -103,12 +105,23 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     try:
+        if args.output is not None and args.input.resolve() == args.output.resolve():
+            raise ValueError("Input and output files must not be the same.")
+
         input_data = json.loads(args.input.read_text(encoding="utf-8"))
         markdown_content = generate_markdown(input_data)
         if args.output is None:
             print(markdown_content, end="")
         else:
-            args.output.write_text(markdown_content, encoding="utf-8")
+            temp_fd, temp_path = tempfile.mkstemp(dir=args.output.parent, text=True)
+            try:
+                with os.fdopen(temp_fd, "w", encoding="utf-8") as mdfile:
+                    mdfile.write(markdown_content)
+                os.replace(temp_path, args.output)
+            except Exception:
+                os.unlink(temp_path)
+                raise
+
             print(f"Markdown written to {args.output}")
     except Exception as exc:
         print(f"Error exporting Markdown: {exc}", file=sys.stderr)

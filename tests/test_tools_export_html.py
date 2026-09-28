@@ -176,3 +176,35 @@ def test_main_file_output_error(
 
     assert excinfo.value.code == 1
     assert "Error exporting HTML" in capsys.readouterr().err
+
+def test_main_same_file(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    input_file = tmp_path / "input.json"
+    input_file.write_text("{}", encoding="utf-8")
+
+    with pytest.raises(SystemExit) as excinfo:
+        main([str(input_file), "-o", str(input_file)])
+
+    assert excinfo.value.code == 1
+    assert "Error exporting HTML: Input and output files must not be the same." in capsys.readouterr().err
+
+def test_main_exception_cleanup(
+    tmp_path: Path,
+    sample_json_data: dict[str, object],
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch
+) -> None:
+    input_file = tmp_path / "input.json"
+    input_file.write_text(json.dumps(sample_json_data), encoding="utf-8")
+    output_file = tmp_path / "output.html"
+
+    def mock_replace(*args, **kwargs):
+        raise OSError("Mock error")
+
+    import os
+    monkeypatch.setattr(os, "replace", mock_replace)
+
+    with pytest.raises(SystemExit) as excinfo:
+        main([str(input_file), "-o", str(output_file)])
+
+    assert excinfo.value.code == 1
+    assert "Error exporting HTML: Mock error" in capsys.readouterr().err

@@ -119,3 +119,23 @@ def test_export_csv_cli_invalid_file(
     assert exc_info.value.code == 1
     captured = capsys.readouterr()
     assert "Error exporting CSV:" in captured.err
+
+def test_export_csv_same_file(tmp_path: Path) -> None:
+    input_file = tmp_path / "input.json"
+    input_file.write_text("{}", encoding="utf-8")
+    with pytest.raises(ValueError, match="must not be the same"):
+        export_csv(input_file, input_file)
+
+def test_export_csv_exception_cleanup(tmp_path: Path, monkeypatch) -> None:
+    input_file = tmp_path / "input.json"
+    input_file.write_text(json.dumps(VALID_JSON_DATA), encoding="utf-8")
+    output_file = tmp_path / "output.csv"
+
+    def mock_replace(*args, **kwargs):
+        raise OSError("Mock error")
+
+    import os
+    monkeypatch.setattr(os, "replace", mock_replace)
+
+    with pytest.raises(OSError, match="Mock error"):
+        export_csv(input_file, output_file)

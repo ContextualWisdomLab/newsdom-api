@@ -146,3 +146,30 @@ def test_main_file_output_error(tmp_path, sample_json_data, capsys):
 
     assert excinfo.value.code == 1
     assert "Error exporting Markdown" in capsys.readouterr().err
+
+def test_main_same_file(tmp_path, capsys):
+    input_file = tmp_path / "input.json"
+    input_file.write_text("{}", encoding="utf-8")
+
+    with pytest.raises(SystemExit) as excinfo:
+        main([str(input_file), "-o", str(input_file)])
+
+    assert excinfo.value.code == 1
+    assert "Error exporting Markdown: Input and output files must not be the same." in capsys.readouterr().err
+
+def test_main_exception_cleanup(tmp_path, sample_json_data, capsys, monkeypatch):
+    input_file = tmp_path / "input.json"
+    input_file.write_text(json.dumps(sample_json_data), encoding="utf-8")
+    output_file = tmp_path / "output.md"
+
+    def mock_replace(*args, **kwargs):
+        raise OSError("Mock error")
+
+    import os
+    monkeypatch.setattr(os, "replace", mock_replace)
+
+    with pytest.raises(SystemExit) as excinfo:
+        main([str(input_file), "-o", str(output_file)])
+
+    assert excinfo.value.code == 1
+    assert "Error exporting Markdown: Mock error" in capsys.readouterr().err
