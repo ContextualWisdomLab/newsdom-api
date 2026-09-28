@@ -94,3 +94,7 @@
 **Vulnerability:** 텍스트 Form 필드에 max_length 제한이 없어, python-multipart가 라우트 실행 전 폼 데이터를 메모리에 모두 로드하여 메모리 고갈을 통한 DoS 공격이 가능함.
 **Learning:** FastAPI의 Form 의존성은 메모리 고갈 공격을 방지하기 위해 명시적인 max_length 제한이 필수적임.
 **Prevention:** FastAPI 엔드포인트의 텍스트 입력 Form 필드에는 항상 max_length를 설정해야 함.
+## 2026-09-28 - Update dependencies to patch vulnerabilities in uv.lock
+**Vulnerability:** Trivy CI found several vulnerabilities in indirect dependencies (`anyio`, `httpx2`, and `pypdf`) inside `uv.lock`.
+**Learning:** `uv` handles vulnerability fixing natively with `uv lock --upgrade-package`. This safely updates the lockfile directly without modifying `pyproject.toml` incorrectly.
+**Prevention:** Regularly scan `uv.lock` with Trivy and use `uv lock --upgrade-package` to patch transitive vulnerabilities, ensuring tests pass afterward.
