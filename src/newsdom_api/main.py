@@ -200,6 +200,7 @@ def _validate_pdf_structure(file_path: Path) -> None:
         ) from None
 
 
+
 async def _validate_pdf_structure_before_cancellation(file_path: Path) -> None:
     """Wait for the validation thread before propagating cancellation."""
 
@@ -209,10 +210,11 @@ async def _validate_pdf_structure_before_cancellation(file_path: Path) -> None:
     try:
         await asyncio.shield(worker)
     except asyncio.CancelledError:
-        try:
-            await asyncio.shield(worker)
-        except Exception:
-            pass
+        while not worker.done():
+            try:
+                await asyncio.shield(worker)
+            except asyncio.CancelledError:
+                pass
         raise
 
 
