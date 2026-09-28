@@ -63,3 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2024-09-26 - 중복된 딕셔너리 키 조회(Lookups) 최소화
+**Learning:** 파이썬에서 `payload.get('key') if isinstance(payload.get('key'), list) else None`와 같이 하나의 식에서 같은 키를 여러 번 `get()` 호출하는 패턴은 내부적으로 문자열 해싱과 테이블 룩업(Dictionary lookup)을 중복 수행하여 오버헤드를 유발합니다. 반복적인 파싱 작업이나 매우 큰 JSON 객체를 다룰 때 이 오버헤드가 누적됩니다.
+**Action:** 동일한 딕셔너리 키에 대한 조회가 여러 번 필요할 경우, 값을 지역 변수에 먼저 할당한 뒤 해당 변수를 재사용하여 반복적인 딕셔너리 룩업 오버헤드를 방지해야 합니다.
