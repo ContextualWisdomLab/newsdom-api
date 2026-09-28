@@ -70,6 +70,7 @@ def _apply_security_headers(response: Response, request: Request) -> Response:
     )
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Cache-Control"] = "no-store, no-cache, max-age=0"
+    response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
     forwarded_proto = request.headers.get("x-forwarded-proto", "")
     is_https = request.url.scheme == "https" or forwarded_proto.lower() == "https"
     if is_https:
@@ -131,12 +132,7 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     scheme, separator, credentials = provided.partition(b" ")
     if separator != b" " or scheme.lower() != b"bearer" or not credentials:
         return _unauthorized_response()
-
-    expected_token = token.encode("utf-8")
-    valid_length = len(credentials) == len(expected_token)
-    safe_credentials = credentials if valid_length else expected_token
-
-    if not hmac.compare_digest(safe_credentials, expected_token) or not valid_length:
+    if not hmac.compare_digest(credentials, token.encode("utf-8")):
         return _unauthorized_response()
     return None
 
