@@ -95,3 +95,8 @@
 **Vulnerability:** Found multiple vulnerabilities during Trivy scan in `uv.lock` for `anyio` (CVE-2026-63374: CRITICAL, CVE-2026-64847: MEDIUM), `httpcore2` (CVE-2026-84381: HIGH), `httpx2` (CVE-2026-84382: HIGH, CVE-2026-84379: MEDIUM, CVE-2026-84380: MEDIUM), and `pypdf` (CVE-2026-84309: MEDIUM, CVE-2026-84310: MEDIUM, CVE-2026-84311: MEDIUM).
 **Learning:** Trivy CI scans block the deployment pipeline if vulnerable dependencies are found.
 **Prevention:** Keep `uv` dependencies updated via `uv add --dev` to patch identified vulnerabilities promptly.
+
+## 2026-09-29 - Dependency Vulnerability Fixes (CRITICAL/HIGH/MEDIUM)
+**Vulnerability:** Found multiple vulnerabilities during Trivy scan in `uv.lock` for `anyio` (CVE-2026-63374: CRITICAL, CVE-2026-64847: MEDIUM), `httpcore2` (CVE-2026-84381: HIGH), `httpx2` (CVE-2026-84382: HIGH, CVE-2026-84379: MEDIUM, CVE-2026-84380: MEDIUM), and `pypdf` (CVE-2026-84309: MEDIUM, CVE-2026-84310: MEDIUM, CVE-2026-84311: MEDIUM).
+**Learning:** Trivy CI scans block the deployment pipeline if vulnerable dependencies are found. Also, `anyio` needs to be updated. Upgrading dependencies fixes these issues.
+**Prevention:** Keep `uv` dependencies updated via `uv add --dev` to patch identified vulnerabilities promptly.
