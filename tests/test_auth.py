@@ -40,6 +40,7 @@ def test_parse_requires_auth_when_no_secret_or_opt_in(monkeypatch, stub_parser):
     assert response.headers.get("WWW-Authenticate") == "Bearer"
 
 
+
 def test_parse_is_open_only_with_explicit_anonymous_opt_in(monkeypatch, stub_parser):
     monkeypatch.delenv(API_TOKEN_ENV_VAR, raising=False)
     monkeypatch.setenv(ALLOW_ANONYMOUS_ENV_VAR, "true")

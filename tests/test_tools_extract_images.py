@@ -53,7 +53,7 @@ def test_extract_images_file_not_found(tmp_path: Path):
 def test_extract_images_invalid_extension(tmp_path: Path):
     txt_path = tmp_path / "test.txt"
     txt_path.write_text("not json", encoding="utf-8")
-    with pytest.raises(ValueError, match="File must be a .json file"):
+    with pytest.raises(ValueError, match=r"File must be a \.json file\."):
         extract_images(txt_path)
 
 
