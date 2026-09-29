@@ -131,7 +131,14 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     scheme, separator, credentials = provided.partition(b" ")
     if separator != b" " or scheme.lower() != b"bearer" or not credentials:
         return _unauthorized_response()
-    if not hmac.compare_digest(credentials, token.encode("utf-8")):
+
+    expected_token = token.encode("utf-8")
+    # 타이밍 공격으로 인한 길이 유출을 막기 위해 항상 hmac.compare_digest를 실행합니다.
+    valid_length = len(credentials) == len(expected_token)
+    check_token = credentials if valid_length else expected_token
+
+    is_valid = hmac.compare_digest(check_token, expected_token)
+    if not (valid_length and is_valid):
         return _unauthorized_response()
     return None
 
