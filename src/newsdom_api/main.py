@@ -42,6 +42,8 @@ from .schemas import HealthResponse, ParseResponse, ReadinessResponse
 from .service import parse_pdf
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
+# ⚡ Bolt: 비동기 파일 업로드 시 잦은 await에 따른 오버헤드 방지를 위해 청크 사이즈를 1MB로 증가시킵니다.
+UPLOAD_CHUNK_SIZE_BYTES = 1024 * 1024
 MAX_AUTHORIZATION_HEADER_BYTES = MAX_BEARER_HEADER_BYTES
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
 PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
@@ -252,7 +254,7 @@ async def parse(
             temporary_file.write(header)
 
             bytes_read = len(header)
-            while chunk := await file.read(8192):
+            while chunk := await file.read(UPLOAD_CHUNK_SIZE_BYTES):
                 bytes_read += len(chunk)
                 if bytes_read > MAX_PARSE_UPLOAD_BYTES:
                     LOGGER.warning(
