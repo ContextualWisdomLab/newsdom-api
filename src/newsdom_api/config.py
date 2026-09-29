@@ -103,8 +103,7 @@ def get_api_token(source: Mapping[str, str] | None = None) -> str | None:
 
     values = os.environ if source is None else source
     raw = values.get(API_TOKEN_ENV_VAR)
-    # ⚡ Bolt: Include an early truthiness check before performing string allocations like .strip()
-    if not raw:
+    if raw is None:
         return None
     token = raw.strip()
     return token or None
