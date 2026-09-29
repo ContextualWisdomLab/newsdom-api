@@ -100,3 +100,8 @@
 **Vulnerability:** Several old dependencies (`anyio`, `httpcore2`, `httpx2`, `pypdf`) had known CRITICAL/HIGH CVEs (CVE-2026-63374, CVE-2026-64847, etc.) which were discovered by Trivy filesystem scan.
 **Learning:** Dependency locks can hold onto vulnerable packages even if `pyproject.toml` is up-to-date unless they are proactively refreshed with `uv lock --upgrade`.
 **Prevention:** Periodically upgrade the dependency locks using `uv lock --upgrade` or specify target packages to eliminate the CVEs before they propagate into release artifacts.
+
+## 2026-09-29 - [CRITICAL] Prevent Strix Timeout Failure (exit code 2)
+**Vulnerability:** The Strix CI scan occasionally fails with a timeout or "LLM CONNECTION FAILED" (exit code 2) due to unstable or weaker default models.
+**Learning:** For Strix security scans to be reliable, do not rely on weaker or rate-limited models which may time out. Ensure CI infrastructure guarantees the security gating logic completes by forcing retry mechanisms if temporary model endpoints drop.
+**Prevention:** If an LLM connection failure happens locally or in the strix gate runner causing the required check to fail, use `.github/workflows` configurations to switch providers or implement retry steps for Strix CI jobs.
