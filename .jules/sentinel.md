@@ -90,3 +90,23 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-08-13 - [MEDIUM] JSON 로딩 시 TOCTOU 및 메모리 고갈 방지 (TOCTOU & Resource Exhaustion)
+**Vulnerability:** `load_metrics` 함수에서 JSON 파일을 읽기 전 `path.stat().st_size`로 크기를 검사하는 방식은 검사 시점과 사용 시점 사이의 경쟁 조건(TOCTOU)을 유발하며, FIFO 파이프 등을 통해 크기 검사를 우회하여 악의적인 대용량 데이터를 메모리에 주입할 수 있는 메모리 자원 고갈 (Denial of Service) 공격에 취약합니다.
+**Learning:** 파일 크기를 사전에 검사한 후 전체 데이터를 읽는 방식은 TOCTOU 우회 공격에 취약하므로, 반드시 단일 파일 핸들을 사용하여 데이터를 안전한 제한선까지만 읽어 들인 후 크기를 검증해야 합니다.
+**Prevention:** `path.read_text()` 대신 파일을 `rb` 모드로 열고 `f.read(limit + 1)`로 데이터를 읽은 후, 반환된 바이트 길이가 제한을 초과하면 예외를 발생시키도록 구현하여 TOCTOU 취약점을 원천적으로 차단합니다.
+
+## 2026-09-27 - [CRITICAL] Update vulnerable dependencies locked in uv.lock
+**Vulnerability:** Several old dependencies (`anyio`, `httpcore2`, `httpx2`, `pypdf`) had known CRITICAL/HIGH CVEs (CVE-2026-63374, CVE-2026-64847, etc.) which were discovered by Trivy filesystem scan.
+**Learning:** Dependency locks can hold onto vulnerable packages even if `pyproject.toml` is up-to-date unless they are proactively refreshed with `uv lock --upgrade`.
+**Prevention:** Periodically upgrade the dependency locks using `uv lock --upgrade` or specify target packages to eliminate the CVEs before they propagate into release artifacts.
+
+## 2026-09-29 - [CRITICAL] Prevent Strix Timeout Failure (exit code 2)
+**Vulnerability:** The Strix CI scan occasionally fails with a timeout or "LLM CONNECTION FAILED" (exit code 2) due to unstable or weaker default models.
+**Learning:** For Strix security scans to be reliable, do not rely on weaker or rate-limited models which may time out. Ensure CI infrastructure guarantees the security gating logic completes by forcing retry mechanisms if temporary model endpoints drop.
+**Prevention:** If an LLM connection failure happens locally or in the strix gate runner causing the required check to fail, use `.github/workflows` configurations to switch providers or implement retry steps for Strix CI jobs.
+
+## 2026-09-29 - [CRITICAL] Fix CodeQL dispatch execution check issue
+**Vulnerability:** CodeQL scans run into dispatch timeout limits causing exit code 1 failures (e.g. `CodeQL scan dispatched. The dispatch workflow will rerun this exact failed CodeQL job after publishing its terminal verdict`) during PR updates. This creates pipeline deadlocks on forks or PRs from branch resets.
+**Learning:** For asynchronous security jobs that orchestrate across systems (like CodeQL dispatching from openPR to the default repo), ensure that CI pipelines are correctly synchronized or that PRs are simply force-pushed or closed-and-reopened to re-trigger the fresh workflow run.
+**Prevention:** If an external check fails with a "dispatched" pending state, restarting the check or applying an empty commit (e.g., `git commit --allow-empty -m "Trigger CI"`) can clear the deadlock.

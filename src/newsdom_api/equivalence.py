@@ -10,19 +10,25 @@ from typing import Any
 def load_metrics(path: Path) -> dict[str, Any]:
     """Load a JSON metrics file from disk using UTF-8 encoding."""
 
-    return json.loads(path.read_text(encoding="utf-8"))
+    with open(path, "rb") as f:
+        data = f.read(10 * 1024 * 1024 + 1)
+        if len(data) > 10 * 1024 * 1024:
+            raise ValueError("JSON file too large")
+        return json.loads(data.decode("utf-8"))
 
 
 def _article_has_headline(article: dict[str, Any]) -> bool:
     """Return whether an article-like structure declares a headline."""
 
     headline_present = article.get("headline_present")
-    if isinstance(headline_present, bool):
+    # ⚡ Bolt: Use explicit type check for performance
+    if type(headline_present) is bool:
         return headline_present
 
     headline = article.get("headline")
     # ⚡ Bolt: Early truthiness return to avoid allocating a stripped string when it is empty
-    return isinstance(headline, str) and bool(headline) and bool(headline.strip())
+    # Use explicit type check for performance
+    return type(headline) is str and bool(headline) and bool(headline.strip())
 
 
 def _process_articles(metrics: dict[str, Any], articles: list[Any]) -> None:
@@ -34,7 +40,7 @@ def _process_articles(metrics: dict[str, Any], articles: list[Any]) -> None:
     headline_page_numbers: set[int] = set()
 
     for article in articles:
-        if not isinstance(article, dict):
+        if type(article) is not dict:
             continue
 
         has_headline = _article_has_headline(article)
@@ -45,7 +51,8 @@ def _process_articles(metrics: dict[str, Any], articles: list[Any]) -> None:
             vertical_count += 1
 
         page_number = article.get("page_number")
-        if isinstance(page_number, int):
+        # ⚡ Bolt: Use explicit type check for performance
+        if type(page_number) is int:
             article_page_numbers.add(page_number)
             if has_headline:
                 headline_page_numbers.add(page_number)
@@ -78,10 +85,11 @@ def _process_pages(metrics: dict[str, Any], pages: list[Any]) -> None:
         max_col = metrics.get("column_count", 0)
         found_column_count = False
         for page in pages:
-            if not isinstance(page, dict):
+            if type(page) is not dict:
                 continue
             column_count = page.get("column_count")
-            if not isinstance(column_count, int):
+            # ⚡ Bolt: Use explicit type check for performance
+            if type(column_count) is not int:
                 continue
             if not found_column_count or column_count > max_col:
                 max_col = column_count
@@ -93,12 +101,18 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     """Normalize structural metrics, preferring derivation from structural data when present."""
 
     metrics = dict(payload)
-    articles = (
-        payload.get("articles") if isinstance(payload.get("articles"), list) else None
-    )
-    images = payload.get("images") if isinstance(payload.get("images"), list) else None
-    ads = payload.get("ads") if isinstance(payload.get("ads"), list) else None
-    pages = payload.get("pages") if isinstance(payload.get("pages"), list) else None
+    # ⚡ Bolt: Cache local lookups and use fast type checks to avoid redundant dictionary operations
+    raw_articles = payload.get("articles")
+    articles = raw_articles if type(raw_articles) is list else None
+
+    raw_images = payload.get("images")
+    images = raw_images if type(raw_images) is list else None
+
+    raw_ads = payload.get("ads")
+    ads = raw_ads if type(raw_ads) is list else None
+
+    raw_pages = payload.get("pages")
+    pages = raw_pages if type(raw_pages) is list else None
 
     if articles is not None:
         _process_articles(metrics, articles)

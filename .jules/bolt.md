@@ -63,3 +63,7 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2024-08-13 - 중복된 딕셔너리 조회 및 타입 검사 오버헤드 방지
+**Learning:** 고빈도 순회 루프 안에서 `dict.get()`을 반복적으로 호출하고 `isinstance()`를 사용해 타입을 검사하면 함수 호출 오버헤드가 발생하여 성능을 저하시킵니다.
+**Action:** `payload.get()`과 같은 반복적인 딕셔너리 조회를 지역 변수에 캐싱하고, 기본 원시 타입(list, dict, int, str, bool)에 대해 `isinstance()` 대신 `type() is` 또는 `type() is not`을 사용하여 불필요한 함수 호출을 줄이고 실행 속도를 향상시킵니다.
