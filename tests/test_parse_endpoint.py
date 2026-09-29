@@ -386,7 +386,9 @@ def test_parse_endpoint_rejects_missing_magic_bytes():
 
 @pytest.mark.asyncio
 async def test_parse_endpoint_rejects_magic_bytes_before_full_read():
-    upload = _ReadTrackingUpload(b"MZ\x90\x00\x03" + (b"x" * UPLOAD_READ_CHUNK_SIZE_BYTES))
+    upload = _ReadTrackingUpload(
+        b"MZ\x90\x00\x03" + (b"x" * UPLOAD_READ_CHUNK_SIZE_BYTES)
+    )
 
     with pytest.raises(HTTPException) as exc_info:
         await parse(upload)
