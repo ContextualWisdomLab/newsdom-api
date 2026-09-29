@@ -63,3 +63,7 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2026-08-14 - 불필요한 딕셔너리 조회 방지 및 PEP 8 타입 검사 준수
+**Learning:** 파싱된 구조적 데이터를 다루는 핫루프(예: `equivalence.py`의 `_derived_metrics` 등)에서 `payload.get(key)`를 여러 번 호출하는 것은 딕셔너리 탐색 오버헤드를 유발합니다. 그러나 이를 최적화하기 위해 `isinstance()`를 `type() is`로 변경하는 것은 PEP 8을 위반하며 다형성(다형적 객체나 하위 클래스 호환성)을 깨트려 예기치 않은 버그를 유발할 수 있습니다.
+**Action:** 핫루프에서는 딕셔너리 조회 결과를 로컬 변수에 캐싱하여 최적화하되, 객체의 타입 검사는 항상 표준적인 `isinstance()`를 사용하여 안정성과 가독성을 유지합니다.
