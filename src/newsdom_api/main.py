@@ -133,7 +133,7 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
         return _unauthorized_response()
     expected = token.encode("utf-8")
     if len(credentials) != len(expected):
-        hmac.compare_digest(expected, expected)
+        _ = hmac.compare_digest(expected, expected)
         return _unauthorized_response()
     if not hmac.compare_digest(credentials, expected):
         return _unauthorized_response()
