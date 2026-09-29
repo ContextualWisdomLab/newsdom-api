@@ -252,7 +252,8 @@ async def parse(
             temporary_file.write(header)
 
             bytes_read = len(header)
-            while chunk := await file.read(8192):
+            # ⚡ Bolt: 대용량 파일 업로드 시 기본 8KB 청크 크기로 인한 과도한 스레드 풀 디스패치 오버헤드를 줄이기 위해 청크 크기를 1MB로 증가
+            while chunk := await file.read(1048576):
                 bytes_read += len(chunk)
                 if bytes_read > MAX_PARSE_UPLOAD_BYTES:
                     LOGGER.warning(
