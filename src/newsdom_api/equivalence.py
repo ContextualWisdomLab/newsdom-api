@@ -93,12 +93,19 @@ def _derived_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     """Normalize structural metrics, preferring derivation from structural data when present."""
 
     metrics = dict(payload)
-    articles = (
-        payload.get("articles") if isinstance(payload.get("articles"), list) else None
-    )
-    images = payload.get("images") if isinstance(payload.get("images"), list) else None
-    ads = payload.get("ads") if isinstance(payload.get("ads"), list) else None
-    pages = payload.get("pages") if isinstance(payload.get("pages"), list) else None
+
+    # ⚡ Bolt: Cache payload.get() results to avoid redundant dictionary lookups
+    _articles = payload.get("articles")
+    articles = _articles if isinstance(_articles, list) else None
+
+    _images = payload.get("images")
+    images = _images if isinstance(_images, list) else None
+
+    _ads = payload.get("ads")
+    ads = _ads if isinstance(_ads, list) else None
+
+    _pages = payload.get("pages")
+    pages = _pages if isinstance(_pages, list) else None
 
     if articles is not None:
         _process_articles(metrics, articles)
@@ -125,23 +132,34 @@ def compare_fixture_to_baseline(
     failures: list[str] = []
 
     checks = {
-        "column_count": abs(truth["column_count"] - baseline_metrics["column_count"])
+        "column_count": abs(
+            truth.get("column_count", 0) - baseline_metrics.get("column_count", 0)
+        )
         <= 1,
-        "article_count": abs(truth["article_count"] - baseline_metrics["article_count"])
+        "article_count": abs(
+            truth.get("article_count", 0) - baseline_metrics.get("article_count", 0)
+        )
         <= 1,
-        "image_count": abs(truth["image_count"] - baseline_metrics["image_count"]) <= 1,
-        "ad_count": abs(truth["ad_count"] - baseline_metrics["ad_count"]) <= 1,
+        "image_count": abs(
+            truth.get("image_count", 0) - baseline_metrics.get("image_count", 0)
+        )
+        <= 1,
+        "ad_count": abs(truth.get("ad_count", 0) - baseline_metrics.get("ad_count", 0))
+        <= 1,
         "headline_blocks": abs(
-            truth["headline_blocks"] - baseline_metrics["headline_blocks"]
+            truth.get("headline_blocks", 0) - baseline_metrics.get("headline_blocks", 0)
         )
         <= 2,
         "vertical_article_ratio": abs(
-            truth["vertical_article_ratio"] - baseline_metrics["vertical_article_ratio"]
+            truth.get("vertical_article_ratio", 0.0)
+            - baseline_metrics.get("vertical_article_ratio", 0.0)
         )
         <= 0.2,
-        "page_count": truth["page_count"] == baseline_metrics["page_count"],
+        "page_count": truth.get("page_count", 0)
+        == baseline_metrics.get("page_count", 0),
         "headline_page_coverage": abs(
-            truth["headline_page_coverage"] - baseline_metrics["headline_page_coverage"]
+            truth.get("headline_page_coverage", 0.0)
+            - baseline_metrics.get("headline_page_coverage", 0.0)
         )
         <= 0.2,
     }
