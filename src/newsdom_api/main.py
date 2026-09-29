@@ -114,8 +114,8 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     settings = _runtime_settings(request)
     if settings.authentication_mode is AuthenticationMode.DISABLED:
         return None
-    token = settings.api_token
-    if token is None:
+    expected_digest = settings.api_token_digest
+    if expected_digest is None:
         return JSONResponse(
             status_code=503,
             content={"detail": SERVICE_UNAVAILABLE_DETAIL},
@@ -131,7 +131,12 @@ def _parse_access_failure(request: Request) -> JSONResponse | None:
     scheme, separator, credentials = provided.partition(b" ")
     if separator != b" " or scheme.lower() != b"bearer" or not credentials:
         return _unauthorized_response()
-    if not hmac.compare_digest(credentials, token.encode("utf-8")):
+
+    if len(credentials) != len(expected_digest):
+        hmac.compare_digest(credentials, credentials)
+        return _unauthorized_response()
+
+    if not hmac.compare_digest(credentials, expected_digest):
         return _unauthorized_response()
     return None
 
