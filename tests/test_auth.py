@@ -39,6 +39,8 @@ def test_parse_requires_auth_when_no_secret_or_opt_in(monkeypatch, stub_parser):
     assert response.json()["detail"] == "Unauthorized"
     assert response.headers.get("WWW-Authenticate") == "Bearer"
 
+    assert response.json()["detail"] == "Unauthorized"
+    assert response.headers.get("WWW-Authenticate") == "Bearer"
 
 
 def test_parse_is_open_only_with_explicit_anonymous_opt_in(monkeypatch, stub_parser):
