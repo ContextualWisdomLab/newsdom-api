@@ -71,9 +71,7 @@ def test_trivy_registry_exception_is_scoped_to_the_example_manifest() -> None:
     ignore_document = yaml.safe_load(
         Path(".trivyignore.yaml").read_text(encoding="utf-8")
     )
-    exceptions = {
-        entry["id"]: entry for entry in ignore_document["misconfigurations"]
-    }
+    exceptions = {entry["id"]: entry for entry in ignore_document["misconfigurations"]}
 
     assert trivy_config["ignorefile"] == ".trivyignore.yaml"
     assert exceptions["KSV-0125"]["paths"] == [
