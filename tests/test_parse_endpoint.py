@@ -360,7 +360,7 @@ def test_parse_endpoint_rejects_large_files(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_parse_endpoint_rejects_large_file_without_size_metadata():
-    upload = _ReadTrackingUpload(b"%PDF-" + (b"x" * MAX_PARSE_UPLOAD_BYTES))
+    upload = _ReadTrackingUpload(b"%PDF-" + (b"x" * (MAX_PARSE_UPLOAD_BYTES + 8192 * 2)))
     upload.size = None
 
     with pytest.raises(HTTPException) as exc_info:
@@ -555,3 +555,84 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
+
+def test_parse_endpoint_rejects_malformed_content_length():
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        headers={"Content-Length": "not-an-integer"},
+        content=b"x"
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid Content-Length"
+
+
+def test_parse_endpoint_rejects_chunked_transfer_encoding():
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        headers={"Transfer-Encoding": "chunked"}
+    )
+    assert response.status_code == 411
+    assert response.json()["detail"] == "Length Required"
+
+
+class _ParameterizedStreamUpload:
+    """Mock file upload to test specific read byte thresholds during validation."""
+    content_type = "application/pdf"
+    filename = "fixture.pdf"
+    size = None
+
+    def __init__(self, target_bytes_to_read: int, final_chunk_size: int = 8192):
+        self.target_bytes_to_read = target_bytes_to_read
+        self.final_chunk_size = final_chunk_size
+        self.state = 0
+        self.bytes_read = 0
+
+    async def read(self, size: int = -1) -> bytes:
+        if self.state == 0:
+            self.state = 1
+            self.bytes_read += 5
+            return b"%PDF-"
+        elif self.state == 1:
+            if self.bytes_read < self.target_bytes_to_read:
+                chunk_size = min(8192, self.target_bytes_to_read - self.bytes_read)
+                self.bytes_read += chunk_size
+                return b"x" * chunk_size
+            else:
+                self.state = 2
+                self.bytes_read += self.final_chunk_size
+                return b"y" * self.final_chunk_size
+        return b""
+
+@pytest.mark.parametrize(
+    "target_bytes, final_chunk",
+    [
+        (20 * 1024 * 1024, 8192),
+        (20 * 1024 * 1024, 1),
+        (20 * 1024 * 1024 - 4, 20 * 1024 * 1024),
+        (20 * 1024 * 1024 - 5, 20 * 1024 * 1024 - 5),
+        (5, 20 * 1024 * 1024 + 1),
+    ],
+)
+@pytest.mark.asyncio
+async def test_parse_endpoint_rejects_large_file_during_read_loop_parameterized(
+    target_bytes: int, final_chunk: int
+):
+    upload = _ParameterizedStreamUpload(target_bytes, final_chunk)
+    with pytest.raises(HTTPException) as exc_info:
+        await parse(upload)
+
+    assert exc_info.value.status_code == 413
+    assert exc_info.value.detail == "Payload Too Large"
+
+@pytest.mark.asyncio
+async def test_parse_endpoint_rejects_large_file_size_metadata_exact():
+    upload = _ReadTrackingUpload(b"%PDF-" + (b"x" * (MAX_PARSE_UPLOAD_BYTES + 1)))
+    upload.size = MAX_PARSE_UPLOAD_BYTES + 1
+
+    with pytest.raises(HTTPException) as exc_info:
+        await parse(upload)
+
+    assert exc_info.value.status_code == 413
+    assert exc_info.value.detail == "Payload Too Large"
