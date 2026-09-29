@@ -105,3 +105,8 @@
 **Vulnerability:** The Strix CI scan occasionally fails with a timeout or "LLM CONNECTION FAILED" (exit code 2) due to unstable or weaker default models.
 **Learning:** For Strix security scans to be reliable, do not rely on weaker or rate-limited models which may time out. Ensure CI infrastructure guarantees the security gating logic completes by forcing retry mechanisms if temporary model endpoints drop.
 **Prevention:** If an LLM connection failure happens locally or in the strix gate runner causing the required check to fail, use `.github/workflows` configurations to switch providers or implement retry steps for Strix CI jobs.
+
+## 2026-09-29 - [CRITICAL] Fix CodeQL dispatch execution check issue
+**Vulnerability:** CodeQL scans run into dispatch timeout limits causing exit code 1 failures (e.g. `CodeQL scan dispatched. The dispatch workflow will rerun this exact failed CodeQL job after publishing its terminal verdict`) during PR updates. This creates pipeline deadlocks on forks or PRs from branch resets.
+**Learning:** For asynchronous security jobs that orchestrate across systems (like CodeQL dispatching from openPR to the default repo), ensure that CI pipelines are correctly synchronized or that PRs are simply force-pushed or closed-and-reopened to re-trigger the fresh workflow run.
+**Prevention:** If an external check fails with a "dispatched" pending state, restarting the check or applying an empty commit (e.g., `git commit --allow-empty -m "Trigger CI"`) can clear the deadlock.
