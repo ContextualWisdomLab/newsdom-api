@@ -63,3 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2024-07-31 - Offload synchronous blocking operations in ASGI event loops
+**Learning:** Calling synchronous blocking functions (like `PdfReader` in `_validate_pdf_structure` which performs I/O and CPU bound parsing) directly within an `async def` FastAPI route blocks the main event loop, severely degrading throughput for concurrent requests.
+**Action:** Use `await asyncio.to_thread(func, *args)` to offload these blocking synchronous operations to a worker thread, keeping the ASGI event loop responsive.
