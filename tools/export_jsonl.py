@@ -25,11 +25,18 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
 
     # Use atomic write strategy: write to a temporary file then replace
     import os
+    import tempfile
 
-    tmp_path = output_path.with_name(f".{output_path.name}.tmp")
+    tmp_path: Path | None = None
 
     try:
-        with tmp_path.open("w", encoding="utf-8") as jsonlfile:
+        fd, tmp_name = tempfile.mkstemp(
+            prefix=f".{output_path.name}.",
+            suffix=".tmp",
+            dir=output_path.parent,
+        )
+        tmp_path = Path(tmp_name)
+        with open(fd, "w", encoding="utf-8") as jsonlfile:
             for page in pages:
                 if not isinstance(page, dict):
                     continue
@@ -50,9 +57,10 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
                     json_str = json.dumps(article_copy, ensure_ascii=False, allow_nan=False)
                     jsonlfile.write(json_str + "\n")
 
+        assert tmp_path is not None
         os.replace(tmp_path, output_path)
     except Exception as exc:
-        if tmp_path.exists():
+        if tmp_path is not None and tmp_path.exists():
             tmp_path.unlink()
         raise exc
 
