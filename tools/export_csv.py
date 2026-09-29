@@ -11,7 +11,8 @@ from pathlib import Path
 
 def export_csv(json_path: Path, output_path: Path) -> None:
     """Export NewsDOM JSON to a CSV file containing article metadata and body blocks."""
-    if json_path.resolve() == output_path.resolve():
+    actual_output = output_path.resolve()
+    if json_path.resolve() == actual_output:
         raise ValueError("Input and output files must not be the same.")
     if not json_path.is_file():
         raise FileNotFoundError(f"File not found or is not a file: {json_path}")
@@ -25,7 +26,14 @@ def export_csv(json_path: Path, output_path: Path) -> None:
 
     pages = data.get("pages", [])
 
-    temp_fd, temp_path = tempfile.mkstemp(dir=output_path.parent, text=True)
+    temp_fd, temp_path = tempfile.mkstemp(dir=actual_output.parent, text=True)
+
+    try:
+        if actual_output.exists():
+            os.chmod(temp_path, actual_output.stat().st_mode)
+    except OSError:
+        pass
+
     try:
         with os.fdopen(temp_fd, "w", newline="", encoding="utf-8") as csvfile:
             fieldnames = [
@@ -78,9 +86,12 @@ def export_csv(json_path: Path, output_path: Path) -> None:
                                 "body_block_text": block,
                             }
                         )
-        os.replace(temp_path, output_path)
-    except Exception:
-        os.unlink(temp_path)
+        os.replace(temp_path, actual_output)
+    except BaseException:
+        try:
+            os.unlink(temp_path)
+        except OSError:
+            pass
         raise
 
 

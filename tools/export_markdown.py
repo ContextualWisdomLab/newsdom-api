@@ -105,21 +105,35 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     try:
-        if args.output is not None and args.input.resolve() == args.output.resolve():
-            raise ValueError("Input and output files must not be the same.")
+        if args.output is not None:
+            actual_output = args.output.resolve()
+            if args.input.resolve() == actual_output:
+                raise ValueError("Input and output files must not be the same.")
+        else:
+            actual_output = None
 
         input_data = json.loads(args.input.read_text(encoding="utf-8"))
         markdown_content = generate_markdown(input_data)
-        if args.output is None:
+        if actual_output is None:
             print(markdown_content, end="")
         else:
-            temp_fd, temp_path = tempfile.mkstemp(dir=args.output.parent, text=True)
+            temp_fd, temp_path = tempfile.mkstemp(dir=actual_output.parent, text=True)
+
+            try:
+                if actual_output.exists():
+                    os.chmod(temp_path, actual_output.stat().st_mode)
+            except OSError:
+                pass
+
             try:
                 with os.fdopen(temp_fd, "w", encoding="utf-8") as mdfile:
                     mdfile.write(markdown_content)
-                os.replace(temp_path, args.output)
-            except Exception:
-                os.unlink(temp_path)
+                os.replace(temp_path, actual_output)
+            except BaseException:
+                try:
+                    os.unlink(temp_path)
+                except OSError:
+                    pass
                 raise
 
             print(f"Markdown written to {args.output}")

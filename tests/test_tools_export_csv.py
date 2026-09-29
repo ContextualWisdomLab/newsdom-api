@@ -126,16 +126,48 @@ def test_export_csv_same_file(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="must not be the same"):
         export_csv(input_file, input_file)
 
-def test_export_csv_exception_cleanup(tmp_path: Path, monkeypatch) -> None:
+def test_export_csv_exception_cleanup(tmp_path: Path, monkeypatch, caplog) -> None:
     input_file = tmp_path / "input.json"
     input_file.write_text(json.dumps(VALID_JSON_DATA), encoding="utf-8")
     output_file = tmp_path / "output.csv"
 
     def mock_replace(*args, **kwargs):
-        raise OSError("Mock error")
+        raise KeyboardInterrupt()
 
     import os
+    import stat
     monkeypatch.setattr(os, "replace", mock_replace)
 
-    with pytest.raises(OSError, match="Mock error"):
+    with pytest.raises(KeyboardInterrupt):
+        export_csv(input_file, output_file)
+
+def test_export_csv_oserror_chmod(tmp_path: Path, monkeypatch) -> None:
+    input_file = tmp_path / "input.json"
+    input_file.write_text(json.dumps(VALID_JSON_DATA), encoding="utf-8")
+    output_file = tmp_path / "output.csv"
+    output_file.write_text("exists")
+
+    import os
+    def mock_chmod(*args, **kwargs):
+        raise OSError("Mock chmod error")
+    monkeypatch.setattr(os, "chmod", mock_chmod)
+
+    export_csv(input_file, output_file)
+    assert output_file.exists()
+
+def test_export_csv_oserror_unlink(tmp_path: Path, monkeypatch) -> None:
+    input_file = tmp_path / "input.json"
+    input_file.write_text(json.dumps(VALID_JSON_DATA), encoding="utf-8")
+    output_file = tmp_path / "output.csv"
+
+    import os
+    def mock_replace(*args, **kwargs):
+        raise KeyboardInterrupt()
+    def mock_unlink(*args, **kwargs):
+        raise OSError("Mock unlink error")
+
+    monkeypatch.setattr(os, "replace", mock_replace)
+    monkeypatch.setattr(os, "unlink", mock_unlink)
+
+    with pytest.raises(KeyboardInterrupt):
         export_csv(input_file, output_file)
