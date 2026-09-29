@@ -216,6 +216,8 @@ async def _validate_pdf_structure_before_cancellation(file_path: Path) -> None:
             except asyncio.CancelledError:
                 # Ignore repeated cancellations until the worker finishes.
                 continue
+            except Exception:
+                pass
         raise  # pragma: no cover
 
 
