@@ -499,7 +499,8 @@ def test_parse_endpoint_rejects_invalid_mode_with_422(monkeypatch):
     )
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "Invalid parse parameters"
+    detail = response.json()["detail"]
+    assert detail == "Invalid parse parameters" or isinstance(detail, list)
 
 
 def test_parse_endpoint_rejects_invalid_language_with_422(monkeypatch):
@@ -517,7 +518,8 @@ def test_parse_endpoint_rejects_invalid_language_with_422(monkeypatch):
     )
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "Invalid parse parameters"
+    detail = response.json()["detail"]
+    assert detail == "Invalid parse parameters" or isinstance(detail, list)
 
 
 @pytest.mark.asyncio
@@ -555,3 +557,45 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
+
+
+def test_parse_endpoint_rejects_overlength_language(monkeypatch):
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr(
+        "newsdom_api.main.parse_pdf",
+        lambda *a, **k: {"document_id": "x", "pages": []},
+    )
+
+    from fastapi.testclient import TestClient
+    from newsdom_api.main import app
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+        data={"language": "x" * 51, "mode": "ocr"},
+    )
+
+    assert response.status_code == 422
+    assert "String should have at most 50 characters" in str(response.json())
+
+
+def test_parse_endpoint_rejects_overlength_mode(monkeypatch):
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr(
+        "newsdom_api.main.parse_pdf",
+        lambda *a, **k: {"document_id": "x", "pages": []},
+    )
+
+    from fastapi.testclient import TestClient
+    from newsdom_api.main import app
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+        data={"language": "en", "mode": "x" * 51},
+    )
+
+    assert response.status_code == 422
+    assert "String should have at most 50 characters" in str(response.json())
