@@ -21,6 +21,7 @@ from fastapi import (
 )
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
@@ -157,6 +158,17 @@ async def global_exception_handler(request: Request, exc: Exception) -> Response
     response = JSONResponse(
         status_code=500,
         content={"detail": "Internal Server Error"},
+    )
+    return _apply_security_headers(response, request)
+
+
+async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> Response:
+    """Return structured HTTP exception responses with the standard security headers."""
+
+    response = JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers=getattr(exc, "headers", None),
     )
     return _apply_security_headers(response, request)
 
@@ -329,6 +341,7 @@ def create_app(
     )
     application.middleware("http")(security_boundary_middleware)
     application.add_exception_handler(Exception, global_exception_handler)
+    application.add_exception_handler(StarletteHTTPException, http_exception_handler)
     application.add_api_route(
         "/health",
         health,

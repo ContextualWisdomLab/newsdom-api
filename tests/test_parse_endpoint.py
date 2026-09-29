@@ -395,6 +395,18 @@ async def test_parse_endpoint_rejects_magic_bytes_before_full_read():
     assert upload.read_sizes == [5]
 
 
+def test_http_exception_includes_security_headers():
+    client = TestClient(app, raise_server_exceptions=False)
+    response = client.get("/nonexistent-endpoint")
+    assert response.status_code == 404
+    assert response.headers.get("X-Content-Type-Options") == "nosniff"
+    assert response.headers.get("X-Frame-Options") == "DENY"
+    assert (
+        response.headers.get("Content-Security-Policy")
+        == "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+    )
+
+
 def test_unhandled_exception_includes_security_headers(monkeypatch):
     def fake_parse_pdf_bytes(file_path, filename, **kwargs):
         raise RuntimeError("unexpected internal explosion")
