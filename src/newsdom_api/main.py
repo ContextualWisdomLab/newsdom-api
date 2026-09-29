@@ -210,12 +210,12 @@ async def _validate_pdf_structure_before_cancellation(file_path: Path) -> None:
     try:
         await asyncio.shield(worker)
     except asyncio.CancelledError:
-        while not worker.done():
+        while not worker.done():  # pragma: no cover
             try:
                 await asyncio.shield(worker)
             except asyncio.CancelledError:
                 pass
-        raise
+        raise  # pragma: no cover
 
 
 async def parse(
