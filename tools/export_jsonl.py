@@ -84,7 +84,7 @@ def main(argv: list[str] | None = None) -> None:
     try:
         export_jsonl(args.input, args.output)
         print(f"JSONL successfully written to {args.output}")
-    except BaseException as exc:
+    except Exception as exc:
         print(f"Error exporting JSONL: {exc}", file=sys.stderr)
         sys.exit(1)
 
