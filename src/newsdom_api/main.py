@@ -306,6 +306,7 @@ async def parse(
 
 
 def create_app(
+    # This is a dummy comment to trigger Strix scan
     settings: RuntimeSettings | None = None,
     *,
     runtime_readiness_probe: Callable[[], bool] | None = None,
