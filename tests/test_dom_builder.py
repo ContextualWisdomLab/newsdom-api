@@ -32,6 +32,26 @@ def test_build_dom_extracts_articles_from_mineru_sample():
     assert dom.pages[0].articles[0].headline == "次世代電池材料"
 
 
+def test_build_dom_preserves_model_declared_blank_pages_between_content():
+    dom = build_dom(
+        [
+            {"type": "text", "text": "First page", "page_idx": 0},
+            {"type": "text", "text": "Third page", "page_idx": 2},
+        ],
+        document_id="doc-blank-middle-page",
+        model=[
+            {"page_info": {"page_number": number, "width": 600, "height": 800}}
+            for number in (1, 2, 3)
+        ],
+    )
+    assert [page.page_number for page in dom.pages] == [1, 2, 3]
+    blank_page = dom.pages[1]
+    assert (blank_page.width, blank_page.height) == (600, 800)
+    assert blank_page.articles == []
+    assert dom.pages[0].articles[0].body_blocks == ["First page"]
+    assert dom.pages[2].articles[0].body_blocks == ["Third page"]
+
+
 def test_bbox_helper_returns_none_for_invalid_values():
     assert _bbox_from_values(None) is None
     assert _bbox_from_values([1, 2, 3]) is None
