@@ -3,7 +3,9 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import os
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -149,12 +151,44 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     try:
+        if args.output is not None:
+            actual_output = args.output.resolve()
+            if args.input.resolve() == actual_output:
+                raise ValueError("Input and output files must not be the same.")
+        else:
+            actual_output = None
+
         input_data = json.loads(args.input.read_text(encoding="utf-8"))
         html_content = generate_html(input_data)
-        if args.output is None:
+
+        if actual_output is None:
             print(html_content, end="")
         else:
-            args.output.write_text(html_content, encoding="utf-8")
+            temp_fd, temp_path = tempfile.mkstemp(dir=actual_output.parent)
+
+            try:
+                try:
+                    if actual_output.exists():
+                        os.chmod(temp_path, actual_output.stat().st_mode)
+                    else:
+                        umask = os.umask(0)
+                        os.umask(umask)
+                        os.chmod(temp_path, 0o666 & ~umask)
+                except OSError:
+                    # Ignore chmod errors on systems that don't support it
+                    pass
+
+                with os.fdopen(temp_fd, "w", encoding="utf-8") as htmlfile:
+                    htmlfile.write(html_content)
+                os.replace(temp_path, actual_output)
+            except (Exception, KeyboardInterrupt):
+                try:
+                    os.unlink(temp_path)
+                except OSError:
+                    # Ignore cleanup errors if file is already deleted or locked
+                    pass
+                raise
+
             print(f"HTML written to {args.output}")
     except Exception as exc:
         print(f"Error exporting HTML: {exc}", file=sys.stderr)

@@ -3,12 +3,17 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import sys
+import tempfile
 from pathlib import Path
 
 
 def export_csv(json_path: Path, output_path: Path) -> None:
     """Export NewsDOM JSON to a CSV file containing article metadata and body blocks."""
+    actual_output = output_path.resolve()
+    if json_path.resolve() == actual_output:
+        raise ValueError("Input and output files must not be the same.")
     if not json_path.is_file():
         raise FileNotFoundError(f"File not found or is not a file: {json_path}")
     if json_path.suffix.lower() != ".json":
@@ -21,57 +26,79 @@ def export_csv(json_path: Path, output_path: Path) -> None:
 
     pages = data.get("pages", [])
 
-    with output_path.open("w", newline="", encoding="utf-8") as csvfile:
-        fieldnames = [
-            "document_id",
-            "page_number",
-            "article_id",
-            "headline",
-            "body_block_index",
-            "body_block_text",
-        ]
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
+    temp_fd, temp_path = tempfile.mkstemp(dir=actual_output.parent)
 
-        document_id = data.get("document_id", "Unknown Document")
+    try:
+        try:
+            if actual_output.exists():
+                os.chmod(temp_path, actual_output.stat().st_mode)
+            else:
+                umask = os.umask(0)
+                os.umask(umask)
+                os.chmod(temp_path, 0o666 & ~umask)
+        except OSError:
+            # Ignore chmod errors on systems that don't support it
+            pass
 
-        for page in pages:
-            if not isinstance(page, dict):
-                continue
-            page_number = page.get("page_number", "Unknown")
+        with os.fdopen(temp_fd, "w", newline="", encoding="utf-8") as csvfile:
+            fieldnames = [
+                "document_id",
+                "page_number",
+                "article_id",
+                "headline",
+                "body_block_index",
+                "body_block_text",
+            ]
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
 
-            articles = page.get("articles", [])
-            for article in articles:
-                if not isinstance(article, dict):
+            document_id = data.get("document_id", "Unknown Document")
+
+            for page in pages:
+                if not isinstance(page, dict):
                     continue
-                article_id = article.get("article_id", "Unknown Article ID")
-                headline = article.get("headline", "")
+                page_number = page.get("page_number", "Unknown")
 
-                body_blocks = article.get("body_blocks", [])
+                articles = page.get("articles", [])
+                for article in articles:
+                    if not isinstance(article, dict):
+                        continue
+                    article_id = article.get("article_id", "Unknown Article ID")
+                    headline = article.get("headline", "")
 
-                if not body_blocks:
-                    writer.writerow(
-                        {
-                            "document_id": document_id,
-                            "page_number": page_number,
-                            "article_id": article_id,
-                            "headline": headline,
-                            "body_block_index": "",
-                            "body_block_text": "",
-                        }
-                    )
+                    body_blocks = article.get("body_blocks", [])
 
-                for idx, block in enumerate(body_blocks):
-                    writer.writerow(
-                        {
-                            "document_id": document_id,
-                            "page_number": page_number,
-                            "article_id": article_id,
-                            "headline": headline,
-                            "body_block_index": idx,
-                            "body_block_text": block,
-                        }
-                    )
+                    if not body_blocks:
+                        writer.writerow(
+                            {
+                                "document_id": document_id,
+                                "page_number": page_number,
+                                "article_id": article_id,
+                                "headline": headline,
+                                "body_block_index": "",
+                                "body_block_text": "",
+                            }
+                        )
+
+                    for idx, block in enumerate(body_blocks):
+                        writer.writerow(
+                            {
+                                "document_id": document_id,
+                                "page_number": page_number,
+                                "article_id": article_id,
+                                "headline": headline,
+                                "body_block_index": idx,
+                                "body_block_text": block,
+                            }
+                        )
+        os.replace(temp_path, actual_output)
+    except (Exception, KeyboardInterrupt):
+        try:
+            os.unlink(temp_path)
+        except OSError:
+            # Ignore cleanup errors if file is already deleted or locked
+            pass
+        raise
 
 
 def main(argv: list[str] | None = None) -> None:
