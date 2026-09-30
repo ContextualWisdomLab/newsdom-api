@@ -63,3 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2026-09-12 - Avoid `isinstance` overhead in metrics derivation loop
+**Learning:** In `src/newsdom_api/equivalence.py`, nested loops evaluating structural equivalence metrics call `isinstance()` repeatedly on primitive types like `int`, `dict`, `str`, and `bool`. Profiling shows that using `isinstance()` for primitive types adds function call overhead in comparison to direct `type(var) is` or `type(var) is not` checks. This affects high-throughput artifact processing when generating metrics for extensive synthetic layouts.
+**Action:** Replace `isinstance(x, primitive)` with direct `type()` comparison checks in `equivalence.py` loops where the type being checked is guaranteed not to be a custom subclass.
