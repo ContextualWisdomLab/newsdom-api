@@ -520,6 +520,44 @@ def test_parse_endpoint_rejects_invalid_language_with_422(monkeypatch):
     assert response.json()["detail"] == "Invalid parse parameters"
 
 
+def test_parse_endpoint_rejects_too_long_language(monkeypatch):
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr(
+        "newsdom_api.main.parse_pdf",
+        lambda *a, **k: {"document_id": "x", "pages": []},
+    )
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+        data={"language": "a" * 51},
+    )
+
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert any(err.get("type") == "string_too_long" for err in detail)
+
+
+def test_parse_endpoint_rejects_too_long_mode(monkeypatch):
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr(
+        "newsdom_api.main.parse_pdf",
+        lambda *a, **k: {"document_id": "x", "pages": []},
+    )
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+        data={"mode": "a" * 51},
+    )
+
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert any(err.get("type") == "string_too_long" for err in detail)
+
+
 @pytest.mark.asyncio
 async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     class ClientDisconnectError(Exception):
