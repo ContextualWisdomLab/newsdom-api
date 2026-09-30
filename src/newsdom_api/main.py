@@ -42,6 +42,9 @@ from .schemas import HealthResponse, ParseResponse, ReadinessResponse
 from .service import parse_pdf
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
+# ⚡ Bolt: FastAPI 파일 업로드 시 기본 8192바이트 대신 1MB 청크를 사용하여 스레드풀/컨텍스트 스위칭 오버헤드 대폭 감소.
+# 예상 임팩트: 대용량 파일 업로드 반복 루프 횟수를 크게 감소시키며, IO 처리 속도가 향상됩니다.
+UPLOAD_CHUNK_SIZE_BYTES = 1024 * 1024
 MAX_AUTHORIZATION_HEADER_BYTES = MAX_BEARER_HEADER_BYTES
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
 PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
@@ -252,7 +255,7 @@ async def parse(
             temporary_file.write(header)
 
             bytes_read = len(header)
-            while chunk := await file.read(8192):
+            while chunk := await file.read(UPLOAD_CHUNK_SIZE_BYTES):
                 bytes_read += len(chunk)
                 if bytes_read > MAX_PARSE_UPLOAD_BYTES:
                     LOGGER.warning(

@@ -112,3 +112,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.2.0]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Seongho-Bae/newsdom-api/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Seongho-Bae/newsdom-api/releases/tag/v0.1.0
+
+## [0.2.1] - 2024-05-24
+### 성능 개선
+- `newsdom_api.main`의 비동기 파일 업로드 청크 크기를 8192바이트에서 1MB(`UPLOAD_CHUNK_SIZE_BYTES`)로 증가시켜, 스레드풀 및 컨텍스트 스위칭 오버헤드를 대폭 감소시키고 전반적인 파일 읽기 성능을 개선했습니다.
