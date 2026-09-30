@@ -6,6 +6,7 @@ from tools.filter_dom import filter_dom, main
 
 
 def test_filter_dom_success(tmp_path: Path):
+    """Verify test_filter_dom_success."""
     input_data = {
         "document_id": "test_doc",
         "pages": [
@@ -52,6 +53,7 @@ def test_filter_dom_success(tmp_path: Path):
 
 
 def test_filter_dom_same_file_error(tmp_path: Path):
+    """Verify test_filter_dom_same_file_error."""
     input_file = tmp_path / "input.json"
     input_file.touch()
 
@@ -60,6 +62,7 @@ def test_filter_dom_same_file_error(tmp_path: Path):
 
 
 def test_filter_dom_not_json(tmp_path: Path):
+    """Verify test_filter_dom_not_json."""
     input_file = tmp_path / "input.txt"
     input_file.touch()
     output_file = tmp_path / "output.json"
@@ -69,6 +72,7 @@ def test_filter_dom_not_json(tmp_path: Path):
 
 
 def test_filter_dom_not_found(tmp_path: Path):
+    """Verify test_filter_dom_not_found."""
     input_file = tmp_path / "nonexistent.json"
     output_file = tmp_path / "output.json"
 
@@ -77,6 +81,7 @@ def test_filter_dom_not_found(tmp_path: Path):
 
 
 def test_filter_dom_invalid_json(tmp_path: Path):
+    """Verify test_filter_dom_invalid_json."""
     input_file = tmp_path / "input.json"
     input_file.write_text("invalid json", encoding="utf-8")
     output_file = tmp_path / "output.json"
@@ -86,6 +91,7 @@ def test_filter_dom_invalid_json(tmp_path: Path):
 
 
 def test_filter_dom_not_dict_root(tmp_path: Path):
+    """Verify test_filter_dom_not_dict_root."""
     input_file = tmp_path / "input.json"
     input_file.write_text("[]", encoding="utf-8")
     output_file = tmp_path / "output.json"
@@ -95,6 +101,7 @@ def test_filter_dom_not_dict_root(tmp_path: Path):
 
 
 def test_filter_dom_nan_constant_error(tmp_path: Path):
+    """Verify test_filter_dom_nan_constant_error."""
     input_file = tmp_path / "input.json"
     input_file.write_text('{"val": NaN}', encoding="utf-8")
     output_file = tmp_path / "output.json"
@@ -104,6 +111,7 @@ def test_filter_dom_nan_constant_error(tmp_path: Path):
 
 
 def test_main_success(tmp_path: Path, capsys):
+    """Verify test_main_success."""
     input_file = tmp_path / "input.json"
     input_file.write_text('{"document_id": "test", "pages": []}', encoding="utf-8")
     output_file = tmp_path / "output.json"
@@ -114,6 +122,7 @@ def test_main_success(tmp_path: Path, capsys):
 
 
 def test_main_error(tmp_path: Path, capsys):
+    """Verify test_main_error."""
     input_file = tmp_path / "nonexistent.json"
     output_file = tmp_path / "output.json"
 
@@ -126,6 +135,7 @@ def test_main_error(tmp_path: Path, capsys):
 
 
 def test_filter_dom_empty_and_invalid_types(tmp_path: Path):
+    """Verify test_filter_dom_empty_and_invalid_types."""
     # Test handling of invalid types that should be safely ignored
     input_data = {
         "pages": [
@@ -162,6 +172,7 @@ def test_filter_dom_empty_and_invalid_types(tmp_path: Path):
     assert filtered_data["pages"][0]["articles"][0]["headline"] == "match"
 
 def test_filter_dom_replace_error(tmp_path: Path, monkeypatch):
+    """Verify test_filter_dom_replace_error."""
     input_file = tmp_path / "input.json"
     input_file.write_text('{"pages": []}', encoding="utf-8")
     output_file = tmp_path / "output.json"
@@ -175,6 +186,7 @@ def test_filter_dom_replace_error(tmp_path: Path, monkeypatch):
         filter_dom(input_file, output_file, "query")
 
 def test_filter_dom_coverage_edges(tmp_path: Path):
+    """Verify test_filter_dom_coverage_edges."""
     input_data = {
         "pages": [
             {
@@ -208,6 +220,7 @@ def test_filter_dom_coverage_edges(tmp_path: Path):
 
 
 def test_filter_dom_not_list_pages(tmp_path: Path):
+    """Verify test_filter_dom_not_list_pages."""
     input_data = {"pages": "not a list"}
     input_file = tmp_path / "input.json"
     input_file.write_text(json.dumps(input_data), encoding="utf-8")
@@ -219,6 +232,7 @@ def test_filter_dom_not_list_pages(tmp_path: Path):
     assert filtered_data["pages"] == []
 
 def test_filter_dom_not_list_articles(tmp_path: Path):
+    """Verify test_filter_dom_not_list_articles."""
     input_data = {"pages": [{"articles": "not a list"}]}
     input_file = tmp_path / "input.json"
     input_file.write_text(json.dumps(input_data), encoding="utf-8")
@@ -230,6 +244,7 @@ def test_filter_dom_not_list_articles(tmp_path: Path):
     assert filtered_data["pages"] == []
 
 def test_filter_dom_break_body_blocks(tmp_path: Path):
+    """Verify test_filter_dom_break_body_blocks."""
     input_data = {
         "pages": [
             {
@@ -252,6 +267,7 @@ def test_filter_dom_break_body_blocks(tmp_path: Path):
     assert len(filtered_data["pages"]) == 1
 
 def test_filter_dom_unlink_error(tmp_path: Path, monkeypatch):
+    """Verify test_filter_dom_unlink_error."""
     input_file = tmp_path / "input.json"
     input_file.write_text('{"pages": []}', encoding="utf-8")
     output_file = tmp_path / "output.json"
@@ -265,10 +281,11 @@ def test_filter_dom_unlink_error(tmp_path: Path, monkeypatch):
     monkeypatch.setattr(os, "replace", mock_replace)
     monkeypatch.setattr(os, "unlink", mock_unlink)
 
-    with pytest.raises(OSError, match="Mock unlink error"):
+    with pytest.raises(OSError, match="Mock replace error"):
         filter_dom(input_file, output_file, "query")
 
 def test_filter_dom_no_articles(tmp_path: Path):
+    """Verify test_filter_dom_no_articles."""
     input_data = {
         "pages": [
             {
@@ -286,6 +303,7 @@ def test_filter_dom_no_articles(tmp_path: Path):
     assert len(filtered_data["pages"]) == 0
 
 def test_filter_dom_no_body_blocks_and_no_headline_but_with_string_match(tmp_path: Path):
+    """Verify test_filter_dom_no_body_blocks_and_no_headline_but_with_string_match."""
     input_data = {
         "pages": [
             {
@@ -308,6 +326,7 @@ def test_filter_dom_no_body_blocks_and_no_headline_but_with_string_match(tmp_pat
     assert len(filtered_data["pages"]) == 1
 
 def test_filter_dom_match_body_block_break(tmp_path: Path):
+    """Verify test_filter_dom_match_body_block_break."""
     input_data = {
         "pages": [
             {

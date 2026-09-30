@@ -79,7 +79,10 @@ def flatten_dom(json_path: Path, output_path: Path) -> None:
     try:
         os.replace(tmp_name, output_path)
     except Exception:
-        os.unlink(tmp_name)
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
         raise
 
 

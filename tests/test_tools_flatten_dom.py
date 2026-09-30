@@ -6,6 +6,7 @@ from tools.flatten_dom import flatten_dom, main
 
 
 def test_flatten_dom_success(tmp_path: Path):
+    """Verify test_flatten_dom_success."""
     input_data = {
         "document_id": "test_doc",
         "pages": [
@@ -51,6 +52,7 @@ def test_flatten_dom_success(tmp_path: Path):
 
 
 def test_flatten_dom_same_file_error(tmp_path: Path):
+    """Verify test_flatten_dom_same_file_error."""
     input_file = tmp_path / "input.json"
     input_file.touch()
 
@@ -59,6 +61,7 @@ def test_flatten_dom_same_file_error(tmp_path: Path):
 
 
 def test_flatten_dom_not_json(tmp_path: Path):
+    """Verify test_flatten_dom_not_json."""
     input_file = tmp_path / "input.txt"
     input_file.touch()
     output_file = tmp_path / "output.json"
@@ -68,6 +71,7 @@ def test_flatten_dom_not_json(tmp_path: Path):
 
 
 def test_flatten_dom_not_found(tmp_path: Path):
+    """Verify test_flatten_dom_not_found."""
     input_file = tmp_path / "nonexistent.json"
     output_file = tmp_path / "output.json"
 
@@ -76,6 +80,7 @@ def test_flatten_dom_not_found(tmp_path: Path):
 
 
 def test_flatten_dom_invalid_json(tmp_path: Path):
+    """Verify test_flatten_dom_invalid_json."""
     input_file = tmp_path / "input.json"
     input_file.write_text("invalid json", encoding="utf-8")
     output_file = tmp_path / "output.json"
@@ -85,6 +90,7 @@ def test_flatten_dom_invalid_json(tmp_path: Path):
 
 
 def test_flatten_dom_not_dict_root(tmp_path: Path):
+    """Verify test_flatten_dom_not_dict_root."""
     input_file = tmp_path / "input.json"
     input_file.write_text("[]", encoding="utf-8")
     output_file = tmp_path / "output.json"
@@ -94,6 +100,7 @@ def test_flatten_dom_not_dict_root(tmp_path: Path):
 
 
 def test_flatten_dom_nan_constant_error(tmp_path: Path):
+    """Verify test_flatten_dom_nan_constant_error."""
     input_file = tmp_path / "input.json"
     input_file.write_text('{"val": NaN}', encoding="utf-8")
     output_file = tmp_path / "output.json"
@@ -103,6 +110,7 @@ def test_flatten_dom_nan_constant_error(tmp_path: Path):
 
 
 def test_main_success(tmp_path: Path, capsys):
+    """Verify test_main_success."""
     input_file = tmp_path / "input.json"
     input_file.write_text('{"document_id": "test", "pages": []}', encoding="utf-8")
     output_file = tmp_path / "output.json"
@@ -113,6 +121,7 @@ def test_main_success(tmp_path: Path, capsys):
 
 
 def test_main_error(tmp_path: Path, capsys):
+    """Verify test_main_error."""
     input_file = tmp_path / "nonexistent.json"
     output_file = tmp_path / "output.json"
 
@@ -125,6 +134,7 @@ def test_main_error(tmp_path: Path, capsys):
 
 
 def test_flatten_dom_empty_and_invalid_types(tmp_path: Path):
+    """Verify test_flatten_dom_empty_and_invalid_types."""
     # Test handling of invalid types that should be safely ignored
     input_data = {
         "pages": [
@@ -156,6 +166,7 @@ def test_flatten_dom_empty_and_invalid_types(tmp_path: Path):
 
 
 def test_flatten_dom_replace_error(tmp_path: Path, monkeypatch):
+    """Verify test_flatten_dom_replace_error."""
     input_file = tmp_path / "input.json"
     input_file.write_text('{"pages": []}', encoding="utf-8")
     output_file = tmp_path / "output.json"
@@ -169,6 +180,7 @@ def test_flatten_dom_replace_error(tmp_path: Path, monkeypatch):
         flatten_dom(input_file, output_file)
 
 def test_flatten_dom_not_list_pages(tmp_path: Path):
+    """Verify test_flatten_dom_not_list_pages."""
     input_data = {"pages": "not a list"}
     input_file = tmp_path / "input.json"
     input_file.write_text(json.dumps(input_data), encoding="utf-8")
@@ -178,3 +190,22 @@ def test_flatten_dom_not_list_pages(tmp_path: Path):
 
     flattened_data = json.loads(output_file.read_text(encoding="utf-8"))
     assert flattened_data == []
+
+def test_flatten_dom_unlink_error(tmp_path: Path, monkeypatch):
+    """Verify test_flatten_dom_unlink_error."""
+    input_file = tmp_path / "input.json"
+    input_file.write_text('{"pages": []}', encoding="utf-8")
+    output_file = tmp_path / "output.json"
+
+    def mock_replace(*args, **kwargs):
+        raise OSError("Mock replace error")
+
+    def mock_unlink(*args, **kwargs):
+        raise OSError("Mock unlink error")
+
+    monkeypatch.setattr(os, "replace", mock_replace)
+    monkeypatch.setattr(os, "unlink", mock_unlink)
+
+    import pytest
+    with pytest.raises(OSError, match="Mock replace error"):
+        flatten_dom(input_file, output_file)
