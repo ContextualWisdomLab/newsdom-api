@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-09-29 - Add Permissions-Policy security header
+**Rationale:** The `Permissions-Policy` header disables geolocation, camera, and microphone for the response document and its descendant frames when the response is loaded as a document. It does not restrict the embedding parent document.
+**Learning:** Adding the `Permissions-Policy` header with restrictive defaults (`geolocation=(), camera=(), microphone=()`) is a standard security enhancement that minimizes the attack surface of the API.
+**Prevention:** Include `Permissions-Policy` alongside other standard security headers in the `_apply_security_headers` middleware/helper function.
