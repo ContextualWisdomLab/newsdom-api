@@ -117,20 +117,20 @@ def main(argv: list[str] | None = None) -> None:
         if actual_output is None:
             print(markdown_content, end="")
         else:
-            temp_fd, temp_path = tempfile.mkstemp(dir=actual_output.parent, text=True)
+            temp_fd, temp_path = tempfile.mkstemp(dir=actual_output.parent)
 
             try:
-                if actual_output.exists():
-                    os.chmod(temp_path, actual_output.stat().st_mode)
-                else:
-                    umask = os.umask(0)
-                    os.umask(umask)
-                    os.chmod(temp_path, 0o666 & ~umask)
-            except OSError:
-                # Ignore cleanup errors if file is already deleted or locked
-                pass
+                try:
+                    if actual_output.exists():
+                        os.chmod(temp_path, actual_output.stat().st_mode)
+                    else:
+                        umask = os.umask(0)
+                        os.umask(umask)
+                        os.chmod(temp_path, 0o666 & ~umask)
+                except OSError:
+                    # Ignore chmod errors on systems that don't support it
+                    pass
 
-            try:
                 with os.fdopen(temp_fd, "w", encoding="utf-8") as mdfile:
                     mdfile.write(markdown_content)
                 os.replace(temp_path, actual_output)

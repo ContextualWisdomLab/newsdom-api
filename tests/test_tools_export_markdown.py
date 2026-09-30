@@ -166,7 +166,6 @@ def test_main_exception_cleanup(tmp_path, sample_json_data, capsys, monkeypatch)
         raise KeyboardInterrupt()
 
     import os
-    import stat
     monkeypatch.setattr(os, "replace", mock_replace)
 
     with pytest.raises(KeyboardInterrupt):

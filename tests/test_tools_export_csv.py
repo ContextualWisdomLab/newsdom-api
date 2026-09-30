@@ -135,7 +135,6 @@ def test_export_csv_exception_cleanup(tmp_path: Path, monkeypatch, caplog) -> No
         raise KeyboardInterrupt()
 
     import os
-    import stat
     monkeypatch.setattr(os, "replace", mock_replace)
 
     with pytest.raises(KeyboardInterrupt):

@@ -26,20 +26,20 @@ def export_csv(json_path: Path, output_path: Path) -> None:
 
     pages = data.get("pages", [])
 
-    temp_fd, temp_path = tempfile.mkstemp(dir=actual_output.parent, text=True)
+    temp_fd, temp_path = tempfile.mkstemp(dir=actual_output.parent)
 
     try:
-        if actual_output.exists():
-            os.chmod(temp_path, actual_output.stat().st_mode)
-        else:
-            umask = os.umask(0)
-            os.umask(umask)
-            os.chmod(temp_path, 0o666 & ~umask)
-    except OSError:
-        # Ignore cleanup errors if file is already deleted or locked
-        pass
+        try:
+            if actual_output.exists():
+                os.chmod(temp_path, actual_output.stat().st_mode)
+            else:
+                umask = os.umask(0)
+                os.umask(umask)
+                os.chmod(temp_path, 0o666 & ~umask)
+        except OSError:
+            # Ignore chmod errors on systems that don't support it
+            pass
 
-    try:
         with os.fdopen(temp_fd, "w", newline="", encoding="utf-8") as csvfile:
             fieldnames = [
                 "document_id",
