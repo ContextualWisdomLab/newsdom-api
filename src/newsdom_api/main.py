@@ -69,10 +69,10 @@ def _apply_security_headers(response: Response, request: Request) -> Response:
     if request.url.path in ("/docs", "/redoc", "/openapi.json", "/docs/oauth2-redirect"):
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net fonts.googleapis.com; "
-            "img-src 'self' data: fastapi.tiangolo.com; "
-            "font-src 'self' fonts.gstatic.com; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+            "img-src 'self' data: https://fastapi.tiangolo.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
             "frame-ancestors 'none'; "
             "base-uri 'none'"
         )
