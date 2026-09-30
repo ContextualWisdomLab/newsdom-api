@@ -125,7 +125,7 @@ def test_dockerfile_runs_uvicorn_without_bundled_mineru_runtime():
     assert "--host" in text
     assert "0.0.0.0" in text
     assert "8000" in text
-    assert not _contains_healthcheck_path(text, "/health")
+    assert _contains_healthcheck_path(text, "/health")
 
 
 def test_nvidia_dockerfile_installs_mineru_pipeline_stack():

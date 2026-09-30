@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-09-17 - [HIGH] Dockerfile HEALTHCHECK 누락 (DS-0026) 수정
+**Vulnerability:** `Dockerfile`에 `HEALTHCHECK` 명령어가 누락되어 있어 컨테이너의 상태를 모니터링할 수 없었으며, `trivy-fs` 보안 스캔(DS-0026)에서 실패함.
+**Learning:** 런타임 Docker 이미지에는 서비스 상태를 확인할 수 있는 헬스체크 설정이 필수적이며, 중앙 관리되는 보안 게이트를 통과하기 위해 명시적으로 `HEALTHCHECK`를 추가해야 함.
+**Prevention:** Dockerfile 작성 시 항상 `HEALTHCHECK` 명령어를 포함하여 컨테이너 상태 모니터링을 보장하고 보안 스캔(DS-0026)에 대비할 것.
