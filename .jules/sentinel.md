@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2025-05-20 - Prevent Memory Exhaustion via Unbounded Form Fields
+**Vulnerability:** The `/parse` endpoint accepted string parameters (`language`, `mode`) using `Form()` without a `max_length`. Because `python-multipart` buffers these fields into memory before the endpoint logic executes, attackers could transmit massive strings disguised as form parameters to exhaust application memory (DoS).
+**Learning:** `Form()` without constraints creates an implicit unbounded buffer just like `await file.read()` on large streams, putting the application at risk of DoS before input validation logic even runs.
+**Prevention:** Always specify `max_length` limits (e.g. `Form(max_length=50)`) on string parameters that originate from multipart/form-data.

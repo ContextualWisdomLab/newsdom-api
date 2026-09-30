@@ -484,6 +484,31 @@ def test_parse_endpoint_forwards_language_and_mode_to_parser(monkeypatch):
     assert captured == {"language": "ch", "mode": "ocr"}
 
 
+def test_parse_endpoint_rejects_long_form_fields(monkeypatch):
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr(
+        "newsdom_api.main.parse_pdf",
+        lambda *a, **k: {"document_id": "x", "pages": []},
+    )
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+        data={"language": "a" * 100},
+    )
+    assert response.status_code == 422
+    assert "String should have at most 50 characters" in response.text
+
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+        data={"mode": "a" * 100},
+    )
+    assert response.status_code == 422
+    assert "String should have at most 50 characters" in response.text
+
+
 def test_parse_endpoint_rejects_invalid_mode_with_422(monkeypatch):
     monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
     monkeypatch.setattr(
