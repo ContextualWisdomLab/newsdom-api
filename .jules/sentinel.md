@@ -91,7 +91,7 @@
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
 
-## 2026-09-28 - Add Permissions-Policy security header
-**Vulnerability:** The API responses lacked the `Permissions-Policy` security header, which could allow embedding sites to request sensitive browser features (like geolocation, camera, or microphone) if the API were ever served in a context that allowed framing, or as a general defense-in-depth measure.
+## 2026-09-29 - Add Permissions-Policy security header
+**Rationale:** The `Permissions-Policy` header disables geolocation, camera, and microphone for the response document and its descendant frames when the response is loaded as a document. It does not restrict the embedding parent document.
 **Learning:** Adding the `Permissions-Policy` header with restrictive defaults (`geolocation=(), camera=(), microphone=()`) is a standard security enhancement that minimizes the attack surface of the API.
 **Prevention:** Include `Permissions-Policy` alongside other standard security headers in the `_apply_security_headers` middleware/helper function.
