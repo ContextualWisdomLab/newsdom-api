@@ -555,3 +555,39 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
+
+def test_parse_form_field_length_limits():
+    """
+    Test that the parse endpoint limits the length of form fields to prevent DoS.
+    """
+    from fastapi.testclient import TestClient
+    from newsdom_api.main import app, _runtime_settings
+    from newsdom_api.config import RuntimeSettings, AuthenticationMode, RuntimeProfile
+
+    app.dependency_overrides[_runtime_settings] = lambda request: RuntimeSettings(
+        authentication_mode=AuthenticationMode.DISABLED,
+        runtime_profile=RuntimeProfile.DEVELOPMENT
+    )
+    import newsdom_api.main
+    original = newsdom_api.main._parse_access_failure
+    newsdom_api.main._parse_access_failure = lambda request: None
+
+    try:
+        with TestClient(app) as client:
+            sample_pdf_content = b"%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n>>\nendobj\n%%EOF"
+            files = {"file": ("test.pdf", sample_pdf_content, "application/pdf")}
+            long_string = "a" * 100
+            data = {"language": long_string, "mode": "auto"}
+
+            response = client.post("/parse", data=data, files=files)
+            assert response.status_code == 422
+            assert "detail" in response.json()
+
+            files = {"file": ("test.pdf", sample_pdf_content, "application/pdf")}
+            data = {"language": "en", "mode": long_string}
+            response = client.post("/parse", data=data, files=files)
+            assert response.status_code == 422
+            assert "detail" in response.json()
+    finally:
+        app.dependency_overrides.clear()
+        newsdom_api.main._parse_access_failure = original
