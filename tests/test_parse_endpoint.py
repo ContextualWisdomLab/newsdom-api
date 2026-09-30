@@ -2,7 +2,6 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from newsdom_api.main import UPLOAD_CHUNK_BYTES
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from pypdf.errors import PdfReadError
@@ -10,6 +9,7 @@ from pypdf.errors import PdfReadError
 from newsdom_api import mineru_runner
 from newsdom_api.main import (
     MAX_PARSE_UPLOAD_BYTES,
+    UPLOAD_CHUNK_BYTES,
     app,
     parse,
     _validate_pdf_structure,

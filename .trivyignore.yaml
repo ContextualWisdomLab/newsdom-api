@@ -18,32 +18,3 @@ misconfigurations:
       Revisit when the central scan accepts repository-owned trusted-registry
       data or by 2026-10-31.
     expired_at: 2026-10-31
-
-vulnerabilities:
-  - id: CVE-2026-63374
-    statement: "AnyIO DoS vulnerability ignored as it is out of scope for the Bolt performance enhancement."
-    expired_at: 2027-01-01
-  - id: CVE-2026-64847
-    statement: "AnyIO DoS vulnerability ignored as it is out of scope for the Bolt performance enhancement."
-    expired_at: 2027-01-01
-  - id: CVE-2026-84381
-    statement: "httpx2 WebSocket vulnerability ignored as it is out of scope for the Bolt performance enhancement."
-    expired_at: 2027-01-01
-  - id: CVE-2026-84382
-    statement: "httpx2 DoS vulnerability ignored as it is out of scope for the Bolt performance enhancement."
-    expired_at: 2027-01-01
-  - id: CVE-2026-84379
-    statement: "httpx2 header injection vulnerability ignored as it is out of scope for the Bolt performance enhancement."
-    expired_at: 2027-01-01
-  - id: CVE-2026-84380
-    statement: "httpx2 request smuggling vulnerability ignored as it is out of scope for the Bolt performance enhancement."
-    expired_at: 2027-01-01
-  - id: CVE-2026-84309
-    statement: "pypdf DoS vulnerability ignored as it is out of scope for the Bolt performance enhancement."
-    expired_at: 2027-01-01
-  - id: CVE-2026-84310
-    statement: "pypdf DoS vulnerability ignored as it is out of scope for the Bolt performance enhancement."
-    expired_at: 2027-01-01
-  - id: CVE-2026-84311
-    statement: "pypdf DoS vulnerability ignored as it is out of scope for the Bolt performance enhancement."
-    expired_at: 2027-01-01
