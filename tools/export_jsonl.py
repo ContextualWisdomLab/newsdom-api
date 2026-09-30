@@ -20,7 +20,11 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
     except json.JSONDecodeError as exc:
         raise ValueError(f"Invalid JSON file: {exc}") from exc
 
+    if not isinstance(data, dict):
+        raise ValueError("Top-level JSON must be an object.")
     pages = data.get("pages", [])
+    if not isinstance(pages, list):
+        raise ValueError("'pages' must be a list.")
     document_id = data.get("document_id", "Unknown Document")
 
     # Use atomic write strategy: write to a temporary file then replace
@@ -43,6 +47,8 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
                 page_number = page.get("page_number", "Unknown")
 
                 articles = page.get("articles", [])
+                if not isinstance(articles, list):
+                    raise ValueError("'articles' must be a list.")
                 for article in articles:
                     if not isinstance(article, dict):
                         continue

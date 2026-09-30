@@ -186,3 +186,24 @@ def test_export_jsonl_atomic_failure_no_tmp_file(tmp_path: Path, monkeypatch: py
 
     with pytest.raises(RuntimeError, match="Simulated failure"):
         export_jsonl(input_file, output_file)
+
+def test_export_jsonl_invalid_json_shapes(tmp_path: Path) -> None:
+    output_file = tmp_path / "output.jsonl"
+
+    # Top-level is not a dict
+    f1 = tmp_path / "f1.json"
+    f1.write_text(json.dumps(["not a dict"]), encoding="utf-8")
+    with pytest.raises(ValueError, match="Top-level JSON must be an object"):
+        export_jsonl(f1, output_file)
+
+    # 'pages' is not a list
+    f2 = tmp_path / "f2.json"
+    f2.write_text(json.dumps({"pages": "not a list"}), encoding="utf-8")
+    with pytest.raises(ValueError, match="'pages' must be a list"):
+        export_jsonl(f2, output_file)
+
+    # 'articles' is not a list
+    f3 = tmp_path / "f3.json"
+    f3.write_text(json.dumps({"pages": [{"articles": "not a list"}]}), encoding="utf-8")
+    with pytest.raises(ValueError, match="'articles' must be a list"):
+        export_jsonl(f3, output_file)
