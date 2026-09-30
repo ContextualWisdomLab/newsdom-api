@@ -200,6 +200,27 @@ def _validate_pdf_structure(file_path: Path) -> None:
         ) from None
 
 
+
+async def _validate_pdf_structure_before_cancellation(file_path: Path) -> None:
+    """Wait for the validation thread before propagating cancellation."""
+
+    worker = asyncio.create_task(
+        asyncio.to_thread(_validate_pdf_structure, file_path)
+    )
+    try:
+        await asyncio.shield(worker)
+    except asyncio.CancelledError:
+        while not worker.done():  # pragma: no cover
+            try:
+                await asyncio.shield(worker)
+            except asyncio.CancelledError:
+                # Ignore repeated cancellations until the worker finishes.
+                continue
+            except Exception as exc:
+                LOGGER.debug("Ignored worker exception during cancellation: %s", exc)
+        raise  # pragma: no cover
+
+
 async def parse(
     file: Annotated[UploadFile, File(..., description="The PDF file to parse.")],
     language: Annotated[
@@ -266,7 +287,9 @@ async def parse(
                 temporary_file.write(chunk)
 
         LOGGER.debug("Wrote %s upload bytes to %s", bytes_read, tmp_path)
-        _validate_pdf_structure(tmp_path)
+        # ⚡ Bolt: Offload synchronous I/O and parsing overhead to a background thread
+        # to prevent blocking the main asyncio event loop during PDF validation.
+        await _validate_pdf_structure_before_cancellation(tmp_path)
         return await asyncio.to_thread(
             parse_pdf,
             tmp_path,

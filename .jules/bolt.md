@@ -63,3 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2026-07-13 - Avoid isinstance overhead for primitives
+**Learning:** Using `isinstance()` for simple primitive type checks (like `bool`, `str`, `list`, `dict`, `int`) in high-frequency paths adds measurable overhead.
+**Action:** Replace `isinstance()` with direct `type() is` or `type() is not` checks for exact built-in primitive types.
