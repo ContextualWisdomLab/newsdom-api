@@ -17,7 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+### Changed
+
 - export_csv, export_html, export_markdown 도구에 입력과 출력이 동일할 경우 데이터를 파괴하지 않도록 동일 파일 방어 로직을 추가하고 `tempfile`을 사용하여 원자적으로 파일을 쓰도록 수정하였습니다.
+- 코드 리뷰를 반영하여 기본 umask 권한 적용 로직을 추가하고 `BaseException`을 `(Exception, KeyboardInterrupt)`로 세분화하였으며 불필요한 `pass` 문을 삭제하고 `except` 블록에 명시적인 주석을 추가하였습니다.
 - `/parse`를 언어 선택형 파서로 일반화: MinerU `-l japan`/`-m ocr` 하드코딩을 제거하고 optional form 필드 `language`(MinerU 3.4.4 공식 기본 `ch`, 공개 언어군/alias 검증)와 `mode`(`auto`/`ocr`/`txt`, 기본 `auto`)로 파라미터화. `mode=auto`는 born-digital PDF가 강제 OCR을 건너뛰도록 함. 기존 입력 `language=japan&mode=ocr`는 공식 규약대로 `ch`/`ocr`로 정규화됨.
 - OpenAPI 제목/설명, README, `ArticleNode.headline` 문서를 일반 문서용 (section heading) 표현으로 재구성하여 특정 언어/신문 가정을 소비자에게 노출하지 않도록 함. 응답 스키마 필드는 하위 호환을 위해 변경하지 않음.
 

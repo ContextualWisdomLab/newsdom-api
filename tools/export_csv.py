@@ -31,7 +31,12 @@ def export_csv(json_path: Path, output_path: Path) -> None:
     try:
         if actual_output.exists():
             os.chmod(temp_path, actual_output.stat().st_mode)
+        else:
+            umask = os.umask(0)
+            os.umask(umask)
+            os.chmod(temp_path, 0o666 & ~umask)
     except OSError:
+        # Ignore cleanup errors if file is already deleted or locked
         pass
 
     try:
@@ -87,10 +92,11 @@ def export_csv(json_path: Path, output_path: Path) -> None:
                             }
                         )
         os.replace(temp_path, actual_output)
-    except BaseException:
+    except (Exception, KeyboardInterrupt):
         try:
             os.unlink(temp_path)
         except OSError:
+            # Ignore cleanup errors if file is already deleted or locked
             pass
         raise
 

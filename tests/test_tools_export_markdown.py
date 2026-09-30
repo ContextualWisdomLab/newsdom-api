@@ -133,7 +133,6 @@ def test_main_invalid_input(tmp_path, capsys):
         main([str(input_file)])
     assert excinfo.value.code == 1
 
-    pass
     assert "Error exporting Markdown" in capsys.readouterr().err
 
 
@@ -146,7 +145,6 @@ def test_main_file_output_error(tmp_path, sample_json_data, capsys):
         main([str(input_file), "-o", str(output_file)])
     assert excinfo.value.code == 1
 
-    pass
     assert "Error exporting Markdown" in capsys.readouterr().err
 
 def test_main_same_file(tmp_path, capsys):

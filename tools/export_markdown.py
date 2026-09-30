@@ -122,17 +122,23 @@ def main(argv: list[str] | None = None) -> None:
             try:
                 if actual_output.exists():
                     os.chmod(temp_path, actual_output.stat().st_mode)
+                else:
+                    umask = os.umask(0)
+                    os.umask(umask)
+                    os.chmod(temp_path, 0o666 & ~umask)
             except OSError:
+                # Ignore cleanup errors if file is already deleted or locked
                 pass
 
             try:
                 with os.fdopen(temp_fd, "w", encoding="utf-8") as mdfile:
                     mdfile.write(markdown_content)
                 os.replace(temp_path, actual_output)
-            except BaseException:
+            except (Exception, KeyboardInterrupt):
                 try:
                     os.unlink(temp_path)
                 except OSError:
+                    # Ignore cleanup errors if file is already deleted or locked
                     pass
                 raise
 
