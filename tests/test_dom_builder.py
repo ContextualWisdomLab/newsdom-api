@@ -552,3 +552,14 @@ def test_bbox_helper_returns_none_for_invalid_y0_x1_y1():
     assert _bbox_from_values([0, "bad", 1, 1]) is None
     assert _bbox_from_values([0, 0, "bad", 1]) is None
     assert _bbox_from_values([0, 0, 1, "bad"]) is None
+
+
+def test_build_dom_extracts_ads_with_roles_and_types():
+    content_list = [
+        {"role": "ad", "type": "text", "text": "Ad by role"},
+        {"role": "text", "type": "ad", "text": "Ad by type"},
+        {"role": "ad", "type": "ad", "text": ""},  # empty text skipped
+        {"role": "text", "type": "ad", "text": ""},  # empty text skipped
+    ]
+    response = build_dom(content_list, "doc-1")
+    assert response.pages[0].ads == ["Ad by role", "Ad by type"]
