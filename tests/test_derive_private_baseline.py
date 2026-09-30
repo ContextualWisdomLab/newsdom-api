@@ -223,3 +223,15 @@ def test_derive_baseline_module_help() -> None:
 
     assert result.returncode == 0
     assert "--private-fixtures-dir" in result.stdout
+
+def test_main_block():
+    import runpy
+    import sys
+    from unittest.mock import patch
+
+    with patch('sys.argv', ['derive_private_baseline.py', '--help']):
+        sys.modules.pop('tools.derive_private_baseline', None)
+        try:
+            runpy.run_module('tools.derive_private_baseline', run_name='__main__')
+        except SystemExit:
+            pass
