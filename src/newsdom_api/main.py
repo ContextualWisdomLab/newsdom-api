@@ -206,7 +206,6 @@ async def parse(
     language: Annotated[
         str,
         Form(
-            max_length=50,
             description=(
                 "MinerU language family or compatibility alias (e.g. `ch`, "
                 "`en`, `japan`, `korean`, `arabic`, `devanagari`)."
@@ -216,7 +215,6 @@ async def parse(
     mode: Annotated[
         str,
         Form(
-            max_length=50,
             description=(
                 "MinerU parsing mode: `auto` (born-digital text PDFs skip forced "
                 "OCR), `ocr` (force OCR), or `txt` (embedded text layer only)."
