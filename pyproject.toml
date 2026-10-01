@@ -18,6 +18,9 @@ dependencies = [
   "reportlab>=4.2,<6.0",
   "Pillow>=12.3,<13.0",
   "pypdf>=6.15.0,<7.0",
+  "anyio>=4.13.0",
+  "httpx>=0.28.1",
+  "urllib3>=2.7.0",
 ]
 
 [project.optional-dependencies]
