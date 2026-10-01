@@ -12,6 +12,8 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
         raise FileNotFoundError(f"File not found or is not a file: {json_path}")
     if json_path.suffix.lower() != ".json":
         raise ValueError("Input file must be a .json file.")
+    if output_path.exists() and output_path.samefile(json_path):
+        raise ValueError("Output file must not refer to the input file.")
 
     try:
 
