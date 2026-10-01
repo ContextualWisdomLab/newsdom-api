@@ -96,6 +96,40 @@ def test_export_jsonl_rejects_input_as_output(tmp_path, use_alias):
 
     assert input_json.read_text(encoding="utf-8") == original
 
+
+def test_export_jsonl_preserves_existing_output_on_encoding_failure(
+    tmp_path, monkeypatch
+):
+    input_json = tmp_path / "input.json"
+    input_json.write_text('{"pages": []}', encoding="utf-8")
+    output_jsonl = tmp_path / "output.jsonl"
+    original = '{"existing": true}\n'
+    output_jsonl.write_text(original, encoding="utf-8")
+
+    def fail_serialization(*_args, **_kwargs):
+        raise TypeError("encoding failed")
+
+    monkeypatch.setattr(json, "dumps", fail_serialization)
+    input_json.write_text(
+        '{"pages": [{"articles": [{"value": 1}]}]}',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(TypeError, match="encoding failed"):
+        export_jsonl(input_json, output_jsonl)
+
+    assert output_jsonl.read_text(encoding="utf-8") == original
+
+
+def test_export_jsonl_creates_output_parent(tmp_path):
+    input_json = tmp_path / "input.json"
+    input_json.write_text('{"pages": []}', encoding="utf-8")
+    output_jsonl = tmp_path / "nested" / "output.jsonl"
+
+    export_jsonl(input_json, output_jsonl)
+
+    assert output_jsonl.read_text(encoding="utf-8") == ""
+
 def test_main_success(tmp_path, capsys):
     input_json = tmp_path / "input.json"
     output_jsonl = tmp_path / "output.jsonl"
