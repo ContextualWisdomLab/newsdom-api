@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 
 def export_jsonl(json_path: Path, output_path: Path) -> None:
@@ -61,9 +63,23 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
                 json.dumps(article_data, ensure_ascii=False, allow_nan=False)
             )
 
-    with output_path.open("w", encoding="utf-8") as jsonl_file:
-        for json_line in json_lines:
-            jsonl_file.write(json_line + "\n")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path: Path | None = None
+    try:
+        with NamedTemporaryFile(
+            mode="w",
+            dir=output_path.parent,
+            delete=False,
+            encoding="utf-8",
+        ) as temporary_file:
+            temporary_path = Path(temporary_file.name)
+            for json_line in json_lines:
+                temporary_file.write(json_line + "\n")
+        os.replace(temporary_path, output_path)
+    except Exception:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+        raise
 
 
 def main(argv: list[str] | None = None) -> None:
