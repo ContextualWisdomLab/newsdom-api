@@ -80,6 +80,22 @@ def test_export_jsonl_rejects_malformed_newsdom_structure(tmp_path, payload, mes
     assert not output.exists()
 
 
+
+@pytest.mark.parametrize("use_alias", [False, True])
+def test_export_jsonl_rejects_input_as_output(tmp_path, use_alias):
+    input_json = tmp_path / "input.json"
+    original = '{"pages": []}'
+    input_json.write_text(original, encoding="utf-8")
+    output_jsonl = input_json
+    if use_alias:
+        output_jsonl = tmp_path / "output.jsonl"
+        output_jsonl.hardlink_to(input_json)
+
+    with pytest.raises(ValueError, match="must not refer to the input file"):
+        export_jsonl(input_json, output_jsonl)
+
+    assert input_json.read_text(encoding="utf-8") == original
+
 def test_main_success(tmp_path, capsys):
     input_json = tmp_path / "input.json"
     output_jsonl = tmp_path / "output.jsonl"
