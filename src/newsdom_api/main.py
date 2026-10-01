@@ -252,7 +252,9 @@ async def parse(
             temporary_file.write(header)
 
             bytes_read = len(header)
-            while chunk := await file.read(8192):
+            # Use a 1MB chunk size (1048576 bytes) instead of the default 8KB
+            # to reduce thread-pool dispatch overhead during large PDF uploads.
+            while chunk := await file.read(1048576):
                 bytes_read += len(chunk)
                 if bytes_read > MAX_PARSE_UPLOAD_BYTES:
                     LOGGER.warning(
