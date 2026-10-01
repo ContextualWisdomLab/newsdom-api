@@ -14,9 +14,14 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
         raise ValueError("Input file must be a .json file.")
 
     try:
-        def _reject_non_finite(x):
-            raise ValueError(f"Non-standard token: {x}")
-        data = json.loads(json_path.read_text(encoding="utf-8"), parse_constant=_reject_non_finite)
+
+        def _reject_non_finite(token: str) -> None:
+            raise ValueError(f"Non-standard token: {token}")
+
+        data = json.loads(
+            json_path.read_text(encoding="utf-8"),
+            parse_constant=_reject_non_finite,
+        )
     except json.JSONDecodeError as exc:
         raise ValueError(f"Invalid JSON file: {exc}") from exc
     except ValueError as exc:
