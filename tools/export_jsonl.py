@@ -23,29 +23,40 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
         raise ValueError(f"Invalid JSON file (non-standard tokens): {exc}") from exc
 
     if not isinstance(data, dict):
-        return
+        raise ValueError("NewsDOM root must be an object.")
 
     document_id = data.get("document_id", "Unknown Document")
     pages = data.get("pages", [])
     if not isinstance(pages, list):
-        return
+        raise ValueError("NewsDOM pages must be an array.")
+
+    json_lines: list[str] = []
+    for page_index, page in enumerate(pages):
+        if not isinstance(page, dict):
+            raise ValueError(f"NewsDOM pages[{page_index}] must be an object.")
+        page_number = page.get("page_number", "Unknown")
+        articles = page.get("articles", [])
+        if not isinstance(articles, list):
+            raise ValueError(
+                f"NewsDOM pages[{page_index}].articles must be an array."
+            )
+        for article_index, article in enumerate(articles):
+            if not isinstance(article, dict):
+                raise ValueError(
+                    "NewsDOM "
+                    f"pages[{page_index}].articles[{article_index}] "
+                    "must be an object."
+                )
+            article_data = article.copy()
+            article_data["document_id"] = document_id
+            article_data["page_number"] = page_number
+            json_lines.append(
+                json.dumps(article_data, ensure_ascii=False, allow_nan=False)
+            )
 
     with output_path.open("w", encoding="utf-8") as jsonl_file:
-        for page in pages:
-            if not isinstance(page, dict):
-                continue
-            page_number = page.get("page_number", "Unknown")
-            articles = page.get("articles", [])
-            if not isinstance(articles, list):
-                continue
-            for article in articles:
-                if not isinstance(article, dict):
-                    continue
-                article_data = article.copy()
-                article_data["document_id"] = document_id
-                article_data["page_number"] = page_number
-                json_line = json.dumps(article_data, ensure_ascii=False, allow_nan=False)
-                jsonl_file.write(json_line + "\n")
+        for json_line in json_lines:
+            jsonl_file.write(json_line + "\n")
 
 
 def main(argv: list[str] | None = None) -> None:
