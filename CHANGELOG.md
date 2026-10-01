@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- 성능 향상을 위해 FastAPI 비동기 파일 업로드시 청크 크기를 8192 바이트에서 1MB로 증가시켜 컨텍스트 스위칭 오버헤드를 감소시켰습니다.
+
 > **Planned 0.3.0 deployment migration:** parser authentication changes from
 > **default-open** to **default-required**. Production must configure
 > `NEWSDOM_AUTH_MODE=required`, `NEWSDOM_RUNTIME_PROFILE=production`, and
