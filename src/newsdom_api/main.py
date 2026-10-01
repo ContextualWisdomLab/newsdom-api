@@ -70,6 +70,7 @@ def _apply_security_headers(response: Response, request: Request) -> Response:
     )
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Cache-Control"] = "no-store, no-cache, max-age=0"
+    response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
     forwarded_proto = request.headers.get("x-forwarded-proto", "")
     is_https = request.url.scheme == "https" or forwarded_proto.lower() == "https"
     if is_https:
@@ -205,6 +206,7 @@ async def parse(
     language: Annotated[
         str,
         Form(
+            max_length=50,
             description=(
                 "MinerU language family or compatibility alias (e.g. `ch`, "
                 "`en`, `japan`, `korean`, `arabic`, `devanagari`)."
@@ -214,6 +216,7 @@ async def parse(
     mode: Annotated[
         str,
         Form(
+            max_length=50,
             description=(
                 "MinerU parsing mode: `auto` (born-digital text PDFs skip forced "
                 "OCR), `ocr` (force OCR), or `txt` (embedded text layer only)."

@@ -22,6 +22,10 @@ def test_healthcheck():
         response.headers.get("Strict-Transport-Security")
         == "max-age=31536000; includeSubDomains"
     )
+    assert (
+        response.headers.get("Permissions-Policy")
+        == "geolocation=(), camera=(), microphone=()"
+    )
 
 
 def test_healthcheck_omits_hsts_for_plain_http():
