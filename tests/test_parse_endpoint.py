@@ -502,6 +502,25 @@ def test_parse_endpoint_rejects_invalid_mode_with_422(monkeypatch):
     assert response.json()["detail"] == "Invalid parse parameters"
 
 
+@pytest.mark.parametrize("field_name", ["language", "mode"])
+def test_parse_endpoint_rejects_long_form_fields_with_422(monkeypatch, field_name):
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr(
+        "newsdom_api.main.parse_pdf",
+        lambda *a, **k: {"document_id": "x", "pages": []},
+    )
+
+    client = TestClient(app)
+    response = client.post(
+        "/parse",
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+        data={field_name: "a" * 51},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["type"] == "string_too_long"
+
+
 def test_parse_endpoint_rejects_invalid_language_with_422(monkeypatch):
     monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
     monkeypatch.setattr(
