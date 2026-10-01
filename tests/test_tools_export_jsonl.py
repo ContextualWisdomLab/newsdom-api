@@ -1,4 +1,5 @@
 import json
+import re
 from unittest.mock import patch
 
 import pytest
@@ -68,14 +69,12 @@ def test_export_jsonl_non_finite(tmp_path):
         ('{"pages": [{"articles": [1]}]}', "pages[0].articles[0] must be an object"),
     ],
 )
-def test_export_jsonl_rejects_malformed_newsdom_structure(
-    tmp_path, payload, message
-):
+def test_export_jsonl_rejects_malformed_newsdom_structure(tmp_path, payload, message):
     p = tmp_path / "test.json"
     p.write_text(payload, encoding="utf-8")
     output = tmp_path / "out.jsonl"
 
-    with pytest.raises(ValueError, match=message.replace("[", r"\[").replace("]", r"\]")):
+    with pytest.raises(ValueError, match=re.escape(message)):
         export_jsonl(p, output)
 
     assert not output.exists()
