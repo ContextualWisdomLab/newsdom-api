@@ -75,6 +75,7 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
             temporary_path = Path(temporary_file.name)
             for json_line in json_lines:
                 temporary_file.write(json_line + "\n")
+        assert temporary_path is not None
         os.replace(temporary_path, output_path)
     except Exception:
         if temporary_path is not None:
