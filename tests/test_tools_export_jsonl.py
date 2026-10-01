@@ -1,8 +1,8 @@
 import json
-import pytest
-from pathlib import Path
 from unittest.mock import patch
-import sys
+
+import pytest
+
 from tools.export_jsonl import export_jsonl, main
 
 
@@ -58,45 +58,27 @@ def test_export_jsonl_non_finite(tmp_path):
         export_jsonl(p, tmp_path / "out.jsonl")
 
 
-def test_export_jsonl_not_dict(tmp_path):
+@pytest.mark.parametrize(
+    ("payload", "message"),
+    [
+        ("[]", "root must be an object"),
+        ('{"pages": {}}', "pages must be an array"),
+        ('{"pages": [1]}', "pages[0] must be an object"),
+        ('{"pages": [{"articles": {}}]}', "pages[0].articles must be an array"),
+        ('{"pages": [{"articles": [1]}]}', "pages[0].articles[0] must be an object"),
+    ],
+)
+def test_export_jsonl_rejects_malformed_newsdom_structure(
+    tmp_path, payload, message
+):
     p = tmp_path / "test.json"
-    p.write_text("[]", encoding="utf-8")
-    export_jsonl(p, tmp_path / "out.jsonl")
-    assert not (tmp_path / "out.jsonl").exists()
+    p.write_text(payload, encoding="utf-8")
+    output = tmp_path / "out.jsonl"
 
+    with pytest.raises(ValueError, match=message.replace("[", r"\[").replace("]", r"\]")):
+        export_jsonl(p, output)
 
-def test_export_jsonl_pages_not_list(tmp_path):
-    p = tmp_path / "test.json"
-    p.write_text("{\"pages\": {}}", encoding="utf-8")
-    export_jsonl(p, tmp_path / "out.jsonl")
-    assert not (tmp_path / "out.jsonl").exists()
-
-
-def test_export_jsonl_page_not_dict(tmp_path):
-    p = tmp_path / "test.json"
-    p.write_text("{\"pages\": [1]}", encoding="utf-8")
-    out = tmp_path / "out.jsonl"
-    export_jsonl(p, out)
-    assert out.exists()
-    assert out.read_text(encoding="utf-8") == ""
-
-
-def test_export_jsonl_articles_not_list(tmp_path):
-    p = tmp_path / "test.json"
-    p.write_text("{\"pages\": [{\"articles\": {}}]}", encoding="utf-8")
-    out = tmp_path / "out.jsonl"
-    export_jsonl(p, out)
-    assert out.exists()
-    assert out.read_text(encoding="utf-8") == ""
-
-
-def test_export_jsonl_article_not_dict(tmp_path):
-    p = tmp_path / "test.json"
-    p.write_text("{\"pages\": [{\"articles\": [1]}]}", encoding="utf-8")
-    out = tmp_path / "out.jsonl"
-    export_jsonl(p, out)
-    assert out.exists()
-    assert out.read_text(encoding="utf-8") == ""
+    assert not output.exists()
 
 
 def test_main_success(tmp_path, capsys):
