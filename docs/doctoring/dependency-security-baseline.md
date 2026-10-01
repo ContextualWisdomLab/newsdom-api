@@ -17,13 +17,14 @@ The adopted floors are:
 - `setuptools>=83` for the build backend;
 - `Pillow>=12.3,<13.0` for image parsing on the untrusted document-ingestion path;
 - `pypdf>=6.16.1,<7.0` for PDF parsing;
+- `urllib3>=2.8.0,<3.0` for the requests transport resolved into the production lock;
 - `httpx2>=2.12.0` and `httpcore2>=2.12.0` in the development/TestClient dependency
   set;
 - `mkdocs-material>=9.7,<9.8`, allowing `pymdown-extensions>=11` while the MkDocs
   core remains on the supported 1.x line.
 
 The generated lock resolves Click 8.4.2, setuptools 83.0.0, Pillow 12.3.0,
-pypdf 6.18.0, HTTPX2 2.12.0, httpcore2 2.12.0, mkdocs-material 9.7.7, and
+pypdf 6.18.0, urllib3 2.8.0, HTTPX2 2.12.0, httpcore2 2.12.0, mkdocs-material 9.7.7, and
 pymdown-extensions 11.0.1. Direct floors prevent a later lock refresh from
 silently selecting known-vulnerable ranges again.
 
@@ -44,6 +45,13 @@ Because one direct compatibility floor must exclude all three vulnerable ranges,
 NewsDOM requires `pypdf>=6.16.1,<7.0`. The generated lock currently resolves
 pypdf 6.18.0 with hashes. The repository does not suppress these findings in
 `.trivyignore`; scanner success must come from a remediated artifact.
+
+Successor PR #988 exact-head Security Scan `36794054647`, Trivy job
+`110153330809`, then found the production lock's urllib3 2.7.0 affected by
+CVE-2026-97687, CVE-2026-97688, and CVE-2026-97689. The shared dependency-owner
+evidence identifies 2.8.0 as the first release that fixes this current advisory
+set. NewsDOM therefore declares `urllib3>=2.8.0,<3.0`, resolves urllib3 2.8.0,
+and keeps all three advisory identifiers absent from `.trivyignore.yaml`.
 
 The exact-head filesystem scan also exposed the TestClient HTTPX2 family as a
 separate current lock vulnerability. The upstream HTTPX2 advisories establish
@@ -112,8 +120,11 @@ Before merge, the exact current head must prove all of the following:
   floor and the resolved pypdf artifact is at least 6.16.1;
 - the development/TestClient set declares `httpx2>=2.12.0` and
   `httpcore2>=2.12.0`, and the lock resolves both to at least 2.12.0;
+- source and lock agree on `urllib3>=2.8.0,<3.0`, with exactly urllib3 2.8.0
+  resolved and CVE-2026-97687/97688/97689 unsuppressed;
 - CVE-2026-84309, CVE-2026-84310, CVE-2026-84311, CVE-2026-84378,
-  CVE-2026-84379, CVE-2026-84380, CVE-2026-84381, and CVE-2026-84382 are absent
+  CVE-2026-84379, CVE-2026-84380, CVE-2026-84381, CVE-2026-84382,
+  CVE-2026-97687, CVE-2026-97688, and CVE-2026-97689 are absent
   from the dependency/filesystem scan without suppression;
 - dependency, filesystem, container, CodeQL, Semgrep, fuzzing, and scorecard
   checks complete successfully on the same head;

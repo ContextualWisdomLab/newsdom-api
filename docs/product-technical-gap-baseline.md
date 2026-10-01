@@ -1,6 +1,6 @@
 # NewsDOM product–technical gap baseline
 
-Updated: 2026-09-12
+Updated: 2026-10-01
 
 ## Current authority
 
@@ -40,6 +40,8 @@ The strongest current HTTPX2 floor is 2.12.0. Fresh PR #900 additionally exposed
 
 This does not assert that every HTTPX2 advisory is reachable through NewsDOM production traffic. It removes known-vulnerable artifacts from the exact lock that tests and scanners consume, which is required by the existing whole-tree gate.
 
+Successor #988 exact-head Security Scan `36794054647`, Trivy job `110153330809`, subsequently exposed urllib3 2.7.0 as affected by CVE-2026-97687/97688/97689. The dependency boundary is therefore extended atomically with direct floor `urllib3>=2.8.0,<3.0`, a 2.8.0 lock, and `tests/test_urllib3_security_floor.py`; no scanner suppression is introduced.
+
 ### RED and repair lineage
 
 1. Intervening descendants repeatedly mixed route-level `Form(max_length=50)`, generic Sentinel doctrine, unrelated dependency churn, and deletion of this baseline into the pypdf owner.
@@ -54,10 +56,10 @@ This does not assert that every HTTPX2 advisory is reachable through NewsDOM pro
 
 1. `pyproject.toml` and `uv.lock` agree on `pypdf>=6.16.1,<7.0`; the resolved pypdf artifact is >=6.16.1 and currently 6.18.0.
 2. The development/TestClient set declares `httpx2>=2.12.0` and `httpcore2>=2.12.0`, and the generated lock resolves both to >=2.12.0.
-3. `tests/test_pypdf_security_floor.py` and `tests/test_httpx2_security_floor.py` reject weaker declaration/lock states.
+3. `tests/test_pypdf_security_floor.py`, `tests/test_httpx2_security_floor.py`, and `tests/test_urllib3_security_floor.py` reject weaker declaration/lock states.
 4. `CHANGELOG.md` and `docs/doctoring/dependency-security-baseline.md` describe the same current floors and advisory boundaries.
 5. Complete tests, 100% owned production statement/branch coverage and docstring gates, package/docs builds, Security Scan, SAST, repository CodeQL, central CodeQL, container, fuzz, and scorecard evidence reach terminal success on the same SHA.
-6. Security Scan reports none of CVE-2026-63374/84309/84310/84311/84378/84379/84380/84381/84382 without suppression.
+6. Security Scan reports none of CVE-2026-63374/84309/84310/84311/84378/84379/84380/84381/84382/97687/97688/97689 without suppression.
 7. Independent current-head review has no unresolved valid finding.
 8. Merge is a normal protected-branch merge. Dependent parser/auth lanes then adopt the resulting protected base through non-force descendants and obtain fresh exact-head evidence.
 

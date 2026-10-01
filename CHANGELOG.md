@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- Pinned `urllib3>=2.8.0,<3.0` and refreshed `uv.lock` to urllib3 2.8.0 after exact-head Security Scan `36794054647` / Trivy job `110153330809` found urllib3 2.7.0 affected by CVE-2026-97687, CVE-2026-97688, and CVE-2026-97689. The regression contract rejects weaker source/lock states and keeps all three findings unsuppressed.
 - Raised the AnyIO floor to 4.14.2 and refreshed the lock to AnyIO 4.15.1, HTTPX2 2.13.0, and httpcore2 2.13.0 after current PR #900 exposed CVE-2026-63374 in the prior lock.
 - `/parse` authentication is now immutable per application instance and fails closed before multipart body parsing when required configuration is missing. Hostile missing, invalid, Unicode, oversized, and duplicated Authorization headers return one non-sensitive response.
 - Added unauthenticated `/ready` traffic readiness that combines authentication configuration with MinerU executable availability while `/health` remains liveness-only.
