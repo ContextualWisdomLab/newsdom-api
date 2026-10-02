@@ -42,6 +42,8 @@ from .schemas import HealthResponse, ParseResponse, ReadinessResponse
 from .service import parse_pdf
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
+# Reserve one MiB for multipart boundaries, headers, and the two small form fields.
+MAX_PARSE_REQUEST_BYTES = MAX_PARSE_UPLOAD_BYTES + (1024 * 1024)
 MAX_AUTHORIZATION_HEADER_BYTES = MAX_BEARER_HEADER_BYTES
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
 PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
@@ -140,13 +142,57 @@ async def security_boundary_middleware(
     request: Request,
     call_next: Callable,
 ) -> Response:
-    """Enforce parser authorization before reading the request body and add headers."""
+    """Enforce parser authorization and body limits before multipart parsing."""
 
+    body_limit_exceeded = False
     if request.method == "POST" and request.scope.get("path") == "/parse":
         failure = _parse_access_failure(request)
         if failure is not None:
             return _apply_security_headers(failure, request)
-    response = await call_next(request)
+
+        content_length = request.headers.get("content-length")
+        if content_length and content_length.isascii() and content_length.isdigit():
+            if int(content_length) > MAX_PARSE_REQUEST_BYTES:
+                response = JSONResponse(
+                    status_code=413,
+                    content={"detail": PAYLOAD_TOO_LARGE_DETAIL},
+                )
+                return _apply_security_headers(response, request)
+
+        receive = request.receive
+        received_bytes = 0
+
+        async def limited_receive():
+            """Reject chunked or lengthless bodies that exceed the request budget."""
+
+            nonlocal body_limit_exceeded, received_bytes
+            message = await receive()
+            if message["type"] == "http.request":
+                received_bytes += len(message.get("body", b""))
+                if received_bytes > MAX_PARSE_REQUEST_BYTES:
+                    body_limit_exceeded = True
+                    raise HTTPException(
+                        status_code=413,
+                        detail=PAYLOAD_TOO_LARGE_DETAIL,
+                    )
+            return message
+
+        request._receive = limited_receive
+
+    try:
+        response = await call_next(request)
+    except HTTPException as exc:
+        if exc.status_code != 413 or exc.detail != PAYLOAD_TOO_LARGE_DETAIL:
+            raise
+        response = JSONResponse(
+            status_code=413,
+            content={"detail": PAYLOAD_TOO_LARGE_DETAIL},
+        )
+    if body_limit_exceeded:
+        response = JSONResponse(
+            status_code=413,
+            content={"detail": PAYLOAD_TOO_LARGE_DETAIL},
+        )
     return _apply_security_headers(response, request)
 
 

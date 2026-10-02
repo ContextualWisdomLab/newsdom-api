@@ -12,6 +12,8 @@ Apply this checklist whenever the FastAPI surface changes.
 ## Baseline checks
 
 - validate upload handling and content-type expectations for `/parse`
+- enforce a total `/parse` request-body budget before multipart parsing, including
+  requests without a trustworthy `Content-Length`
 - ensure error messages do not leak private reference paths,
   secrets, or credentials
 - keep synthetic fixtures in tests and examples; never use private

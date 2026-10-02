@@ -7,7 +7,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
-from fastapi import Request
+from fastapi import HTTPException, Request, Response
 from fastapi.testclient import TestClient
 
 from newsdom_api import config
@@ -24,6 +24,7 @@ from newsdom_api.config import (
 )
 from newsdom_api.main import (
     MAX_AUTHORIZATION_HEADER_BYTES,
+    MAX_PARSE_REQUEST_BYTES,
     create_app,
     security_boundary_middleware,
 )
@@ -46,6 +47,31 @@ def _settings(
         runtime_profile=profile,
         api_token=token,
     )
+
+
+def _request_scope(
+    application,
+    *,
+    method: str = "POST",
+    path: str = "/parse",
+    headers: list[tuple[bytes, bytes]] | None = None,
+) -> dict:
+    """Build the minimal ASGI request scope used by middleware tests."""
+
+    return {
+        "type": "http",
+        "asgi": {"version": "3.0"},
+        "http_version": "1.1",
+        "method": method,
+        "scheme": "http",
+        "path": path,
+        "raw_path": path.encode("ascii"),
+        "query_string": b"",
+        "headers": headers or [],
+        "client": ("testclient", 50000),
+        "server": ("testserver", 80),
+        "app": application,
+    }
 
 
 @pytest.fixture
@@ -318,26 +344,180 @@ def test_authentication_middleware_rejects_before_reading_request_body() -> None
     async def call_next(_request):
         raise AssertionError("downstream application should not run")
 
-    scope = {
-        "type": "http",
-        "asgi": {"version": "3.0"},
-        "http_version": "1.1",
-        "method": "POST",
-        "scheme": "http",
-        "path": "/parse",
-        "raw_path": b"/parse",
-        "query_string": b"",
-        "headers": [],
-        "client": ("testclient", 50000),
-        "server": ("testserver", 80),
-        "app": application,
-    }
-    request = Request(scope, receive)
+    request = Request(_request_scope(application), receive)
 
     response = asyncio.run(security_boundary_middleware(request, call_next))
 
     assert response.status_code == 503
     assert body_read is False
+
+
+def test_parse_request_content_length_is_rejected_before_body_read() -> None:
+    """Reject a declared oversized multipart body before receiving any bytes."""
+
+    application = create_app(_settings(), runtime_readiness_probe=lambda: True)
+    body_read = False
+
+    async def receive():
+        nonlocal body_read
+        body_read = True
+        raise AssertionError("oversized request body should not be read")
+
+    async def call_next(_request):
+        raise AssertionError("oversized request should not reach the parser")
+
+    request = Request(
+        _request_scope(
+            application,
+            headers=[
+                (b"authorization", b"Bearer s3cret-token"),
+                (
+                    b"content-length",
+                    str(MAX_PARSE_REQUEST_BYTES + 1).encode("ascii"),
+                ),
+            ],
+        ),
+        receive,
+    )
+
+    response = asyncio.run(security_boundary_middleware(request, call_next))
+
+    assert response.status_code == 413
+    assert body_read is False
+
+
+def test_parse_request_budget_runs_in_the_real_middleware_stack(
+    monkeypatch: pytest.MonkeyPatch,
+    parser_spy: dict[str, int],
+) -> None:
+    """Reject an oversized multipart request before endpoint execution."""
+
+    monkeypatch.setattr("newsdom_api.main.MAX_PARSE_REQUEST_BYTES", 64)
+    application = create_app(_settings(), runtime_readiness_probe=lambda: True)
+
+    response = TestClient(application).post(
+        "/parse",
+        files=_PDF_FILES,
+        headers={"Authorization": "Bearer s3cret-token"},
+    )
+
+    assert response.status_code == 413
+    assert response.json() == {"detail": "Payload Too Large"}
+    assert parser_spy["count"] == 0
+
+
+def test_parse_request_stream_budget_runs_in_the_real_middleware_stack(
+    monkeypatch: pytest.MonkeyPatch,
+    parser_spy: dict[str, int],
+) -> None:
+    """Reject an oversized chunked request without relying on Content-Length."""
+
+    monkeypatch.setattr("newsdom_api.main.MAX_PARSE_REQUEST_BYTES", 64)
+    application = create_app(_settings(), runtime_readiness_probe=lambda: True)
+
+    def body_chunks():
+        yield b"x" * 64
+        yield b"x"
+
+    response = TestClient(application).post(
+        "/parse",
+        content=body_chunks(),
+        headers={
+            "Authorization": "Bearer s3cret-token",
+            "Content-Type": "multipart/form-data; boundary=test",
+        },
+    )
+
+    assert response.status_code == 413
+    assert response.json() == {"detail": "Payload Too Large"}
+    assert parser_spy["count"] == 0
+
+
+def test_parse_request_stream_is_bounded_without_content_length() -> None:
+    """Enforce the same total body budget for chunked or lengthless requests."""
+
+    application = create_app(_settings(), runtime_readiness_probe=lambda: True)
+    messages = iter(
+        [
+            {
+                "type": "http.request",
+                "body": b"x" * MAX_PARSE_REQUEST_BYTES,
+                "more_body": True,
+            },
+            {"type": "http.request", "body": b"x", "more_body": False},
+        ]
+    )
+
+    async def receive():
+        return next(messages)
+
+    async def call_next(request):
+        async for _chunk in request.stream():
+            pass
+        return Response(status_code=204)
+
+    request = Request(
+        _request_scope(
+            application,
+            headers=[(b"authorization", b"Bearer s3cret-token")],
+        ),
+        receive,
+    )
+
+    response = asyncio.run(security_boundary_middleware(request, call_next))
+
+    assert response.status_code == 413
+
+
+def test_parse_request_limiter_preserves_disconnect_messages() -> None:
+    """Forward non-body ASGI messages without treating them as request bytes."""
+
+    application = create_app(_settings(), runtime_readiness_probe=lambda: True)
+
+    async def receive():
+        return {"type": "http.disconnect"}
+
+    async def call_next(request):
+        assert await request.receive() == {"type": "http.disconnect"}
+        return Response(status_code=204)
+
+    response = asyncio.run(
+        security_boundary_middleware(
+            Request(
+                _request_scope(
+                    application,
+                    headers=[(b"authorization", b"Bearer s3cret-token")],
+                ),
+                receive,
+            ),
+            call_next,
+        )
+    )
+
+    assert response.status_code == 204
+
+
+def test_security_boundary_does_not_mask_unrelated_http_errors() -> None:
+    """Propagate downstream HTTP errors that are not the body-limit signal."""
+
+    application = create_app(_settings(), runtime_readiness_probe=lambda: True)
+
+    async def receive():
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    async def call_next(_request):
+        raise HTTPException(status_code=409, detail="conflict")
+
+    with pytest.raises(HTTPException, match="409: conflict"):
+        asyncio.run(
+            security_boundary_middleware(
+                Request(
+                    _request_scope(application, method="GET", path="/health"),
+                    receive,
+                ),
+                call_next,
+            )
+        )
 
 
 def test_concurrent_requests_cannot_switch_authentication_state(
