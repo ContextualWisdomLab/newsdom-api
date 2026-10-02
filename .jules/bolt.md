@@ -63,3 +63,6 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2024-10-02 - Avoid Redundant Dictionary Lookups with Type Checks
+**Learning:** When conditionally extracting values from dictionaries with type validation (e.g., `payload.get("key") if isinstance(payload.get("key"), list) else None`), performing the `.get()` lookup twice adds unnecessary dictionary access overhead.
+**Action:** Assign the result of the `.get()` lookup to a local variable first, then perform the type check on the variable to avoid the redundant lookup.
