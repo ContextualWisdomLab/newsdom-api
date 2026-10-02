@@ -4,10 +4,13 @@ import argparse
 import json
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 
 def _reject_non_finite(token: str) -> float:
+    """Reject a non-standard non-finite JSON number token."""
+
     raise ValueError(f"Non-standard float token not allowed: {token}")
 
 
@@ -37,23 +40,37 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
     if not isinstance(pages, list):
         raise ValueError("'pages' field must be a list.")
 
-    temp_path = output_path.with_suffix(output_path.suffix + ".tmp")
     actual_output = output_path.resolve()
+    existing_mode = actual_output.stat().st_mode if actual_output.exists() else None
+    temp_path: Path | None = None
 
     try:
-        with temp_path.open("w", encoding="utf-8") as jsonlfile:
-            for page in pages:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=actual_output.parent,
+            prefix=f".{actual_output.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as jsonlfile:
+            temp_path = Path(jsonlfile.name)
+            for page_index, page in enumerate(pages):
                 if not isinstance(page, dict):
-                    continue
+                    raise ValueError(f"pages[{page_index}] must be an object")
                 page_number = page.get("page_number", "Unknown")
 
                 articles = page.get("articles", [])
                 if not isinstance(articles, list):
-                    continue
+                    raise ValueError(
+                        f"pages[{page_index}].articles must be a list"
+                    )
 
-                for article in articles:
+                for article_index, article in enumerate(articles):
                     if not isinstance(article, dict):
-                        continue
+                        raise ValueError(
+                            f"pages[{page_index}].articles[{article_index}] "
+                            "must be an object"
+                        )
 
                     out_article = article.copy()
                     out_article["document_id"] = document_id
@@ -62,19 +79,14 @@ def export_jsonl(json_path: Path, output_path: Path) -> None:
                     line = json.dumps(out_article, allow_nan=False)
                     jsonlfile.write(line + "\n")
 
-        if actual_output.exists():
-            os.chmod(temp_path, actual_output.stat().st_mode)
-        else:
-            umask = os.umask(0)
-            os.umask(umask)
-            os.chmod(temp_path, 0o666 & ~umask)
-
         os.replace(temp_path, actual_output)
+        if existing_mode is not None:
+            os.chmod(actual_output, existing_mode)
     except Exception:
-        if temp_path.exists():
+        if temp_path is not None and temp_path.exists():
             try:
                 os.unlink(temp_path)
-            except Exception: # Ignore cleanup errors
+            except Exception:  # Ignore cleanup errors
                 pass
         raise
 
