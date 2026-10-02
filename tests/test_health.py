@@ -19,6 +19,10 @@ def test_healthcheck():
     assert response.headers.get("Referrer-Policy") == "no-referrer"
     assert response.headers.get("Cache-Control") == "no-store, no-cache, max-age=0"
     assert (
+        response.headers.get("Permissions-Policy")
+        == "geolocation=(), camera=(), microphone=()"
+    )
+    assert (
         response.headers.get("Strict-Transport-Security")
         == "max-age=31536000; includeSubDomains"
     )
