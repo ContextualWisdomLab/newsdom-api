@@ -418,6 +418,10 @@ def test_unhandled_exception_includes_security_headers(monkeypatch):
     )
     assert response.headers.get("Referrer-Policy") == "no-referrer"
     assert response.headers.get("Cache-Control") == "no-store, no-cache, max-age=0"
+    assert (
+        response.headers.get("Permissions-Policy")
+        == "geolocation=(), camera=(), microphone=()"
+    )
     assert "Strict-Transport-Security" not in response.headers
 
 
