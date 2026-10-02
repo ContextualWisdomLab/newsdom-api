@@ -131,6 +131,12 @@ curl -F "file=@sample.pdf" \
 | `language` | `ch` | MinerU 3.4.4 public family or alias (`ch`, `en`, `japan`, `korean`, `arabic`, `east_slavic`, `cyrillic`, `devanagari`, …) | MinerU `-l` |
 | `mode` | `auto` | `auto`, `ocr`, `txt` | MinerU `-m` |
 
+Each optional string is limited to 50 characters. The PDF file is limited to
+20 MiB, and the complete multipart request is limited to 21 MiB before form
+parsing. The separate request budget also bounds multipart headers, boundaries,
+unknown fields, and lengthless or chunked bodies; oversized requests return
+`413 Payload Too Large`.
+
 `mode=auto` lets born-digital (text-layer) PDFs skip forced OCR; `ocr` forces
 optical recognition and `txt` extracts only the embedded text layer. Invalid
 values return `422`. The previous Japanese-newspaper behavior is still available
