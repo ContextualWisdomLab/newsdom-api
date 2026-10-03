@@ -68,6 +68,7 @@ def _apply_security_headers(response: Response, request: Request) -> Response:
     response.headers["Content-Security-Policy"] = (
         "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
     )
+    response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Cache-Control"] = "no-store, no-cache, max-age=0"
     forwarded_proto = request.headers.get("x-forwarded-proto", "")
