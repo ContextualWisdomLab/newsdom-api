@@ -63,3 +63,7 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2026-06-30 - Avoid glob generation for predictable filenames
+**Learning:** In _parse_mineru_output, blindly calling next(ocr_dir.glob("*_model.json")) instantiates a glob generator and traverses the directory, which adds significant overhead (~40% slower) compared to an exact path lookup when the filename is highly predictable (matching the PDF stem).
+**Action:** Always attempt an exact path lookup with .exists() before falling back to glob() for predictable MinerU artifacts.
