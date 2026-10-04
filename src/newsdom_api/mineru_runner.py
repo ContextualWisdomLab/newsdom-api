@@ -272,14 +272,22 @@ def _execute_mineru(cmd: list[str]) -> subprocess.CompletedProcess[str]:
         raise MineruRuntimeUnavailableError() from exc
 
 
+def _reject_non_finite(token: str) -> float:
+    """Reject non-finite float values during JSON parsing."""
+    raise ValueError(f"Strict JSON parsing rejects non-finite float {token!r}")
+
+
 def _read_mineru_json(path: Path, *, artifact: str) -> Any:
     """Read a MinerU JSON artifact with safe, differentiated failure messages."""
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        raise MineruIncompleteOutputError(f"{artifact} JSON was malformed") from exc
+        raw_text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as exc:
         raise MineruIncompleteOutputError(f"{artifact} JSON could not be read") from exc
+
+    try:
+        return json.loads(raw_text, parse_constant=_reject_non_finite)
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise MineruIncompleteOutputError(f"{artifact} JSON was malformed") from exc
 
 
 def _parse_mineru_output(

@@ -7,10 +7,15 @@ from pathlib import Path
 from typing import Any
 
 
+def _reject_non_finite(token: str) -> float:
+    """Reject non-finite float values during JSON parsing."""
+    raise ValueError(f"Strict JSON parsing rejects non-finite float {token!r}")
+
+
 def load_metrics(path: Path) -> dict[str, Any]:
     """Load a JSON metrics file from disk using UTF-8 encoding."""
 
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8"), parse_constant=_reject_non_finite)
 
 
 def _article_has_headline(article: dict[str, Any]) -> bool:

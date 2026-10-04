@@ -254,6 +254,6 @@ def generate_fixture(output_dir: Path, seed: int = 7) -> tuple[Path, Path]:
     pdf_canvas.save()
 
     truth_path.write_text(
-        json.dumps(truth, ensure_ascii=False, indent=2), encoding="utf-8"
+        json.dumps(truth, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8"
     )
     return pdf_path, truth_path
