@@ -63,3 +63,7 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2026-06-30 - .glob() 호출 전 .exists()로 빠른 경로 확인
+**Learning:** 단일 산출물 경로를 찾을 때 즉시 `.glob()`에 의존하면 반복자와 디렉터리 순회 비용이 발생합니다.
+**Action:** `pathlib`를 사용하여 단일 파일 경로를 예상할 때는 비용이 많이 드는 제너레이터 인스턴스화 오버헤드를 줄이기 위해 `.glob()`으로 폴백하기 전에 먼저 `.exists()`로 정확한 경로 조회를 시도하십시오.
