@@ -19,10 +19,13 @@ from fastapi import (
     Response,
     UploadFile,
 )
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import (
     AuthenticationMode,
@@ -147,6 +150,31 @@ async def security_boundary_middleware(
         if failure is not None:
             return _apply_security_headers(failure, request)
     response = await call_next(request)
+    return _apply_security_headers(response, request)
+
+
+async def http_exception_handler(
+    request: Request, exc: StarletteHTTPException
+) -> Response:
+    """Return HTTP exceptions with the standard security headers."""
+
+    response = JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers=getattr(exc, "headers", None),
+    )
+    return _apply_security_headers(response, request)
+
+
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> Response:
+    """Return validation errors with the standard security headers."""
+
+    response = JSONResponse(
+        status_code=422,
+        content={"detail": jsonable_encoder(exc.errors())},
+    )
     return _apply_security_headers(response, request)
 
 
@@ -328,6 +356,10 @@ def create_app(
         runtime_readiness_probe or mineru_runtime_available
     )
     application.middleware("http")(security_boundary_middleware)
+    application.add_exception_handler(StarletteHTTPException, http_exception_handler)
+    application.add_exception_handler(
+        RequestValidationError, validation_exception_handler
+    )
     application.add_exception_handler(Exception, global_exception_handler)
     application.add_api_route(
         "/health",
