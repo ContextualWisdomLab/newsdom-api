@@ -42,7 +42,7 @@ from .schemas import HealthResponse, ParseResponse, ReadinessResponse
 from .service import parse_pdf
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
-# ⚡ Bolt: Increase chunk size to 1MB to reduce threadpool and context-switching overhead during file upload.
+# Upper bound for one `UploadFile.read()` request on the `/parse` copy path.
 UPLOAD_READ_CHUNK_SIZE_BYTES = 1024 * 1024
 MAX_AUTHORIZATION_HEADER_BYTES = MAX_BEARER_HEADER_BYTES
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
@@ -251,7 +251,8 @@ async def parse(
         with tempfile.NamedTemporaryFile(delete=False) as temporary_file:
             tmp_path = Path(temporary_file.name)
             LOGGER.debug("Created temporary upload file %s", tmp_path)
-            temporary_file.write(header)
+            # Disk writes run in a worker thread so the event loop stays free.
+            await asyncio.to_thread(temporary_file.write, header)
 
             bytes_read = len(header)
             while chunk := await file.read(UPLOAD_READ_CHUNK_SIZE_BYTES):
@@ -265,7 +266,7 @@ async def parse(
                         status_code=413,
                         detail=PAYLOAD_TOO_LARGE_DETAIL,
                     )
-                temporary_file.write(chunk)
+                await asyncio.to_thread(temporary_file.write, chunk)
 
         LOGGER.debug("Wrote %s upload bytes to %s", bytes_read, tmp_path)
         _validate_pdf_structure(tmp_path)
