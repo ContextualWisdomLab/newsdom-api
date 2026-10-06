@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- [보안] FastAPI의 `StarletteHTTPException` 및 `RequestValidationError` 예외 응답에 누락되던 보안 헤더(`X-Content-Type-Options: nosniff` 등)를 추가하여 간접적인 보안 위협을 방지하도록 수정했습니다.
+
 
 > **Planned 0.3.0 deployment migration:** parser authentication changes from
 > **default-open** to **default-required**. Production must configure
