@@ -90,3 +90,8 @@
 **Vulnerability:** The `_safe_upload_filename` function used `filename.replace`, `PurePosixPath`, and `re.sub` on unbounded client input, making it vulnerable to ReDoS or CPU/memory exhaustion (DoS) when fed extremely long strings.
 **Learning:** Even fast standard library functions like `PurePosixPath` and string replacements can cause significant lag when chained on strings in the megabytes. String processing operations should always bound their inputs first if the input is untrusted and can be arbitrarily large.
 **Prevention:** Cap the length of client-provided filename strings early by slicing them (e.g. `filename = filename[-512:]`) before doing more complex string parsing or regex replacements, especially when only the basename suffix is relevant.
+
+## 2026-06-30 - Preserve Security Headers on HTTP Exceptions
+**Vulnerability:** FastAPIs default exception handlers for `StarletteHTTPException` (404, 401) and `RequestValidationError` (422) bypass the standard HTTP middleware, preventing security headers from being applied to these error responses.
+**Learning:** Middleware alone is insufficient for ensuring security headers are applied to all responses. The framework's default exception handlers intercept the request before or around the middleware depending on configuration, bypassing standard response modification.
+**Prevention:** Explicitly register custom exception handlers for `StarletteHTTPException` and `RequestValidationError` (in addition to the global 500 handler) that manually invoke the security header application function before returning the `JSONResponse`.
