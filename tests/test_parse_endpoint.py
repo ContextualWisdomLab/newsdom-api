@@ -575,6 +575,10 @@ class _ThreadRecordingTemporaryFile:
         self.written = bytearray()
         self.write_gate = write_gate
         self.write_started = threading.Event()
+        self.write_finished = threading.Event()
+        self.write_errors: list[BaseException] = []
+        self.close_threads: list[int] = []
+        self.closed_before_write_finished = False
         self.gate_released_in_time: list[bool] = []
 
     def __enter__(self):
@@ -582,22 +586,30 @@ class _ThreadRecordingTemporaryFile:
         return self
 
     def __exit__(self, exc_type, exc, tb):
-        return self._file.__exit__(exc_type, exc, tb)
+        self.close()
+
+    def close(self):
+        self.close_threads.append(threading.get_ident())
+        self.closed_before_write_finished = (
+            self.write_started.is_set() and not self.write_finished.is_set()
+        )
+        self._file.close()
 
     def write(self, data: bytes) -> int:
         self.write_threads.append(threading.get_ident())
         self.write_started.set()
-        if self.write_gate is not None:
-            self.gate_released_in_time.append(
-                self.write_gate.wait(timeout=_WRITE_GATE_TIMEOUT_SECONDS)
-            )
-        self.written.extend(data)
         try:
+            if self.write_gate is not None:
+                self.gate_released_in_time.append(
+                    self.write_gate.wait(timeout=_WRITE_GATE_TIMEOUT_SECONDS)
+                )
+            self.written.extend(data)
             return self._file.write(data)
-        except ValueError:
-            # The request was cancelled and the file closed while this worker
-            # thread was still blocked; the bytes are intentionally discarded.
-            return 0
+        except BaseException as exc:
+            self.write_errors.append(exc)
+            raise
+        finally:
+            self.write_finished.set()
 
 
 def _install_recording_tempfile(
@@ -635,6 +647,19 @@ async def test_parse_upload_writes_do_not_run_on_event_loop_thread(monkeypatch):
     assert created[0].write_threads, "the upload must be persisted"
     assert loop_thread not in created[0].write_threads
     assert bytes(created[0].written) == payload
+
+
+@pytest.mark.asyncio
+async def test_parse_upload_close_does_not_flush_on_event_loop_thread(monkeypatch):
+    created = _install_recording_tempfile(monkeypatch)
+    _stub_parser(monkeypatch)
+
+    await parse(_ReadTrackingUpload(b"%PDF-1.4\n"))
+
+    assert created[0].close_threads
+    assert threading.get_ident() not in created[0].close_threads
+    assert created[0]._file.closed
+    assert not Path(created[0].name).exists()
 
 
 @pytest.mark.asyncio
@@ -736,14 +761,80 @@ async def test_parse_cleans_up_tempfile_when_cancelled_during_write(monkeypatch)
     _stub_parser(monkeypatch)
 
     parse_task = asyncio.create_task(parse(_ReadTrackingUpload(b"%PDF-1.4\n")))
-    while not created:
-        await asyncio.sleep(0)
-    await asyncio.to_thread(created[0].write_started.wait, 5)
-    parse_task.cancel()
     try:
-        with pytest.raises(asyncio.CancelledError):
-            await parse_task
+        while not created:
+            await asyncio.sleep(0)
+        assert await asyncio.to_thread(created[0].write_started.wait, 5)
+        parse_task.cancel()
+        for _ in range(10):
+            await asyncio.sleep(0)
+        assert not parse_task.done(), "cancellation must wait for the owned write"
+        assert not created[0]._file.closed
+        assert Path(created[0].name).exists()
     finally:
         gate.set()
+        with pytest.raises(asyncio.CancelledError):
+            await parse_task
+        assert await asyncio.to_thread(created[0].write_finished.wait, 5)
 
+    assert not created[0].closed_before_write_finished
+    assert not created[0].write_errors
     assert not Path(created[0].name).exists()
+
+
+@pytest.mark.parametrize("worker_fails", [False, True])
+@pytest.mark.asyncio
+async def test_upload_file_io_settles_after_repeated_cancellation(
+    worker_fails, caplog
+):
+    from newsdom_api.main import _run_upload_file_io
+
+    started = asyncio.Event()
+    release = threading.Event()
+    settled = threading.Event()
+    loop = asyncio.get_running_loop()
+    failure = OSError("synthetic worker failure")
+
+    def operation():
+        loop.call_soon_threadsafe(started.set)
+        try:
+            assert release.wait(10)
+            if worker_fails:
+                raise failure
+        finally:
+            settled.set()
+
+    task = asyncio.create_task(_run_upload_file_io(operation))
+    try:
+        await asyncio.wait_for(started.wait(), 10)
+        for _ in range(2):
+            task.cancel()
+            for _ in range(10):
+                await asyncio.sleep(0)
+            assert not task.done()
+            assert not settled.is_set()
+    finally:
+        release.set()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    assert settled.is_set()
+    if worker_fails:
+        assert "Upload file operation failed during cancellation" in caplog.text
+    else:
+        assert "Upload file operation failed during cancellation" not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_upload_file_io_preserves_worker_error_identity():
+    from newsdom_api.main import _run_upload_file_io
+
+    failure = OSError("synthetic disk failure")
+
+    def fail():
+        raise failure
+
+    with pytest.raises(OSError) as exc_info:
+        await _run_upload_file_io(fail)
+
+    assert exc_info.value is failure
