@@ -42,6 +42,8 @@ from .schemas import HealthResponse, ParseResponse, ReadinessResponse
 from .service import parse_pdf
 
 MAX_PARSE_UPLOAD_BYTES = 20 * 1024 * 1024
+# Upper bound for one `UploadFile.read()` request on the `/parse` copy path.
+UPLOAD_READ_CHUNK_SIZE_BYTES = 1024 * 1024
 MAX_AUTHORIZATION_HEADER_BYTES = MAX_BEARER_HEADER_BYTES
 UNSUPPORTED_MEDIA_DETAIL = "Unsupported Media Type"
 PAYLOAD_TOO_LARGE_DETAIL = "Payload Too Large"
@@ -200,6 +202,27 @@ def _validate_pdf_structure(file_path: Path) -> None:
         ) from None
 
 
+async def _run_upload_file_io(operation: Callable, *args) -> None:
+    """Settle an upload file operation before propagating request cancellation."""
+
+    worker = asyncio.create_task(asyncio.to_thread(operation, *args))
+    cancellation: asyncio.CancelledError | None = None
+    while not worker.done():
+        try:
+            await asyncio.shield(worker)
+        except asyncio.CancelledError as exc:
+            cancellation = exc
+        except Exception:
+            break
+    if cancellation is not None:
+        try:
+            worker.result()
+        except Exception:
+            LOGGER.exception("Upload file operation failed during cancellation")
+        raise cancellation
+    worker.result()
+
+
 async def parse(
     file: Annotated[UploadFile, File(..., description="The PDF file to parse.")],
     language: Annotated[
@@ -246,13 +269,15 @@ async def parse(
         if header != b"%PDF-":
             raise HTTPException(status_code=415, detail=UNSUPPORTED_MEDIA_DETAIL)
 
-        with tempfile.NamedTemporaryFile(delete=False) as temporary_file:
+        temporary_file = tempfile.NamedTemporaryFile(delete=False)
+        try:
             tmp_path = Path(temporary_file.name)
             LOGGER.debug("Created temporary upload file %s", tmp_path)
-            temporary_file.write(header)
+            # Disk writes run in a worker thread so the event loop stays free.
+            await _run_upload_file_io(temporary_file.write, header)
 
             bytes_read = len(header)
-            while chunk := await file.read(8192):
+            while chunk := await file.read(UPLOAD_READ_CHUNK_SIZE_BYTES):
                 bytes_read += len(chunk)
                 if bytes_read > MAX_PARSE_UPLOAD_BYTES:
                     LOGGER.warning(
@@ -263,7 +288,9 @@ async def parse(
                         status_code=413,
                         detail=PAYLOAD_TOO_LARGE_DETAIL,
                     )
-                temporary_file.write(chunk)
+                await _run_upload_file_io(temporary_file.write, chunk)
+        finally:
+            await _run_upload_file_io(temporary_file.close)
 
         LOGGER.debug("Wrote %s upload bytes to %s", bytes_read, tmp_path)
         _validate_pdf_structure(tmp_path)

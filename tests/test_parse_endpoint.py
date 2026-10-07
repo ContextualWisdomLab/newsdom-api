@@ -1,4 +1,7 @@
+import asyncio
 import subprocess
+import tempfile
+import threading
 from pathlib import Path
 
 import pytest
@@ -9,6 +12,7 @@ from pypdf.errors import PdfReadError
 from newsdom_api import mineru_runner
 from newsdom_api.main import (
     MAX_PARSE_UPLOAD_BYTES,
+    UPLOAD_READ_CHUNK_SIZE_BYTES,
     app,
     parse,
     _validate_pdf_structure,
@@ -30,7 +34,7 @@ class _FakeTempDir:
 class _ReadTrackingUpload:
     content_type = "application/pdf"
     filename = "fixture.pdf"
-    size = 10 * 1024 * 1024
+    size = 10 * UPLOAD_READ_CHUNK_SIZE_BYTES
 
     def __init__(self, payload: bytes):
         self._payload = payload
@@ -385,7 +389,7 @@ def test_parse_endpoint_rejects_missing_magic_bytes():
 
 @pytest.mark.asyncio
 async def test_parse_endpoint_rejects_magic_bytes_before_full_read():
-    upload = _ReadTrackingUpload(b"MZ\x90\x00\x03" + (b"x" * 1024 * 1024))
+    upload = _ReadTrackingUpload(b"MZ\x90\x00\x03" + (b"x" * UPLOAD_READ_CHUNK_SIZE_BYTES))
 
     with pytest.raises(HTTPException) as exc_info:
         await parse(upload)
@@ -555,3 +559,282 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
+
+
+_REAL_NAMED_TEMPORARY_FILE = tempfile.NamedTemporaryFile
+_WRITE_GATE_TIMEOUT_SECONDS = 2
+
+
+class _ThreadRecordingTemporaryFile:
+    """Wrap a real temporary file and record which thread performs each write."""
+
+    def __init__(self, *args, write_gate: threading.Event | None = None, **kwargs):
+        self._file = _REAL_NAMED_TEMPORARY_FILE(*args, **kwargs)
+        self.name = self._file.name
+        self.write_threads: list[int] = []
+        self.written = bytearray()
+        self.write_gate = write_gate
+        self.write_started = threading.Event()
+        self.write_finished = threading.Event()
+        self.write_errors: list[BaseException] = []
+        self.close_threads: list[int] = []
+        self.closed_before_write_finished = False
+        self.gate_released_in_time: list[bool] = []
+
+    def __enter__(self):
+        self._file.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
+
+    def close(self):
+        self.close_threads.append(threading.get_ident())
+        self.closed_before_write_finished = (
+            self.write_started.is_set() and not self.write_finished.is_set()
+        )
+        self._file.close()
+
+    def write(self, data: bytes) -> int:
+        self.write_threads.append(threading.get_ident())
+        self.write_started.set()
+        try:
+            if self.write_gate is not None:
+                self.gate_released_in_time.append(
+                    self.write_gate.wait(timeout=_WRITE_GATE_TIMEOUT_SECONDS)
+                )
+            self.written.extend(data)
+            return self._file.write(data)
+        except BaseException as exc:
+            self.write_errors.append(exc)
+            raise
+        finally:
+            self.write_finished.set()
+
+
+def _install_recording_tempfile(
+    monkeypatch, write_gate: threading.Event | None = None
+) -> list[_ThreadRecordingTemporaryFile]:
+    created: list[_ThreadRecordingTemporaryFile] = []
+
+    def factory(*args, **kwargs):
+        handle = _ThreadRecordingTemporaryFile(*args, write_gate=write_gate, **kwargs)
+        created.append(handle)
+        return handle
+
+    monkeypatch.setattr("newsdom_api.main.tempfile.NamedTemporaryFile", factory)
+    return created
+
+
+def _stub_parser(monkeypatch) -> None:
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr(
+        "newsdom_api.main.parse_pdf",
+        lambda *args, **kwargs: {"document_id": "fixture", "pages": []},
+    )
+
+
+@pytest.mark.asyncio
+async def test_parse_upload_writes_do_not_run_on_event_loop_thread(monkeypatch):
+    created = _install_recording_tempfile(monkeypatch)
+    _stub_parser(monkeypatch)
+    payload = b"%PDF-" + (b"x" * (2 * UPLOAD_READ_CHUNK_SIZE_BYTES + 17))
+
+    await parse(_ReadTrackingUpload(payload))
+
+    loop_thread = threading.get_ident()
+    assert len(created) == 1
+    assert created[0].write_threads, "the upload must be persisted"
+    assert loop_thread not in created[0].write_threads
+    assert bytes(created[0].written) == payload
+
+
+@pytest.mark.asyncio
+async def test_parse_upload_close_does_not_flush_on_event_loop_thread(monkeypatch):
+    created = _install_recording_tempfile(monkeypatch)
+    _stub_parser(monkeypatch)
+
+    await parse(_ReadTrackingUpload(b"%PDF-1.4\n"))
+
+    assert created[0].close_threads
+    assert threading.get_ident() not in created[0].close_threads
+    assert created[0]._file.closed
+    assert not Path(created[0].name).exists()
+
+
+@pytest.mark.asyncio
+async def test_parse_upload_write_keeps_event_loop_responsive(monkeypatch):
+    gate = threading.Event()
+    created = _install_recording_tempfile(monkeypatch, write_gate=gate)
+    _stub_parser(monkeypatch)
+
+    async def release_gate_while_write_is_blocked() -> None:
+        while not created:
+            await asyncio.sleep(0)
+        await asyncio.to_thread(created[0].write_started.wait, 5)
+        gate.set()
+
+    releaser = asyncio.create_task(release_gate_while_write_is_blocked())
+    await parse(_ReadTrackingUpload(b"%PDF-1.4\n"))
+    await asyncio.wait_for(releaser, timeout=5)
+
+    # The gate can only be released before its timeout when the blocked disk
+    # write leaves the event loop free to run the releasing coroutine.
+    assert created[0].gate_released_in_time
+    assert all(created[0].gate_released_in_time)
+
+
+@pytest.mark.parametrize(
+    ("payload_size", "expected_status"),
+    [
+        (MAX_PARSE_UPLOAD_BYTES - 1, None),
+        (MAX_PARSE_UPLOAD_BYTES, None),
+        (MAX_PARSE_UPLOAD_BYTES + 1, 413),
+    ],
+)
+@pytest.mark.asyncio
+async def test_parse_upload_limit_boundaries_without_size_metadata(
+    monkeypatch, payload_size, expected_status
+):
+    created = _install_recording_tempfile(monkeypatch)
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    observed: dict[str, bytes] = {}
+
+    def fake_parse_pdf(file_path, filename, **kwargs):
+        observed["bytes"] = Path(file_path).read_bytes()
+        return {"document_id": "fixture", "pages": []}
+
+    monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf)
+    payload = b"%PDF-" + (b"x" * (payload_size - 5))
+    upload = _ReadTrackingUpload(payload)
+    upload.size = None
+
+    if expected_status is None:
+        await parse(upload)
+        assert observed["bytes"] == payload
+    else:
+        with pytest.raises(HTTPException) as exc_info:
+            await parse(upload)
+        assert exc_info.value.status_code == expected_status
+        assert len(created[0].written) <= MAX_PARSE_UPLOAD_BYTES
+    assert not Path(created[0].name).exists()
+
+
+@pytest.mark.parametrize(
+    "body_size",
+    [0, 1, UPLOAD_READ_CHUNK_SIZE_BYTES, UPLOAD_READ_CHUNK_SIZE_BYTES + 1],
+)
+@pytest.mark.asyncio
+async def test_parse_upload_read_calls_are_explicit(monkeypatch, body_size):
+    _stub_parser(monkeypatch)
+    upload = _ReadTrackingUpload(b"%PDF-" + (b"x" * body_size))
+
+    await parse(upload)
+
+    full_chunks, remainder = divmod(body_size, UPLOAD_READ_CHUNK_SIZE_BYTES)
+    body_reads = full_chunks + (1 if remainder else 0) + 1  # final empty read
+    assert upload.read_sizes == [5] + [UPLOAD_READ_CHUNK_SIZE_BYTES] * body_reads
+
+
+@pytest.mark.asyncio
+async def test_parse_cleans_up_tempfile_when_offloaded_write_fails(monkeypatch):
+    created = _install_recording_tempfile(monkeypatch)
+
+    def failing_write(self, data: bytes) -> int:
+        self.write_threads.append(threading.get_ident())
+        raise OSError(28, "No space left on device")
+
+    monkeypatch.setattr(_ThreadRecordingTemporaryFile, "write", failing_write)
+
+    with pytest.raises(OSError):
+        await parse(_ReadTrackingUpload(b"%PDF-1.4\n%synthetic\n"))
+
+    assert len(created) == 1
+    assert threading.get_ident() not in created[0].write_threads
+    assert not Path(created[0].name).exists()
+
+
+@pytest.mark.asyncio
+async def test_parse_cleans_up_tempfile_when_cancelled_during_write(monkeypatch):
+    gate = threading.Event()
+    created = _install_recording_tempfile(monkeypatch, write_gate=gate)
+    _stub_parser(monkeypatch)
+
+    parse_task = asyncio.create_task(parse(_ReadTrackingUpload(b"%PDF-1.4\n")))
+    try:
+        while not created:
+            await asyncio.sleep(0)
+        assert await asyncio.to_thread(created[0].write_started.wait, 5)
+        parse_task.cancel()
+        for _ in range(10):
+            await asyncio.sleep(0)
+        assert not parse_task.done(), "cancellation must wait for the owned write"
+        assert not created[0]._file.closed
+        assert Path(created[0].name).exists()
+    finally:
+        gate.set()
+        with pytest.raises(asyncio.CancelledError):
+            await parse_task
+        assert await asyncio.to_thread(created[0].write_finished.wait, 5)
+
+    assert not created[0].closed_before_write_finished
+    assert not created[0].write_errors
+    assert not Path(created[0].name).exists()
+
+
+@pytest.mark.parametrize("worker_fails", [False, True])
+@pytest.mark.asyncio
+async def test_upload_file_io_settles_after_repeated_cancellation(
+    worker_fails, caplog
+):
+    from newsdom_api.main import _run_upload_file_io
+
+    started = asyncio.Event()
+    release = threading.Event()
+    settled = threading.Event()
+    loop = asyncio.get_running_loop()
+    failure = OSError("synthetic worker failure")
+
+    def operation():
+        loop.call_soon_threadsafe(started.set)
+        try:
+            assert release.wait(10)
+            if worker_fails:
+                raise failure
+        finally:
+            settled.set()
+
+    task = asyncio.create_task(_run_upload_file_io(operation))
+    try:
+        await asyncio.wait_for(started.wait(), 10)
+        for _ in range(2):
+            task.cancel()
+            for _ in range(10):
+                await asyncio.sleep(0)
+            assert not task.done()
+            assert not settled.is_set()
+    finally:
+        release.set()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    assert settled.is_set()
+    if worker_fails:
+        assert "Upload file operation failed during cancellation" in caplog.text
+    else:
+        assert "Upload file operation failed during cancellation" not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_upload_file_io_preserves_worker_error_identity():
+    from newsdom_api.main import _run_upload_file_io
+
+    failure = OSError("synthetic disk failure")
+
+    def fail():
+        raise failure
+
+    with pytest.raises(OSError) as exc_info:
+        await _run_upload_file_io(fail)
+
+    assert exc_info.value is failure
