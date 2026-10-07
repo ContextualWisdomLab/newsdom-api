@@ -555,3 +555,32 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     # We should have unlinked exactly one file, which should be in the temp directory
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
+
+def test_parse_large_string_payload_rejected(
+    monkeypatch,
+) -> None:
+    def fake_parse_pdf_bytes(file_path, filename, **kwargs):
+        return {"document_id": "fixture", "pages": []}
+
+    monkeypatch.setattr("newsdom_api.main.parse_pdf", fake_parse_pdf_bytes)
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+
+    client = TestClient(app)
+    minimal_pdf_bytes = b"%PDF-1.4\n%synthetic\n"
+
+    # Test that max_length=50 on Form limits the length of strings to mitigate memory exhaustion DoS
+    response = client.post(
+        "/parse",
+        data={"language": "a" * 51},
+        files={"file": ("test.pdf", minimal_pdf_bytes, "application/pdf")},
+    )
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["type"] == "string_too_long"
+
+    response = client.post(
+        "/parse",
+        data={"mode": "a" * 51},
+        files={"file": ("test.pdf", minimal_pdf_bytes, "application/pdf")},
+    )
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["type"] == "string_too_long"
