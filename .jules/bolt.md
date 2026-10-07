@@ -63,3 +63,10 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+## 2024-07-30 - Avoid Sorting Single-Artifact Glob Matches
+**Learning:** In file discovery routines, sorting or eagerly resolving a glob generator into a list when only a single match is needed causes unnecessary overhead.
+**Action:** Use `next(path.glob(...))` with `StopIteration` handling for single-artifact fallback lookups.
+
+## 2024-07-30 - Optimize predictable artifact paths
+**Learning:** Unconditionally using `path.glob()` for outputs that follow predictable naming conventions introduces unnecessary directory scanning and generator overhead.
+**Action:** Always attempt an exact path lookup with `.exists()` before falling back to `.glob()` for predictable output artifacts to optimize file discovery.
