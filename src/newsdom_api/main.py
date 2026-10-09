@@ -19,10 +19,14 @@ from fastapi import (
     Response,
     UploadFile,
 )
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from pypdf import PdfReader
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from pypdf.errors import PdfReadError
+from fastapi.utils import is_body_allowed_for_status_code
 
 from .config import (
     AuthenticationMode,
@@ -157,6 +161,35 @@ async def global_exception_handler(request: Request, exc: Exception) -> Response
     response = JSONResponse(
         status_code=500,
         content={"detail": "Internal Server Error"},
+    )
+    return _apply_security_headers(response, request)
+
+
+async def http_exception_handler(
+    request: Request, exc: StarletteHTTPException
+) -> Response:
+    """Return HTTP error responses with the standard security headers."""
+
+    headers = getattr(exc, "headers", None) or {}
+    if not is_body_allowed_for_status_code(exc.status_code):
+        response = Response(status_code=exc.status_code, headers=headers)
+    else:
+        response = JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+            headers=headers,
+        )
+    return _apply_security_headers(response, request)
+
+
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> Response:
+    """Return validation error responses with the standard security headers."""
+
+    response = JSONResponse(
+        status_code=422,
+        content={"detail": jsonable_encoder(exc.errors())},
     )
     return _apply_security_headers(response, request)
 
@@ -329,6 +362,10 @@ def create_app(
     )
     application.middleware("http")(security_boundary_middleware)
     application.add_exception_handler(Exception, global_exception_handler)
+    application.add_exception_handler(StarletteHTTPException, http_exception_handler)
+    application.add_exception_handler(
+        RequestValidationError, validation_exception_handler
+    )
     application.add_api_route(
         "/health",
         health,
