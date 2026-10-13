@@ -63,3 +63,11 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2024-05-28 - FastAPI Request.url.scheme vs Request.scope["scheme"]
+**Learning:** Checking `request.url.scheme` in FastAPI/Starlette triggers a relatively expensive URL parsing operation that creates a new URL object. The scheme is already available much faster directly in the ASGI scope (`request.scope.get("scheme")`).
+**Action:** Use `request.scope.get("scheme", "http")` in middleware or hot paths to avoid URL parsing overhead.
+
+## 2024-05-28 - ASGI Header Case Sensitivity
+**Learning:** ASGI servers guarantee that header names in the `request.scope["headers"]` list are lowercased bytes. Calling `.lower()` on the name during iteration is redundant and adds overhead on every request.
+**Action:** When iterating over raw ASGI headers, compare directly to lowercased byte strings without calling `.lower()`.
