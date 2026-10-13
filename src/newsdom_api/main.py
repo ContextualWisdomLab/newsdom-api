@@ -329,6 +329,43 @@ def create_app(
     )
     application.middleware("http")(security_boundary_middleware)
     application.add_exception_handler(Exception, global_exception_handler)
+
+    from starlette.exceptions import HTTPException as StarletteHTTPException
+    from fastapi.exceptions import RequestValidationError
+    from fastapi.responses import JSONResponse
+    from fastapi.encoders import jsonable_encoder
+    from fastapi.utils import is_body_allowed_for_status_code
+
+    async def _http_exception_handler(request: Request, exc: Exception) -> Response:
+        """Ensure security headers are applied to HTTP exceptions like 404 or 401."""
+        exc_starlette = exc  # type: ignore
+        headers = getattr(exc_starlette, "headers", None)
+        if not is_body_allowed_for_status_code(exc_starlette.status_code):
+            response = Response(status_code=exc_starlette.status_code, headers=headers)
+        else:
+            response = JSONResponse(
+                {"detail": exc_starlette.detail},
+                status_code=exc_starlette.status_code,
+                headers=headers,
+            )
+        return _apply_security_headers(response, request)
+
+    async def _validation_exception_handler(
+        request: Request, exc: Exception
+    ) -> Response:
+        """Return sanitized 422 responses with the standard security headers."""
+        exc_validation = exc  # type: ignore
+        response = JSONResponse(
+            status_code=422,
+            content={"detail": jsonable_encoder(exc_validation.errors())},
+        )
+        return _apply_security_headers(response, request)
+
+    application.add_exception_handler(StarletteHTTPException, _http_exception_handler)
+    application.add_exception_handler(
+        RequestValidationError, _validation_exception_handler
+    )
+
     application.add_api_route(
         "/health",
         health,
