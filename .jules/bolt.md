@@ -63,3 +63,7 @@
 ## 2024-07-30 - Avoid chained string replace when checking character sets
 **Learning:** Using chained `.replace(a, "").replace(b, "")` to check if a string consists entirely of specific characters requires intermediate string allocations for every call. In benchmarks, using `.strip("ab")` is ~30% faster and avoids multiple allocations in the hot path.
 **Action:** When checking if a string is solely composed of specific characters, use `.strip(chars)` instead of chained `.replace()` calls to improve performance.
+
+## 2024-10-14 - Optimize ASGI scope handling
+**Learning:** Accessing `request.url.scheme` triggers expensive URL parsing. Also ASGI servers guarantee that header names in the ASGI scope are already lowercased byte strings, so redundant `.lower()` calls on header names add measurable overhead.
+**Action:** Use `request.scope.get('scheme', 'http')` to access the scheme directly and avoid redundant `.lower()` calls on header names when iterating through them.
