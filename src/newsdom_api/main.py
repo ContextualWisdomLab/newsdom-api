@@ -71,7 +71,10 @@ def _apply_security_headers(response: Response, request: Request) -> Response:
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Cache-Control"] = "no-store, no-cache, max-age=0"
     forwarded_proto = request.headers.get("x-forwarded-proto", "")
-    is_https = request.url.scheme == "https" or forwarded_proto.lower() == "https"
+    is_https = (
+        request.scope.get("scheme", "http") == "https"
+        or forwarded_proto.lower() == "https"
+    )
     if is_https:
         response.headers["Strict-Transport-Security"] = (
             "max-age=31536000; includeSubDomains"
@@ -94,7 +97,7 @@ def _authorization_values(request: Request) -> list[bytes]:
     return [
         value
         for name, value in request.scope.get("headers", [])
-        if name.lower() == b"authorization"
+        if name == b"authorization"
     ]
 
 
