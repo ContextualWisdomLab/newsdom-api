@@ -91,6 +91,50 @@ def test_ci_workflows_run_for_all_pull_requests():
         )
 
 
+def test_pull_request_workflows_cancel_only_superseded_ready_heads():
+    for workflow_path in _iter_workflow_paths():
+        workflow = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
+        triggers = workflow.get("on", workflow.get(True))
+        if "pull_request" not in triggers:
+            continue
+
+        pull_request = triggers["pull_request"] or {}
+        assert {
+            "opened",
+            "synchronize",
+            "reopened",
+            "ready_for_review",
+            "converted_to_draft",
+            "closed",
+        } <= set(pull_request["types"]), workflow_path
+        concurrency = workflow["concurrency"]
+        assert "${{ github.workflow }}-${{ github.repository }}-" in concurrency[
+            "group"
+        ], workflow_path
+        assert concurrency["cancel-in-progress"] in {
+            True,
+            "${{ github.event_name == 'pull_request' }}",
+        }, workflow_path
+
+        for job in workflow["jobs"].values():
+            condition = str(job.get("if", ""))
+            if "github.event_name == 'workflow_dispatch'" in condition:
+                continue
+            assert "github.event.action != 'closed'" in condition, workflow_path
+            assert (
+                "github.event.pull_request.draft == false" in condition
+            ), workflow_path
+
+
+def test_central_security_owners_replace_local_pr_triggers():
+    for workflow_name in ("codeql.yml", "scorecards.yml"):
+        workflow = yaml.safe_load(
+            Path(".github/workflows", workflow_name).read_text(encoding="utf-8")
+        )
+        triggers = workflow.get("on", workflow.get(True))
+        assert "pull_request" not in triggers, workflow_name
+
+
 def test_docs_workflow_uses_least_privilege_pages_permissions():
     text = Path(".github/workflows/gh-pages.yml").read_text(encoding="utf-8")
     assert "contents: write" not in text
