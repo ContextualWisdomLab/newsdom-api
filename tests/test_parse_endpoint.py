@@ -556,40 +556,36 @@ async def test_parse_endpoint_cleans_up_tempfile_on_read_exception(monkeypatch):
     assert len(unlinked_paths) == 1
     assert "tmp" in unlinked_paths[0].lower() or "temp" in unlinked_paths[0].lower()
 
-def test_parse_form_field_max_length_exceeded(monkeypatch):
-    """Test that Form fields reject inputs longer than max_length=50."""
-    # Temporarily override runtime settings to bypass authentication in tests
-    from newsdom_api.config import AuthenticationMode, RuntimeSettings, RuntimeProfile
-    from newsdom_api.main import _runtime_settings
-
-    monkeypatch.setitem(
-        app.dependency_overrides,
-        _runtime_settings,
-        lambda request: RuntimeSettings(
-            authentication_mode=AuthenticationMode.DISABLED,
-            runtime_profile=RuntimeProfile.DEVELOPMENT
-        )
+def test_parse_endpoint_rejects_overlong_language_field(monkeypatch):
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr(
+        "newsdom_api.main.parse_pdf",
+        lambda *a, **k: {"document_id": "x", "pages": []},
     )
 
-    # We must patch the access failure validation to bypass authentication during test
-    monkeypatch.setattr("newsdom_api.main._parse_access_failure", lambda request: None)
-
-    client = TestClient(app, raise_server_exceptions=False)
-
-    long_string = "a" * 51
-
+    client = TestClient(app)
     response = client.post(
         "/parse",
-        files={"file": ("dummy.pdf", b"%PDF-dummy", "application/pdf")},
-        data={"language": long_string, "mode": "auto"},
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+        data={"language": "x" * 51},
     )
-    assert response.status_code == 422
-    assert "language" in response.text
 
+    assert response.status_code == 422
+    assert "detail" in response.json()
+
+def test_parse_endpoint_rejects_overlong_mode_field(monkeypatch):
+    monkeypatch.setattr("newsdom_api.main._validate_pdf_structure", lambda _: None)
+    monkeypatch.setattr(
+        "newsdom_api.main.parse_pdf",
+        lambda *a, **k: {"document_id": "x", "pages": []},
+    )
+
+    client = TestClient(app)
     response = client.post(
         "/parse",
-        files={"file": ("dummy.pdf", b"%PDF-dummy", "application/pdf")},
-        data={"language": "ch", "mode": long_string},
+        files={"file": ("fixture.pdf", b"%PDF-1.4\n%synthetic\n", "application/pdf")},
+        data={"mode": "x" * 51},
     )
+
     assert response.status_code == 422
-    assert "mode" in response.text
+    assert "detail" in response.json()
