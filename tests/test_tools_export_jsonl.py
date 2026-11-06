@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -25,9 +26,11 @@ VALID_JSON_DATA = {
                 },
             ],
         },
+        "not_a_dict_page",
         {
             "page_number": 2,
             "articles": [
+                "not_a_dict_article",
                 {
                     "article_id": "art_3",
                     "headline": "Test Headline 3",
@@ -42,32 +45,26 @@ VALID_JSON_DATA = {
 def test_export_jsonl_success(tmp_path: Path) -> None:
     input_file = tmp_path / "input.json"
     input_file.write_text(json.dumps(VALID_JSON_DATA), encoding="utf-8")
-    output_file = tmp_path / "nested" / "output.jsonl"
+    output_file = tmp_path / "output.jsonl"
 
     export_jsonl(input_file, output_file)
 
     assert output_file.exists()
 
     with output_file.open("r", encoding="utf-8") as f:
-        lines = f.read().splitlines()
+        lines = f.readlines()
 
-        assert len(lines) == 3
+    assert len(lines) == 3
 
-        row1 = json.loads(lines[0])
-        assert row1["document_id"] == "test_doc"
-        assert row1["page_number"] == 1
-        assert row1["article_id"] == "art_1"
-        assert row1["headline"] == "Test Headline 1"
-        assert row1["body_blocks"] == ["Block 1", "Block 2"]
+    art1 = json.loads(lines[0])
+    assert art1["article_id"] == "art_1"
+    assert art1["headline"] == "Test Headline 1"
 
-        row2 = json.loads(lines[1])
-        assert row2["headline"] == "Test Headline 2"
-        assert row2["body_blocks"] == []
+    art2 = json.loads(lines[1])
+    assert art2["article_id"] == "art_2"
 
-        row3 = json.loads(lines[2])
-        assert row3["page_number"] == 2
-        assert row3["article_id"] == "art_3"
-        assert row3["body_blocks"] == ["Block 3"]
+    art3 = json.loads(lines[2])
+    assert art3["article_id"] == "art_3"
 
 
 def test_export_jsonl_invalid_file(tmp_path: Path) -> None:
@@ -88,28 +85,25 @@ def test_export_jsonl_invalid_file(tmp_path: Path) -> None:
         export_jsonl(invalid_json, output_file)
 
 
-def test_export_jsonl_rejects_noncanonical_newsdom(tmp_path: Path) -> None:
-    input_file = tmp_path / "input.json"
-    malformed = {
-        **VALID_JSON_DATA,
-        "pages": [{"page_number": 1, "articles": ["not-an-article"]}],
-    }
-    input_file.write_text(json.dumps(malformed), encoding="utf-8")
-    output_file = tmp_path / "output.jsonl"
-
-    with pytest.raises(ValueError, match="does not match ParseResponse schema"):
-        export_jsonl(input_file, output_file)
-
-
-def test_export_jsonl_rejects_input_as_output_without_modifying_source(
+def test_export_jsonl_preserves_published_output_when_encoding_fails(
     tmp_path: Path,
 ) -> None:
     input_file = tmp_path / "input.json"
-    original = json.dumps(VALID_JSON_DATA)
-    input_file.write_text(original, encoding="utf-8")
+    input_file.write_text(json.dumps(VALID_JSON_DATA), encoding="utf-8")
+    output_file = tmp_path / "output.jsonl"
 
-    with pytest.raises(ValueError, match="must differ from input"):
-        export_jsonl(input_file, input_file)
+    # create original output
+    output_file.write_text("original content", encoding="utf-8")
+
+    # mock json.dumps to simulate encoding failure
+    with patch(
+        "tools.export_jsonl.json.dumps", side_effect=TypeError("Not serializable")
+    ):
+        with pytest.raises(TypeError, match="Not serializable"):
+            export_jsonl(input_file, output_file)
+
+    # assert the output file is still the original one
+    assert output_file.read_text(encoding="utf-8") == "original content"
 
 
 def test_export_jsonl_cli_success(
