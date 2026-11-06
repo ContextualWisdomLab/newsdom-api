@@ -17,7 +17,9 @@ def _coverage_source_paths() -> set[str]:
     )
     assert match is not None, "pyproject.toml must declare [tool.coverage.run]"
 
-    source_match = re.search(r"(?m)^source\s*=\s*\[(?P<paths>[^]]+)\]", match["section"])
+    source_match = re.search(
+        r"(?m)^source\s*=\s*\[(?P<paths>[^]]+)\]", match["section"]
+    )
     assert source_match is not None, "coverage run config must declare source paths"
     return set(re.findall(r'"([^"]+)"', source_match["paths"]))
 
@@ -32,7 +34,9 @@ def test_ci_coverage_uses_project_sources_without_narrowing_them() -> None:
     )
     pytest_job = workflow["jobs"]["pytest"]
     coverage_step = next(
-        step for step in pytest_job["steps"] if step.get("name") == "Run tests with coverage"
+        step
+        for step in pytest_job["steps"]
+        if step.get("name") == "Run tests with coverage"
     )
     command = coverage_step["run"]
     tokens = shlex.split(command)
