@@ -7,9 +7,14 @@ on:
       - 'Dockerfile.test'
       - '.github/workflows/build-ci-image.yml'
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'Dockerfile.test'
       - '.github/workflows/build-ci-image.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.repository }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Least-privilege default: read-only GITHUB_TOKEN at the top level.
 # packages:write is granted only to the job that pushes to GHCR (Scorecard TokenPermissions, alert #39).
@@ -18,6 +23,7 @@ permissions:
 
 jobs:
   build-and-push:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
