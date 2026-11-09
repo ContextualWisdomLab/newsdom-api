@@ -17,6 +17,16 @@ uv pip install --python .venv/bin/python "mineru[pipeline]==3.4.4"
 
 On Windows, replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
 
+Local OpenCode reviews use NVIDIA NIM only. Bind the org secret to the
+process variable OpenCode reads:
+
+```bash
+export NVIDIA_API_KEY="${NVIDIA_NIM_API_KEY}"
+```
+
+Do not configure `github-models`, `STRIX_GITHUB_MODELS_TOKEN`, or
+`COPILOT_GITHUB_TOKEN`.
+
 ## Test commands
 
 ```bash
