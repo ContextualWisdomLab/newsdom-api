@@ -27,7 +27,7 @@ jobs:
           persist-credentials: false
 
       - name: Run analysis
-        uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc
+        uses: ossf/scorecard-action@23f22cd43608bae7a1f1fa2603d7314dee9538a5
         with:
           repo_token: ${{ secrets.SCORECARD_TOKEN || github.token }}
           results_file: results.sarif
@@ -36,7 +36,7 @@ jobs:
 
       - name: Upload SARIF results
         if: github.event_name != 'pull_request'
-        uses: github/codeql-action/upload-sarif@f205ea1c3313d32999d8d6a48b4f6530d4437b38
+        uses: github/codeql-action/upload-sarif@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea
         env:
           FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
         with:
