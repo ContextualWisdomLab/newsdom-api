@@ -263,10 +263,20 @@ def _execute_mineru(cmd: list[str]) -> subprocess.CompletedProcess[str]:
             stderr="OCR processing timed out after 5 minutes",
         ) from exc
     except subprocess.CalledProcessError as exc:
+        stdout_str = (
+            exc.output
+            if isinstance(exc.output, str)
+            else (exc.output.decode("utf-8", "replace") if exc.output else "")
+        )
+        stderr_str = (
+            exc.stderr
+            if isinstance(exc.stderr, str)
+            else (exc.stderr.decode("utf-8", "replace") if exc.stderr else "")
+        )
         raise MineruRuntimeUnavailableError(
             returncode=exc.returncode,
-            stdout=exc.output,
-            stderr=exc.stderr,
+            stdout=stdout_str[:4096],
+            stderr=stderr_str[:4096],
         ) from exc
     except FileNotFoundError as exc:
         raise MineruRuntimeUnavailableError() from exc
